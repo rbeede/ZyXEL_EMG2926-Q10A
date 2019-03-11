@@ -1,0 +1,17 @@
+--- b/json_object.c	2012-09-19 15:46:39.673063822 +0800
++++ a/json_object.c	2012-09-19 15:45:27.325063508 +0800
+@@ -267,6 +267,14 @@
+   lh_table_insert(jso->o.c_object, strdup(key), val);
+ }
+ 
++void json_object_object_replace(struct json_object* jso, const char *key,
++				struct json_object *val)
++{
++	struct lh_entry *e = lh_table_lookup_entry(jso->o.c_object, key);
++
++	e->v = val;
++}
++
+ struct json_object* json_object_object_get(struct json_object* jso, const char *key)
+ {
+   return (struct json_object*) lh_table_lookup(jso->o.c_object, key);

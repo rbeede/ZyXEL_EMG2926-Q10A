@@ -1,0 +1,54 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Panasonic VIERA</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Panasonic</DescriptionText>
+			<DescriptionText>VIErA</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>X-PANASONIC-DMP-Profile:</HttpText>
+			<HttpText>Panasonic MIL DLNA CP UPnP/1.0 DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+            <BrowseRecognition>
+		<BrowseHttpHeaders>X-PANASONIC-DMP-Profile:</BrowseHttpHeaders>
+            </BrowseRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+			<Target>JPEG1920x1080</Target>
+			<Target>JPEG120x90</Target>
+		</Scaling>
+		<VideoTranscoding>
+			<Source>video/quicktime</Source>
+			<Source>video/x-ms-dvr</Source>
+			<Source>video/x-ms-wtv</Source>
+			<Source>video/flv</Source>
+			<Source>video/webm</Source>
+			<Source>video/3gpp</Source>
+			<Source>video/mpeg</Source>
+			<Source>video/mpeg2</Source>
+			<Target>MPEG</Target>
+		</VideoTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/x-msvideo</In>
+				<Out>video/avi</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+        <Quirk>RES_ADD_FLAG</Quirk>
+		<Quirk>SUPPORT_MPG2TS_TIME_SEEK</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

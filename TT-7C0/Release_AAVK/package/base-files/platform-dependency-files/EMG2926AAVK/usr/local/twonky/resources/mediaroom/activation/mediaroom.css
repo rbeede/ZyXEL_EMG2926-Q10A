@@ -1,0 +1,49 @@
+body {
+    -webkit-text-size-adjust:100%;
+}
+
+hr {
+    padding: 2px;
+    margin-top: -3px;
+}
+
+h1 {
+    font-size:12pt;
+}
+
+p {
+    font-size:11pt;
+}
+
+.btn {
+    font-size:11pt;
+}
+
+.listitem {
+    font-size:13pt;
+}
+
+.listitemtext {
+    font-size:11pt;
+}
+
+.icn {
+    width:48pt;
+    height:24pt;
+    float:left;
+    margin-bottom: 4pt;
+}
+
+.outer_to_center_text {
+    display: table;
+    position: static;
+}
+
+.middle_to_center_text {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.center_align {
+    text-align: center;
+}

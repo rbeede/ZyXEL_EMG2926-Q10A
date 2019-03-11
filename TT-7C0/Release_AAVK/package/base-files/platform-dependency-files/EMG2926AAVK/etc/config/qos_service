@@ -1,0 +1,34 @@
+#Created for quality of service (Qos).
+
+config 'qos' general
+	option 'service_count' '6'
+
+config 'service' '1'
+	option 'name' 'FTP'
+	option 'protocol' '6'
+	option 'PortRange' '20:21'
+
+config 'service' '2'
+	option 'name' 'SIP'
+	option 'protocol' '17'
+	option 'Port' '5060'
+
+config 'service' '3'
+	option 'name' 'RTSP'
+	option 'protocol' '17'
+	option 'Port' '554'
+
+config 'service' '4'
+	option 'name' 'DNS'
+	option 'protocol' '17'
+	option 'Port' '53'
+
+config 'service' '5'
+	option 'name' 'WEB'
+	option 'protocol' '6'
+	option 'Port' '80'
+
+config 'service' '6'
+	option 'name' 'Telnet'
+	option 'protocol' '6'
+	option 'Port' '23'

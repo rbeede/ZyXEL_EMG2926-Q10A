@@ -1,0 +1,21 @@
+Source-Makefile: feeds/streamboost/leash/Makefile
+Package: leash
+Submenu: Utilities
+Version: 1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Filter to read node data from DHCP, ARP table and WiFi table
+Maintainer: Cristian Prundeanu <c.p@qca.qualcomm.com>
+Source: 
+Type: ipkg-prebuilt
+Description:  This package contains an a daemon that will watch the DHCP leases file, along
+ with the ARP table and the WiFi client list.
+ When it sees a change, it will filter and compound the data into a single file,
+ to prepare for inclusion into Redis.
+Cristian Prundeanu <c.p@qca.qualcomm.com>
+@@
+
+

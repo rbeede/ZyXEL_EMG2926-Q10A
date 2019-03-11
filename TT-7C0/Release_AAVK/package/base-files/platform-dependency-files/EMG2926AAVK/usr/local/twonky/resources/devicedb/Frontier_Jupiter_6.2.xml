@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Frontier Jupiter 6.2</DisplayName>
+		<HttpRecognition>
+			<HttpText>FSL DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

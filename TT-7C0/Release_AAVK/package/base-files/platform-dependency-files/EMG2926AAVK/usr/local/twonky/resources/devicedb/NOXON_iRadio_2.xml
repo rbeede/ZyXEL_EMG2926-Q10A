@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<DisplayName>NOXON iRadio 2</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>NOXON iRadio 2</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+		<ExtraProtocolInfo>http-get:*:audio/x-wav:*,http-get:*:audio/wav:*,http-get:*:audio/wave:*</ExtraProtocolInfo>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOUTF8</Quirk>
+		<Quirk>FORCERES</Quirk>
+		<Quirk>IGNORESORT</Quirk>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+	</DeviceQuirks>
+</Client>

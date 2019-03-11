@@ -1,0 +1,29 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=50
+
+start() {
+	### applying after WAN connection up ###
+	exit 0
+}
+
+apply() {
+	/sbin/nat apply
+}
+
+init() {
+	exit 0
+}
+
+reload() {
+	/sbin/nat reload
+	
+	# The old routing cache will be continuously  for a while  if LAN PC continues to ping WAN side.
+	# Bug: EMG3425AAYJ [ZQ70] , It may couse NAT Disable/Enable do no work temporarily.
+        #ifconfig eth1 down
+        #ip route flush cache
+        #sleep 25
+        #ifconfig eth1 up
+}
+

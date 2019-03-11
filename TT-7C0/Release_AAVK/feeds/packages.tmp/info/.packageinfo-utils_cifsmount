@@ -1,0 +1,18 @@
+Source-Makefile: feeds/packages/utils/cifsmount/Makefile
+Package: cifsmount
+Submenu: Filesystem
+Version: 1.5-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: utils
+Category: Utilities
+Title: CIFS mounting helper utility
+Maintainer: 
+Source: 
+Type: ipkg
+Description: 	An user space helper utility for mounting remote CIFS shares.
+
+@@
+
+

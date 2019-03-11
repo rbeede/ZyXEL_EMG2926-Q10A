@@ -1,0 +1,198 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+## Configure Firewall Rules
+
+LAN="br+"
+
+filterEnabled=`uci get firewall.general.filterEnabled` 
+count=`uci get firewall.general.rules_count`
+target=`uci get firewall.general.target`
+ruleid=1
+
+## set default action of firewall to DROP ##
+iptables -P FORWARD DROP
+iptables -P INPUT DROP
+
+iptables -F lan_local_default
+iptables -F input_rule
+iptables -F output_igmp
+iptables -F forwarding_rule_filter
+
+if [ "$filterEnabled" = "1" -a "$count" -gt 0  ] ; then  
+
+	## firewall
+	iptables -N input_rule
+	iptables -N output_igmp
+	iptables -N forwarding_rule_filter
+
+	if [ "$target" == "ACCEPT" ]; then
+		## lan and local traffic must be accepted by default if there is not any exception rule
+		iptables -N lan_local_default
+		iptables -A lan_local_default -i $LAN -j ACCEPT
+		iptables -A lan_local_default -i lo -j ACCEPT
+		iptables -D INPUT -j lan_local_default
+		iptables -A INPUT -j lan_local_default
+	fi
+                         
+	while [ "$ruleid" -le "$count" ]
+	do
+		StatusEnable=`uci get firewall.rule$ruleid.StatusEnable`
+		if [ "$StatusEnable" = "1" ] ; then
+			type=`uci get firewall.rule$ruleid.type`
+			service=`uci get firewall.rule$ruleid.service`
+			dstip=`uci get firewall.rule$ruleid.dst_ip`
+			srcip=`uci get firewall.rule$ruleid.src_ip`
+			time=`uci get firewall.rule$ruleid.time`
+			mac_address=`uci get firewall.rule$ruleid.mac_address`
+			igmp_from_addr=`uci get firewall.rule$ruleid.igmp_from_addr`
+			igmp_to_addr=`uci get firewall.rule$ruleid.igmp_to_addr`
+			name=`uci get firewall.rule$ruleid.name`
+	
+			if [ -z $mac_address ];then
+				mac=""
+			else
+				case $mac_address in
+				00:00:00:00:00:00) mac="";;
+				*) mac="-m mac --mac-source $mac_address";;
+				esac
+			fi
+	
+			case $service in
+			any) proto="";;
+			*)
+					protocol=`uci get firewall.rule$ruleid.protocol`
+					dFromPort=`uci get firewall.rule$ruleid.dFromPort`
+					dToPort=`uci get firewall.rule$ruleid.dToPort`
+					sFromPort=`uci get firewall.rule$ruleid.sFromPort`
+					sToPort=`uci get firewall.rule$ruleid.sToPort`
+	   
+					case $protocol in
+					TCP|UDP) 
+
+						if [ -z $sFromPort ]; then
+							sFromPort_rule=""
+						else
+							sFromPort_rule="--sport $sFromPort"
+						fi
+
+						if [ -z $sToPort ]; then
+							sToPort_rule=""
+						else
+							sToPort_rule=":$sToPort"
+						fi
+
+						if [ -z $dFromPort ]; then
+							dFromPort_rule=""
+						else
+							dFromPort_rule="--dport $dFromPort"
+						fi
+
+						if [ -z $dToPort ]; then
+							dToPort_rule=""
+						else
+							dToPort_rule=":$dToPort"
+						fi				
+
+						proto="-p $protocol $sFromPort_rule$sToPort_rule $dFromPort_rule$dToPort_rule";;
+
+					ICMP|IGMP) proto="-p $protocol";;
+					All) proto="";;
+					esac 
+			esac
+	
+	      
+			case $dstip in
+				0.0.0.0) dest="";;
+				*) dest="-d $dstip";;
+			esac
+
+			case $srcip in
+				0.0.0.0) src="";;
+				*) src="-s $srcip";;
+			esac
+			
+			[ "$protocol" == "IGMP" ] && {
+				[ -n "$igmp_to_addr" ] && {
+					dest="-m iprange --dst-range $igmp_from_addr-$igmp_to_addr"
+				} || {
+					dest="-d $igmp_from_addr"
+				}
+					for i in "" 1 2 3 4
+					do
+						igmpEnabled=$(uci get igmpproxy.wan$i.igmpEnabled)
+						if [ "$igmpEnabled" == "enable" ];then
+							defaultwan=wan$i
+							break
+						fi
+					done	
+					ETH_WAN=$(uci get network.$defaultwan.ifname)
+					echo 2 > /proc/sys/net/ipv4/conf/$ETH_WAN/force_igmp_version
+				iptables -A output_igmp $proto $dest -j $target
+			} || {
+				if [ "$protocol" == "TCP" -a "$name" == "app_service" ] ; then 
+					iptables -A forwarding_rule_filter $proto $schedule $src $dest $mac -j $target
+				elif [ "$protocol" == "UDP" -a "$name" == "app_service" ] ; then 
+					iptables -A forwarding_rule_filter $proto $schedule $src $dest $mac -j $target	
+				else				
+					iptables -A forwarding_rule_filter $proto $schedule $src $dest $mac -j $target
+					iptables -A input_rule $proto $schedule $src $dest $mac -j $target
+				fi
+			}
+		fi
+		ruleid=`expr $ruleid + 1`
+	done
+else
+	## lan and local traffic must be accepted by default if there is not any exception rule
+	iptables -N lan_local_default
+	iptables -A lan_local_default -i $LAN -j ACCEPT
+	iptables -A lan_local_default -i lo -j ACCEPT
+	iptables -D INPUT -j lan_local_default
+	iptables -A INPUT -j lan_local_default
+fi
+
+#number=`uci get firewall.general.number`
+#ruleid=1
+#while [ "$ruleid" -le "$number" ]
+#do
+#sourceip=`uci get firewall.rule$ruleid.ipaddr`
+#protocol=`uci get firewall.rule$ruleid.proto`
+#srcport=`uci get firewall.rule$ruleid.sport`
+#dstport=`uci get firewall.rule$ruleid.dport`
+#
+#[ -z "$sourceip" ] || {
+#if [ "$sourceip" == "any" ];then
+#cmd=iptables\ -t\ filter\ -A\ input_rule
+#cmd1=iptables\ -t\ nat\ -A\ prerouting_rule
+#else
+#cmd=iptables\ -t\ filter\ -A\ input_rule\ -s\ $sourceip
+#cmd1=iptables\ -t\ nat\ -A\ prerouting_rule\ -s\ $sourceip
+#fi
+#}
+#
+#if [ "$protocol" ]; then
+#case "$protocol" in
+#        tcp) cmd=$cmd\ -p\ tcp; cmd1=$cmd1\ -p\ tcp ;;
+#        udp) cmd=$cmd\ -p\ udp; cmd1=$cmd1\ -p\ udp ;;
+#        *) cmd=$cmd\ -p\ all;cmd1=$cmd1\ -p\ all ;;
+#esac
+#fi
+#
+#if [ "$srcport" ]; then
+#cmd=$cmd\ --source-port\ $srcport
+#cmd1=$cmd1\ --source-port\ $srcport
+#fi
+#
+#if [ "$dstport" ]; then
+#cmd=$cmd\ --destination-port\ $dstport
+#cmd1=$cmd1\ --destination-port\ $dstport
+#fi
+#
+#cmd=$cmd\ -j\ ACCEPT
+#cmd1=$cmd1\ -j\ ACCEPT
+
+#echo "$cmd" | sh
+#echo "$cmd1" | sh
+#
+#ruleid=`expr $ruleid + 1`
+#done

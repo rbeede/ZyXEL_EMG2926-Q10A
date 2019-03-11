@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Kodak EX-1011</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>EX-1011</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG640x480</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<HTTP>
+			<HttpSetting>LIVEWITHLENGTH</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOTRPICS</Quirk>
+	</DeviceQuirks>
+</Client>

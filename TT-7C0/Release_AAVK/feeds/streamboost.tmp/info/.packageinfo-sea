@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/sea/Makefile
+Package: sea
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2-core +libuuid +jansson
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Stats and Events Aggregator for StreamBoost
+Maintainer: Nic Costa <ncosta@qca.qualcomm.com>
+Source: sea-.tar.gz
+Type: ipkg
+Description: SEA receives statistics and events from other StreamBoost utilities on various pubsub channels and maintains this data in a stats db area within a redis instance.
+Nic Costa <ncosta@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sea
+	config sea_USE_CUSTOM_VERSION
+		depends on PACKAGE_sea
+		bool "Use custom package version"
+		default n
+	config sea_CUSTOM_VERSION
+		depends on sea_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sea
+	config sea_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sea
+		bool "Use custom source directory"
+		default n
+	config sea_CUSTOM_SOURCE_DIR
+		depends on sea_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

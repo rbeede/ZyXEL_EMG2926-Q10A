@@ -1,0 +1,8 @@
+#Support for arbitrary file extensions
+#File Format: One extension per row
+#Row format: file extension,MIME type,content type (M|P|V),scanner(generic|mp3|mp4|aac|amr|aif|wma|wmv|ogg|jpg|tif|png|bmp|mpg|mkv)
+#if a file format shares the same meta-data format as an existing format then set the scanner field accordingly, otherwise set to generic
+#Example: raw,image/raw,P,generic
+#
+# .kar Karaoke files
+kar,audio/x-midi,M,generic

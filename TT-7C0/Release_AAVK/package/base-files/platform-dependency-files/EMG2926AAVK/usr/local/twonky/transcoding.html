@@ -1,0 +1,98 @@
+<h1>TwonkyMedia Transcoding Architecture</h1>
+<p>
+The new transcoding architecture is able to use nearly any external program for transcoding, rescaling or resampling.
+Examples of such external programs are: 
+<code>vlc</code>, 
+<code>ffmpeg</code>, 
+<code>mplayer</code>,
+<code>mencoder</code>, 
+<code>imagemagick</code> 
+and others.
+In principal each program which is able to transform file x to file y can be used. 
+<p>
+<img border="0" src="overview.gif">
+<h2>File Structure</h2>
+<p>
+Subfolder <code>cgi-bin</code> contains several <code>.desc</code> files.
+Each <code>.desc</code> file in <code>cgi-bin</code> describes exactly one transcoding path. 
+It has three mandatory and some optional entries, e.g. <code>vlc-mov-mpeg2.desc</code>:
+<pre>
+exec: vlc $infile :sout=#transcode{vcodec=mp2v,acodec=mp2a,scale=1,channels=2,deinterlace,audio-sync}:duplicate{dst=std{access=file,mux=ps,dst=$outfile}} vlc:quit
+from=video/mp4
+to=video/mpeg
+asynchronous
+</pre>
+<p>
+The mandatory <code>from=</code> and <code>to=</code> lines describe the source and the target mime-type 
+while the mandatory <code>exec:</code> line describes the external program, e.g. <code>vlc</code>,  
+and its exact parameters.
+The optional <code>asynchonous</code> means that the transcoder should run in background and the server thread will not block until it has finished,
+which make sense for streaming, but not for rescaling of pictures.
+Another optional but important parameter is <code>dlnaprofile=</code>, see below.
+<code>$infile</code> and <code>$outfile</code> are replaced by the server with the input filename and the output filename.
+There will be some more variables later, e.g. <code>$width</code>, <code>$height</code>, etc.
+<p>
+The pathname of the transcoder is described in a <code>.location</code> file.
+It contains just one line and describes the directory where the transcoder is stored, which makes configuration for Windows and Linux easier.
+The name of the location file must match with the name of the transcoder, e.g. <code>vlc.location</code>:
+<pre>
+c:\program files\videolan\vlc
+</pre>
+<p>
+Here is another example: <code>vlc-wma-mp3.desc</code>
+<pre>
+exec: vlc $infile --novideo :sout=#transcode{acodec=mp3}:duplicate{dst=std{access=file,mux=ffmpeg,dst=$outfile}} vlc:quit
+from=audio/x-ms-wma
+to=audio/mpeg
+asynchronous
+</pre>
+<p>
+Each <code>.desc</code> file describes exactly one potential transcoding path 
+with an unique <code>from</code> and <code>to</code> mime-type 
+(and an optional <code>dlnaprofile</code>).
+With <code>vlc-mov-mpeg2.desc</code> and <code>vlc-wma-mp3.desc</code> (and <code>vlc.location</code>) the server knows
+<ul>
+<li>how to transcode <code>video/mp4</code> to <code>video/mpeg</code>
+<li>how to transform <code>audio/x-ms-wma</code> to <code>audio/mpeg</code>
+</ul>
+<p>
+There is also a table <code>resources/transcoding.db</code>.
+This table describes all potential target ("transcoded") formats for a given media.
+Each line consists of 2 or 3 entries (file-extension, target-mime-type and optional DLNA-profile, 
+if this format matches a DLNA profile from the DLNA spec).
+Here is an excerpt of our current transcoding.db
+<pre>
+mp3 audio/mpeg MP3
+lpcm audio/x-wav LPCM
+wav audio/x-wav
+mpg video/mpeg MPEG_PS_PAL
+mpg video/mpeg MPEG_PS_NTSC
+mp4 video/mp4 AVC_MP4_BL_CIF30_MPEG1_L3
+</pre> 
+
+<h2>How does it work?</h2>
+<p> 
+The server tries to add as many res-elements as possible from <code>transcoding.db</code> to each media in the following way:
+The mime-type of a given media is compared with <code>from</code> in all <code>.desc</code> files.
+If there is a match and if the target-mime-type matches the <code>to</code> mime-type 
+(and if the DLNA-profile matches <code>dlnaprofile</code>),
+then the target-mime-type is added to the res-elements (using a the given file extension for the transcoded file).
+It should be mentionend that also some client adaptation takes places here.
+The target mime-type must also match the features of a particular client (client.db).
+If a client is not able to play a particular type, this res-element is not added.
+<p> 
+If the server for instances find a media file <code>hello.wma</code> (mime-type is <code>audio/x-ms-wma</code>) 
+it will find a match in <code>vlc-wma-mp3.desc</code> and will add an addional res-element 
+for <code>audio/mpeg</code>. 
+A player will see the media <code>hello</code> now in two versions (res-elements), as:
+<ul>
+<li><code>audio/x-ms-wma</code>
+<li><code>audio/mpeg</code>
+</ul>
+<p> 
+If the player selects <code>audio/x-ms-wma</code> it will get the original file <code>hello.wma</code>.
+If the player selects <code>audio/mpeg</code> the server will start the transcoder producing <code>hello.mp3</code>
+with this command
+<pre>
+vlc hello.wma --novideo :sout=#transcode{acodec=mp3}:duplicate{dst=std{access=file,mux=ffmpeg,dst=hello.mp3}} vlc:quit
+</pre>

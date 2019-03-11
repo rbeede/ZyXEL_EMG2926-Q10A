@@ -1,0 +1,12 @@
+diff --git a/net/ipv6/route.c b/net/ipv6/route.c
+--- a/net/ipv6/route.c
++++ b/net/ipv6/route.c
+@@ -812,7 +812,7 @@
+ 	int strict = 0;
+ 	int attempts = 3;
+ 	int err;
+-	int reachable = net->ipv6.devconf_all->forwarding ? 0 : RT6_LOOKUP_F_REACHABLE;
++	int reachable = (net->ipv6.devconf_all->forwarding == 1) ? 0 : RT6_LOOKUP_F_REACHABLE;
+ 
+ 	strict |= flags & RT6_LOOKUP_F_IFACE;
+

@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Twonky Beam</DisplayName>
+		<HttpRecognition>
+			<HttpText>TwonkyMedia-NMC DLNADOC/1.50 mobileview</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+		<DeviceGroup>MOBILE</DeviceGroup>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOPROXYURL</Quirk>
+	</DeviceQuirks>
+</Client>

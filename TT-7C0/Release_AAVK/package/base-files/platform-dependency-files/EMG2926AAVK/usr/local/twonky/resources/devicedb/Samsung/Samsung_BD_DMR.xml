@@ -1,0 +1,55 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Samsung BD DMR</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Samsung BD DMR</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<PretendServer>SAMSUNGFEATLIST</PretendServer>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/x-matroska</In>
+				<Out>video/x-mkv</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeSuppress>audio/x-wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wave</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<Capabilities> 
+		<Scaling> 
+			<Target>JPEG1920x1080</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEG160x160</Target>
+			<Target>JPEGORG</Target> 
+		</Scaling> 
+                <SupportedMediaProfiles>
+                        <Profile>AASCALE#JPEG640x480</Profile>
+                </SupportedMediaProfiles>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>NEEDS_THUMBNAIL_CI_FLAG</Quirk>
+		<Quirk>KEEP_RES_4_THUMBNAIL</Quirk>
+		<Quirk>REDUCED_METADATA</Quirk>
+		<Quirk>FORCE_DURATION</Quirk>
+		<Quirk>NEEDS_OP01_ON_TRANSCODED_FILES</Quirk>
+		<Quirk>SUPPRESS_SEEK_ON_GROWING_FILES</Quirk>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<Quirk>ACCEPT_ANY_SEQ</Quirk>
+		<Quirk>IGNORE_STOP_AFTER_PLAY</Quirk>
+	</DeviceQuirks>
+</Client>

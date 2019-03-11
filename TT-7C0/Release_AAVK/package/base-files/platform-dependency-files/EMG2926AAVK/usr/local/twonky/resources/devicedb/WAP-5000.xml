@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WAP-5000</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WAP-5000</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

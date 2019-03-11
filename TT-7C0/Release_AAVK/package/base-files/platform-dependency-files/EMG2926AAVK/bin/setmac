@@ -1,0 +1,186 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+base_addr=$(fw_printenv ethaddr | awk -F"=" '{print $2}' |sed 's/"//g')
+addr_str_len=${#base_addr}
+addr_num=""
+
+#addr_num=$(echo $base_addr | awk -F":" 'BEGIN{OFS=""}{print $1,$2,$3,$4,$5,$6}'
+#echo "addr_num=$addr_num"
+
+set_eth_mac(){
+
+	eth_if="eth1"	
+	lastchar=$(echo $base_addr | cut -c 17-17)
+
+	case $lastchar in
+        	"0")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)	
+        	        ifconfig $eth_if hw ether $mac_address"2"	
+		;;
+			"4")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)	
+        	        ifconfig $eth_if hw ether $mac_address"6"	
+		;;
+        	"8")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)	
+        	        ifconfig $eth_if hw ether $mac_address"a"	
+		;;
+			c|C)
+        	        mac_address=$(echo $base_addr | cut -c 1-16)	
+        	        ifconfig $eth_if hw ether $mac_address"e"	
+		;;
+		*)
+        	echo "Wrong end character in Mac address!"
+        	;;
+	esac
+
+}
+
+set_wan_mac(){
+
+	lastchar=$(echo $base_addr | cut -c 17-17)
+
+	case $lastchar in
+        	"0")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"3"	
+		;;
+			"4")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"7"		
+		;;
+        	"8")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"b"
+		;;
+			c|C)
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"f"	
+		;;
+		*)
+        	echo "Wrong end character in Mac address!"
+        	;;
+	esac
+	wan_status=$(uci get network.wan.wan_mac_status)
+	wan1_status=$(uci get network.wan1.wan_mac_status)
+	wan2_status=$(uci get network.wan2.wan_mac_status)
+	wan3_status=$(uci get network.wan3.wan_mac_status)
+	wan4_status=$(uci get network.wan4.wan_mac_status)
+
+	if [ "$wan_status" == "0" ]; then
+		[ -n  "$mac_address" ] && uci set network.wan.wan_set_mac="$mac_address"
+	fi
+	
+	if [ "$wan1_status" == "0" ]; then
+		[ -n  "$mac_address" ] && uci set network.wan1.wan_set_mac="$mac_address"
+	fi
+	
+	if [ "$wan2_status" == "0" ]; then
+		[ -n  "$mac_address" ] && uci set network.wan2.wan_set_mac="$mac_address"
+	fi
+	
+	if [ "$wan3_status" == "0" ]; then
+		[ -n  "$mac_address" ] && uci set network.wan3.wan_set_mac="$mac_address"
+	fi
+	
+	if [ "$wan4_status" == "0" ]; then
+		[ -n  "$mac_address" ] && uci set network.wan4.wan_set_mac="$mac_address"
+	fi
+	uci commit network
+}
+
+set_vlan_mac(){
+
+	vlan_if="eth0"	
+	wan_if=$(uci get network.wan.ifname)
+	lastchar=$(echo $base_addr | cut -c 17-17)
+	case $lastchar in
+        	"0")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"3"				
+        	        #mac_address=$(echo $base_addr | cut -c 1-16)
+        	        #ifconfig $vlan_if hw ether $mac_address"3"	
+		;;
+			"4")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"7"	
+					#mac_address=$(echo $base_addr | cut -c 1-16)	
+        	        #ifconfig $vlan_if hw ether $mac_address"7"	
+		;;
+        	"8")
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"b"
+					#mac_address=$(echo $base_addr | cut -c 1-16)					
+        	        #ifconfig $vlan_if hw ether $mac_address"b"	
+		;;
+			c|C)
+        	        mac_address=$(echo $base_addr | cut -c 1-16)"f"	
+					#mac_address=$(echo $base_addr | cut -c 1-16)
+        	        #ifconfig $vlan_if hw ether $mac_address"f"	
+		;;
+		*)
+        	echo "Wrong end character in Mac address!"
+        	;;
+	esac
+	
+	local wan_mac=$(uci get network.wan.wan_set_mac)
+	
+	[ -n  "$wan_mac" ] && mac_address=$wan_mac
+	[ -n  "$mac_address" ] && {
+		#mac toupper		
+		uci set network.wan.macaddr=`echo $mac_address | awk '{print toupper($0)}'`
+		uci commit network
+		ifconfig $vlan_if hw ether $mac_address	
+	}
+	
+
+}
+
+set_wlan_mac(){
+	
+	mac_addr=$(echo $base_addr | cut -c 1-16)
+	lastchar=$(echo $base_addr | cut -c 17-17)
+	curchar24G=
+	curchar5G=
+	case $lastchar in
+		0) 	curchar24G="0" 
+			curchar5G="1"
+		;;
+		4) 	curchar24G="4" 
+			curchar5G="5"
+		;;
+		8) 	curchar24G="8"
+			curchar5G="9"
+		;;
+		c|C) curchar24G="C"
+			curchar5G="D"
+		;;
+		*)
+			echo "Wrong end character in Mac address!"
+        ;;
+
+	esac
+	wlan24G_main_mac=$mac_addr$curchar24G
+	echo $wlan24G_main_mac > /tmp/wlan_main_mac
+	echo "MacAddress=$wlan24G_main_mac" >> /tmp/AR71XX_24G.dat
+	wlan5G_main_mac=$mac_addr$curchar5G
+	echo "MacAddress=$wlan5G_main_mac" >> /tmp/AR71XX_5G.dat
+}
+
+cmd=$1
+case "$cmd" in
+        ethernet)
+                set_eth_mac
+                exit $?
+        ;;
+	wlan)
+		set_wlan_mac
+                exit $?
+	;;
+	vlan)
+                set_vlan_mac
+                exit $?
+        ;;
+	wan)
+                set_wan_mac
+                exit $?
+        ;;
+esac
+
+exit $?
+

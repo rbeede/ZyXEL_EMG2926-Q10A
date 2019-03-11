@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Netgear MP101 RTP</DisplayName>
+		<HttpRecognition>
+			<HttpText>Netgear MP101</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCERES</Quirk>
+	</DeviceQuirks>
+</Client>

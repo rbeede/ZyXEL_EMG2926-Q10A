@@ -1,0 +1,366 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=03
+
+USB0_ENABLED_GPIO_NO=16
+
+class_count="0"
+
+
+check_inftfGrp() {
+	op=$(uci get intfGrp.Default.option60del)
+
+	if [[ -z "$op" ]]; then
+		return
+	fi
+
+	array=$(echo $op | tr "," "\n")
+	for i in $array
+	do
+		if [ $i -lt 5 ]; then
+			/bin/dhcp_option60_intfGrp del intfGrp.Default.option60del $i
+			/bin/dhcp_option60_intfGrp add intfGrp.Default.lanport $i
+			/bin/dhcp_option60_intfGrp add intfGrp.general.available $i
+			
+			/bin/dhcp_option60_intfGrp del intfGrp.Group4.lanport $i
+			/bin/dhcp_option60_intfGrp del intfGrp.Group5.lanport $i	
+			/bin/dhcp_option60_intfGrp del intfGrp.Group6.lanport $i	
+			/bin/dhcp_option60_intfGrp del intfGrp.Group7.lanport $i
+		else
+			/bin/dhcp_option60_intfGrp del intfGrp.Default.option60del $i
+			/bin/dhcp_option60_intfGrp add intfGrp.Default.wlan $i
+			
+			/bin/dhcp_option60_intfGrp del intfGrp.Group4.wlan $i
+			/bin/dhcp_option60_intfGrp del intfGrp.Group5.wlan $i	
+			/bin/dhcp_option60_intfGrp del intfGrp.Group6.wlan $i	
+			/bin/dhcp_option60_intfGrp del intfGrp.Group7.wlan $i
+		fi
+	done	
+}
+
+
+initial_zcmd() {
+	## initial default setting
+	systemUpTime=$(cat /proc/uptime |awk -F"."  '{print $1}')
+	FWVersion=$(firmware_info | awk '/Firmware/{print $3}')
+	SerialNum=$(fw_printenv |grep serialnum|awk -F"=" '{print $2}')
+	#DeviceOUI=$(fw_printenv ethaddr | awk -F"=" '{print $2}' |sed 's/"//g' | sed 's/://g'|cut -c 0-6)
+	HWVersion=EMG2926-Q10A_A01
+	
+	local static=$(uci get tr069.main.static)
+	if [ "$static" == "1" ]; then
+		DeviceOUI=$(uci get tr069.main.static_oui)
+	else
+		DeviceOUI=$(fw_printenv ethaddr | awk -F"=" '{print $2}' |sed 's/"//g' | sed 's/://g'|cut -c 0-6) 
+	fi
+
+	be_ctltr98 DeviceInfo set UpTime $systemUpTime int32
+	be_ctltr98 DeviceInfo set SoftwareVersion $FWVersion
+	be_ctltr98 DeviceInfo set SerialNumber $SerialNum
+	be_ctltr98 DeviceInfo set ManufacturerOUI $DeviceOUI
+	be_ctltr98 DeviceInfo set HardwareVersion $HWVersion
+
+	## initial WiFi default SSID presharedkey
+	ChkSSID=$(uci get wireless.ath0.ssid)
+	ChkSSID_5G=$(uci get wireless.ath10.ssid)
+	ChkSSID_5G_1=$(uci get wireless.ath11.ssid)
+	ChkSSID_5G_2=$(uci get wireless.ath12.ssid)
+	ChkSSID_5G_3=$(uci get wireless.ath13.ssid)
+	WiFiMAC=$(fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12)
+	
+	set_tmp_psk
+        WPAPSKkey=$(cat /tmp/tmppsk)
+        rm /tmp/tmppsk
+
+	[ -z "$ChkSSID" ] && {			
+		be_ctltr98 LANDevice.1.WLANConfiguration.1 set SSID ZyXEL"$WiFiMAC"
+		be_ctltr98 LANDevice.1.WLANConfiguration.1.PreSharedKey.1 set PreSharedKey "$WPAPSKkey"
+	}
+	[ -z "$ChkSSID_5G" ] && {			
+		be_ctltr98 LANDevice.1.WLANConfiguration.5 set SSID ZyXEL"$WiFiMAC"_5G
+		be_ctltr98 LANDevice.1.WLANConfiguration.5.PreSharedKey.1 set PreSharedKey "$WPAPSKkey"
+	}
+	
+	be_ctltr98 LANDevice.1.WLANConfiguration.6 set SSID "$ChkSSID_5G_1"
+	be_ctltr98 LANDevice.1.WLANConfiguration.7 set SSID "$ChkSSID_5G_2"
+	be_ctltr98 LANDevice.1.WLANConfiguration.8 set SSID "$ChkSSID_5G_3"
+	
+	
+}
+
+ck_Https() {
+	ckHttpsFlag=$(uci get firewall.remote_https)
+	[ -z "$ckHttpsFlag" ] && {
+		uci set firewall.remote_https=firewall
+		uci set firewall.remote_https.interface=2
+		uci set firewall.remote_https.client_check=0
+		uci set firewall.remote_https.port=443
+		uci commit firewall
+	}
+}
+
+rename_qos_classify(){
+
+	local qos_classify_name="$1"
+	class_count=$(uci get qos_classify.general.class_count)
+	classid=`expr $class_count + 1`
+	uci rename qos_classify.$qos_classify_name=class$classid
+	uci set qos_classify.general.class_count="$classid"
+}
+
+#FIx QoS config error format and initial value
+init_qos() {
+
+	local qos_version=$(uci get qos.general.version)
+	if [ -z "$qos_version" ]; then   
+		rm /etc/config/qos
+		cp /rom/etc/config/qos /etc/config/qos
+		uci set qos.general.version="1"
+		uci commit qos
+	fi
+	
+	local qos_class_ver=$(uci get qos_classify.general.version)
+	if [ -z "$qos_class_ver"  ]; then   
+	
+		rm /etc/config/qos_classify
+		cp /rom/etc/config/qos_classify  /etc/config/qos_classify
+		uci set qos_classify.general.version="1"
+		uci commit qos_classify
+
+	fi
+
+        local qos_class_ver=$(uci get qos_classify.general.version)
+        if [ "$qos_class_ver" == "1" ]; then
+
+                uci set qos_classify.general.class_count="0"
+		config_load qos_classify
+		config_foreach rename_qos_classify class
+                uci set qos_classify.general.version="2"
+                uci commit qos_classify
+ 
+        fi
+
+
+
+	local qos_service_ver=$(uci get qos_service.general.version)
+	if [ "$qos_service_ver" != "1" ]; then   
+	
+		rm /etc/config/qos_service
+		cp /rom/etc/config/qos_service  /etc/config/qos_service
+		uci set  qos_service.general.version="1"
+		uci commit qos_service
+	fi
+
+
+}
+
+set_customer_ssid() {
+	local customer_id=$(uci get system.main.customerId) 
+	if [ -n "$customer_id" ]; then
+		local mac_ssid=$(fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12)
+		local wan_mac=$(uci get network.wan.macaddr | sed 's/://g'| cut -c 9-12)
+		uci set  wireless.ath0.ssid=${customer_id}${mac_ssid}
+		uci set  wireless.ath1.ssid=${customer_id}_SSID1
+		uci set  wireless.ath2.ssid=${customer_id}_SSID2
+		uci set  wireless.ath3.ssid=${customer_id}_SSID3
+		uci set  wireless.ath10.ssid=${customer_id}${mac_ssid}_5G
+		uci set  wireless.ath11.ssid=${customer_id}_SSID1_5G
+		uci set  wireless.ath12.ssid=${customer_id}_SSID2_5G
+		uci set  wireless.ath13.ssid=${customer_id}_SSID3_5G
+		uci set  account.admin.password=${customer_id}${wan_mac}
+                uci commit wireless
+				uci commit account
+                
+	fi
+}
+
+
+check_firewall() {
+
+	local firewall_target=$(uci_get firewall general target)
+	if [ -z "$firewall_target" ]; then
+		uci set firewall.general.target="DROP"
+		uci commit firewall
+	fi
+	
+}
+
+check_tr143(){
+        local ucitracktr143=$(uci get ucitrack.@tr143[0])
+        [ -z "$ucitracktr143" ] && {
+                uci add ucitrack tr143
+                uci set ucitrack.@tr143[0].init=tr143
+                uci commit ucitrack
+        }
+}
+
+check_button_useful(){
+	local button_useful=$(uci get wireless.wifi)
+        [ -z "$button_useful" ] && {
+                uci set wireless.wifi=WiFi
+				uci set wireless.wifi.button_useful=1
+                uci commit wireless
+        }
+}
+
+check_hw_addr(){
+
+	wan_enable1=$(uci get network.wan1.enable)
+	wan_enable2=$(uci get network.wan2.enable)
+	wan_enable3=$(uci get network.wan3.enable)
+	wan_enable4=$(uci get network.wan4.enable)
+	
+	local wan_mac=$(uci get network.wan.wan_set_mac)
+	[ -n  "$wan_mac" ] && uci set network.wan.macaddr="$wan_mac"
+	
+	if [ "$wan_enable1" == "1" ] ;then
+
+		local wan_mac=$(uci get network.wan1.wan_set_mac)
+		[ -n  "$wan_mac" ] && uci set network.wan1.macaddr="$wan_mac"
+
+	fi
+
+	if [ "$wan_enable2" == "1" ] ;then
+
+		local wan_mac=$(uci get network.wan2.wan_set_mac)
+		[ -n  "$wan_mac" ] && uci set network.wan2.macaddr="$wan_mac"
+
+	fi
+
+	if [ "$wan_enable3" == "1" ] ;then
+
+		local wan_mac=$(uci get network.wan3.wan_set_mac)
+		[ -n  "$wan_mac" ] && uci set network.wan3.macaddr="$wan_mac"
+	fi
+
+	if [ "$wan_enable4" == "1" ] ;then
+
+		local wan_mac=$(uci get network.wan4.wan_set_mac)
+		[ -n  "$wan_mac" ] && uci set network.wan4.macaddr="$wan_mac"
+		
+	fi
+	
+	uci commit network
+	
+}
+
+
+setup_default_account(){
+	uci set account.$1.default="1"
+	uci commit account
+}
+
+check_account(){
+
+	local account_version=$(uci get account.general.version)
+	if [ -z "$account_version" ]; then   
+		config_load account
+		config_foreach setup_default_account account
+		uci set account.general.version="1"
+		uci commit account
+	fi
+	
+}
+
+check_IP_version(){
+
+        wan_IP_version=$(uci get network.wan.IP_version)
+        if [ -z "$wan_IP_version" ]; then
+		uci set network.wan.IP_version="IPv4_Only"
+		uci commit network
+	fi
+
+        wan1_IP_version=$(uci get network.wan1.IP_version)
+        if [ -z "$wan1_IP_version" ]; then
+                uci set network.wan1.IP_version="IPv4_Only"
+                uci commit network
+        fi
+
+        wan2_IP_version=$(uci get network.wan2.IP_version)
+        if [ -z "$wan2_IP_version" ]; then
+                uci set network.wan2.IP_version="IPv4_Only"
+                uci commit network
+        fi
+
+        wan3_IP_version=$(uci get network.wan3.IP_version)
+        if [ -z "$wan3_IP_version" ]; then
+                uci set network.wan3.IP_version="IPv4_Only"
+                uci commit network
+        fi
+
+        wan4_IP_version=$(uci get network.wan4.IP_version)
+        if [ -z "$wan4_IP_version" ]; then
+                uci set network.wan4.IP_version="IPv4_Only"
+                uci commit network
+        fi
+}
+
+boot(){
+	# record initial process	
+	echo 1 > /tmp/initial_process	
+
+	# Export USB0_ENABLE gpio pin
+	echo $USB0_ENABLED_GPIO_NO > /sys/class/gpio/export
+	echo out >/sys/class/gpio/gpio${USB0_ENABLED_GPIO_NO}/direction
+	echo 1 >/sys/class/gpio/gpio${USB0_ENABLED_GPIO_NO}/value
+	/bin/setmac wlan
+	# 
+	cat <<EOF >/var/platform.definition
+#!/bin/sh
+GPIO_CTRL_PATH=/sys/class/gpio
+USB0_ENABLED_GPIO_NO=$USB0_ENABLED_GPIO_NO
+EOF
+
+## Enable IGMP Snooping
+#/bin/IGMP_snooping
+
+##Record Currect information of currect FW paration.
+mkdir -p /tmp/zyFWupgrade
+dd if=/dev/mtdblock3 of=/tmp/mtd3 bs=2 count=1
+hexdump /tmp/mtd3 | grep '0000000'|cut -c '9-12' >/tmp/zyFWupgrade/fw_currect_mtd
+
+#mount for storing config file record(tr069)
+mkdir -p /tmp/DataBaseBackup/
+mount -o noatime -t jffs2 mtd11 /tmp/DataBaseBackup/
+
+/bin/setmac wan
+
+#apply customer id to ssid of more AP at first boot
+set_customer_ssid
+
+##initial ZCMD
+zcmd
+sleep 1
+initial_zcmd
+
+/sbin/chk_sfe
+
+##check qos default config and fix error config format
+init_qos
+
+check_inftfGrp
+
+##reset firewall config
+check_firewall
+
+##check tr-143 setting
+check_tr143
+
+##check wifi button useful setting
+check_button_useful
+
+de_wan=$(uci get network.wan.ifname)
+if [ $de_wan == "eth0" ]; then
+	uci set network.wan.vid='0'
+	uci commit network
+fi
+
+##check hw addr
+check_hw_addr
+
+check_account
+
+check_IP_version
+
+}

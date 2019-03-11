@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Naim Audio Streamer</DisplayName>
+			<HttpRecognition>
+				<HttpText>NaimUPnP</HttpText>
+			</HttpRecognition>
+			<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+			<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG1000x1000</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>	
+</Client>

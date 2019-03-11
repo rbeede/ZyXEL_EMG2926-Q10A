@@ -1,0 +1,24 @@
+<Client>
+	<DeviceId>
+		<DisplayName>myTwonky</DisplayName>
+		<HttpRecognition>
+			<HttpText>Twonky-NMC-WebAPI DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<Capabilities> 
+		<DTCP/>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>DATETIME</Quirk>
+		<Quirk>NOPROXYURL</Quirk>
+		<Quirk>GIVE_ALL_KNOWN_RES</Quirk>
+		<Quirk>SUPPRESS_AS_MEDIARECEIVER</Quirk>
+	</DeviceQuirks>
+</Client>

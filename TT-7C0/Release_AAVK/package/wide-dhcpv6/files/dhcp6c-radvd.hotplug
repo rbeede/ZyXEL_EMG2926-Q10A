@@ -1,0 +1,24 @@
+#!/bin/sh
+
+[ -f /etc/config/radvd ] && [ "$ACTION" == "start" ] && {
+	IsIpv6Enable=$(uci get network.wan.ipv6)
+	Is6rdEnable=$(uci get network.general.wan6rd_enable)
+		
+	[ "$IsIpv6Enable" == "1" -o "$Is6rdEnable" == "1" ] && {
+		## radvd script would check the static mode on LAN
+		/etc/init.d/radvd reload config ##Only reload radvd config.
+	
+#		IsDHCPv6GivePD=$(uci get network.wan.dhcpv6pd)
+#		v6lanstatic=$(uci get network.general.v6lanstatic)
+#		
+#		# NOTE:  "$IsDHCPv6GivePD"  may empty cause of  network.wan.dhcpv6pd  sometimes is not exist.
+#		[ "$IsDHCPv6GivePD" == "0" -o "$v6lanstatic" == "1" ] && {
+#			# Static mode on LAN
+#			/etc/init.d/default_lan_radvd restart
+#		} || {
+#			# default to restart  radvd.sh  , because PPPoEv6 and DHCPv6 may not have this option.
+#			/etc/init.d/radvd start ##Only reload radvd config.
+#		}
+
+	}
+}

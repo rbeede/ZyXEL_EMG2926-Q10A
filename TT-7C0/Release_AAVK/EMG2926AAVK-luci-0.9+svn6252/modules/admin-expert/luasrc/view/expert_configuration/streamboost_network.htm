@@ -1,0 +1,185 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta http-equiv='content-type' content='text/html;charset=utf-8;IE=9'>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" src="<%=media%>/easy/js/jquery-1.5.1.min.js"></script>
+
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"></script>
+<style type="text/css"></style>
+
+	<script language="javascript" type="text/javascript" src="/js/fxEnvironment.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxPageMenu.js"></script>	
+
+    <!-- include the prerequisite libraries for the flux kit-->
+	<script src="/js/excanvas.min.js" type="text/javascript"></script>	 
+	<!-- <script src="/js/jquery.min.js" type="text/javascript"></script> -->
+	<script src="/js/jquery-ui-1.8.21.custom.min.js" type="text/javascript"></script>
+	<script src="/js/jquery.contextMenu.js" type="text/javascript"></script>
+	<link href="/css/jquery.contextMenu.css" rel="stylesheet" type="text/css" /> 
+
+	<!-- include flux itself-->
+	<script language="javascript" type="text/javascript" src="/js/fxNetwork.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxData.js"></script>
+		
+
+		<%
+			local lan_ipaddr = uci.get("network","lan","ipaddr")
+			local lanInfo_cmd=luci.sys.exec("ifconfig br-lan")
+			local lan_mac=string.match(lanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")			
+		%>
+		
+		<script>
+		
+			var RouterMacId = null;
+			var RouterIPAddr = null;
+						
+			RouterIPAddr = "<%=lan_ipaddr%>";			
+			RouterMacId = "<%=lan_mac%>";
+			
+		</script>
+
+        <!-- code to start the page -->
+        <script>
+				
+          //!!!!!! none of this will work unless authorized with the router !!!!!!!
+ 
+		  function verifyReadyData()
+		  {
+		     showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+
+			  <% enable_streamboost = uci:get("appflow","tccontroller","enable_streamboost") 
+			     if enable_streamboost == "0" then 
+			  %>   
+				  alert("<%:Streamboost_on_warning%>");
+			  <% end %>
+		  }
+ 
+          //handler function for mouse clicks
+          function handler(icon,name,x,y,node,id)
+          {			
+			
+              //var pathname = window.location.pathname;
+			  var pathname = '<%=controller%>/expert/configuration/management';
+			  			  
+              var n=pathname.indexOf("streamboost");
+			  
+              if(n==-1)
+              {			  
+                pathname = pathname + "/streamboost/streamboost_node";				
+              }
+              else
+              { 
+				pathname = pathname + "/streamboost/streamboost_node";
+              }
+			  
+              //send the browser to the node page
+              //append the id of the clicked on node              
+			  window.location = pathname+'?nodeid='+id;
+          };
+
+          //when the document loads run this function
+          $(document).ready(function () {
+
+			  var isSBEnabled = "<%= uci:get("appflow","tccontroller","enable_streamboost")%>";
+			  
+              //if streamboost is on we can draw the page
+              if(isSBEnabled == "1")
+              {
+                  //create the data object with the path to nodes
+                  var data = new fxData("/cgi-bin/ozker/api/nodes");//("/luci-static/resources/testnodes.json");
+
+                  //create the flux network class
+                  var net = new fxNetwork("Display",  //div to draw into
+                                          data,       //data to display
+                                          handler);   //mouse handler
+
+                  // Show menu when #myDiv is clicked
+                  $("#Display").contextMenu({
+                    menu: 'myMenu'
+                  },
+                    function(action, el, pos) {
+                      $.ajax(
+                      {
+                        type: "PUT",
+                        async: true,
+                        url: "/cgi-bin/ozker/api/debug/flashy",
+                        dataType: "json",
+                        //-------------------------------------------------------------------
+                        // Issue callback with result data
+                        success: function(data, status, request)
+                        {
+                          var data1 = data;
+                        }
+                      });
+
+                  },
+                  function()
+                  {
+                  });
+              }
+            });
+			
+      </script>
+
+</head>
+
+<body onload="verifyReadyData(); init();" >
+
+	<div id="tabs">
+	  <ul>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost" title="Bandwidth"><span><%:Bandwidth%></span></a></li>
+		<li class="hightline"><a title="Network"><span><%:Network%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_priorities" title="Priorities"><span><%:Priorities%></span></a></li>	
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_uptime" title="UpTime"><span><%:Up_Time%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_bytes" title="Bytes"><span><%:Byetes%></span></a></li>	
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_allevents" title="AllEvents"><span><%:All_Events%></span></a></li>		
+	  </ul>
+	  <br class="clearfloat" />
+	</div>
+
+	<div id="table">
+		<li class="table_content">
+		  <div class="data">		  
+			<div id="Display" style="width:800px;height:100%;"></div>
+			<!-- <div id="Display" style="min-width:800px;height:100%;margin-top:25px;"></div> -->			
+		  </div>
+		</li>
+	</div>
+  
+</body>
+
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Streamboost%> > <%:Network%>');
+</script>
+
+</html>

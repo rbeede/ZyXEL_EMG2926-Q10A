@@ -1,0 +1,127 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=97
+
+boot() {
+	oldconfig=`uci get parental.general.enable`
+	
+	##Now Parental Control is not supported yet on NBG6716
+	[ "$oldconfig" = "" ] && {
+		key_enable=`uci get parental.keyword.enable`
+		key=`uci get parental.keyword.keywords`
+		uci set parental.general=parental_general
+		uci set parental.general.enable="$key_enable"
+		uci set parental.general.ruleIdx="rule1"
+		uci set parental.general.count="1"
+		[ -n "$key" ] && {
+			uci set parental.rule1=parental_rule
+			uci set parental.rule1.enable="$key_enable"
+			uci set parental.rule1.src_mac="00:00:00:00:00:00"
+			uci set parental.rule1.stop_hour="24"
+			uci set parental.rule1.weekdays="Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+			uci set parental.rule1.service_count="0"
+			uci set parental.rule1.name="ZyXEL"
+			uci set parental.rule1.start_hour="00"
+			uci set parental.rule1.start_min="00"
+			uci set parental.rule1.stop_min="00"
+			uci set parental.rule1.keyword="$key"
+			uci set parental.rule1.src_type="all"
+			uci set parental.rule1.service_act="block"
+		}
+		uci set parental.keyword.keywords=""
+		uci set parental.keyword.enable="0"
+		uci commit parental
+	}
+  	### applying after WAN connection up ###
+	/sbin/webstr_filter start
+}
+
+start() {
+		##check hw_nat
+	/sbin/chk_sfe
+	/sbin/webstr_filter start
+}
+
+stop() {
+	##check hw_nat
+	/sbin/chk_sfe	
+	
+	/sbin/webstr_filter stop
+}
+
+restart() {
+	##delete rule
+	count=`uci get parental.general.count`
+	i=1
+	while [ $i -le $count ]
+	do	
+		delete=`uci get parental.rule$i.delete`
+		if [ "$delete" = "1" ] ; then
+			ruleid=$i
+			
+			###delet rule service
+			service_count=`uci get parental.rule$ruleid.service_count`
+			j=1
+			while [ $j -le $service_count ]
+			do
+				serviceid=$j
+				uci del parental.rule"$ruleid"_service"$serviceid"
+				j=`expr $j + 1`
+			done
+			##delet rule
+			uci del parental.rule$ruleid			
+			
+			while [ $ruleid -lt $count ]
+			do
+				#move rule
+				uci rename parental.rule`expr $ruleid + 1`=rule$ruleid
+				
+				##move rule service
+				next_service_count=`uci get parental.rule$ruleid.service_count`
+				k=1
+				while [ $k -le $next_service_count ]
+				do
+					uci rename parental.rule`expr $ruleid + 1`_service"$k"=rule"$ruleid"_service"$k"
+					uci set parental.rule"$ruleid"_service"$k"=parental_netservicerule"$ruleid"
+					k=`expr $k + 1`
+				done
+				ruleid=`expr $ruleid + 1`
+			done
+			count=`expr $count - 1`
+			i=`expr $i - 1`
+			uci set parental.general.count=$count
+			uci commit parental
+		fi
+		
+		##delete service only
+		service_count=`uci get parental.rule$i.service_count`
+		m=1
+		while [ $m -le $service_count ]
+		do	
+			serviceid=$m
+			delete_service=`uci get parental.rule"$i"_service"$m".delete`
+			if [ "$delete_service" = "1" ] ; then
+				uci del parental.rule"$i"_service"$m"
+				while [ $serviceid -lt $service_count ]
+				do
+					uci rename parental.rule"$i"_service`expr $serviceid + 1`=rule"$i"_service"$serviceid"
+					serviceid=`expr $serviceid + 1`
+				done
+				service_count=`expr $service_count - 1`
+				uci set parental.rule$i.service_count=$service_count
+				uci commit parental
+				m=`expr $m - 1`
+			fi
+			m=`expr $m + 1`
+		done
+		
+		
+		i=`expr $i + 1`
+	done
+	##check hw_nat
+	        /sbin/chk_sfe
+	        
+	                /sbin/webstr_filter restart
+}
+

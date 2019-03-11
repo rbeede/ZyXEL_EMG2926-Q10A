@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+. /etc/functions.sh
+include /lib/config
+
+START=09
+
+boot(){
+	###### set essential infomation to tmp file ######
+
+#	##for save default mac address
+#	wan_ifname=$(uci_get network wan ifname)
+#	[ -e "/tmp/default_wan_mac" ] || (echo `ifconfig $wan_ifname | grep 'HWaddr' | awk '{print $5}'` > /tmp/default_wan_mac)
+
+	## update (unlock) success notification
+	echo "0" > /var/update_dns_lock
+
+	## dump current country code
+	fw_printenv countrycode | awk -F"=" '{print $2}' > /var/countrycode
+
+	#create a empty resolv.conf.auto for DNS server in DHCP setting first, or
+	#it won't show web page in DHCP Server>Advanced when there is no wan connection.
+	touch /tmp/resolv.conf.auto
+	touch /tmp/dhcp.leases
+	
+	#Generate firmware version used for WEB GUI
+	echo "No version" > /tmp/firmware_version
+	firmware_ver=$(firmware_info | awk '/Firmware version/{print $3}')
+	echo $firmware_ver > /tmp/firmware_version
+	
+	##init mac clone
+#	/sbin/act_mac_clone
+}

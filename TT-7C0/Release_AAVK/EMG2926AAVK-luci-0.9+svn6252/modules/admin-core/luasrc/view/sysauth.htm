@@ -1,0 +1,361 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at 
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+sys = require("luci.sys")
+uci = require("luci.model.uci").cursor()
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+
+-%>
+
+<% 
+local htp_mode=sys.exec("cat /proc/cmdline | grep HTP")
+
+if (htp_mode ~= "") then
+	local wlan_pw=uci:get("wireless","ra0","WPAPSKkey")
+	if (wlan_pw == nil) then
+		sys.exec("set_tmp_psk")
+		wlan_pw=sys.exec("cat /tmp/tmppsk")
+		sys.exec("rm /tmp/tmppsk")
+	end
+
+	local data= sys.exec("sys atsh")
+	local info = string.gsub(data,"\n","<br>")
+%>
+System Information
+<br>
+-----------------------------------------------------
+<br>
+<%=info%>
+<br>
+-----------------------------------------------------
+<br> 
+Wifi Password:<%=wlan_pw%>
+
+<br> 
+
+<%else%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/brick.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/DST.js"></script> 
+<script type="text/JavaScript">
+<!--
+
+function MM_findObj(n, d) { //v4.01
+  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+    d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+  if(!x && d.getElementById) x=d.getElementById(n); return x;
+}
+
+function MM_showHideLayers() { //v6.0
+  var i,p,v,obj,args=MM_showHideLayers.arguments;
+  for (i=0; i<(args.length-2); i+=3) if ((obj=MM_findObj(args[i]))!=null) { v=args[i+2];
+    if (obj.style) { obj=obj.style; v=(v=='show')?'visible':(v=='hide')?'hidden':v; }
+    obj.visibility=v; }
+}
+
+function MM_goToURL() { //v3.0
+  var i, args=MM_goToURL.arguments; document.MM_returnValue = false;
+  for (i=0; i<(args.length-1); i+=2) eval(args[i]+".location='"+args[i+1]+"'");
+}
+
+/* Modify "Password Visible in Source Code" for Login, EMG2926-Q10A, WenHsiang, 2012/05/10 */
+function submit_data()  // Data validation in "authenticator.htmlauth" of "dispatcher.lua".
+{  
+									
+									document.web_login.action="<%=controller%>/easy/passWarning";
+									document.web_login.submit();
+									
+									
+                                    <% local eaZy123 = uci:get("system","main","eaZy123") %>
+									
+									<% if not eaZy123 then %>
+										document.web_login.action="<%=controller%>/easy/eaZy123";
+										document.web_login.submit();
+                                    <% end %>
+}
+var objXMLHTTP;
+var time = 5;
+
+var code = -1;
+	var temp = null;
+	var city = null;
+	var unit = null;
+	
+
+
+function changeTime(){
+        with ( document.web_login ){
+		time_choice.selectedIndex = <%=timeindex%>;
+	}
+}
+
+function changeLanguage()
+{
+        var submit_url = '<%=controller%>/';
+        var loc = submit_url;
+        loc += '?language=' + document.forms[0].language_choice.value;
+        var code = 'location="' + loc + '"';
+        eval(code);
+}
+
+/* Modify "Password Visible in Source Code" for Login, EMG2926-Q10A, WenHsiang, 2012/05/10 */
+function check()
+{
+	if (window.top!=window.self){
+		top.window.location.href = "<%=controller%>/easy/sysauth";
+	}
+	var status_check = "<%=chk_password%>";
+	if( status_check == "1" )
+		alert("Wrong account or password,please input again!");
+}
+//-->
+</script>
+</head>
+<body onload="changeTime();check();">
+
+<form method="post" name="web_login">  
+
+<div id="wrapper">
+<div class="top_image"></div>
+<div class="index_bg" id="index_bg"></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_left.gif);width:9px;height:501px;z-index: 1;top: 0px;"></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_right.gif);width:9px;height:501px;right:-2px;z-index: 1;top: 0px;"></div>
+<div class="logo" id="logo"></div>
+<div class="home_image"></div>
+<div class="home_note">
+  <ul>
+    <li class="modelname">EMG2926-Q10A</li>
+    <li class="welcome_text"><%:Login_Msg_1%></li>
+    <li>
+  <table width="350" border="0" cellpadding="0" cellspacing="2">
+    <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+
+    <tr>
+      <td>&nbsp;</td>
+      <td><span class="password_word" style="color:#CCCCCC"><%:Language%> :</span></td>
+      <td><span class="green">
+        <select name="language_choice" onchange="changeLanguage()">
+          <option value="en" <%if lang == "en" then %>selected="selected"<%end%>><%:English%></option>
+          <option value="zh" <%if lang == "zh" then %>selected="selected"<%end%>><%:Chinese%></option>
+          <option value="de" <%if lang == "de" then %>selected="selected"<%end%>><%:Deutsch%></option>
+          <option value="es" <%if lang == "es" then %>selected="selected"<%end%>><%:Espanol%></option>
+          <option value="fr" <%if lang == "fr" then %>selected="selected"<%end%>><%:Francais%></option>
+          <option value="it" <%if lang == "it" then %>selected="selected"<%end%>><%:Italiano%></option>
+        </select>
+      </span></td>
+      <td>&nbsp;</td>
+    </tr>
+    </tr>
+      <td>&nbsp;</td>
+    <tr>  
+    <tr>
+      <td>&nbsp;</td>
+      <td><span class="password_word" style="color:#CCCCCC"><%:User%> : </span></td>
+      <td><input name="username" size="15" maxlength="30" value="" class=""/></td>
+    </tr>
+    
+    <tr>
+      <td>&nbsp;</td>
+      <td><span class="password_word" style="color:#CCCCCC"><%:Password%> : </span></td>
+      <td><input name="password" size="15" maxlength="30" value="" type="password" class=""/></td>
+      <td><label>
+
+      <input name="Submit" type="button" value="Login" onclick='javascript:submit_data()' />
+      </label></td>
+    </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td colspan="3"><span class="m"><%:Login_Msg_2%></span></td>
+      </tr>
+    <tr>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+      <td>&nbsp;</td>
+    </tr>
+    <tr>
+      <td width="4">&nbsp;</td>
+      <td colspan="3">	 </td>
+      </tr>
+  </table>
+</li></ul>
+</div>
+
+<div class="copyright" id="copyright"><%:copy_right%></div>
+
+
+  <div id="set_pupup2" style="visibility:hidden;">
+<div class="close1"><a href="#" onclick="MM_showHideLayers('set_pupup2','','hide')"></a></div>
+  <ul><li style="font-weight:bold; margin-top:10px;"><%:Change_time_zone%></li>
+<li><select name="time_choice" size="1">
+        <option value="GMT+12">  <%:International%>  </option>    
+        <option value="GMT+11">  <%:Midway_Island%>  </option>    
+        <option value="GMT+10">  <%:Hawaii%>         </option>    
+        <option value="GMT+9" >  <%:Alaska%>         </option>    
+        <option value="GMT+8" >  <%:Pacific_Time%>   </option>    
+        <option value="GMT+7" >  <%:Arizona%>        </option>    
+        <option value="GMT+7" >  <%:Chihuahua%>      </option>    
+        <option value="GMT+7" >  <%:Mountain_Time%>  </option>    
+        <option value="GMT+6" >  <%:Central_America%></option>    
+        <option value="GMT+6" >  <%:Central_Time%>   </option>    
+        <option value="GMT+6" >  <%:Guadalajara%>    </option>    
+        <option value="GMT+6" >  <%:Saskatchewan%>   </option>    
+        <option value="GMT+5" >  <%:Bogota%>         </option>    
+        <option value="GMT+5" >  <%:Eastern_Time%>   </option>    
+        <option value="GMT+5" >  <%:Indiana%>        </option>    
+        <option value="GMT+4" >  <%:Altlantic_Time%> </option>    
+        <option value="GMT+4" >  <%:Caracas%>        </option>    
+        <option value="GMT+3:30"><%:Newfoundland%>   </option>    
+        <option value="GMT+3" >  <%:Brasilia%>       </option>    
+        <option value="GMT+3" >  <%:Buenos_Aires%>   </option>    
+        <option value="GMT+2" >  <%:Mid_Atlantic%>   </option>    
+        <option value="GMT+1" >  <%:Azores%>         </option>    
+        <option value="GMT-0" >  <%:Casablanca%>     </option>    
+        <option value="GMT-0" >  <%:Greenwich%>      </option>    
+        <option value="GMT-1" >  <%:Amsterdam%>      </option>    
+        <option value="GMT-1" >  <%:Belgrade%>       </option>    
+        <option value="GMT-1" >  <%:Brussels%>       </option>    
+        <option value="GMT-1" >  <%:Sarajevo%>       </option>    
+        <option value="GMT-1" >  <%:West_Central_Africa%></option>
+        <option value="GMT-2" >  <%:Athens%>         </option>    
+        <option value="GMT-2" >  <%:Bucharest%>      </option>    
+        <option value="GMT-2" >  <%:Helsinki%>       </option>    
+        <option value="GMT-2" >  <%:Jerusalem%>      </option>    
+        <option value="GMT-3" >  <%:Baghdad%>        </option>    
+        <option value="GMT-3" >  <%:Moscow%>         </option>    
+        <option value="GMT-3" >  <%:Tehran%>         </option>    
+        <option v value="GMT-4" >  <%:Abu_Dhabi%>      </option>    
+        <option value="GMT-4" >  <%:Baku%>           </option>    
+        <option value="GMT-4" >  <%:Kabul%>          </option>    
+        <option value="GMT-5" >  <%:Ekaterinburg%>   </option>    
+        <option value="GMT-5" >  <%:Islamabad%>      </option>    
+        <option value="GMT-5:30"><%:Chennai%>        </option>    
+        <option value="GMT-5:45"><%:Katmandu%>       </option>    
+        <option value="GMT-6" >  <%:Almaty%>         </option>    
+        <option value="GMT-6" >  <%:Astana%>         </option>    
+        <option value="GMT-6" >  <%:Sri_Jayawardenepura%></option>
+        <option value="GMT-6:30"><%:Rangoon%>        </option>    
+        <option value="GMT-7" >  <%:Bangkok%>        </option>    
+        <option value="GMT-7" >  <%:Krasnoyarsk%>    </option>    
+        <option value="GMT-8" >  <%:Beijing%>        </option>    
+        <option value="GMT-8" >  <%:Irkutsk%>        </option>    
+        <option value="GMT-8" >  <%:Singapore%>      </option>    
+        <option value="GMT-8" >  <%:Taipei%>         </option>    
+        <option value="GMT-9" >  <%:Tokyo%>          </option>    
+        <option value="GMT-9" >  <%:Seoul%>          </option>    
+        <option value="GMT-9:30"><%:Adelaide%>       </option>    
+        <option value="GMT-10" > <%:Brisbane%>       </option>    
+        <option value="GMT-10" > <%:Canberra%>       </option>    
+        <option value="GMT-10" > <%:Guam%>           </option>    
+        <option value="GMT-11" > <%:Magadan%>        </option>    
+        <option value="GMT-12" > <%:Auckland%>       </option>    
+        <option value="GMT-12" > <%:Fiji%>           </option>    
+        <option value="GMT-13" > <%:Nuku_alofa%>     </option>    
+  </select>
+</li>
+<li>
+  <div align="right" style="margin-right:10px;">
+    <input name="applyTime" type="button" value="<%:Finish%>"  onclick="btnApply()"/>
+  </div>
+</li>
+  </ul>
+  </div>
+
+  <div class="infomation">
+  <table width="100%" height="82" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+
+     
+      <td width="127"><div class="clock"><ul>
+        <li class="time" id="mtenCurrent_Time"></li>
+        <li class="date" id="mtenCurrent_Date"></li>
+      </ul>
+      </div></td>
+    </tr>
+  </table>
+</div>
+</div>
+</form>
+
+<form method="post" name="NTP">
+
+         <input type="hidden" name="mtenCurrent_Hour" value='<%=string.match(luci.sys.exec("date +%H"),"(%d+)")%>' />
+         <input type="hidden" name="mtenCurrent_Min" value='<%=string.match(luci.sys.exec("date +%M"),"(%d+)")%>' />
+         <input type="hidden" name="mtenCurrent_Sec" value='<%=string.match(luci.sys.exec("date +%S"),"(%d+)")%>' />
+         <input type="hidden" name="mtenCurrent_Year" value='<%=string.match(luci.sys.exec("date +%Y"),"(%d+)")%>' />
+         <input type="hidden" name="mtenCurrent_Mon" value='<%=string.match(luci.sys.exec("date +%m"),"(%d+)")%>' />
+         <input type="hidden" name="mtenCurrent_Day" value='<%=string.match(luci.sys.exec("date +%d"),"(%d+)")%>' />
+</form>
+</body>
+
+<script language="JavaScript">
+function btnApply()
+{
+
+        with ( document.web_login ){
+		var submit_url = '<%=controller%>/';
+		var loc = submit_url; 
+		
+		loc += '&timeIndex=' + time_choice.selectedIndex;
+		loc += '&timeZone=' + time_choice.options[time_choice.selectedIndex].value;
+		
+		var code = 'location="' + loc + '"';
+		eval(code);
+	}
+
+}
+
+ start_Mon='<%=uci:get("time", "DST", "start_month")%>';
+ start_Hour='<%=uci:get("time", "DST", "start_clock")%>'; 
+ end_Mon='<%=uci:get("time", "DST", "end_month")%>';
+ end_Hour='<%=uci:get("time", "DST", "end_clock")%>';
+ enable_dst = '<%=uci:get("time", "DST", "enable")%>';
+
+ start_Num='<%=uci:get("time", "DST", "start_num")%>';
+ end_Num='<%=uci:get("time", "DST", "end_num")%>';
+ start_D='<%=uci:get("time", "DST", "start_d")%>';
+ end_D='<%=uci:get("time", "DST", "end_d")%>';
+
+ modes='<%=uci:get("time", "main", "mode")%>';
+ mtensNew_Year='<%=uci:get("time", "main", "manual_year")%>';
+/*
+	if(enable_dst=='1')
+	{
+	daylightsaving();
+	}
+*/
+initDateAndTime();
+IncreaseSec();	
+</script>
+</html>
+<%end%>

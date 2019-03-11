@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony KDL-26J3000</DisplayName>
+		<HttpRecognition>
+			<HttpText>Sony KDL-26J3000</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

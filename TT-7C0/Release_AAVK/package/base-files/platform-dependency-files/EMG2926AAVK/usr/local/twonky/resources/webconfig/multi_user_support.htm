@@ -1,0 +1,95 @@
+<div id="multiUserContainer">
+    <div class="serverSettingsTitlebarWrapper">
+        <div class="subHeader nomargin">
+            <span class="subheaderTitle" string="multiusersupport"></span>
+        </div>
+    </div>
+    <div class="paddingLeft">
+        <span string="multiusercaption" />
+    </div>
+	<div class="aggregationCheckWrapper largeFont paddingLeft ">
+		<input key="multiusersupportenabled" id="multiUserSupportEnabledCheckbox" type="checkbox" onchange="multiUserSupportCheckboxChanged()" />&nbsp; <span string="enablemultiusersupport" />
+		<div class="smallServerContentSpacer"></div>
+	</div>
+	<div id="multiUserSupportEnableContainer">
+		<div class="boxHeader">
+			<span class="titleWrapper">
+				<span class="title" string="multiusersupportsettings" />
+			</span>
+			<div class="clear" />
+		</div>
+		<div class="multiUserSupportWrapperBackground" style="padding-left:10px;padding-top:10px;padding-bottom:10px">
+				<div class="paddingLeft">
+					<span string="multiusersupportpassword" />
+				</div>
+				<div class="smallServerContentSpacer"></div>
+				<table>
+				 <tr>	
+					<td><span string="username" />
+					</td>
+					<td><span>&nbsp;&nbsp;&nbsp;</span>
+					</td>
+					<td><span string="password" />
+					</td>
+				 </tr>
+				 <tr>
+					<td style="color:#000000;background:#EFEFEF">
+						<span id="username" key="accessuser" />
+					</td>
+					<td><span>&nbsp;&nbsp;&nbsp;</span>
+					</td>
+					<td>
+						<input id="password" type="text" key="accesspwd" class="inputGap" />
+					</td>
+				 </tr>
+				</table>
+		</div>
+		<div class="smallServerContentSpacer"></div>
+<!-- no https		
+		<div class="boxHeader">
+			<span class="titleWrapper">
+				<span class="title" string="multiusersecurity" />
+			</span>
+			<div class="clear" />
+		</div>
+		<div class="multiUserSupportWrapperBackground" style="padding-left:10px;padding-top:10px;padding-bottom:10px">
+				<div class="paddingLeft">
+					<span string="multiuserusehttpscaption" />
+				</div>
+				<div class="smallServerContentSpacer"></div>
+				<input key="multiuserusehttps" id="multiUserUseHttpsEnabledCheckbox" type="checkbox" />&nbsp; <span string="multiuserusehttps" />
+		</div>
+		<div class="smallServerContentSpacer"></div>
+-->
+	</div>
+    <div id="multiUserSupportContainer">
+	    <div class="boxHeader">
+	    	<span class="titleWrapper">
+	        	<span class="title" string="userlist" />
+				<div id="twonkymus2" class="toggleButton showing smallestFont"><div class="toggleText" string="hide"></div></div><div class="toggleSpacer"></div>
+			</span>
+			<div class="clear" />
+	    </div>
+		<div id="subheader_twonkymus2" class="paddingLeft" >
+			<div>
+				<div class="inputCaption" string="userlistcaption" />
+			</div>
+			<div class="smallServerContentSpacer">
+			</div>
+			<div id="userlistMainContainer" key="userlist" />
+			<div class="serverContentSpacer"></div>
+			<div id="multiUserSupportConfigureDevicesButton" class="floatR" style="padding-right:40%">
+				<a id="configureDevices" class="actionbtnmd" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="showContainer('twonkysh2');navigateTo('sharing')"><span class="actionbtn_l"></span><span class="actionbtn_c" string="configuredevices"></span><span class="actionbtn_r"></span></a>
+			</div>
+			<div class="serverContentSpacer"></div>
+		</div>
+		<div class="smallServerContentSpacer"></div>
+    </div>
+	<div id="actionButtonContainer">
+    	<a id="saveButton" class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="submitMultiUserSupportData()"><span class="actionbtn_l"></span><span class="actionbtn_c" string="savechanges"></span><span class="actionbtn_r"></span></a>
+    	<a class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="cancelSettings()"><span class="actionbtn_l"></span><span class="actionbtn_c" string="cancel"></span><span class="actionbtn_r"></span></a>
+	</div>
+	<div id="spinnerContainer" style="display: none;">
+		<div class="spinner"></div>
+	</div>	
+</div>

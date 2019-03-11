@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>D-Link DSM120</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>DSM-120</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

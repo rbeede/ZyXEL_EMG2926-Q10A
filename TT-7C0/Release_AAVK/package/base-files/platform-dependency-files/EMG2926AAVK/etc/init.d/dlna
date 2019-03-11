@@ -1,0 +1,158 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+
+start() {
+	
+	[ -d /var/twonky ] || mkdir /var/twonky
+	[ -d /var/twonky/twonkyserver ] || mkdir /var/twonky/twonkyserver
+	[ -f /var/twonkyserver ] || bzcat /usr/local/twonky/twonkyserver.bz2 > /var/twonkyserver && chmod 755 /var/twonkyserver
+	[ -f /var/twonkystarter ] || bzcat /usr/local/twonky/twonkystarter.bz2 > /var/twonkystarter && chmod 755 /var/twonkystarter
+
+	twonky_enabled=$(uci_get dlna main enabled)
+	[ "$twonky_enabled" != "1" ] && exit 0
+	
+	usb1_photo=$(uci_get dlna main usb1_photo)
+	usb1_music=$(uci_get dlna main usb1_music)
+	usb1_video=$(uci_get dlna main usb1_video)
+	usb2_photo=$(uci_get dlna main usb2_photo)
+	usb2_music=$(uci_get dlna main usb2_music)
+	usb2_video=$(uci_get dlna main usb2_video)
+	usb1_type=0
+	usb2_type=0
+
+	[ $usb1_photo = 1 ] && usb1_type=$(($usb1_type+1))
+	[ $usb1_music = 1 ] && usb1_type=$(($usb1_type+2))
+	[ $usb1_video = 1 ] && usb1_type=$(($usb1_type+4))
+
+	[ $usb2_photo = 1 ] && usb2_type=$(($usb2_type+1))
+	[ $usb2_music = 1 ] && usb2_type=$(($usb2_type+2))
+	[ $usb2_video = 1 ] && usb2_type=$(($usb2_type+4))
+
+	[ "$usb1_type" == "0" -a "$usb2_type" == "0" ] && exit 0
+	[ -d "/tmp/storage/usb1" -o -d "/tmp/storage/usb2" ] || exit 0
+
+	contentbase="/tmp/storage/"
+	contentdir0=
+	contentdir1=
+	contentdir=
+	language=$(uci_get system main language)	
+	dbdir=
+
+	#type,0:none,1:Photos,2:Music,3:M+P,4:Videos,5:P+V,6:M+V,7:all
+	case "$usb1_type" in
+		"0") contentdir0="" ;;		
+		"1") contentdir0="+P|/usb1" ;;
+		"2") contentdir0="+M|/usb1" ;;		
+		"3") contentdir0="+v|/usb1" ;;
+		"4") contentdir0="+V|/usb1" ;;
+		"5") contentdir0="+m|/usb1" ;;
+		"6") contentdir0="+p|/usb1" ;;
+		"7") contentdir0="+A|/usb1" ;;
+	esac
+
+	case "$usb2_type" in
+		"0") contentdir1="" ;;		
+		"1") contentdir1="+P|/usb2" ;;
+		"2") contentdir1="+M|/usb2" ;;
+		"3") contentdir1="+v|/usb2" ;;
+		"4") contentdir1="+V|/usb2" ;;
+		"5") contentdir1="+m|/usb2" ;;
+		"6") contentdir1="+p|/usb2" ;;		
+		"7") contentdir1="+A|/usb2" ;;
+	esac
+
+	if [ "$usb1_type" == "0" -a "$usb2_type" != "0" ];then
+		contentdir="$contentdir1"
+	elif [ "$usb1_type" != "0" -a "$usb2_type" == "0" ];then
+		contentdir="$contentdir0"
+	else
+		contentdir="$contentdir0","$contentdir1"
+	fi
+
+	if [ "$language" == "zh" ];then
+		language="cht"
+	fi
+
+	if [ -d "/tmp/storage/usb1" ];then
+		dirls=$(ls /tmp/storage/usb1)
+		dirsub=$(echo $dirls|awk '{print $1}')		
+		dbdir=/tmp/storage/usb1/"$dirsub"/db
+	elif [ -d "/tmp/storage/usb2" ];then
+		dirls=$(ls /tmp/storage/usb2)
+		dirsub=$(echo $dirls|awk '{print $1}')		
+		dbdir=/tmp/storage/usb2/"$dirsub"/db
+	else
+		dbdir="/var/twonky/twonkyserver/db"
+	fi
+
+lan_ip=$(uci get network.lan.ipaddr)
+
+	cat << EOF > /usr/local/twonky/resources/devicedescription-custom-settings.txt
+#MANUFACTURER#ZyXEL Communications Corp.
+#MANUFACTURERURL#http://www.zyxel.com
+#MODELNAME#ZyXEL EMG2926-Q10A Router
+#MODELURL#http://www.zyxel.com
+#MODELDESCRIPTION#ZyXEL EMG2926-Q10A Router
+#PRESENTATION-URL#http://$lan_ip
+//MODELNUMBER#as default will be the version number of TMS, please remove comment and set custom number if needed
+//SERIALNUMBER#as default will be the version number of TMS, please remove comment and set custom number if needed
+#PVEXTENSION#
+#TMS_PNPX_X_HARDWAREWID#VEN_0033&amp;DEV_0001&amp;REV_01
+#TMS_PNPX_X_COMPATIBLEID#MS_DigitalMediaDeviceClass_DMS_V001
+#TMS_PNPX_X_DEVICECATEGORY#MediaDevices
+#TMS_DFX_X_DEVICECATEGORY#Multimedia.DMS
+#TMS_DFX_MODELID#
+#TMS_PNPX_X_CONTAINERID#
+
+// Notes:
+// The character encoding of this file is expected to be UTF-8
+//
+// Remember these values are inserted into an XML document;
+// special characters must be appropriately coded as entity references.
+//
+// TMS_DFX_MODELID and TMS_PNPX_X_CONTAINERID are optional, and can be left empty.
+// In that case they are removed from the document (empty tag is not added)
+
+EOF
+	
+	cat <<EOF >/var/twonky/twonkyserver/twonkyserver.ini
+contentbase=$contentbase
+contentdir=$contentdir
+followlinks=0
+enableweb=2
+maxitems=60000
+httpport=9191
+stack_size=65536
+httpsessionlimit=6
+disablepmscaling=1
+dbdir=$dbdir
+language=$language
+servermanagedmusicdir=/tmp/twonky/music/Twonky
+servermanagedpicturedir=/tmp/twonky/pictures/Twonky
+servermanagedvideodir=/tmp/twonky/videos/Twonky
+ignoredir=AppleDouble,AppleDB,AppleDesktop,TemporaryItems,.fseventsd,.Spotlight-
+mediafusionserverurl=http://www.zyxel.com
+friendlyname=EMG2926-Q10A
+EOF
+	rm -rf $dbdir
+	/usr/local/twonky/twonky.sh start
+	
+	##limit cpu resource
+	cpulimit-ng -e /usr/local/twonky/twonkyserver -l 50 >/dev/null 2>&1 &
+}
+
+stop(){
+	/usr/local/twonky/twonky.sh stop
+	
+	killall -9 cgi-jpegscale
+	killall -9 itunes-import
+	killall -9 /usr/local/twonky/twonkyserver
+
+	limitDlnaPid=$(ps | grep "cpulimit-ng -e /usr/local/twonky/twonkyserver" | grep -v grep | awk '{print $1}')	
+	kill -9 $limitDlnaPid
+
+	sleep 1
+	rm -rf /var/twonky/*
+}

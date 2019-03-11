@@ -1,0 +1,30 @@
+<Client>
+	<DeviceId>
+		<DisplayName>ACTIVY Media Player</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>ACTIVY</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG120x90</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+		<AudioTranscoding>
+			<Target>MP3</Target>
+			<Target>WAV</Target>
+		</AudioTranscoding>
+		<VideoTranscoding>
+			<Target>WMV</Target>
+		</VideoTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

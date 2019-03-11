@@ -1,0 +1,99 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+defaultwan=$(uci get network.general.defaultWan)
+proto=$(uci_get network $defaultwan proto)
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+	WAN="$proto"-"$defaultwan"
+else
+	WAN=$(uci_get network $defaultwan ifname)
+fi
+
+lan_ip=$(ifconfig br-lan | awk '/inet addr/{print $2}' | awk -F':' '{print $2}')
+lan_mask=$(ifconfig br-lan | awk '/inet addr/{print $4}' | awk -F':' '{print $2}')
+
+wan_ip=$(ifconfig $WAN | awk '/inet addr/{print $2}' | awk -F':' '{print $2}')
+wan_mask=$(ifconfig $WAN | awk '/inet addr/{print $4}' | awk -F':' '{print $2}')
+
+conflict=true
+
+if [ "$lan_ip" == "" ]; then
+	conflict=false
+fi
+
+## byte1
+lan_ip_byte1=$(echo $lan_ip | awk -F'.' '{print $1}')
+lan_mask_byte1=$(echo $lan_mask | awk -F'.' '{print $1}')
+
+wan_ip_byte1=$(echo $wan_ip | awk -F'.' '{print $1}')
+wan_mask_byte1=$(echo $wan_mask | awk -F'.' '{print $1}')
+
+if [ "$((lan_ip_byte1&lan_mask_byte1))" != "$((wan_ip_byte1&wan_mask_byte1))" ]; then
+	conflict=false
+fi
+
+## byte2
+lan_ip_byte2=$(echo $lan_ip | awk -F'.' '{print $2}')
+lan_mask_byte2=$(echo $lan_mask | awk -F'.' '{print $2}')
+
+wan_ip_byte2=$(echo $wan_ip | awk -F'.' '{print $2}')
+wan_mask_byte2=$(echo $wan_mask | awk -F'.' '{print $2}')
+
+if [ "$((lan_ip_byte2&lan_mask_byte2))" != "$((wan_ip_byte2&wan_mask_byte2))" ]; then
+	conflict=false
+fi
+
+## byte3
+lan_ip_byte3=$(echo $lan_ip | awk -F'.' '{print $3}')
+lan_mask_byte3=$(echo $lan_mask | awk -F'.' '{print $3}')
+
+wan_ip_byte3=$(echo $wan_ip | awk -F'.' '{print $3}')
+wan_mask_byte3=$(echo $wan_mask | awk -F'.' '{print $3}')
+
+if [ "$((lan_ip_byte3&lan_mask_byte3))" != "$((wan_ip_byte3&wan_mask_byte3))" ]; then
+	conflict=false
+fi
+
+## byte4
+lan_ip_byte4=$(echo $lan_ip | awk -F'.' '{print $4}')
+lan_mask_byte4=$(echo $lan_mask | awk -F'.' '{print $4}')
+
+wan_ip_byte4=$(echo $wan_ip | awk -F'.' '{print $4}')
+wan_mask_byte4=$(echo $wan_mask | awk -F'.' '{print $4}')
+
+if [ "$((lan_ip_byte4&lan_mask_byte4))" != "$((wan_ip_byte4&wan_mask_byte4))" ]; then
+	conflict=false
+fi
+
+
+## check br-lan subnet
+lan_subnet=$((lan_ip_byte1&lan_mask_byte1)).$((lan_ip_byte2&lan_mask_byte2)).$((lan_ip_byte3&lan_mask_byte3)).$((lan_ip_byte4&lan_mask_byte4))
+boot_sequence=$(ps | grep "/etc/init.d/rcS" | grep -v 'grep'| grep -v 'boot')
+   
+if [ "$conflict" == "true" ]; then
+	
+	if [ "$lan_subnet" == "10.0.0.0" ]; then
+		uci set network.lan.ipaddr=192.168.1.1
+		uci commit
+		
+		## to prevent rt5392 from being fail to intialize
+		ifconfig br-lan 192.168.1.1
+	else
+		uci set network.lan.ipaddr=10.0.0.1
+		uci commit
+		
+		## to prevent rt5392 from being fail to intialize
+		netmasks=$(uci get network.lan.netmask)
+		ifconfig br-lan 10.0.0.1 netmask $netmasks
+	fi
+
+	ifup wan
+	
+	env -i ACTION="ifup" INTERFACE="lan" DEVICE="lan" PROTO=static /sbin/hotplug-call "iface"
+	
+	[ -z "$boot_sequence" ]&&{
+		/bin/switch_port lan reset
+	}
+fi

@@ -1,0 +1,21 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony CableTV Movie Player</DisplayName>
+		<HttpRecognition>
+			<HttpText>SonyMarketing-Movie-Player-for-CATV</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<DTCP/>
+	</Capabilities>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>DATETIME</Quirk>
+	</DeviceQuirks>
+</Client>

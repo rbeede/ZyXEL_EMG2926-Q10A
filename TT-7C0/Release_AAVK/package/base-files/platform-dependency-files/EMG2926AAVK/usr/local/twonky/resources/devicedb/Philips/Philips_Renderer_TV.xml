@@ -1,0 +1,27 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips Renderer TV</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>UPnP Media Renderer 1.0</DescriptionText>
+			<DescriptionText>NMR</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/quicktime</In>
+				<Out>video/mp4</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>REDUCED_METADATA</Quirk>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

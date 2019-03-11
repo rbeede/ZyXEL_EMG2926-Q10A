@@ -1,0 +1,183 @@
+Source-Makefile: feeds/packages/net/updatedd/Makefile
+Package: updatedd
+Menu: 1
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: A tool to update dynamic dns services
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: Updatedd is a small tool that will update one of many dynamic 
+	dns services on boot. 
+	Please look at the /etc/init.d/ddns script for more info. 
+
+http://savannah.nongnu.org/projects/updatedd/
+
+@@
+
+Package: updatedd-mod-changeip
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: changeip.com
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: changeip.com
+
+@@
+
+Package: updatedd-mod-dyndns
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: dyndns.org
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: dyndns.org
+
+@@
+
+Package: updatedd-mod-eurodyndns
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: eurodyndns.org
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: eurodyndns.org
+
+@@
+
+Package: updatedd-mod-hn
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: hn.org
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: hn.org
+
+@@
+
+Package: updatedd-mod-noip
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: no-ip.com
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: no-ip.com
+
+@@
+
+Package: updatedd-mod-ods
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: ods.org
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: ods.org
+
+@@
+
+Package: updatedd-mod-ovh
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: ovh.com
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: ovh.com
+
+@@
+
+Package: updatedd-mod-regfish
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: regfish.com
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: regfish.com
+
+@@
+
+Package: updatedd-mod-tzo
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: tzo.com
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: tzo.com
+
+@@
+
+Package: updatedd-mod-zoneedit
+Version: 2.6-7
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread updatedd
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: net
+Category: Base system
+Title: zoneedit.com
+Maintainer: 
+Source: updatedd_2.6.tar.bz2
+Type: ipkg
+Description: zoneedit.com
+
+@@
+
+

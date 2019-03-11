@@ -1,0 +1,571 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Untitled Document</title>
+<script type="text/javascript" src="<%=media%>/easy/js/jquery-1.2.6.js"></script>
+<script type="text/javascript" src="<%=media%>/easy/js/wireless_security.js"></script>
+<script type='text/javascript' src='<%=media%>/easy/js/jquery.simplemodal.js' ></script>
+<link type='text/css' href='images/confirm.css' rel='stylesheet' media='screen' />
+<link href="<%=media%>/easy/images/popup.css" rel="stylesheet" type="text/css" />
+<style>
+.on {display:on}
+.off {display:none}
+</style>
+<script type="text/JavaScript">
+			
+/*function btnApply(){
+			
+	var submit_url = '<%=luci.dispatcher.build_url("easy","streamboost")%>';
+	//window.close();
+	//window.location.href="<%=controller%>/easy/networkmap";
+}*/
+
+var divs = {
+			'PPPOE' : 'PPPOE' ,
+//			'PPTP'  : 'PPTP' ,
+			'IPOE'  : 'IPOE'
+}
+function showhide(obj)
+{
+	var el, v = obj.options[obj.selectedIndex].value;
+	for (var opt in divs)
+	if (el = document.getElementById(divs[opt]))
+	el.style.display = (opt != v) ? 'none' : 'block';
+}
+
+window.onload = function()
+{
+	document.getElementById('internet').onchange();
+}
+
+function MM_goToURL() { //v3.0
+	var i, args=MM_goToURL.arguments; document.MM_returnValue = false;
+	for (i=0; i<(args.length-1); i+=2) eval(args[i]+".location='"+args[i+1]+"'");
+}
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function checkRange(str, num, min, max)
+{
+	d = atoi(str, num);
+	if (d > max || d < min)
+		return false;
+	return true;
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function checkIpAddr(field, ismask)
+{
+	if (field.value == "") {
+		alert("<%:IP_Error_1%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	if (isAllNum(field.value) == 0) {
+		alert("<%:IP_Error_2%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	if (ismask) {
+		if ((!checkRange(field.value, 1, 0, 255)) ||
+				(!checkRange(field.value, 2, 0, 255)) ||
+				(!checkRange(field.value, 3, 0, 255)) ||
+				(!checkRange(field.value, 4, 0, 255)))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	else {
+		if ((!checkRange(field.value, 1, 0, 255)) ||
+				(!checkRange(field.value, 2, 0, 255)) ||
+				(!checkRange(field.value, 3, 0, 255)) ||
+				(!checkRange(field.value, 4, 1, 254)))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	return true;
+}
+
+function CheckValue()
+{
+    if (document.wanCfg.connectionType.options.selectedIndex == 0) //PPPoE
+    {
+        if(document.wanCfg.pppoeUser.value == "")
+        {
+           alert("<%:WAN_Error_5%>");
+		   return false;
+        }
+        if(document.wanCfg.pppoePass.value == "")
+        {
+           alert("<%:WAN_Error_6%>");
+		   return false;
+        }
+
+		if (document.wanCfg.pppoeWanIPMode[1].checked == true){
+		 if (!checkIpAddr(document.wanCfg.pppoeWanIpAddr, false))
+		   return false;
+		}
+    }
+	/*else if (document.wanCfg.connectionType.options.selectedIndex == 1) //PPTP
+    {
+        if (document.wanCfg.pptp_serverIp.value == "")
+	    {
+            alert("<%:IP_Error_1%>");
+		    return false;
+        }
+		else if (!checkIpAddr(document.wanCfg.pptp_serverIp, false))
+		{
+		    return false;
+	    }
+	    if (document.wanCfg.pptp_config_ip[1].checked == true) //Static IP
+        {
+            if (!checkIpAddr(document.wanCfg.pptp_staticIp, false))
+			     return false;
+		    if (!checkIpAddr(document.wanCfg.pptp_staticNetmask, true))
+			     return false;
+		    if (document.wanCfg.pptp_staticGateway.value != "")
+		    {
+			    if (!checkIpAddr(document.wanCfg.pptp_staticGateway, false))
+				    return false;
+            }
+	   	}
+		 
+		if(document.wanCfg.pptpUser.value == "")
+        {
+            alert("<%:WAN_Error_5%>");
+			return false;
+        }
+        if(document.wanCfg.pptpPass.value == "")
+        {
+            alert("<%:WAN_Error_6%>");
+			return false;
+        }
+	    if (document.wanCfg.pptpIdleTime.disabled == false)
+		{
+			if (document.wanCfg.pptpIdleTime.value == "")
+			{
+				alert("<%:WAN_Error_11%>");
+				document.wanCfg.pptpIdleTime.focus();
+				document.wanCfg.pptpIdleTime.select();
+				return false;
+			}
+			if (isAllNum(document.wanCfg.pptpIdleTime.value) == 0) 
+			{
+		        alert("<%:WAN_Error_2%>");
+		        document.wanCfg.pptpIdleTime.value = document.wanCfg.pptpIdleTime.defaultValue;
+		        document.wanCfg.pptpIdleTime.focus();
+		        return false;
+	        }
+        }
+		if (document.wanCfg.pptpWanIPMode[1].checked == true) {
+		    if (!checkIpAddr(document.wanCfg.pptpWanIpAddr, false))
+				return false;
+		}
+    }*/
+    else if (document.wanCfg.connectionType.options.selectedIndex == 1) //IPoE
+    {   
+        if (document.wanCfg.WAN_IP_Auto[1].checked == true) //Static IP
+        {
+            if (!checkIpAddr(document.wanCfg.staticIp, false))
+			    return false;
+		    if (!checkIpAddr(document.wanCfg.staticNetmask, true))
+			    return false;
+		    if (document.wanCfg.staticGateway.value != "")
+		    {
+			    if (!checkIpAddr(document.wanCfg.staticGateway, false))
+				    return false;
+            }
+        }
+    }	
+    else //unknown WAN Mode
+		return false;
+
+	return true;  
+}
+
+function ipoe_wanIP_mode_switch()
+{
+    if (document.wanCfg.WAN_IP_Auto[0].checked == true)
+    {  
+        document.wanCfg.staticIp.disabled      = true;
+	    document.wanCfg.staticNetmask.disabled = true;
+        document.wanCfg.staticGateway.disabled = true;
+    }
+    else
+    {
+	    document.wanCfg.staticIp.disabled      = false;
+	    document.wanCfg.staticNetmask.disabled = false;
+        document.wanCfg.staticGateway.disabled = false;
+    }
+}
+
+/*
+function pptp_wanIP_mode_switch() 
+{
+	if (document.wanCfg.pptp_config_ip[0].checked == true)
+	{		
+		document.wanCfg.pptp_staticIp.disabled = true;
+	    document.wanCfg.pptp_staticNetmask.disabled = true;
+        document.wanCfg.pptp_staticGateway.disabled = true;
+	}
+    else
+	{
+		document.wanCfg.pptp_staticIp.disabled = false;
+	    document.wanCfg.pptp_staticNetmask.disabled = false;
+        document.wanCfg.pptp_staticGateway.disabled = false;
+	}
+} 
+*/
+
+function pppoe_wanIP_mode_switch()
+{
+    if (document.wanCfg.pppoeWanIPMode[0].checked == true)	
+	    document.wanCfg.pppoeWanIpAddr.disabled = true;
+    else
+	    document.wanCfg.pppoeWanIpAddr.disabled = false;
+}
+
+function btnApplyCheck()
+{
+	if( CheckValue() == 1 )
+	{
+		document.wanCfg.submit();
+	}
+}	
+		
+</script>
+
+</head>
+
+<body>
+	
+	<form method="post" name="wanCfg" action="<%=controller%>/easy/internet" >
+						
+		<div id="wrapper">
+				
+			<div>
+				<ul><li>
+				 <font id="space1">&nbsp;</font>
+				</li></ul>
+			</div>		
+
+			<div class="g_word">
+			  <table width="100%" border="0">
+				<tr>
+				  <td width="250" style="font-size:16px; font-weight:bold; color:#6398ca"><%:internet_connection_type%> :</td>
+				  <td width="425">
+					<label>
+					<% local wanif = uci:get("network","wan","proto") %>	
+
+					  <select id="internet" name="connectionType" onchange="showhide(this)" class="board2">
+						<option value="PPPOE" <% if wanif == "pppoe" then %>selected<% end %>><%:PPPoE%></option>
+						<!-- <option value="PPTP"  <% if wanif == "pptp" then %>selected<% end %>><%:PPTP%></option> -->			
+						<option value="IPOE"  <% if wanif == "dhcp" or wanif == "static" then %>selected<% end %>><%:IPoE%></option>
+					  </select>
+					</label>
+				  </td>
+				</tr>  
+			  </table>
+			</div>
+
+			<div>
+				<ul><li>
+				 <font id="space1">&nbsp;</font>
+				</li></ul>
+			</div>			
+			
+			<div class="input_bn2" >
+
+				<div id="IPOE" style="display:none;">
+				 <ul><li class="map_content">
+					<table width="100%" border="0">
+					  <tr>
+						<td align="left" colspan="2"><%:eaZy123_2_1_note_1%></td>
+					  </tr>
+					  <tr><td>&nbsp;</td></tr>
+					  <tr>
+						<td colspan="2"><ul>
+							<li class="b_txt">
+								<% local wanif = uci:get("network","wan","proto") %>
+				                 <tr>
+									   <td>                                                                          
+									   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="WAN_IP_Auto" name="WAN_IP_Auto" type="radio" value="1" onclick="ipoe_wanIP_mode_switch()" <% if wanif ~= "static" then %>checked="CHECKED"<% end %> /><%:Obtain_an_IP_Address_Automatically%>																   
+									   </td>
+								 </tr>
+								 <tr>
+									   <td>                                                                          				
+									   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="WAN_IP_Auto" name="WAN_IP_Auto" type="radio" value="0" onclick="ipoe_wanIP_mode_switch()" <% if wanif == "static" then %>checked="CHECKED"<% end %> /><%:Static_IP_Address%>
+
+									   </td>
+								 </tr>
+							  <table width="98%" border="0" align="center" cellpadding="0" cellspacing="2">								
+	                            <tr>
+								  <% local ipaddr = uci:get("network","wan","ipaddr") %>
+								  <td width="200">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:IP_Address%> :</td>
+								  <td>
+									<label>
+									  <input name="staticIp" maxlength="15" size="15" <% if ipaddr then %>value="<%=ipaddr%>"<% else %>value="" <% end %> <% if wanif ~= "static" then %>disabled<% else %><% end %>/>
+									</label>
+								  </td>
+								</tr>
+								<tr>
+								  <% local netmask = uci:get("network","wan","netmask") %>
+								  <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Subnet_Mask%> :</td>
+								  <td>
+									<label>
+									  <input name="staticNetmask" maxlength="15" size="15" <%if netmask then%>value="<%=netmask%>"<%else%>value="" <%end%> <% if wanif ~= "static" then %>disabled<% else %><% end %>/>
+									</label>
+								  </td>
+								</tr>
+								<tr>
+								  <% local gateway = uci:get("network","wan","gateway") %>
+								  <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Gateway_IP_address%> :</td>
+								  <td>
+									<label>
+									  <input name="staticGateway" maxlength="15" size="15" <%if gateway then%>value="<%=gateway%>"<%else%>value="" <%end%> <% if wanif ~= "static" then %>disabled<% else %><% end %>/>
+									</label>
+								  </td>
+								</tr>
+							  </table>
+							</li>
+						</ul></td>
+					  </tr>
+					</table>
+				 </li></ul>
+				</div>
+
+				<div id="PPTP" style="display:none;">
+				 <ul><li class="map_content">
+					<table width="100%" border="0">
+					  <tr>
+						<td align="left" colspan="2"><%:eaZy123_2_1_note_1%></td>
+					  </tr>
+					  <tr><td>&nbsp;</td></tr>
+					  <tr>
+						<td colspan="2"><ul>
+							<li class="b_txt">
+							  <table width="98%" border="0" align="center" cellpadding="0" cellspacing="2">
+								<tr>
+								  <% local UserName_pptpUser = uci:get("network","vpn","pptp_username") %>
+									<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:PPTP_Username%> : </td>
+									  <td>
+										<label>
+										  <input name="pptpUser" type="text" size="32" maxlength="50" <% if UserName_pptpUser then %>value="<%=UserName_pptpUser%>"<% else %>value=""<% end %> />
+										</label>
+									  </td>
+								</tr>
+								<tr>
+								  <% local Password_pptpPass = uci:get("network","vpn","pptp_password") %>
+									<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:PPTP_Password%> : </td>
+									  <td>
+										<label>
+										  <input name="pptpPass" type="password" size="32" maxlength="50"<% if Password_pptpPass then %>value="<%=Password_pptpPass%>"<% else %>value=""<% end %> />
+										</label>
+									  </td>
+								</tr>
+								<tr>
+								  <% local pptp_serverip = uci:get("network","vpn","pptp_serverip") %>
+									<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:PPTP_SER_IP%> : </td>
+									  <td>
+										<label>
+										  <input name="pptp_serverIp" maxlength="15" size="15" <% if pptp_serverip then %>value="<%=pptp_serverip%>"<% else %>value="" <% end %>/>
+										</label>
+									  </td>
+								</tr>
+								<% local pptp_proto = uci:get("network","vpn","proto") %>
+								 <tr>
+									   <td>                                                                          
+									   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="pptp_config_ip" type="radio" value="1" onclick="pptp_wanIP_mode_switch()" <% if pptp_proto ~= "static" then %>checked="CHECKED"<% end %> /><%:Obtain_an_IP_Address_Automatically%>
+									   </td>
+								 </tr>
+								 <tr>
+									   <td>                                                                          				
+									   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="pptp_config_ip" type="radio" value="0" onclick="pptp_wanIP_mode_switch()" <% if pptp_proto == "static" then %>checked="CHECKED"<% end %> /><%:Static_IP_Address%>
+									   </td>
+								 </tr>
+
+								<tr>
+								  <% local pptp_ipaddr = uci:get("network","wan","ipaddr") %>
+									<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:IP_Address%> : </td>
+									  <td>
+										<label>
+										  <input name="pptp_staticIp" maxlength="15" size="15" <% if pptp_ipaddr then %>value="<%=pptp_ipaddr%>"<% else %>value="" <% end %> <% if pptp_proto ~= "static" then %> disabled <% end %>/>
+										</label>
+									  </td>
+								</tr>
+								<tr>
+								  <% local pptp_netmask = uci:get("network","wan","netmask") %>
+									<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Subnet_Mask%>  : </td>
+									  <td>
+										<label>
+										  <input name="pptp_staticNetmask" maxlength="15" size="15" <%if pptp_netmask then%>value="<%=pptp_netmask%>"<%else%>value="" <%end%> <% if pptp_proto ~= "static" then %> disabled <% end %>/>
+										</label>
+									  </td>
+								</tr>
+								<tr>
+								  <% local pptp_gateway = uci:get("network","wan","gateway") %>
+									<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Gateway_IP_address%> : </td>
+									  <td>
+										<label>
+										  <input name="pptp_staticGateway" maxlength="15" size="15" <%if pptp_gateway then%>value="<%=pptp_gateway%>"<%else%>value="" <%end%> <% if pptp_proto ~= "static" then %> disabled <% end %>/>
+										</label>
+									  </td>
+								</tr>
+							  </table>
+							</li>
+						</ul></td>
+					  </tr>
+					</table>				
+				 </li></ul>
+				</div>
+
+				<div id="PPPOE" style="display:none;">
+				 <ul><li class="map_content">
+					<table width="100%" border="0">
+					  <tr>
+						<td align="left" colspan="2"><%:eaZy123_2_1_note_1%></td>
+					  </tr>
+					  <tr><td>&nbsp;</td></tr>
+					  <tr>
+						<td colspan="2"><ul>
+							<li class="b_txt">
+							    <%
+								  local pppoeWanIpAddr = uci:get("network","wan","pppoeWanIpAddr")
+								  local pppoe_ip=string.match(luci.sys.exec("ifconfig ppp0"),"inet addr:(%d+.%d+.%d+.%d+)")
+								  if pppoe_ip == "10.64.64.64" then
+									 pppoe_ip = ""
+								  end
+								  local pppoe_status
+								  if pppoeWanIpAddr and pppoe_ip and pppoeWanIpAddr==pppoe_ip then pppoe_status="static" end
+								%>	
+								 <tr>
+									   <td>                                                                          
+									   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="pppoeWanIPMode" type="radio" value="1" onclick="pppoe_wanIP_mode_switch()" <%if pppoe_status~="static" then%>checked<%end%>/><%:Get_automatically_from_ISP%>
+									   </td>
+								 </tr>
+								 <tr>
+									   <td>                                                                          				
+									   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input name="pppoeWanIPMode" type="radio" value="0" onclick="pppoe_wanIP_mode_switch()" <%if pppoe_status=="static" then%>checked<%end%>/><%:Use_Fixed_IP_Address%>
+									   </td>
+								 </tr>							  
+
+								 <table width="98%" border="0" align="center" cellpadding="0" cellspacing="2">
+								
+								<tr>
+								  <% local UserName_pppoeUser = uci:get("network","wan","username") %>
+								  <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:PPP_Username%> :</td>
+								  <td>
+									<label>
+									  <input name="pppoeUser" type="text" size="32" maxlength="50" <% if UserName_pppoeUser then %>value="<%=UserName_pppoeUser%>"<% else %>value=""<% end %> />
+									</label>
+								  </td>
+								</tr>
+								<tr>
+								  <% local Password_pppoePass = uci:get("network","wan","password") %>
+								  <td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:PPP_Password%> :</td>
+								  <td>
+									<label>
+									  <input name="pppoePass" type="password" size="32" maxlength="50"<% if Password_pppoePass then %>value="<%=Password_pppoePass%>"<% else %>value=""<% end %> />
+									</label>
+								  </td>
+								</tr>
+								<tr>
+								  <td width="200">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:My_WAN_IP_Address%> :</td>
+								  <td>
+									<label>
+									  <input name="pppoeWanIpAddr" maxlength=15 size=15 <%if pppoeWanIpAddr and pppoe_ip and pppoeWanIpAddr==pppoe_ip then%>value="<%=pppoeWanIpAddr%>"<%elseif pppoe_ip then%>value="<%=pppoe_ip%>"<%else%>value=""<%end%> <%if pppoe_status~="static" then%>disabled<%end%>>
+									</label>
+								  </td>
+								</tr>
+							  </table>
+							</li>
+						</ul></td>
+					  </tr>
+					</table>
+				 </li></ul>
+				</div>
+
+			</div>	
+			
+			<div class="button">
+				<ul>
+					<li><input type="hidden" name="apply" value="apply" ></li>				
+					<li><a href="<%=controller%>/easy/networkmap" target="_parent" title="<%:cancel%>"><span><%:cancel%></span></a></li>
+					<li><a href="javascript:btnApplyCheck()" title="<%:apply%>"><span><%:apply%></span></a></li>				
+				</ul>
+			</div>
+
+		</div>
+			
+	</form>
+			
+</body>
+
+</html>

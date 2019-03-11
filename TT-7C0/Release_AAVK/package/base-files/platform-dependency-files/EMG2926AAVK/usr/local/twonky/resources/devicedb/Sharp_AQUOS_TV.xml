@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sharp AQUOS TV</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>AQUOS</DescriptionText>
+		</DeviceDescriptionRecognition>		 
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeSuppress>audio/x-wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wave</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>RES_ADD_FLAG</Quirk>
+		<Quirk>SUPPORT_MPG2TS_TIME_SEEK</Quirk>
+	</DeviceQuirks>
+</Client>

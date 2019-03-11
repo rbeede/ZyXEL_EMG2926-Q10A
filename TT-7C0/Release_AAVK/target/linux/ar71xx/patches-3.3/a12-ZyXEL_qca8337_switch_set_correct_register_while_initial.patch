@@ -1,0 +1,27 @@
+Index: linux-3.3.8/drivers/net/phy/ar8216.c
+===================================================================
+--- linux-3.3.8.orig/drivers/net/phy/ar8216.c	2015-05-04 16:55:48.919851214 +0800
++++ linux-3.3.8/drivers/net/phy/ar8216.c	2015-06-03 13:59:51.890659719 +0800
+@@ -1530,13 +1530,17 @@
+ 	else
+ 		cfg = NULL;
+ 
+-	ar8327_config_port(priv, port, cfg);
+-	
++	//Fixed switch QCA8337 initial problem, it should read back first and then write switch register for Port1~Port5
++	if (  (port == 0)  ||   (port == 6) ) {
++		ar8327_config_port(priv, port, cfg);
++	} else {
++		t = priv->read(priv, AR8327_REG_PORT_STATUS(port));
++		t |= AR8216_PORT_STATUS_LINK_AUTO;
++		priv->write(priv, AR8327_REG_PORT_STATUS(port), t);
++	}	
+ 	priv->write(priv, AR8327_REG_PORT_HEADER(port), 0);
+ 
+-	t = 1 << AR8327_PORT_VLAN0_DEF_SVID_S;
+-	t |= 1 << AR8327_PORT_VLAN0_DEF_CVID_S;
+-	priv->write(priv, AR8327_REG_PORT_VLAN0(port), t);
++	priv->write(priv, AR8327_REG_PORT_VLAN0(port), 0);
+ 
+ 	t = AR8327_PORT_VLAN1_OUT_MODE_UNTOUCH << AR8327_PORT_VLAN1_OUT_MODE_S;
+ 	priv->write(priv, AR8327_REG_PORT_VLAN1(port), t);

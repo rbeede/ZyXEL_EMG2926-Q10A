@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>o2 Joggler</DisplayName>
+		<HttpRecognition>
+			<HttpText>Platinum</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG800x600</Target>
+		</Scaling>
+	</Capabilities>
+</Client>

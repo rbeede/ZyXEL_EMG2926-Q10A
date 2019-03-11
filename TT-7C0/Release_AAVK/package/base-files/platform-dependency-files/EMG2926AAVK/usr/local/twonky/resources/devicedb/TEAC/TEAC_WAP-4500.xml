@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>TEAC WAP-4500</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WAP-4500</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

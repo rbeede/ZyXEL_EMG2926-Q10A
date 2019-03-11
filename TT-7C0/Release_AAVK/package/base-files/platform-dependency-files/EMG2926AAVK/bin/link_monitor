@@ -1,0 +1,763 @@
+#!/bin/sh
+. /lib/functions.sh
+. /etc/functions.sh
+include /lib/config
+
+set_wan_up(){
+
+	wan1_sw=$(uci get network.wan1.enable)
+	wan2_sw=$(uci get network.wan2.enable)
+	wan3_sw=$(uci get network.wan3.enable)
+	wan4_sw=$(uci get network.wan4.enable)
+
+	ifup wan
+	
+	if [ "$wan1_sw" == "1" ]; then
+		ifup wan1	
+	fi
+
+	if [ "$wan2_sw" == "1" ]; then
+		ifup wan2	
+	fi
+	
+	if [ "$wan3_sw" == "1" ]; then
+		ifup wan3	
+	fi
+	
+	if [ "$wan4_sw" == "1" ]; then
+		ifup wan4	
+	fi	
+}
+
+#after reading/writing data on USB, it will release cash memory
+top -n 1 > /tmp/top_log &
+sleep 1
+
+io_value=$( cat /tmp/top_log | grep "CPU:" | awk '{print $10}' | awk '{FS="%"} {print $1}' )
+
+if [ $io_value -ge 1 ] ;then
+	echo 0 > /tmp/io_value_sum
+fi
+
+rm /tmp/top_log
+
+if [ -f /tmp/io_value_sum ] ;then
+
+	io_value_sum=$(cat /tmp/io_value_sum)
+	sum=$(($io_value_sum+1))
+
+	echo $sum > /tmp/io_value_sum	
+	
+	if [ $sum -eq 30 ] ;then
+		echo 3 > /proc/sys/vm/drop_caches
+		rm /tmp/io_value_sum
+	fi
+	
+fi
+
+#check uhttpd daemon
+system_min_time=$(date +%M)
+time=$(($system_min_time%10))
+
+if [ "$time" == "0" ] ;then
+
+	if [ ! -f /tmp/uhttpd_restart ] ;then
+		
+		touch /tmp/uhttpd_restart
+			
+		top -n 1 > /tmp/top_log &
+		sleep 1
+
+		parser_words=$( cat /tmp/top_log | grep "/usr/sbin/uhttpd" | sed '2,100d' | awk '{print $7}' | awk '{FS="%"} {print $1}' )
+			
+		if [ $parser_words -ge 40 ] ;then
+
+			echo "$parser_words" >> /tmp/uhttpd_logs		
+			echo "1" > /tmp/uhttpd_restart
+			/etc/init.d/uhttpd restart
+				
+		fi
+
+		rm /tmp/top_log
+			
+	fi
+	
+fi
+	
+if [ "$time" == "1" ] ;then
+
+	if [ -f /tmp/uhttpd_restart ] ;then
+		
+		rm /tmp/uhttpd_restart
+			
+	fi
+	
+fi
+
+#check Time Zone status
+[ -f /tmp/TimeZone_status ] && {
+	Record_TimeZone=$( cat /tmp/TimeZone_status )
+	Now_TimeZone=$( date | awk '{print $5}' )
+	
+	if [ "$Record_TimeZone" == "$Now_TimeZone" ] ;then
+		break
+	else
+		echo "$Now_TimeZone" > /tmp/TimeZone_status
+		date -k
+		/etc/init.d/wifi_scheduling restart
+		/etc/init.d/wifi_scheduling5G restart
+		/etc/init.d/wireless_macfilter restart
+		/etc/init.d/wireless5G_macfilter restart
+	fi
+} || {
+	TimeZone=$( date | awk '{print $5}' )
+	echo "$TimeZone" > /tmp/TimeZone_status
+}
+
+
+##chk_5Gwifi
+boot_count=$(cat /tmp/wifibootcount | wc -l)
+wifi_moni=$(iwconfig ath10| grep "Not-Associated")
+[ -n "$wifi_moni" ] && [ $(expr $boot_count) -le 5 ] && {
+        echo 1 >/tmp/chkflag
+        sleep 20
+        ckwifi=$(cat /tmp/chkflag)
+        wifi_moni2=$(iwconfig ath10| grep "Not-Associated")
+        [ -n "$wifi_moni2" ] && [ -n "$ckwifi" ] && {
+                /etc/init.d/wireless stop
+                sleep 1
+                /etc/init.d/wireless start
+                echo 1 >>/tmp/wifibootcount
+                rm /tmp/chkflag
+        }
+}
+
+## wan: port 4
+
+wan_link_status=$(/bin/port_config r 5 | grep down)
+wan_link_ckeck=$(cat /tmp/wan_link_status)
+defaultwan=$(uci get network.general.defaultWan)
+wan_proto=$(uci get network.$defaultwan.proto)
+
+#[ "$wan_proto" == "static" ] && exit 1
+
+if [ "$wan_link_status" == "" ] && [ "$wan_link_ckeck" == "0" ] ;then
+
+	ubus call network reload
+	##restart wan interface	
+	set_wan_up
+	##restart 6rd -- not support multiple wan now.
+	local ck6rdwan=$(uci get network.general.wan6rd_enable)
+	[ "$ck6rdwan" == "1" ] && ifup wan6rd || ifdown wan6rd
+	##restart 6to4 -- not support multiple wan now.
+	local ck6to4wan=$(uci get network.general.wan6to4_enable)
+	[ "$ck6to4wan" == "1" ] && ifup wan6to4 || ifdown wan6to4
+	##restart 6in4 -- not support multiple wan now.
+	local ck6in4wan=$(uci get network.general.wan6in4_enable)
+	[ "$ck6in4wan" == "1" ] && ifup wan6in4 || ifdown wan6in4
+        #internet_led
+	echo 1 > /tmp/wan_link_status
+
+	local ath13_disabled_5G=$(iwconfig ath13| grep ESSID)
+	local guest_wlan_5G_enabled=$(uci get wireless.ath13.enable_guest_wlan)
+	local ath3_disabled_24G=$(iwconfig ath3| grep ESSID)
+	local guest_wlan_24G_enabled=$(uci get wireless.ath3.enable_guest_wlan)
+	#Guest WLAN 2.4G enable.
+	if [ -n "$ath3_disabled_24G" ] && [ "$guest_wlan_24G_enabled" == "1" ]; then
+		echo 1 >/tmp/Guest_WLAN_24G
+	fi
+	#Guest WLAN 5G enable.
+	if [ -n "$ath13_disabled_5G" ] && [ "$guest_wlan_5G_enabled" == "1" ]; then
+		echo 1 >/tmp/Guest_WLAN_5G
+    fi
+	wan_enable1=$(uci get network.wan1.enable)
+	wan_enable2=$(uci get network.wan2.enable)
+	wan_enable3=$(uci get network.wan3.enable)
+	wan_enable4=$(uci get network.wan4.enable)
+
+	if [ "$wan_enable1" == "1" ] ;then
+		ubus call network.interface.wan1 up
+		local wan_name=$(uci get network.wan1.ifname)
+		local wan_mac=$(uci get network.wan1.wan_set_mac)
+		ifconfig $wan_name hw ether $wan_mac
+	fi
+
+	if [ "$wan_enable2" == "1" ] ;then
+		ubus call network.interface.wan2 up
+		local wan_name=$(uci get network.wan2.ifname)
+		local wan_mac=$(uci get network.wan2.wan_set_mac)
+		ifconfig $wan_name hw ether $wan_mac
+	fi
+
+	if [ "$wan_enable3" == "1" ] ;then
+		ubus call network.interface.wan3 up
+		local wan_name=$(uci get network.wan3.ifname)
+		local wan_mac=$(uci get network.wan3.wan_set_mac)
+		ifconfig $wan_name hw ether $wan_mac
+	fi
+
+	if [ "$wan_enable4" == "1" ] ;then
+		ubus call network.interface.wan4 up
+		local wan_name=$(uci get network.wan4.ifname)
+		local wan_mac=$(uci get network.wan4.wan_set_mac)
+		ifconfig $wan_name hw ether $wan_mac
+	fi    
+
+        #Setting routing table
+	local defaultWan=$(uci get network.general.defaultWan)
+	local defaultWan2=""
+	local proto=$(uci get network.$defaultWan.proto)
+
+	local d_gw=""
+
+	if [ "$proto" == "static" ] ;then
+		d_gw=$(uci get network.$defaultWan.gateway)
+	else
+		d_gw=$(uci get network.$defaultWan.isp_gw)
+	fi
+
+	if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+
+		defaultWan2="$proto"-$defaultWan
+
+		rm /tmp/wan_route
+		d_gw=""
+		route -n | grep  $defaultWan2 | grep 255.255  > /tmp/wan_route
+		exec < /tmp/wan_route
+		while read line
+		do
+			local test=$(echo $line | awk '{print $8}' )
+			local test2=$(echo $line | awk '{print $4}' )
+			if [ "$test" == "$defaultWan2" ] && [ "$test2" != "UG" ] ;then
+				d_gw=$(echo $line | awk '{print $1}' | tr -d '\n')
+				break
+			fi		
+		done
+		
+		#d_gw=$(route -n | grep  $defaultWan2 | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+		if [ "$d_gw" == "" ] ;then
+			d_gw="0.0.0.0"
+		fi		
+	else
+		defaultWan2=$(uci get network.$defaultWan.ifname)	
+	fi
+
+	ip route delete
+
+	route add default gw $d_gw dev $defaultWan2
+	uci set dhcp6c.basic.defaultWan=$defaultWan2
+
+	/etc/init.d/intfGrp restart
+##
+	lan_ipaddr=$(ifconfig br-lan | awk '/inet addr/{print $2}' | awk -F':' '{print $2}')
+	lan_netmask=$(ifconfig br-lan | awk '/inet addr/{print $4}' | awk -F':' '{print $2}')
+
+	lan_ip_byte1=$(echo $lan_ipaddr | awk -F'.' '{print $1}')
+	lan_mask_byte1=$(echo $lan_netmask | awk -F'.' '{print $1}')
+
+
+	lan_ip_byte2=$(echo $lan_ipaddr | awk -F'.' '{print $2}')
+	lan_mask_byte2=$(echo $lan_netmask | awk -F'.' '{print $2}')
+
+	lan_ip_byte3=$(echo $lan_ipaddr | awk -F'.' '{print $3}')
+	lan_mask_byte3=$(echo $lan_netmask | awk -F'.' '{print $3}')
+
+	lan_ip_byte4=$(echo $lan_ipaddr | awk -F'.' '{print $4}')
+	lan_mask_byte4=$(echo $lan_netmask | awk -F'.' '{print $4}')
+
+	wan_ip_byte4=$(echo $wan_ip | awk -F'.' '{print $4}')
+	wan_mask_byte4=$(echo $wan_mask | awk -F'.' '{print $4}')
+
+	lan_subnet=$((lan_ip_byte1&lan_mask_byte1)).$((lan_ip_byte2&lan_mask_byte2)).$((lan_ip_byte3&lan_mask_byte3)).$((lan_ip_byte4&lan_mask_byte4))
+
+	local prefix_str=`/bin/ipcalc.sh $lan_ipaddr $lan_netmask | grep PREFIX`
+	local prefix=$(echo $prefix_str | sed 's/PREFIX=//g')
+
+	#=====  Add route table ======================================
+	local doamin1=""
+	local mask1=""
+
+	rm /tmp/wan_routex
+	route -n | grep  $defaultWan2 | grep 255.255  > /tmp/wan_routex
+	exec < /tmp/wan_routex
+	while read line
+	do
+		local test=$(echo $line | awk '{print $8}')
+		local test2=$(echo $line | awk '{print $4}' )	
+		if [ "$test" == "$defaultWan2" ] && [ "$test2" != "UG" ] ;then
+			doamin1=$(echo $line | awk '{print $1}' | tr -d '\n')
+			mask1=$(echo $line | awk '{print $3}' | tr -d '\n')
+			break
+		fi		
+	done
+
+	ip route add $doamin1/$mask1  dev $defaultWan2 table 1
+	#========================================================
+
+	ip route add $lan_subnet/$prefix dev br-lan table 1
+	ip route del default table 1
+	ip route add default via $d_gw dev $defaultWan2 table 1
+	ip rule del from $lan_subnet/$prefix table 1
+	ip rule del to $lan_subnet/$prefix table 1
+	ip rule add from $lan_subnet/$prefix table 1
+	ip rule add to $lan_subnet/$prefix table 1
+	
+## Set route for Default Interface Group
+	for iface in "" 1 2 3 4 
+	do	
+	grouped=$(uci get network.wan$iface.grouped)
+	wan_enabled=$(uci get network.wan$iface.enable)
+	default_iface=$(uci get network.wan$iface.default)
+	if [ "$wan_enabled" == "1" ] ;then
+		local iface2=$(uci get network.wan$iface.proto)
+		if [ "$iface2" == "pppoe" ]; then
+			iface3=pppoe-wan"$iface"
+		else
+			iface3=$(uci get network.wan$iface.ifname)
+		fi
+		
+		if [ "$grouped" != "1" ] && [ "$default_iface" != "1" ] ; then
+			rule_route=$(ip r s | grep  "$iface3 " | grep "proto kernel"  | awk -F' ' '{print $1}')
+			ip route add $rule_route dev $iface3 table 1
+		fi
+	fi
+	done
+## End Set
+	
+	ip route flush cache
+
+## Set iptables for Default Interface Group
+	iptables -D IntfGrp -i br-lan  -j DROP 2>/dev/null
+	iptables -I IntfGrp -i br-lan  -j DROP 2>/dev/null
+
+	for iface in "" 1 2 3 4 
+	do	
+	grouped=$(uci get network.wan$iface.grouped)
+	wan_enabled=$(uci get network.wan$iface.enable)
+	default_iface=$(uci get network.wan$iface.default)
+	if [ "$wan_enabled" == "1" ] ;then
+		local iface2=$(uci get network.wan$iface.proto)
+		if [ "$iface2" == "pppoe" ]; then
+			iface3=pppoe-wan"$iface"
+		else
+			iface3=$(uci get network.wan$iface.ifname)
+		fi
+		
+		if [ "$grouped" == "1" ] && [ "$default_iface" != "1" ] ; then
+			iptables -D IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+			iptables -I IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+		else
+			iptables -D IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+			iptables -I IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+		fi
+		
+	fi
+	done
+
+	iptables -D IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+	iptables -I IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+## End Set
+
+	#Pass LAN side traffic and block illegal upstream traffic.
+	/sbin/configure_intfGrp set_iptables_rule
+
+	/sbin/configure_qos wan_cos_setup
+##
+elif [ "$wan_link_status" != "" ] && [ "$wan_link_ckeck" == "1" ] ;then
+
+	wan_enable1=$(uci get network.wan1.enable)
+	wan_enable2=$(uci get network.wan2.enable)
+	wan_enable3=$(uci get network.wan3.enable)
+	wan_enable4=$(uci get network.wan4.enable)
+
+	wan_proto1=$(uci get network.wan1.proto)
+	wan_proto2=$(uci get network.wan2.proto)
+	wan_proto3=$(uci get network.wan3.proto)
+	wan_proto4=$(uci get network.wan4.proto)
+
+	local get_wan1=$(uci get network.wan1.ifname)
+	local get_wan2=$(uci get network.wan2.ifname)
+	local get_wan3=$(uci get network.wan3.ifname)
+	local get_wan4=$(uci get network.wan4.ifname)
+	local wan_ifname=$(uci get network.wan.ifname)
+
+	[ "$wan_proto" == "dhcp" ] && ifconfig $wan_ifname 0.0.0.0 || ifconfig pppoe-$defaultwan 0.0.0.0	
+	
+	if [ "$wan_enable1" == "1" ] || [ "$wan_proto1" == "dhcp" ];then
+		ubus call network.interface.wan1 down
+		ifconfig $get_wan1 0.0.0.0 
+	fi
+	if [ "$wan_enable2" == "1" ] || [ "$wan_proto2" == "dhcp" ];then
+		ubus call network.interface.wan2 down
+		ifconfig $get_wan2 0.0.0.0 
+	fi
+	if [ "$wan_enable3" == "1" ] || [ "$wan_proto3" == "dhcp" ];then
+		ubus call network.interface.wan3 down
+		ifconfig $get_wan3 0.0.0.0 
+	fi
+	if [ "$wan_enable4" == "1" ] || [ "$wan_proto4" == "dhcp" ];then
+		ubus call network.interface.wan4 down
+		ifconfig $get_wan4 0.0.0.0 
+	fi	
+
+	echo 0 > /tmp/wan_link_status
+	/sbin/led_ctrl INTERNET off
+	
+fi
+
+local guest_wlan_24G_enabled=$(cat /tmp/Guest_WLAN_24G)
+local guest_wlan_5G_enabled=$(cat /tmp/Guest_WLAN_5G)
+#Guest WLAN 2.4G enable.
+if [ -n "$guest_wlan_24G_enabled" ]; then
+	Guest24G_pid=$(cat /var/run/dnsmasq.pid.ath3)
+	LAN_DHCP=$(uci get dhcp.lan.enabled)
+
+	if [ "$Guest24G_pid" != "" ]; then
+		dnsmasqExist=$(cat /proc/$Guest24G_pid/cmdline)
+	else
+		dnsmasqExist=""
+	fi
+
+	if [ -z "$dnsmasqExist" ] && [ "$LAN_DHCP" == "1" ]; then
+		ipaddr_24G=$(uci get wireless.ath3.guest_ip)
+		args_24G=$(cat /tmp/Guest_dnsmasq24G)
+		dnsmasq $args_24G
+		dnsmasq_pid_24G=$(ps | grep "dnsmasq -C /tmp/dnsmasq.conf -z -a $ipaddr_24G" | grep -v "grep" | awk '{print $1}')
+		echo $dnsmasq_pid_24G > /var/run/dnsmasq.pid.ath3
+		rm /tmp/Guest_WLAN_24G
+	fi
+fi
+
+#Guest WLAN 5G enable.
+if [ -n "$guest_wlan_5G_enabled" ]; then
+	Guest5G_pid=$(cat /var/run/dnsmasq.pid.ath13)
+	LAN_DHCP=$(uci get dhcp.lan.enabled)
+	
+	if [ "$Guest5G_pid" != "" ]; then
+		dnsmasq5GExist=$(cat /proc/$Guest5G_pid/cmdline)
+	else
+		dnsmasq5GExist=""
+	fi
+	
+	if [ -z "$dnsmasq5GExist" ] && [ "$LAN_DHCP" == "1" ]; then
+		ipaddr_5G=$(uci get wireless.ath13.guest_ip)
+		args_5G=$(cat /tmp/Guest_dnsmasq5G)
+		dnsmasq $args_5G
+		dnsmasq_pid_5G=$(ps | grep "dnsmasq -C /tmp/dnsmasq.conf -z -a $ipaddr_5G" | grep -v "grep" | awk '{print $1}')
+		echo $dnsmasq_pid_5G > /var/run/dnsmasq.pid.ath13
+		rm /tmp/Guest_WLAN_5G
+	fi
+fi
+
+
+#check Default WAN Status
+local wan_link_ckeckz=$(cat /tmp/wan_link_status)
+local defaultWanz=$(uci get network.general.defaultWan)
+local defaultWan2z=""
+local protoz=$(uci get network.$defaultWanz.proto)
+local d_gwz=""
+local chk1=""
+local chk2=""
+
+if [ "$protoz" == "static" ] ;then
+	d_gwz=$(uci get network.$defaultWanz.gateway)
+else
+	d_gwz=$(uci get network.$defaultWanz.isp_gw)
+fi
+
+if [ "$protoz" == "pppoe" ] || [ "$protoz" == "pptp" ];then
+
+	defaultWan2z="$protoz"-$defaultWanz
+
+	rm /tmp/wan_route
+	d_gwz=""
+	route -n | grep  $defaultWan2z | grep 255.255  > /tmp/wan_route
+	exec < /tmp/wan_route
+	while read line
+	do
+		local test=$(echo $line | awk '{print $8}' )	
+		local test2=$(echo $line | awk '{print $4}' )
+		if [ "$test" == "$defaultWan2z" ] && [ "$test2" != "UG" ] ;then
+			d_gwz=$(echo $line | awk '{print $1}' | tr -d '\n')
+			break
+		fi		
+	done
+		
+	#d_gwz=$(route -n | grep  $defaultWan2z | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+	if [ "$d_gwz" == "" ] ;then
+		d_gwz="0.0.0.0"
+	fi		
+else
+	defaultWan2z=$(uci get network.$defaultWanz.ifname)	
+fi
+
+chk1=$(ip r s t 1 | grep  $defaultWan2z  | grep via |   tr -d '\n')
+
+rm /tmp/wan_route
+chk2=""
+route -n | grep  $defaultWan2z | grep 255.255  > /tmp/wan_route
+exec < /tmp/wan_route
+while read line
+do
+	local test=$(echo $line | awk '{print $8}' )	
+	local test2=$(echo $line | awk '{print $4}' )
+	if [ "$test" == "$defaultWan2z" ] && [ "$test2" != "UG" ] ;then
+		chk2=$(echo $line | awk '{print $1}' | tr -d '\n')
+		break
+	fi		
+done
+
+#chk2=$(route -n | grep  $defaultWan2z |   tr -d '\n')
+
+
+if [ "$wan_link_ckeckz" == "1" ] ;then
+
+	if [ "$chk1" == "" ] ;then
+		if [ "$chk2" != "" ] ;then
+			
+			ip route delete
+
+			route add default gw $d_gwz dev $defaultWan2z
+			uci set dhcp6c.basic.defaultWanz=$defaultWan2z
+
+			lan_ipaddr=$(ifconfig br-lan | awk '/inet addr/{print $2}' | awk -F':' '{print $2}')
+			lan_netmask=$(ifconfig br-lan | awk '/inet addr/{print $4}' | awk -F':' '{print $2}')
+
+			lan_ip_byte1=$(echo $lan_ipaddr | awk -F'.' '{print $1}')
+			lan_mask_byte1=$(echo $lan_netmask | awk -F'.' '{print $1}')
+
+
+			lan_ip_byte2=$(echo $lan_ipaddr | awk -F'.' '{print $2}')
+			lan_mask_byte2=$(echo $lan_netmask | awk -F'.' '{print $2}')
+
+			lan_ip_byte3=$(echo $lan_ipaddr | awk -F'.' '{print $3}')
+			lan_mask_byte3=$(echo $lan_netmask | awk -F'.' '{print $3}')
+
+			lan_ip_byte4=$(echo $lan_ipaddr | awk -F'.' '{print $4}')
+			lan_mask_byte4=$(echo $lan_netmask | awk -F'.' '{print $4}')
+
+			wan_ip_byte4=$(echo $wan_ip | awk -F'.' '{print $4}')
+			wan_mask_byte4=$(echo $wan_mask | awk -F'.' '{print $4}')
+
+			lan_subnet=$((lan_ip_byte1&lan_mask_byte1)).$((lan_ip_byte2&lan_mask_byte2)).$((lan_ip_byte3&lan_mask_byte3)).$((lan_ip_byte4&lan_mask_byte4))
+
+			local prefix_str=`/bin/ipcalc.sh $lan_ipaddr $lan_netmask | grep PREFIX`
+			local prefix=$(echo $prefix_str | sed 's/PREFIX=//g')
+
+			#=====  Add route table ======================================
+			local doamin1=""
+			local mask1=""
+
+			rm /tmp/wan_routex
+			route -n | grep  $defaultWan2z | grep 255.255  > /tmp/wan_routex
+			exec < /tmp/wan_routex
+			while read line
+			do
+				local test=$(echo $line | awk '{print $8}')
+				local test2=$(echo $line | awk '{print $4}' )	
+				if [ "$test" == "$defaultWan2z" ] && [ "$test2" != "UG" ] ;then
+					doamin1=$(echo $line | awk '{print $1}' | tr -d '\n')
+					mask1=$(echo $line | awk '{print $3}' | tr -d '\n')
+					break
+				fi		
+			done
+
+			ip route add $doamin1/$mask1  dev $defaultWan2z table 1
+			#========================================================
+
+			ip route add $lan_subnet/$prefix dev br-lan table 1
+			ip route del default table 1
+			ip route add default via $d_gwz dev $defaultWan2z table 1
+			ip rule del from $lan_subnet/$prefix table 1
+			ip rule del to $lan_subnet/$prefix table 1
+			ip rule add from $lan_subnet/$prefix table 1
+			ip rule add to $lan_subnet/$prefix table 1
+			
+## Set route for Default Interface Group
+			for iface in "" 1 2 3 4 
+			do	
+			grouped=$(uci get network.wan$iface.grouped)
+			wan_enabled=$(uci get network.wan$iface.enable)
+			default_iface=$(uci get network.wan$iface.default)
+			if [ "$wan_enabled" == "1" ] ;then
+				local iface2=$(uci get network.wan$iface.proto)
+				if [ "$iface2" == "pppoe" ]; then
+					iface3=pppoe-wan"$iface"
+				else
+					iface3=$(uci get network.wan$iface.ifname)
+				fi
+				
+				if [ "$grouped" != "1" ] && [ "$default_iface" != "1" ] ; then
+					rule_route=$(ip r s | grep  "$iface3 " | grep "proto kernel"  | awk -F' ' '{print $1}')
+					ip route add $rule_route dev $iface3 table 1
+				fi
+			fi
+			done
+## End Set
+			
+			ip route flush cache
+
+## Set iptables for Default Interface Group
+			iptables -D IntfGrp -i br-lan  -j DROP 2>/dev/null
+			iptables -I IntfGrp -i br-lan  -j DROP 2>/dev/null
+			
+			for iface in "" 1 2 3 4 
+			do	
+			grouped=$(uci get network.wan$iface.grouped)
+			wan_enabled=$(uci get network.wan$iface.enable)
+			default_iface=$(uci get network.wan$iface.default)
+			if [ "$wan_enabled" == "1" ] ;then
+				local iface2=$(uci get network.wan$iface.proto)
+				if [ "$iface2" == "pppoe" ]; then
+					iface3=pppoe-wan"$iface"
+				else
+					iface3=$(uci get network.wan$iface.ifname)
+				fi
+				
+				if [ "$grouped" == "1" ] && [ "$default_iface" != "1" ] ; then
+					iptables -D IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+					iptables -I IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+				else
+					iptables -D IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+					iptables -I IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+				fi
+				
+			fi
+			done
+
+			iptables -D IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+			iptables -I IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+## End Set
+
+			#Pass LAN side traffic and block illegal upstream traffic.
+			/sbin/configure_intfGrp set_iptables_rule
+
+		fi
+
+	fi
+
+fi
+
+#check interface Grouping Status
+setup_routing()
+{
+    local group_name="$1"
+	local chk1z=""
+	local chk2z=""
+	[ "$group_name" == "Default" ] && return
+	config_get wanint $group_name wanint
+	config_get vlanid $group_name vlanid
+	local protoz2=$(uci get network.$wanint.proto)
+	local wan_link_ckeckz2=$(cat /tmp/wan_link_status)
+	local defaultWan2z2=""
+
+	local default_gw_ip=""
+
+	if [ "$WAN_PROTO" == "static" ] ;then
+		default_gw_ip=$(uci get network.$wanint.gateway)
+	else
+		default_gw_ip=$(uci get network.$wanint.isp_gw)
+	fi
+
+	if [ "$protoz2" == "pppoe" ] || [ "$protoz2" == "pptp" ];then
+
+		defaultWan2z2="$protoz2"-$wanint
+
+		rm /tmp/wan_route
+		default_gw_ip=""
+		route -n | grep  $defaultWan2z2 | grep 255.255  > /tmp/wan_route
+		exec < /tmp/wan_route
+		while read line
+		do
+			local test=$(echo $line | awk '{print $8}' )	
+			local test2=$(echo $line | awk '{print $4}' )
+			if [ "$test" == "$defaultWan2z2" ] && [ "$test2" != "UG" ] ;then
+				default_gw_ip=$(echo $line | awk '{print $1}' | tr -d '\n')
+				break
+			fi		
+		done
+		
+		#default_gw_ip=$(route -n | grep  $defaultWan2z2 | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+		if [ "$default_gw_ip" == "" ] ;then
+			default_gw_ip="0.0.0.0"
+		fi
+
+	else
+		defaultWan2z2=$(uci get network.$wanint.ifname)	
+	fi
+	
+	chk1z=$(ip r s t $vlanid | grep  $defaultWan2z2 |  grep via | tr -d '\n')
+
+	rm /tmp/wan_route
+	chk2z=""
+	route -n | grep  $defaultWan2z2 | grep 255.255  > /tmp/wan_route
+	exec < /tmp/wan_route
+	while read line
+	do
+		local test=$(echo $line | awk '{print $8}' )	
+		local test2=$(echo $line | awk '{print $4}' )
+		if [ "$test" == "$defaultWan2z2" ] && [ "$test2" != "UG" ] ;then
+			chk2z=$(echo $line | awk '{print $1}' | tr -d '\n')
+			break
+		fi		
+	done
+	
+	#chk2z=$(route -n | grep  $defaultWan2z2  |   tr -d '\n')
+
+	if [ "$wan_link_ckeckz2" == "1" ] ;then
+
+		if [ "$chk1z" == "" ] ;then
+			if [ "$chk2z" != "" ] ;then
+
+				local type1=$(iptables -nvL IntfGrp | grep  br-vlanth$vlanid | grep DROP  | awk '{print $7}' | tr -d '\n')	
+
+				#iptables -D IntfGrp -i br-vlanth$vlanid -j DROP 2>/dev/null
+				#iptables -D IntfGrp -i br-vlanth$vlanid -o $type1 -j ACCEPT 2>/dev/null
+				iptables -D IntfGrp -i br-vlanth$vlanid ! -o $type1 -j DROP 2>/dev/null
+				iptables -D IntfGrp -i br-vlanth$vlanid -o br-vlanth$vlanid -j ACCEPT 2>/dev/null
+			
+				#iptables -I IntfGrp -i br-vlanth$vlanid -j DROP 2>/dev/null
+				#iptables -I IntfGrp -i br-vlanth$vlanid -o $defaultWan2z2 -j ACCEPT 2>/dev/null
+				iptables -I IntfGrp -i br-vlanth$vlanid ! -o $defaultWan2z2 -j DROP 2>/dev/null
+				iptables -I IntfGrp -i br-vlanth$vlanid -o br-vlanth$vlanid -j ACCEPT 2>/dev/null
+
+				#Pass LAN side traffic and block illegal upstream traffic.
+				/sbin/configure_intfGrp set_iptables_rule
+
+				#=====  Add route table ======================================
+				local doamin1=""
+				local mask1=""
+
+				rm /tmp/wan_routex
+				route -n | grep  $defaultWan2z2 | grep 255.255  > /tmp/wan_routex
+				exec < /tmp/wan_routex
+				while read line
+				do
+					local test=$(echo $line | awk '{print $8}')
+					local test2=$(echo $line | awk '{print $4}' )	
+					if [ "$test" == "$defaultWan2z2" ] && [ "$test2" != "UG" ] ;then
+						doamin1=$(echo $line | awk '{print $1}' | tr -d '\n')
+						mask1=$(echo $line | awk '{print $3}' | tr -d '\n')
+						break
+					fi		
+				done
+
+				ip route add $doamin1/$mask1  dev $defaultWan2z2 table $vlanid
+				#========================================================
+
+				ip route del default table $vlanid
+				ip route add default via $default_gw_ip dev $defaultWan2z2 table $vlanid
+				ip route flush cache
+			fi
+		fi
+	fi		
+}
+
+config_load intfGrp
+config_foreach setup_routing interface
+
+
+#/sbin/update_sys_dns

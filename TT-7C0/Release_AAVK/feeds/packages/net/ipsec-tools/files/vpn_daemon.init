@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+START=97
+boot() {
+	mkdir /tmp/racoon
+	start
+}
+start() {
+	
+	failover=$(uci get ipsecFailOver.rule1.FailOver)
+	[ "$failover" == "1" ] && cfg=ipsecFailOver || cfg=ipsec
+	
+	config_load $cfg
+	for rules in rule1 rule2 rule3 rule4 rule5
+	do
+		config_get ipsec_vpn_enable $rules statusEnable
+		if [ "$ipsec_vpn_enable" == "enable" ]; then
+			vpn_daemon start $cfg
+			/sbin/chk_vpn 1 &
+			break
+		fi
+	done
+
+}
+stop() {
+	vpn_daemon stop
+}
+restart() {
+	vpn_daemon restart
+}
+reload() {
+	vpn_daemon reload
+}

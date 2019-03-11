@@ -1,0 +1,72 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 OpenWrt.org
+. /etc/functions.sh
+include /lib/config
+
+START=60
+
+##check mode,if AP/UR,exit	
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+defaultwan=$(uci get network.general.defaultWan)
+proto=$(uci_get network $defaultwan proto)
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+	WAN="$proto"-"$defaultwan"
+else
+	WAN=$(uci_get network $defaultwan ifname)
+fi
+
+append_string() {
+	local section="$1"
+	local option="$2"
+	local value="$3"
+	local _val
+	config_get _val "$section" "$option"
+	[ -n "$_val" ] && append args "$3$_val"
+}
+
+start_service() {
+	local cfg="$1"
+	args=""
+
+	append_string "$cfg" broadcast "--host="
+	append_string "$cfg" port "--port="
+	append_string "$cfg" password "--passwd="
+	append_string "$cfg" mac ""
+	config_get_bool enabled "$cfg" "enabled" '1'
+	[ "$enabled" -gt 0 ] && /usr/bin/wol $args
+	
+	## reset enable to 0
+	uci set wol.wol.enabled=0
+	uci commit
+}
+
+boot() {
+	exit 0
+}
+
+restart() {
+	iptables -t mangle -F wol_ipq
+	iptables -t mangle -D PREROUTING -j wol_ipq
+	iptables -t mangle -X wol_ipq
+	
+	killall -9 wolipq
+	rmmod nfnetlink_queue
+	
+	config_load wol
+	config_get wol_ipq_enable main enabled
+	
+	if [ "$wol_ipq_enable" == "1" ]; then
+		insmod nfnetlink_queue 2>&- >&-
+		
+		config_get wol_port main port
+		
+		iptables -t mangle -N wol_ipq
+		iptables -t mangle -I PREROUTING -j wol_ipq
+		iptables -t mangle -A wol_ipq -i $WAN -p udp --dport $wol_port -j QUEUE
+		
+		/usr/bin/wolipq $wol_port &
+	fi
+	
+	config_foreach start_service wol-target
+}

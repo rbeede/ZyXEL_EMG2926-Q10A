@@ -1,0 +1,39 @@
+#!/bin/sh
+. /etc/functions.sh
+
+
+
+reload_netbios (){
+	
+	
+	config_load ipsec_new
+    config_get netbiosAllow general netbiosAllow
+		
+	if [ "$netbiosAllow" == "disable" ]; then
+		iptables -N netbios_rule
+		iptables -I FORWARD -j  netbios_rule
+		iptables -I netbios_rule -p tcp --sport 445 -j DROP
+		iptables -I netbios_rule -p tcp --sport 139 -j DROP
+	fi
+	
+	return 0
+}
+ 
+cmd=$1
+shift
+case "$cmd" in
+        --help|help) usage ;;
+        start|stop|reload|restart|init)
+        
+		iptables -F netbios_rule
+		iptables -D FORWARD -j netbios_rule
+		iptables -X netbios_rule
+		
+		reload_netbios
+
+
+                exit $?
+        ;;
+esac
+ 
+exit $?

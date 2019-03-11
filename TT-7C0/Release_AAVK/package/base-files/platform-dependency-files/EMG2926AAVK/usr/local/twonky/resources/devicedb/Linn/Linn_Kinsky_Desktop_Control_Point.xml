@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Linn Kinsky Desktop Control Point</DisplayName>
+		<MappingUpdatePolicy>FIXPC2</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEGORG</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+</Client>

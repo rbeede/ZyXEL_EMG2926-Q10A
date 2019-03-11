@@ -1,0 +1,16 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Apple iPhone</DisplayName>
+		<HttpRecognition>
+			<HttpText>iPhone OS</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MOBILE</DeviceGroup>
+	</DeviceId>
+	<Capabilities>
+		<VideoTranscoding>
+			<Source>video/mpeg</Source>
+			<Target>HLS</Target>
+		</VideoTranscoding>
+	</Capabilities>
+</Client>

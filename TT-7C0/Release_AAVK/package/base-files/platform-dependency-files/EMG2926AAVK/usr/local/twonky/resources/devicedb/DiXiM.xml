@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DiXiM</DisplayName>
+		<HttpRecognition>
+			<HttpText>DiXiM</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

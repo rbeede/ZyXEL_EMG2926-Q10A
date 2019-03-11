@@ -1,0 +1,92 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body  >
+<script type="text/javascript">
+function verifySubmitData()
+{
+   showWebMessage( 0 , '<%:Message%>' , '<%:msg_config%>' );
+}
+</script>
+<form onsubmit="return verifySubmitData()">
+   <div id="tabs">
+      <ul>
+         <li class="hightline"><a title="<%:UPnP%>"><span><%:UPnP%></span></a></li>
+      </ul>
+      <br class="clearfloat" />
+   </div>
+   <div id="table">
+      <ul>
+         <li class="table_top"></li>
+         <li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table"><%:UPnP%>  :</li>
+                        <li class="right_table">
+                           <%
+                              local enabled = uci:get( "upnpd", "config", "enabled" )
+                              if nil == enabled or "0" == enabled then
+                                 enabled = false
+                              else
+                                 enabled = true
+                              end
+                           %>
+                           <input name="UPnPState" id="radio" type="radio" value="enable" <% if enabled then %> checked="checked" <% end %> /> <%:Enable%>
+                           <input name="UPnPState" id="radio2" type="radio" value="disable" <% if not enabled then %> checked="checked" <% end %> /> <%:Disable%>
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                     </ul>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="apply" value="<%:Apply%>" type="submit" />&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="reset" />
+            </div>
+         </li>
+      </ul>
+   </div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Management%> > <%:UPnP%>');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>

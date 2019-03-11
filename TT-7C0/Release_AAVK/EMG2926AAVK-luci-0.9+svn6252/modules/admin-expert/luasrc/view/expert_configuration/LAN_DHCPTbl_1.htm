@@ -1,0 +1,249 @@
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body>
+
+
+<form method="post" name="DHCP_APP" action="<%=controller%>/expert/configuration/network/dhcpserver/dhcptbl" >
+<div id="tabs">
+  <ul>
+    <li><a href="<%=controller%>/expert/configuration/network/dhcpserver" title="<%:General%>"><span><%:General%> </span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/dhcpserver/ipstatic" title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+    <li class="hightline"><a title="<%:Client_List%>"><span><%:Client_List%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+        <div class="data">
+          <ul><div class="tableframe">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+
+              <tr>
+                <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td><table width="100%" cellpadding="0" cellspacing="0" >
+                                  <tr>
+                                    <td height="26" colspan="6"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <td height="26"class="table_title"> <%:DHCP_Client_Table%> </td>
+                                        </tr>
+                                    </table></td>
+                                  </tr>
+                                  <tr align="center"  class="top_font">
+                                    <td width="35">#</td>
+                                    <td width="80"><%:Status%></td>
+                                    <td ><%:Host_Name%></td>
+                                    <td ><%:IP_Address%></td>
+                                    <td ><%:MAC_Address%></td>
+                                    <td ><%:Reserve%></td>
+                                  </tr>
+
+<script language="JavaScript">
+var count;
+var ipList=new Array();
+var macList=new Array();
+var start="true";
+
+var ipConfig="";
+var macConfig="";
+var oriIp=new Array();
+var oriMac=new Array();
+var oriCount=0;
+
+
+<%luci.sys.net.macIp(function(rt) %>
+oriMac[<%=rt.index-1%>]="<%=rt.mac%>";
+oriIp[<%=rt.index-1%>]="<%=rt.ip%>"
+
+oriCount="<%=rt.index%>";
+<%end)%>
+
+</script>
+                                  <% luci.sys.net.dhcp_leases(function(rt) %>
+                                  <tr align="center" class="table_font">
+                                    <td ><%=rt.index%></td>
+                                    <td><img src="<%=media%>/admin/images/i_active_on.gif" width="18" height="18"  title="<%:On%>"/></td>
+                                    <td><%=rt.hostName%></td>
+                                    <td><%=rt.ipAdd%></td>
+                                    <td><%=rt.macAdd%></td>
+                                <script language="JavaScript">
+var judge="0";
+
+<%luci.sys.net.macIp(function(rt2) %>
+if("<%=rt2.mac%>"=="<%=rt.macAdd%>")
+judge="1";
+<%end)%>
+if(judge=="1")
+        document.write("<td><input name=\"sel\" type=\"checkbox\" checked \/><\/td><\/tr>");
+else
+        document.write("<td><input name=\"sel\" type=\"checkbox\" \/><\/td><\/tr>");
+
+
+
+
+
+
+
+
+                                  count="<%=rt.index%>";
+
+                                  ipList[<%=rt.index-1%>]="<%=rt.ipAdd%>";
+                                  macList[<%=rt.index-1%>]="<%=rt.macAdd%>";
+
+
+
+
+
+
+
+                                  </script>
+                                <% end) %>
+                              </table></td>
+                            </tr>
+                        </table></td>
+                      </tr>
+                </table></td>
+              </tr>
+            </table>
+            </div>
+            <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+     <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="<%:Apply%>" type="submit" onClick="show(this.form)" />
+
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+        <input type="hidden" id="tmp1" name="macIp" size="20" value="1">
+        <input type="hidden" id="tmp2" name="onlyOne" size="20" value="1">
+      </div></li>
+  </ul>
+</div>
+
+
+<script language="JavaScript">
+<!--
+showFullPath(' <%:Network%> > <%:DHCP_Server%> > <%:Client_List%>');
+//-->
+
+function UTMgetElementsByName(name, tagName)
+{
+if(top.BROWSER_TYPE=="ff")
+{return document.getElementsByName(name);}
+else
+{
+var result = new Array();
+var preelments = document.getElementsByTagName(tagName);
+for(i = 0; i < preelments.length; i++)
+{
+if(preelments[i].getAttribute("name") == name)
+{result[result.length] = preelments[i];}
+}
+}
+return result;
+}
+
+
+
+function show(form){
+
+
+var obj=UTMgetElementsByName("sel","input");
+
+var tmpCnt=0;
+
+for(var i=0;i<count;i++){
+if(obj[i].checked==true)
+{
+        var oldItem=0;
+        for(var j=0;j<oriCount;j++)
+        {
+                oldItem = 0;
+                if(macList[i] ==oriMac[j])
+                {
+                oldItem = 1;
+                break;
+                }
+        }
+        if(oldItem==0){
+        oriMac[parseInt(oriCount)+parseInt(tmpCnt)]=macList[i];
+        oriIp[parseInt(oriCount)+parseInt(tmpCnt)]=ipList[i];
+        tmpCnt=tmpCnt+1;
+
+        }
+}
+}
+
+
+var xx=parseInt(oriCount)+parseInt(tmpCnt);
+
+var sameMac;
+var macipConfig="";
+var onlyOne=1;
+for(var k=0;k<xx;k++)
+{
+
+for(var l=0;l<count;l++){
+sameMac=0;
+if(macList[l]==oriMac[k]&&obj[l].checked==false){
+
+sameMac=1;
+break;
+
+}
+
+
+}
+
+if(sameMac==0){
+if(start=="true"){
+ipConfig=ipConfig+oriIp[k];
+macConfig=macConfig+oriMac[k];
+macipConfig=macipConfig+oriMac[k]+" "+oriIp[k];
+start="false";
+}
+else{
+onlyOne=0;
+ipConfig=ipConfig+";"+oriIp[k];
+macConfig=macConfig+";"+oriMac[k];
+macipConfig=macipConfig+";"+oriMac[k]+" "+oriIp[k];
+}
+}
+
+}
+
+document.forms[0].macIp.value=macipConfig;
+document.forms[0].onlyOne.value=onlyOne;
+
+}
+
+</script>
+</form>
+</body>
+</html>

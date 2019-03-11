@@ -1,0 +1,18 @@
+Source-Makefile: feeds/streamboost/nexus-example-sensor/Makefile
+Package: kmod-nexus-example-sensor
+Submenu: Flow Detect
+Version: <LINUX_VERSION>-1
+Depends: +kmod-nexus
+Menu-Depends: 
+Provides: 
+Section: kernel
+Category: Bigfoot
+Title: Example sensor StreamBoost Nexus
+Maintainer: 
+Source: nexus-example-sensor-.tar.gz
+Type: ipkg
+Description: Example sensor StreamBoost Nexus
+
+@@
+
+

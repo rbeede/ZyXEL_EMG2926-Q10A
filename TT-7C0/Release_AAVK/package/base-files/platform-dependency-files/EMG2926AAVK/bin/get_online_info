@@ -1,0 +1,33 @@
+#!/bin/sh
+
+if [ -f "/tmp/zyfw_info" ]; then
+        rm /tmp/zyfw_info
+fi
+
+Project_Name=$(firmware_info |grep "Project Name"|awk '{print$3}')
+SERVER="ftp://ftp2.zyxel.com/${Project_Name}/firmware"
+#SERVER="ftp://zyus2504:zyus2504@ftp2.zyxel.com.tw/${Project_Name}/firmware"
+
+wget $SERVER/zyfw_info -O /tmp/zyfw_info 1>/dev/null 2>&1
+
+if [ ! -f "/tmp/zyfw_info" ]; then
+        echo "fail" > /tmp/get_online_info
+        exit 1
+else
+	echo "success" > /tmp/get_online_info
+fi
+
+fw_name=$(cat /tmp/zyfw_info | grep file | awk '{print $3}')
+echo $fw_name > /tmp/fw_online_info
+
+fw_version=$(cat /tmp/zyfw_info | grep version | awk '{print $3}')
+echo $fw_version >> /tmp/fw_online_info
+
+release_date=$(cat /tmp/zyfw_info | grep date | awk '{print $3}')
+echo $release_date >> /tmp/fw_online_info
+
+release_note=$(cat /tmp/zyfw_info | grep note | awk '{print $3}')
+echo $release_note >> /tmp/fw_online_info
+
+fw_size=$(cat /tmp/zyfw_info | grep Size | awk '{print $2}')
+echo $fw_size >> /tmp/fw_online_info

@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DSPG XpndR Phone Demo/1.01</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>DSPG XpndR Phone Demo/1.01</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>DSPG XpndR Phone Demo/1.01</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG176x220</Target>
+		</Scaling>
+	</Capabilities>
+</Client>

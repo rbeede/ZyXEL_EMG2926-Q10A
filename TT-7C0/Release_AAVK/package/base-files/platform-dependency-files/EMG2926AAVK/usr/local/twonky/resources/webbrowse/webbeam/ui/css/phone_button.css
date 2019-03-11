@@ -1,0 +1,144 @@
+/* Basic/default beam button - normal size  */
+.beam-button {
+    cursor: pointer;
+    display: inline-block;
+    background-attachment: initial;
+    background-origin: initial;
+    background-clip: initial;
+    background-color: initial;
+    background-position: -2px -2px;
+    background-repeat: no-repeat no-repeat;
+    vertical-align: middle;
+    background-image: url(../res/TBBSprite_normal.png);
+    width: 58px;
+    height: 20px;
+}
+
+/* small button */
+.pv_bb_small .beam-button {
+    background-image: url(../res/TBBSprite_small.png);
+    background-position: -2px -2px;
+    width: 16px;
+    height: 16px;
+}
+
+.pv_bb_small .beam-button:hover {
+    background-position: -2px -20px;
+}
+
+.pv_bb_small .beam-button:active {
+    background-position: -2px -38px;
+}
+/* small button ends */
+
+/* normal button */
+.pv_bb_normal .beam-button {
+    background-image: url(../res/TBBSprite_normal.png);
+    background-position: -2px -2px;
+    width: 58px;
+    height: 20px;
+}
+
+.beam-button:hover, .pv_bb_normal .beam-button:hover {
+    background-position: -2px -24px;
+}
+
+.beam-button:active, .pv_bb_normal .beam-button:active{
+    background-position: -2px -46px;
+}
+/* normal button ends */
+
+/* large button  */
+.pv_bb_large .beam-button {
+    background-image: url(../res/TBBSprite_big.png);
+    background-position: -2px -2px;
+    width: 68px;
+    height: 25px;
+
+}
+
+.pv_bb_large .beam-button:hover {
+    background-position: -2px -29px;
+}
+
+.pv_bb_large .beam-button:active {
+    background-position: -2px -56px;
+}
+/*large button ends */
+
+
+/* hover */
+.pv_bb_overlay .beam-button,.pv_bb_overlay_hover .beam-button {
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+}
+/* hover ends */
+
+/* Application States */
+.pv-bb-application-frame {
+	position: fixed;
+	background: transparent;
+	bottom: 0px;
+	left: 0px;
+	width: 100%;
+	border: none;
+	z-index: 2147483647;
+}
+
+.pv-bb-application-state-advertisement {
+    height: 255px !important;
+}
+
+.pv-bb-application-state-beaming {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-beamingsuccess {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-beamingwarning {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-closed {
+	height: 0px !important;
+}
+
+.pv-bb-application-state-default {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-error {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-firsttime {
+	height: 192px !important;
+}
+
+.pv-bb-application-state-mediainfo {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-minimized {
+	height: 22px !important;
+}
+
+.pv-bb-application-state-notification {
+	height: 112px !important;
+}
+
+.pv-bb-application-state-playerselection {
+	height: 192px !important;
+}
+
+.pv-bb-application-state-requirementscheck {
+	height: 192px !important;
+}
+
+.pv-bb-application-state-stoped {
+	height: 112px !important;
+}
+/* End Application States */

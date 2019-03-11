@@ -1,0 +1,84 @@
+#!/bin/sh
+
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/rc.appflow
+
+#
+# Environment config
+#
+BINARY="sbsaved"
+NAME=${BINARY}
+DISPLAY_NAME="Persistence Daemon"
+
+#
+# config
+#
+# path to binary
+SAVED_BIN="${BINDIR}/${BINARY}"
+
+# path to pid file
+PIDFILE="${RUNDIR}/${BINARY}.pid"
+
+# path to nodedb save file
+SAVEFILE="/usr/lib/sbsaved/sb.redis"
+
+# Redis server port
+PORT=6379
+
+# event persistence settings
+STATSFILE="${RUNDIR}/stats.redis"
+STATSTREE='eventdb:*'
+
+# Format the command line parameters
+CMDLINE_OPTS="--daemon -o ${PORT} -p ${PIDFILE} -f ${SAVEFILE} --persist-data ${STATSFILE} ${STATSTREE}"
+
+#
+# Functions
+#
+
+start() {
+	redis-cli sadd settings:saved:channels "nodeevent.*"
+	redis-cli sadd settings:saved:keypats "nodedb:mac:%s:type"
+	redis-cli sadd settings:saved:keypats "nodedb:mac:%s:detection_finished"
+	redis-cli sadd settings:saved:keypats "nodedb:mac:%s:uidata"
+	redis-cli set settings:saved:keyset "nodedb:nodeset"
+	#[ -e "${SAVEFILE}" ] && redis-cli --pipe < "${SAVEFILE}"
+
+	[ ! -d "${RUNDIR}" ] && {
+		mkdir ${RUNDIR}
+	}
+
+	[ -x ${SAVED_BIN} ] || {
+		echo "${BINARY} not found: ${SAVED_BIN}"
+		exit 2
+	}
+
+	echo -n "Starting ${NAME}: "
+	${SAVED_BIN} ${CMDLINE_OPTS} "$@"
+	retval=$?
+	echo
+	return ${retval}
+}
+
+boot() {
+	mkdir -p /usr/lib/sbsaved
+	start "$@"
+}
+
+stop() {
+	[ -f "${PIDFILE}" ] && {
+		echo -n "Stopping ${NAME}: "
+		PID=$(cat ${PIDFILE})
+		kill -TERM ${PID}
+		retval=$?
+		echo
+		while status >/dev/null 2>&1 ; do
+			sleep 1
+		done
+		[ -d /proc/${PID} ] || rm -f ${PIDFILE}
+		return ${retval}
+	}
+	return 0
+}
+
+action "$@"
+exit $?

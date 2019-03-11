@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<!-- NMC not to be listed in MediaReceiver list of server.
+		     To be used for bookmark gathering and NMC RPCs via server UI -->
+		<DisplayName>Twonky NMC No Receiver</DisplayName>
+		<HttpRecognition>
+			<HttpText>Twonky-NMC-No-Receiver</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<DTCP/>
+	</Capabilities>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>DATETIME</Quirk>
+		<Quirk>NOPROXYURL</Quirk>
+		<Quirk>SUPPRESS_AS_MEDIARECEIVER</Quirk>
+		<Quirk>GIVE_ALL_KNOWN_RES</Quirk>
+	</DeviceQuirks>
+</Client>

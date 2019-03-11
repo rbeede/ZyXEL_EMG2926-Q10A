@@ -1,0 +1,93 @@
+#!/bin/sh
+
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/rc.appflow
+
+#
+# Environment config
+#
+BINDIR="/usr/sbin"
+NAME="nxstat"
+LOGNAME="/dev/nxlog"
+MODNAME="nexus"
+SLEEP=10
+MAX_CACHE=80
+ARCHIVE_FILE="/tmp/nxstat.log"
+
+# path to binary
+BINARY="${BINDIR}/${NAME}"
+DISPLAY_NAME="nxstat"
+export RUNDIR BINDIR BINARY
+
+LOGGER="logger -p daemon.info -t ${BINARY}"
+export LOGGER
+
+# controller arguments - exported, since the controller is a script
+# comment LOGDEST line to use stderr instead of syslog
+PIDFILE="${RUNDIR}/${NAME}.pid"
+export PIDFILE
+
+
+# Format the command line parameters
+CMDLINE_OPTS="\
+-d \
+-p ${PIDFILE} \
+-f ${LOGNAME} \
+-s ${SLEEP} \
+-m ${MAX_CACHE} \
+-a ${ARCHIVE_FILE} \
+"
+
+
+#
+# Functions
+#
+
+start() {
+	[ ! -d "${RUNDIR}" ] && {
+		mkdir ${RUNDIR}
+	}
+
+	[ -x ${BINARY} ] || {
+		echo "${NAME} not found: ${BINARY}"
+		exit 2
+	}
+
+	echo -n "Starting ${NAME}: "
+	${BINARY} ${CMDLINE_OPTS}
+	retval=$?
+	echo
+	return ${retval}
+}
+
+boot() {
+	#check for nexus running
+
+	lsmod | grep "${MODNAME}" &> /dev/null
+	retval=$?
+	[ ! ${retval} = 0 ] && {
+		echo "Nexus is not running. NXStat will not be started"
+		return ${retval}
+	}
+
+	#get major for nexus
+	local major=$(cat /proc/devices | grep nexus | awk '{ print $1 }')
+	echo "major id is ${major}"
+	#set up log file
+	mknod ${LOGNAME} c ${major} 0
+	start "$@"
+}
+
+stop() {
+	[ -f "${PIDFILE}" ] && {
+		echo -n "Stopping ${NAME}: "
+		kill -TERM $(cat ${PIDFILE})
+		retval=$?
+		echo
+		[ ${retval} -eq 0 ] && rm -f ${PIDFILE}
+		return ${retval}
+	}
+	return 0
+}
+
+action "$@"
+exit $?

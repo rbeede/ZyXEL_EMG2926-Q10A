@@ -1,0 +1,14 @@
+# Generate video thumbnail using internal Twonky Thumbnail Utility (TTU)
+#(c) 2015 by Lynx Technology
+# Usage:  ttu  filenameIn  jpgFilenameOut  thumbWidth thumbHeight  jpegQuality (0-100)  #keyFramesRequested  clipOfstPercent  sizePercentile (0-100)
+# where
+#  clipOfstPercent is percent of clip duration at which keyframes are collected
+#  sizePercentile of the keyframe bitstream sizes is the selected key frame
+#  width=0 or height=0 sets the thumbnail size to be same as the picture size
+exec: ttu  $infile  $outfile  $targetwidth  $targetheight  100  5  25  100
+# capabilities
+from=video/mp4
+to=image/jpeg
+videothumb
+synchronous
+order=2

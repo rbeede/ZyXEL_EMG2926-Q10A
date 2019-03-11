@@ -1,0 +1,54 @@
+#!/bin/sh
+
+help()
+{
+	echo "USB control script v1.0"
+	echo "  It will turn off power of USB port if you disable USB, otherwise it will turn on" 
+	echo;echo "Usage: usb_ctrl <USB port number> <enable|disable>";echo
+}
+
+if [ -f /var/platform.definition ]; then
+	. /var/platform.definition
+fi
+if [ -z $USB_PORT_NUM ]; then
+	USB_PORT_NUM=1
+fi
+if [ -z $GPIO_CTRL_PATH ]; then
+	GPIO_CTRL_PATH=/sys/class/gpio
+fi
+for i in `seq 0 $((USB_PORT_NUM-1))`; do
+	GPIO_PORT_NAME="USB${i}_ENABLED_GPIO_NO"
+	eval GPIO_PORT_NO=\$$GPIO_PORT_NAME
+	if [ -z $GPIO_PORT_NO ]; then
+		echo "No define GPIO pin number for USB${i}!"
+		exit 1
+	fi
+	if [ ! -e ${GPIO_CTRL_PATH}/gpio${GPIO_PORT_NO}/value ]; then
+		echo "No control interface for USB${i}!"
+		exit 2
+	fi
+done
+
+if [ $# -lt 2 ]; then
+	help
+	exit 3
+fi
+
+GPIO_PORT_NAME="USB${1}_ENABLED_GPIO_NO"
+eval GPIO_PORT_NO=\$$GPIO_PORT_NAME
+
+case $2 in
+	d|disable)
+		echo 0 > $GPIO_CTRL_PATH/gpio${GPIO_PORT_NO}/value
+		;;
+	e|enable)
+		echo 1 > $GPIO_CTRL_PATH/gpio${GPIO_PORT_NO}/value
+		;;
+	*)
+		echo "Unknown argument '$2'!";echo
+		help
+		exit 4
+esac
+exit 0
+
+

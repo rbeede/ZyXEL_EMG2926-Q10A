@@ -1,0 +1,705 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+apply(){
+proto=$(uci_get network wan proto)
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+WAN="$proto"-wan
+else
+WAN=$(uci_get network wan ifname)
+fi
+LAN="br-lan"
+#LAN=$(uci_get network lan ifname)
+
+natenable=$(uci_get nat general nat)
+
+if [ "$natenable" == "enable" ];then
+
+	insmod x_tables  2>&- >&-
+    insmod ip_tables  2>&- >&-
+    insmod ip6_tables  2>&- >&-
+
+    insmod nfnetlink  2>&- >&-
+    insmod nf_defrag_ipv4  2>&- >&-
+    insmod nf_conntrack  2>&- >&-
+    insmod nf_conntrack_ipv4  2>&- >&-
+    insmod nf_conntrack_ipv6 2>&- >&-
+    insmod nf_nat  2>&- >&-
+    insmod nf_conntrack_proto_gre  2>&- >&-
+    insmod nf_conntrack_proto_sctp  2>&- >&-
+    insmod nf_conntrack_netlink  2>&- >&-
+    insmod xt_connbytes  2>&- >&-
+    insmod xt_conntrack  2>&- >&-
+    insmod xt_tcpudp  2>&- >&-
+    insmod iptable_nat  2>&- >&-
+    insmod iptable_filter  2>&- >&-
+    insmod iptable_raw  2>&- >&-
+    insmod ipt_MASQUERADE  2>&- >&-
+    insmod xt_connlimit  2>&- >&-
+    insmod nf_conntrack_ftp  2>&- >&-
+    insmod nf_nat_ftp  2>&- >&-
+    insmod nf_conntrack_sip  2>&- >&-
+    insmod nf_nat_sip  2>&- >&-
+    insmod xt_TCPMSS  2>&- >&-
+    insmod nf_conntrack_pptp  2>&- >&-
+    insmod nf_nat_proto_gre  2>&- >&-
+    insmod nf_nat_pptp  2>&- >&-
+    insmod xt_multiport 2>&- >&-
+
+    iptables -N forwarding_rule_nat
+    #iptables -N forwarding_session_limit
+	
+    iptables -t nat -N prerouting_rule_nat
+    iptables -t nat -N postrouting_rule_nat
+
+    ##for remote mgnt
+    iptables -t nat -N prerouting_RMGM
+    
+    ## NAT MASQUERADE
+    iptables -t nat -A postrouting_rule_nat -o $WAN -j MASQUERADE
+    iptables -t nat -A POSTROUTING -j postrouting_rule_nat
+
+    ## Add MINIUPNPD/prerouting_RMMG_TR069 chain
+    iptables -t nat -N MINIUPNPD 2>/dev/null
+    iptables -t nat -N prerouting_RMMG_TR069 2>/dev/null
+
+    ##check mode,if AP/UR,exit
+    local sys_mode=$(get_sys_mode)
+    [ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+	count=$(uci_get nat general rules_count)
+	ruleid=1
+	while [ "$ruleid" -le "$count" ]
+	do
+	  StatusEnable=$(uci_get nat rule$ruleid StatusEnable)
+	  if [ "$StatusEnable" = "1" ] ; then
+	    service=$(uci_get nat rule$ruleid service)
+	    localip=$(uci_get nat rule$ruleid local_ip)
+	    wanip=$(uci_get nat rule$ruleid wan_ip)
+	    proto=$(uci_get nat rule$ruleid protocol)
+	    port=$(uci_get nat rule$ruleid port)
+	    trport=$(uci_get nat rule$ruleid trport)
+		service_idx=$(uci_get nat rule$ruleid service_idx)
+	
+	    ##Add multiport and port range support
+	    multiport_ck1=$(echo $port| sed -n '/,/p')
+	    multiport_ck2=$(echo $port| sed -n '/ /p')	
+
+	    if [ -n "$multiport_ck2" ];then
+		port=$(echo $port| sed -n 's/ /,/gp')
+	    fi
+
+	    portrange=$(echo $port| sed -n 's/-/:/gp')
+	    
+	    if [ -n "$portrange" ];then
+		portzone="$portrange"
+	    else
+		portzone="$port"
+	    fi
+
+	    if [ -n "$multiport_ck1" -o -n "$multiport_ck2" ];then
+		multiport_on="-m multiport"
+		ip_port="$localip"
+	    else
+		multiport_on=""		
+		ip_port="$localip:$trport"
+	    fi
+
+	    trportFilter=$(echo $trport| sed -n 's/-/:/gp')
+
+	    if [ -z "$trportFilter" ];then
+		trportFilter="$trport"
+	    fi
+
+	    ##--------------------------------------	
+	    case $wanip in
+	    0.0.0.0 | "") wan="" ;;
+	    *) wan="-s $wanip" ;;
+	    esac
+	
+	   case $service in
+	    any)
+	    iptables -t nat -I prerouting_rule_nat -i $WAN $wan -j DNAT --to $localip
+	    iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -j ACCEPT
+	    ;;
+	    *)
+			case $proto in
+			tcp)
+				## For VT forwarding services
+				case $service_idx in
+				31) ## BitTorrent
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6881:6889 -j DNAT --to "$localip:6881-6889"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 6881:6889 -j ACCEPT ;;
+				60) ## Medal of Honor: Games
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 12203:12204 -j DNAT --to "$localip:12203-12204"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 12203:12204 -j ACCEPT ;;
+				102) ## World of Warcraft
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3724 -j DNAT --to "$localip:3724"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6112 -j DNAT --to "$localip:6112"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6881:6889 -j DNAT --to "$localip:6881-6889"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 3724,6112,6881:6999 -j ACCEPT ;;
+				*)
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp $multiport_on --dport $portzone -j DNAT --to $ip_port
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp $multiport_on --dport $trportFilter -j ACCEPT ;;
+				esac
+				;;
+			udp)
+				## For VT forwarding services
+				case $service_idx in
+				28) ## Battlefield 1942
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 14567 -j DNAT --to "$localip:14567"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 22000 -j DNAT --to "$localip:22000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 23000:23009 -j DNAT --to "$localip:23000-23009"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28900 -j DNAT --to "$localip:28900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 14567,22000,23000:23009,27900,28900 -j ACCEPT ;;
+				30) ## Battlefield:Vietnam
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4755 -j DNAT --to "$localip:4755"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 23000 -j DNAT --to "$localip:23000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 22000 -j DNAT --to "$localip:22000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27243:27245 -j DNAT --to "$localip:27243-27245"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 4755,23000,22000,27243:27245 -j ACCEPT ;;
+				41) ## Dungeon Siege
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6073 -j DNAT --to "$localip:6073"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2302:2400 -j DNAT --to "$localip:2302-2400"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6073,2302:2400 -j ACCEPT ;;
+				45) ## Far Cry
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 49001 -j DNAT --to "$localip:49001"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 49002 -j DNAT --to "$localip:49002"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 49001,49002 -j ACCEPT ;;
+				53) ## Halo: Combat Evolved
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2302 -j DNAT --to "$localip:2302"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2303 -j DNAT --to "$localip:2303"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2302,2303 -j ACCEPT ;;
+				56|57) ## Jedi Knight II: Jedi Outcast / Jedi Knight II: Jedi Academy
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28060 -j DNAT --to "$localip:28060"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28061 -j DNAT --to "$localip:28061"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28062 -j DNAT --to "$localip:28062"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28070:28081 -j DNAT --to "$localip:28070-28081"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 28060,28061,28062,28070:28081 -j ACCEPT ;;				
+				58) ## KALI
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2213 -j DNAT --to "$localip:2213"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6666 -j DNAT --to "$localip:6666"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2213,6666 -j ACCEPT ;;
+				65) ## Neverwinter Nights
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 5120:5300 -j DNAT --to "$localip:5120-5300"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6500 -j DNAT --to "$localip:6500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28900 -j DNAT --to "$localip:28900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 5120:5300,6500,27900,28900 -j ACCEPT ;;
+				72) ## Rainbow six: Raven Shield
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7777:7787 -j DNAT --to "$localip:7777-7787"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8777:8787 -j DNAT --to "$localip:8777-8787"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 7777:7787,8777:8787 -j ACCEPT ;;
+				73) ## Return to Castle Wolfenstein
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27950 -j DNAT --to "$localip:27950"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27960 -j DNAT --to "$localip:27960"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27965 -j DNAT --to "$localip:27965"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27952 -j DNAT --to "$localip:27952"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 27950,27960,27965,27952 -j ACCEPT ;;
+				80) ## Soldier of Fortune
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28901 -j DNAT --to "$localip:28901"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28910 -j DNAT --to "$localip:28910"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 38900:38910 -j DNAT --to "$localip:38900-38910"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 22100:23000 -j DNAT --to "$localip:22100-23000"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 28901,28910,38900:38910,22100:23000 -j ACCEPT ;;
+				81) ## Soldier of Fortune II: Double Helix
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 20100:20112 -j DNAT --to "$localip:20100-20112"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 20100:20112 -j ACCEPT ;;
+				83) ## Star Trek:Elite Force II
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 29250 -j DNAT --to "$localip:29250"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 29256 -j DNAT --to "$localip:29256"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 29250,29256 -j ACCEPT ;;
+				85) ## Starsiege Tribes
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27999 -j DNAT --to "$localip:27999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28000 -j DNAT --to "$localip:28000"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 27999,28000 -j ACCEPT ;;
+				86) ## SWAT 4
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 10480:10483 -j DNAT --to "$localip:10480-10483"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 10480:10483 -j ACCEPT ;;
+				96) ## Vietcong
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 5425 -j DNAT --to "$localip:5425"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 15425 -j DNAT --to "$localip:15425"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28900 -j DNAT --to "$localip:28900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 5425,15425,28900 -j ACCEPT ;;
+				100) ## Wolfenstein: Enemy Territory
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27950 -j DNAT --to "$localip:27950"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27960 -j DNAT --to "$localip:27960"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27965 -j DNAT --to "$localip:27965"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27952 -j DNAT --to "$localip:27952"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 27950,27960,27965,27952 -j ACCEPT ;;
+				*)
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp $multiport_on --dport $portzone -j DNAT --to $ip_port
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp $multiport_on --dport $trportFilter -j ACCEPT ;;
+				esac
+				;;
+			*)
+				## For VT forwarding services
+				case $service_idx in
+				12)  ## Battlefield 4 - PS4
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80  -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 443  -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1935  -j DNAT --to "$localip:1935"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3478:3480  -j DNAT --to "$localip:3478-3480"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3478:3479  -j DNAT --to "$localip:3478-3479"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,443,1935,3478:3480  -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 3478:3479 -j ACCEPT ;;
+				13)  ## Blizzard Battle.net
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 4000,6112:6119 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 4000,6112:6119 -j ACCEPT ;;
+				14) ## League of Legends
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 443 -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 2099 -j DNAT --to "$localip:2099"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 5222:5223 -j DNAT --to "$localip:5222-5223"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 8393:8400 -j DNAT --to "$localip:8393-8400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 5000:5500 -j DNAT --to "$localip:5000-5500"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,443,2099,5222:5223,8393:8400 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 5000:5500 -j ACCEPT ;;
+				16)  ## PlayStation 3
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3658 -j DNAT --to "$localip:3658"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6000:7000 -j DNAT --to "$localip:6000-7000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 50000 -j DNAT --to "$localip:50000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 10070 -j DNAT --to "$localip:10070"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,3658 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6000:7000,50000,10070 -j ACCEPT ;;
+				17)  ## PlayStation 4
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 443 -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1935 -j DNAT --to "$localip:1935"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3478:3480 -j DNAT --to "$localip:3478-3480"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3478:3479 -j DNAT --to "$localip:3478-3479"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,443,1935,3478:3480 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 3478:3479 -j ACCEPT ;;
+				18)  ## Playstation Network
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 443 -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 465 -j DNAT --to "$localip:465"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 983 -j DNAT --to "$localip:983"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 5223 -j DNAT --to "$localip:5223"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 10070:10080 -j DNAT --to "$localip:10070-10080"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3478:3479 -j DNAT --to "$localip:3478-3479"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3658 -j DNAT --to "$localip:3658"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 10070 -j DNAT --to "$localip:10070"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,443,465,983,5223,10070:10080 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 3478:3479,3658,10070 -j ACCEPT ;;
+				19)  ## Steam Client
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27014:27050 -j DNAT --to "$localip:27014-27050"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3478 -j DNAT --to "$localip:3478"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4379:4380 -j DNAT --to "$localip:4379-4380"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27000:27030 -j DNAT --to "$localip:27000-27030"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 27014:27050 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 3478,4379:4380,27000:27030 -j ACCEPT ;;
+				21)  ## World of Warcraft
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1119:1120 -j DNAT --to "$localip:1119-1120"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3724 -j DNAT --to "$localip:3724"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6112:6114 -j DNAT --to "$localip:6112-6114"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6881:6999 -j DNAT --to "$localip:6881-6999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1119:1120 -j DNAT --to "$localip:1119-1120"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3724 -j DNAT --to "$localip:3724"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6112:6114 -j DNAT --to "$localip:6112-6114"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6881:6999 -j DNAT --to "$localip:6881-6999"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,1119:1120,3724,4000,6112:6114,6881:6999 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 80,1119:1120,3724,4000,6112:6114,6881:6999 -j ACCEPT ;;
+				22)  ## Xbox Live 360
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 53  -j DNAT --to "$localip:53"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80  -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1863 -j DNAT --to "$localip:1863"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3074 -j DNAT --to "$localip:3074"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 53 -j DNAT --to "$localip:53"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 88 -j DNAT --to "$localip:88"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1863 -j DNAT --to "$localip:1863"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3074 -j DNAT --to "$localip:3074"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 53,80,1863,3074 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 53,88,1863,3074 -j ACCEPT ;;
+				23)  ## Xbox One
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 53 -j DNAT --to "$localip:53"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3074 -j DNAT --to "$localip:3074"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 53 -j DNAT --to "$localip:53"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 88 -j DNAT --to "$localip:88"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 500 -j DNAT --to "$localip:500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3074 -j DNAT --to "$localip:3074"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3544 -j DNAT --to "$localip:3544"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4500 -j DNAT --to "$localip:4500"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 53,80,3074 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 53,88,500,3074,3544,4500 -j ACCEPT ;;
+				24) ## Age of Empires
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 2302:2400 -j DNAT --to "$localip:2302-2400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6073 -j DNAT --to "$localip:6073"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2302:2400 -j DNAT --to "$localip:2302-2400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6073 -j DNAT --to "$localip:6073"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 2302:2400,6073 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2302:2400,6073 -j ACCEPT ;;
+				25) ## Aliens vs. Predator
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 2300:2400 -j DNAT --to "$localip:2300-2400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 8000:8999 -j DNAT --to "$localip:8000-8999 "
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2300:2400 -j DNAT --to "$localip:2300-2400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8000:8999 -j DNAT --to "$localip:8000-8999 "
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,2300:2400,8000:8999 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 80,2300:2400,8000:8999 -j ACCEPT ;;
+				26) ## America's Army
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 20045 -j DNAT --to "$localip:20045"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1716:1718 -j DNAT --to "$localip:1716-1718"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8777 -j DNAT --to "$localip:8777"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 20045 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 1716:1718,8777,27900 -j ACCEPT ;;
+				27) ## Asheron's Call
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 9000:9013 -j DNAT --to "$localip:9000-9013"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2001 -j DNAT --to "$localip:2001"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 9000:9013 -j DNAT --to "$localip:9000-9013"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 9000:9013 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2001,9000:9013 -j ACCEPT ;;
+				29) ## Battlefield 2
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4711 -j DNAT --to "$localip:4711"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 29900 -j DNAT --to "$localip:29900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 29901 -j DNAT --to "$localip:29901"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 29920 -j DNAT --to "$localip:29920"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 28910 -j DNAT --to "$localip:28910"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1500:4999 -j DNAT --to "$localip:1500-4999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 16567 -j DNAT --to "$localip:16567"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 29900 -j DNAT --to "$localip:29900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 29910 -j DNAT --to "$localip:29910"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27901 -j DNAT --to "$localip:27901"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 55123 -j DNAT --to "$localip:55123"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 55124 -j DNAT --to "$localip:55124"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 55215 -j DNAT --to "$localip:55215"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,4711,29900,29901,29920,28910 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 1500:4999,16567,27900,29900,29910,27901,55123,55124,55215 -j ACCEPT ;;
+				32) ## Black and White
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 2611:2612 -j DNAT --to "$localip:2611-2612"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6500 -j DNAT --to "$localip:6500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6667 -j DNAT --to "$localip:6667"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2611:2612 -j DNAT --to "$localip:2611-2612"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6500 -j DNAT --to "$localip:6500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6667 -j DNAT --to "$localip:6667"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 2611:2612,6500,6667,27900 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2611:2612,6500,6667,27900 -j ACCEPT ;;
+				33) ## Call of Duty
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 28960 -j DNAT --to "$localip:28960"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 20500 -j DNAT --to "$localip:20500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 20510 -j DNAT --to "$localip:20510"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28960 -j DNAT --to "$localip:28960"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 28960 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 20500,20510,28960 -j ACCEPT ;;
+				34|35) ## Command and Conquer Generals /Command and Conquer Generals
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6667 -j DNAT --to "$localip:6667"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 28910 -j DNAT --to "$localip:28910"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 29900 -j DNAT --to "$localip:29900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 29920 -j DNAT --to "$localip:29920"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4321 -j DNAT --to "$localip:4321"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,6667,28910,29900,29920 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 4321,27900 -j ACCEPT ;;
+				36) ## Counter Strike 
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27030:27039 -j DNAT --to "$localip:27030-27039"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1200 -j DNAT --to "$localip:1200"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27000:27015 -j DNAT --to "$localip:27000-27015"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 27030:27039 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 1200,27000:27015 -j ACCEPT ;;
+				38) ## Delta Force
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3100:3999 -j DNAT --to "$localip:3100-3999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3568 -j DNAT --to "$localip:3568"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 3100 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 3568 -j ACCEPT ;;
+				39) ## Diablo I and II
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 6112:6119,4000 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6112:6119 -j ACCEPT ;;
+				42) ## eDonkey
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4661:4662 -j DNAT --to "$localip:4661-4662"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4665 -j DNAT --to "$localip:4665"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 4661:4662 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 4665 -j ACCEPT ;;
+				43) ## eMule
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4661:4662 -j DNAT --to "$localip:4661-4662"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4711 -j DNAT --to "$localip:4711"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4672 -j DNAT --to "$localip:4672"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4665 -j DNAT --to "$localip:4665"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 4661:4662,4711 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 4672,4665 -j ACCEPT ;;
+				44) ## Everquest
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1024:6000 -j DNAT --to "$localip:1024-6000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7000 -j DNAT --to "$localip:7000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1024:6000 -j DNAT --to "$localip:1024-6000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7000 -j DNAT --to "$localip:7000"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 1024:6000,7000 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 1024:6000,7000 -j ACCEPT ;;
+				46|47) ## Final Fantasy XI (PC) / Final Fantasy XI (PS2)
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 25 -j DNAT --to "$localip:25"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 110 -j DNAT --to "$localip:110"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 443 -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 50000:65535 -j DNAT --to "$localip:50000-65535"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 50000:65535 -j DNAT --to "$localip:50000-65535"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 25,80,110,443,50000:65535 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 50000:65535 -j ACCEPT ;;
+				50) ## Ghost Recon
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 2346:2348 -j DNAT --to "$localip:2346-2348"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2346:2348 -j DNAT --to "$localip:2346-2348"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 2346:2348 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2346:2348 -j ACCEPT ;;
+				52) ## Half Life
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6003 -j DNAT --to "$localip:6003"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7002 -j DNAT --to "$localip:7002"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27005 -j DNAT --to "$localip:27005"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27010 -j DNAT --to "$localip:27010"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27011 -j DNAT --to "$localip:27011"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27015 -j DNAT --to "$localip:27015"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 6003,7002 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 27005,27010,27011,27015 -j ACCEPT ;;
+				59) ## Links
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 2300:2400 -j DNAT --to "$localip:2300-2400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 47624 -j DNAT --to "$localip:47624"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 2300:2400 -j DNAT --to "$localip:2300-2400"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6073 -j DNAT --to "$localip:6073"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 2300:2400,47624 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 2300:2400,6073 -j ACCEPT ;;
+				64) ## Need for Speed: Hot Pursuit
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 8511 -j DNAT --to "$localip:8511"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 28900 -j DNAT --to "$localip:28900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1230 -j DNAT --to "$localip:1230"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8512 -j DNAT --to "$localip:8512"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 61200:61230 -j DNAT --to "$localip:61200-61230"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 8511,28900 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 1230,8512,27900,61200:61230 -j ACCEPT ;;
+				67) ## PS2
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4658 -j DNAT --to "$localip:4658"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4659 -j DNAT --to "$localip:4659"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4658 -j DNAT --to "$localip:4658"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4659 -j DNAT --to "$localip:4659"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 4658,4659 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 4658,4659 -j ACCEPT ;;
+				68) ## Postal 2: Share the Pain
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7777:7779 -j DNAT --to "$localip:7777-7779"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28900 -j DNAT --to "$localip:28900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 7777:7779,27900,28900 -j ACCEPT ;;
+				70) ## Quake 3
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27660 -j DNAT --to "$localip:27660"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27960 -j DNAT --to "$localip:27960"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27660 -j DNAT --to "$localip:27660"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27960 -j DNAT --to "$localip:27960"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 27660,27960 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 27660,27960 -j ACCEPT ;;
+				75) ## Roger Wilco
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 3782 -j DNAT --to "$localip:3782"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 28900 -j DNAT --to "$localip:28900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 3782:3783 -j DNAT --to "$localip:3782-3783"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 3782 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 27900,28900,3782:3783 -j ACCEPT ;;
+				77) ## Serious Sam II
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 25600:25605 -j DNAT --to "$localip:25600-25605"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 25600:25605 -j DNAT --to "$localip:25600-25605"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 25600:25605 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 25600:25605 -j ACCEPT ;;
+				82) ## Splinter Cell: Pandora Tomorrow
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 40000:43000 -j DNAT --to "$localip:40000-43000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 44000:45001 -j DNAT --to "$localip:44000-45001"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7776 -j DNAT --to "$localip:7776"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8888 -j DNAT --to "$localip:8888"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 40000:43000 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 44000:45001,7776,8888 -j ACCEPT ;;
+				84) ## Starcraft
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 6112:6119,4000 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6112:6119 -j ACCEPT ;;
+				88) ## Tiberian Sun
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1140:1234 -j DNAT --to "$localip:1140-1234"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1140:1234 -j DNAT --to "$localip:1140-1234"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 1140:1234,4000 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 1140:1234,4000 -j ACCEPT ;;
+				89) ## Tiger Woods 2K4
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 443 -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 1791:1792 -j DNAT --to "$localip:1791-1792"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 13500 -j DNAT --to "$localip:13500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 20801:20900 -j DNAT --to "$localip:20801-20900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 32768:65535 -j DNAT --to "$localip:32768-65535"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 80 -j DNAT --to "$localip:80"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 443 -j DNAT --to "$localip:443"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 1791:1792 -j DNAT --to "$localip:1791-1792"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 13500 -j DNAT --to "$localip:13500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 20801:20900 -j DNAT --to "$localip:20801-20900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 32768:65535 -j DNAT --to "$localip:32768-65535"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 80,443,1791:1792,13500,20801:20900,32768:65535 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 80,443,1791:1792,13500,20801:20900,32768:65535 -j ACCEPT ;;
+				90) ## Tribes of Vengeance
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7777 -j DNAT --to "$localip:7777"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7778 -j DNAT --to "$localip:7778"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 28910 -j DNAT --to "$localip:28910"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6500 -j DNAT --to "$localip:6500"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7777 -j DNAT --to "$localip:7777"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7778 -j DNAT --to "$localip:7778"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 7777,7778,28910 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6500,7777,7778,27900 -j ACCEPT ;;
+				91) ## Ubi.com
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 40000:42999 -j DNAT --to "$localip:40000-42999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 41005 -j DNAT --to "$localip:41005"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 40000:42999 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 41005 -j ACCEPT ;;
+				92) ## Ultima
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 5001:5010 -j DNAT --to "$localip:5001-5010"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7775:7777 -j DNAT --to "$localip:7775-7777"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7875 -j DNAT --to "$localip:7875"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 8800:8900 -j DNAT --to "$localip:8800-8900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 9999 -j DNAT --to "$localip:9999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 5001:5010 -j DNAT --to "$localip:5001-5010"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7775:7777 -j DNAT --to "$localip:7775-7777"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7875 -j DNAT --to "$localip:7875"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8800:8900 -j DNAT --to "$localip:8800-8900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 9999 -j DNAT --to "$localip:9999"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 5001:5010,7775:7777,7875,8800:8900,9999 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 5001:5010,7775:7777,7875,8800:8900,9999 -j ACCEPT ;;
+				93) ## Unreal
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7777 -j DNAT --to "$localip:7777"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 8888 -j DNAT --to "$localip:8888"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7777:7781 -j DNAT --to "$localip:7777-7781"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 7777,8888,27900 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 7777:7781 -j ACCEPT ;;
+				94) ## Unreal Tournament
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 7777:7783 -j DNAT --to "$localip:7777-7783"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 8080 -j DNAT --to "$localip:8080"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7777:7783 -j DNAT --to "$localip:7777-7783"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 8080 -j DNAT --to "$localip:8080"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 27900 -j DNAT --to "$localip:27900"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 7777:7783,8080,27900 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 7777:7783,8080,27900 -j ACCEPT ;;
+				95) ## Unreal Tournament 2004
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 28902 -j DNAT --to "$localip:28902"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 777:7778 -j DNAT --to "$localip:777-7778"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 7787:7788 -j DNAT --to "$localip:7787-7788"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 28902 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 7777:7778,7787:7788 -j ACCEPT ;;
+				97|98) ## Warcraft II
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 4000 -j DNAT --to "$localip:4000"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6112:6119 -j DNAT --to "$localip:6112-6119"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 6112:6119,4000 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6112:6119 -j ACCEPT ;;
+				99) ## WinMX
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 6699 -j DNAT --to "$localip:6699"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 6257 -j DNAT --to "$localip:6257"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 6699 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 6257 -j ACCEPT ;;
+				101) ## WON Servers
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp -m multiport --dport 27000:27999 -j DNAT --to "$localip:27000:27999"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 15001 -j DNAT --to "$localip:15001"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 15101 -j DNAT --to "$localip:15101"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 15200 -j DNAT --to "$localip:15200"
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp -m multiport --dport 15400 -j DNAT --to "$localip:15400"
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp -m multiport --dport 27000:27999 -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp -m multiport --dport 15001,15101,15200,15400 -j ACCEPT ;;
+				103) ## WON Servers
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p 41 -j DNAT --to $localip
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p 41 -j ACCEPT ;;
+				*)
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp $multiport_on --dport $portzone -j DNAT --to $ip_port
+					iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp $multiport_on --dport $portzone -j DNAT --to $ip_port
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp $multiport_on --dport $trportFilter -j ACCEPT
+					iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp $multiport_on --dport $trportFilter -j ACCEPT ;;
+				esac
+			;;
+			esac
+	    ;;
+	    esac
+	  fi
+	  ruleid=`expr $ruleid + 1`
+	done
+	
+	iptables -t nat -A PREROUTING -j prerouting_rule_nat
+fi
+
+## session limit
+#sessions_user=$(uci_get nat general sessions_user)
+#if [ "$sessions_user" != "" ];then
+#	iptables -A forwarding_session_limit -m connlimit --connlimit-above $sessions_user -j DROP
+#fi
+ 
+changeToSer=$(uci_get nat general changeToSer)
+case $changeToSer in
+1) 	
+	changeToSerIP=$(uci_get nat general changeToSerIP)
+    local remote_www=$(uci_get firewall remote_www port)
+    local remote_telnet=$(uci_get firewall remote_telnet port)
+    local remote_snmp=$(uci_get snmpd agent port)
+
+    iptables -t nat -A prerouting_RMGM -i $WAN -p tcp --dport $remote_www -j ACCEPT
+    iptables -t nat -A prerouting_RMGM -i $WAN -p tcp --dport $remote_telnet -j ACCEPT
+    iptables -t nat -A prerouting_RMGM -i $WAN -p udp --dport $remote_snmp -j ACCEPT
+    iptables -t nat -I PREROUTING -j prerouting_RMGM
+
+    iptables -t nat -A prerouting_rule_nat -i $WAN $wan -j DNAT --to $changeToSerIP
+    iptables -A forwarding_rule_nat -i $WAN $wan -d $changeToSerIP -j ACCEPT;;
+esac
+
+## reload port triggering
+## iptables app reorder will be done in porttrigering
+/etc/init.d/portTrigger reload
+
+## Protect Miniupnpd
+iptables -t nat -D PREROUTING -i $WAN -j MINIUPNPD 2>/dev/null
+iptables -t nat -I PREROUTING -i $WAN -j MINIUPNPD 2>/dev/null
+
+## Protect TR069
+iptables -t nat -D PREROUTING -j prerouting_RMMG_TR069 2>/dev/null
+iptables -t nat -I PREROUTING -j prerouting_RMMG_TR069 2>/dev/null
+}
+
+cmd=$1
+
+case "$cmd" in
+apply|start|stop|reload|restart|init) 
+		iptables -t nat -F prerouting_rule_nat 2>/dev/null
+		iptables -t nat -F postrouting_rule_nat 2>/dev/null
+		iptables -F forwarding_rule_nat 2>/dev/null
+		#iptables -F forwarding_session_limit 2>/dev/null
+		iptables -t nat -F prerouting_RMGM 2>/dev/null
+		
+		iptables -t nat -D PREROUTING -j prerouting_rule_nat 2>/dev/null
+		iptables -t nat -D POSTROUTING -j postrouting_rule_nat 2>/dev/null
+		iptables -D FORWARD -j forwarding_rule_nat 2>/dev/null
+		#iptables -D FORWARD -j forwarding_session_limit 2>/dev/null  
+		iptables -t nat -D PREROUTING -j prerouting_RMGM 2>/dev/null   
+		
+		iptables -t nat -X prerouting_rule_nat 2>/dev/null
+		iptables -t nat -X postrouting_rule_nat 2>/dev/null
+		iptables -X forwarding_rule_nat 2>/dev/null
+		#iptables -X forwarding_session_limit 2>/dev/null
+		iptables -t nat -X prerouting_RMGM 2>/dev/null
+		     
+		apply;;
+esac
+

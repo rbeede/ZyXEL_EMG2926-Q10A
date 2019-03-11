@@ -1,0 +1,70 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+
+local sys_mode=$(get_sys_mode)
+
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && {
+
+	[ "`lsmod | grep 'shortcut_fe'`" == "" ] &&  insmod shortcut-fe
+	[ "`lsmod | grep 'shortcut_fe_ipv6'`" == "" ] &&  insmod shortcut-fe-ipv6
+	[ "`lsmod | grep 'fast_classifier'`" == "" ] &&  insmod fast-classifier
+
+	exit 0
+}
+
+##check hw_nat
+
+defaultwan=$(uci get network.general.defaultWan)
+local wan_proto=$(uci get network.$defaultwan.proto)
+
+local qos_enable=$(uci get qos.general.enable)
+
+
+#chk_web_filter=$(cat /etc/config/parental |grep "1" |grep -v "ipaddr"|grep -v "keywords")
+chk_web_filter=$(uci get parental.general.enable)
+
+## chk guest wlan state
+wifi_hw_on=$(cat /tmp/wlan_on)
+local ath0_disabled_24G=$(uci_get wireless ath0 disabled)  
+local ath3_disabled_24G=$(uci_get wireless ath3 disabled)                                                                                                         
+local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+local guest_wlan_24G_QOS_enabled=$(uci_get wireless ath3 guest_bandwidth_enable)
+
+local ath10_disabled_5G=$(uci_get wireless ath10 disabled)  
+local ath13_disabled_5G=$(uci_get wireless ath13 disabled)                                                                                                         
+local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)
+local guest_wlan_5G_QOS_enabled=$(uci_get wireless ath13 guest_bandwidth_enable)
+
+local guest_wlan_enable="0"
+if [ "$wifi_hw_on" = "1" ] ; then
+	if [ "$ath0_disabled_24G" == "0" ] && [ "$ath3_disabled_24G" == "0" ] && [ "$guest_wlan_24G_enabled" == "1" ] && [ "$guest_wlan_24G_QOS_enabled" == "1" ]; then 
+
+			guest_wlan_enable="1"	
+			
+	fi  
+
+	if [ "$ath10_disabled_5G" == "0" ] && [ "$ath13_disabled_5G" == "0" ] && [ "$guest_wlan_5G_enabled" == "1" ]  && [ "$guest_wlan_5G_QOS_enabled" == "1" ]; then 
+
+			guest_wlan_enable="1"	
+			
+	fi  
+fi
+
+if [ "$wan_proto" == "pptp" ] || [ "$chk_web_filter" == "1" ] || [ "$qos_enable" == "1" ] || [ "$guest_wlan_enable" == "1" ] ; then
+
+	[ "`lsmod | grep 'fast_classifier'`" != "" ] &&  rmmod fast-classifier
+	[ "`lsmod | grep 'shortcut_fe_ipv6'`" != "" ] &&  rmmod shortcut-fe-ipv6
+	[ "`lsmod | grep 'shortcut_fe'`" != "" ] &&  rmmod shortcut-fe
+
+else
+
+	rmmod fast-classifier
+	rmmod shortcut-fe-ipv6
+	rmmod shortcut-fe
+	[ "`lsmod | grep 'shortcut_fe'`" == "" ] &&  insmod shortcut-fe
+	[ "`lsmod | grep 'shortcut_fe_ipv6'`" == "" ] &&  insmod shortcut-fe-ipv6
+	[ "`lsmod | grep 'fast_classifier'`" == "" ] &&  insmod fast-classifier
+	
+fi

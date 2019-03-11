@@ -1,0 +1,2801 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+ 
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local http = require("luci.http")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+<%
+	local luaIG = {}
+	local class_count = uci:get( "qos_classify", "general","class_count") 
+   
+   uci:foreach( "intfGrp", "interface", function( section )
+       if not ( nil == section.ifname ) then
+         local tmp = section
+         tmp.id = section[ '.name' ]
+         table.insert( luaIG, tmp ) 
+       end
+   end )
+   
+	local luaClassify = {}
+	uci:foreach( "qos_classify", "class", function( section )
+		local tmp = section
+		tmp.id = section[ '.name' ]
+		table.insert( luaClassify, tmp ) 
+	end )
+
+	local luaQueue = {}
+	uci:foreach( "qos", "queue", function( section )
+		local tmp = section
+		tmp.id = section[ '.name' ]
+		table.insert( luaQueue, tmp )
+	end )   
+	
+	
+	function  comps(a, b)
+		return  tonumber( string.sub(a.id,6,-1)) < tonumber( string.sub(b.id,6,-1))
+	end                    
+
+	table.sort(luaClassify,comps)
+
+
+%>
+function JSIG( id)
+{
+	this.id =id; 	
+}
+
+function JSQUEUE( id,enable, name, interface, priority, weight, rate )
+{
+	this.id =id; 
+	this.enable =  ( enable == "" || enable == "0" ) ? false : true;
+	this.name = name;
+	this.interface = interface;
+	this.priority = priority;
+	this.weight = weight;
+	this.rate = rate;
+}
+
+function JSCLASSIFY( enable , name  , fromInt ,ethType,
+					 srcIp ,  destIp ,srcMask , destMask ,
+					srcMac , destMac ,srcMacMask , destMacMask, 
+				srcPort_min  ,srcPort_max , destPort_min , destPort_max ,
+				service , protocol , setProtocol , dhcp , setDhcp ,
+				dscp , pktLength_min , pktLength_max ,	 
+				vlanId , prio , set_vid , set_prio , 
+				set_dscp , vidMark_action , set_dscpMark , queue ,
+				srcIpExclude , srcPortExclude , srcMacExclude , 
+				destIpExclude , destPortExclude , destMacExclude ,
+				serviceExclude ,protocolExclude ,dhcpExclude ,
+				pktLengthExclude ,dscpExclude ,prioExclude ,
+				vlanIdExclude , tcpAckActive,tcpAckExclude 		
+)
+{
+	this.enable = enable;
+	this.name = name;
+	this.fromInt = fromInt;
+	this.ethType = ethType;
+	this.srcIp = srcIp;
+	this.destIp = destIp;
+	this.srcMask = srcMask;
+	this.destMask = destMask;
+	this.srcMac = srcMac;
+	this.destMac = destMac;
+	this.srcMacMask = srcMacMask;
+	this.destMacMask = destMacMask;
+	this.srcPort_min = srcPort_min;
+	this.srcPort_max = srcPort_max;
+	this.destPort_min = destPort_min;
+	this.destPort_max = destPort_max;
+
+	this.service = service;
+	this.protocol = protocol;
+	this.setProtocol = setProtocol;
+	this.dhcp = dhcp;
+	this.setDhcp = setDhcp;
+	this.dscp = dscp;
+	this.pktLength_min = pktLength_min;
+	this.pktLength_max = pktLength_max;
+
+	this.vlanId = vlanId;
+	this.prio = prio;
+	this.set_vid = set_vid;
+	this.set_prio = set_prio;
+	this.set_dscp = set_dscp;
+	this.vidMark_action = vidMark_action;
+	this.set_dscpMark = set_dscpMark;
+	this.queue = queue;
+
+	this.srcIpExclude = srcIpExclude;
+	this.srcPortExclude = srcPortExclude;
+	this.srcMacExclude = srcMacExclude;
+	this.destIpExclude = destIpExclude;
+	this.destPortExclude = destPortExclude;
+	this.destMacExclude = destMacExclude;
+	this.serviceExclude = serviceExclude;
+	this.protocolExclude = protocolExclude;
+	this.dhcpExclude = dhcpExclude;
+	this.pktLengthExclude = pktLengthExclude;
+	this.dscpExclude = dscpExclude;
+	this.prioExclude = prioExclude;
+	this.vlanIdExclude = vlanIdExclude;
+	this.tcpAckActive = tcpAckActive;
+	this.tcpAckExclude = tcpAckExclude;
+
+}
+
+var jsEditNo = "";
+
+var jsIg = [
+   <%for name, info in pairs(luaIG) do%> 
+      new JSIG( "<%= info.id %>"), 
+	<%end%>
+	];
+
+var jsQueues = [
+   <%for name, info in pairs(luaQueue) do%> 
+      new JSQUEUE( "<%= info.id %>","<%= info.enable %>", "<%= info.name %>", "<%= info.interface %>", "<%= info.priority %>", "<%= info.weight %>", "<%= info.rate %>" ), 
+	<%end%>
+	];
+
+var jsClassify = [
+   <%for name, info in pairs(luaClassify) do%> 
+   new JSCLASSIFY( "<%= info.enable %>" , "<%= info.name %>" , "<%= info.fromInt %>" , "<%= info.ethType %>" ,
+   				   "<%= info.srcIp %>" , "<%= info.destIp %>" , "<%= info.srcMask %>" , "<%= info.destMask %>" ,
+				   	"<%= info.srcMac %>" , "<%= info.destMac %>" , "<%= info.srcMacMask %>" , "<%= info.destMacMask %>" ,
+					"<%= info.srcPort_min %>" ,"<%= info.srcPort_max %>", "<%= info.destPort_min %>", "<%= info.destPort_max %>" ,
+					"<%= info.service %>", "<%= info.protocol %>", "<%= info.setProtocol %>", "<%= info.dhcp %>", "<%= info.setDhcp %>" ,
+					"<%= info.dscp %>" , "<%= info.pktLength_min %>" , "<%= info.pktLength_max %>"  ,
+					"<%= info.vlanId %>" , "<%= info.prio %>" , "<%= info.set_vid %>" , 
+					"<%= info.set_prio %>", "<%= info.set_dscp %>" ,  
+					"<%= info.vidMark_action %>" ,"<%= info.set_dscpMark %>" , "<%= info.queue %>",					
+
+					"<%= info.srcIpExclude %>","<%= info.srcPortExclude %>","<%= info.srcMacExclude %>",
+					"<%= info.destIpExclude %>","<%= info.destPortExclude %>","<%= info.destMacExclude %>",
+					"<%= info.serviceExclude %>","<%= info.protocolExclude %>","<%= info.dhcpExclude %>",
+					"<%= info.pktLengthExclude %>","<%= info.dscpExclude %>","<%= info.prioExclude %>",
+					"<%= info.vlanIdExclude %>","<%= info.tcpAckActive %>","<%= info.tcpAckExclude %>"
+	),
+	<%end%>
+	];
+
+function editClassify( entryNo)
+{
+	document.getElementById( "tabs" ).style.display="none";
+	document.getElementById( "list" ).style.display="none";
+	document.getElementById( "edit" ).style.display="block";
+	document.getElementsByName( "SubmitType" )[0].value = "edit";
+
+	jsEditNo = entryNo;
+	repaintEdit();
+}
+
+function repaintEdit()
+{
+
+   if ( jsEditNo != 'New' )
+   {
+		document.getElementsByName( "editclassOrder" )[0].value = jsEditNo+1;
+		document.getElementsByName( "editclassOrder" )[0].style.display = 'block';
+		document.getElementsByName( "classOrder" )[0].style.display = 'none' ;
+		
+		if ("1" == jsClassify[ jsEditNo ].enable )
+		{
+			document.getElementsByName( "classActive" )[0].checked = true;
+		}
+		
+		document.getElementsByName( "className" )[0].value = jsClassify[ jsEditNo ].name;
+		document.getElementsByName( "formInterface" )[0].value = jsClassify[ jsEditNo ].fromInt;
+		document.getElementsByName( "etherType" )[0].value = jsClassify[ jsEditNo ].ethType;
+		
+		if ( jsClassify[ jsEditNo ].srcIp )
+		{
+			document.getElementsByName( "srcIpActive" )[0].checked = true;
+			document.getElementsByName( "srcIp" )[0].value = jsClassify[ jsEditNo ].srcIp;
+			document.getElementsByName( "srcIpActive" )[0].disabled = false;
+			document.getElementsByName( "srcIp" )[0].disabled = false;
+
+			if(  jsClassify[ jsEditNo ].srcMask )
+			{
+				document.getElementsByName( "srcNetMask" )[0].value = jsClassify[ jsEditNo ].srcMask;
+				document.getElementsByName( "srcNetMask" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].srcIpExclude )
+			{
+				document.getElementsByName( "srcIpExclude" )[0].checked = true;
+				document.getElementsByName( "srcIpExclude" )[0].disabled = false;
+			}
+		}
+
+		if(jsClassify[ jsEditNo ].srcPort_min)
+		{
+			document.getElementsByName( "srcPortActive" )[0].checked = true;
+			document.getElementsByName( "srcPort_min" )[0].value =  jsClassify[ jsEditNo ].srcPort_min;
+			document.getElementsByName( "srcPortActive" )[0].disabled = false;
+			document.getElementsByName( "srcPort_min" )[0].disabled = false;
+
+			if(jsClassify[ jsEditNo ].srcPort_max)
+			{
+				document.getElementsByName( "srcPort_max" )[0].value =  jsClassify[ jsEditNo ].srcPort_max;
+				document.getElementsByName( "srcPort_max" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].srcPortExclude )
+			{
+				document.getElementsByName( "srcPortExclude" )[0].checked = true;
+				document.getElementsByName( "srcPortExclude" )[0].disabled = false;
+			}
+		}
+
+		if (  jsClassify[ jsEditNo ].srcMac )
+		{
+			document.getElementsByName( "srcMacActive" )[0].checked = true;
+			document.getElementsByName( "srcMac" )[0].value = jsClassify[ jsEditNo ].srcMac;
+			document.getElementsByName( "srcMacActive" )[0].disabled = false;
+			document.getElementsByName( "srcMac" )[0].disabled = false;
+		
+			if (  jsClassify[ jsEditNo ].srcMacMask )
+			{
+				document.getElementsByName( "srcMacMask" )[0].value = jsClassify[ jsEditNo ].srcMacMask;
+				document.getElementsByName( "srcMacMask" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].srcMacExclude )
+			{
+				document.getElementsByName( "srcMacExclude" )[0].checked = true;
+				document.getElementsByName( "srcMacExclude" )[0].disabled = false;
+			}
+		}
+		
+		if (  jsClassify[ jsEditNo ].destIp )
+		{
+			document.getElementsByName( "destIpActive" )[0].checked = true;
+			document.getElementsByName( "destIp" )[0].value = jsClassify[ jsEditNo ].destIp;
+			document.getElementsByName( "destIpActive" )[0].disabled = false;
+			document.getElementsByName( "destIp" )[0].disabled = false;
+
+			if(  jsClassify[ jsEditNo ].destMask )
+			{
+				document.getElementsByName( "destNetMask" )[0].value = jsClassify[ jsEditNo ].destMask;
+				document.getElementsByName( "destNetMask" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].destIpExclude )
+			{
+				document.getElementsByName( "destIpExclude" )[0].checked = true;
+				document.getElementsByName( "destIpExclude" )[0].disabled = false;
+			}
+		}
+		
+		if( jsClassify[ jsEditNo ].destPort_min )
+		{
+			document.getElementsByName( "destPortActive" )[0].checked = true;
+			document.getElementsByName( "destPort_min" )[0].value = jsClassify[ jsEditNo ].destPort_min;
+			document.getElementsByName( "destPortActive" )[0].disabled = false;
+			document.getElementsByName( "destPort_min" )[0].disabled = false;
+
+			if( jsClassify[ jsEditNo ].destPort_max )
+			{
+				document.getElementsByName( "destPort_max" )[0].value = jsClassify[ jsEditNo ].destPort_max;
+				document.getElementsByName( "destPort_max" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].destPortExclude )
+			{
+				document.getElementsByName( "destPortExclude" )[0].checked = true;
+				document.getElementsByName( "destPortExclude" )[0].disabled = false;
+			}
+		}
+		
+		if(  jsClassify[ jsEditNo ].destMac )
+		{
+			document.getElementsByName( "destMacActive" )[0].checked = true;
+			document.getElementsByName( "destMac" )[0].value = jsClassify[ jsEditNo ].destMac;
+			document.getElementsByName( "destMacActive" )[0].disabled = false;
+			document.getElementsByName( "destMac" )[0].disabled = false;
+		
+			if(  jsClassify[ jsEditNo ].destMacMask )
+			{
+				document.getElementsByName( "destMacMask" )[0].value = jsClassify[ jsEditNo ].destMacMask;
+				document.getElementsByName( "destMacMask" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].destMacExclude )
+			{
+				document.getElementsByName( "destMacExclude" )[0].checked = true;
+				document.getElementsByName( "destMacExclude" )[0].disabled = false;
+			}
+		}
+				
+		if( jsClassify[ jsEditNo ].service )
+		{
+			document.getElementsByName( "serviceActive" )[0].checked = true;
+			document.getElementsByName( "Service" )[0].value = jsClassify[ jsEditNo ].service;
+			document.getElementsByName( "serviceActive" )[0].disabled = false;
+			document.getElementsByName( "Service" )[0].disabled = false;
+			
+			if ("1" == jsClassify[ jsEditNo ].serviceExclude )
+			{
+				document.getElementsByName( "serviceExclude" )[0].checked = true;
+				document.getElementsByName( "serviceExclude" )[0].disabled = false;
+			}
+		}
+		
+		if(  jsClassify[ jsEditNo ].protocol )
+		{
+			document.getElementsByName( "protocolActive" )[0].checked = true;
+			document.getElementsByName( "protocolActive" )[0].disabled = false;
+			document.getElementsByName( "protocol" )[0].disabled = false;
+			document.getElementsByName( "protocolPort" )[0].value = jsClassify[ jsEditNo ].protocol;
+		
+			if ("6" == jsClassify[ jsEditNo ].protocol  )
+			{
+				document.getElementsByName( "protocol" )[0].value = jsClassify[ jsEditNo ].protocol;
+			}
+			else if ("17" == jsClassify[ jsEditNo ].protocol  )
+			{
+				document.getElementsByName( "protocol" )[0].value = jsClassify[ jsEditNo ].protocol;
+			}
+			else if ("1" == jsClassify[ jsEditNo ].protocol )
+			{
+				document.getElementsByName( "protocol" )[0].value = jsClassify[ jsEditNo ].protocol;
+			}
+			else if ("2" == jsClassify[ jsEditNo ].protocol )
+			{
+				document.getElementsByName( "protocol" )[0].value = jsClassify[ jsEditNo ].protocol;
+			}
+			else
+			{
+				document.getElementsByName( "protocol" )[0].value = "UserDef";
+				document.getElementsByName( "protocolPort" )[0].value = jsClassify[ jsEditNo ].protocol;
+				document.getElementsByName( "protocolPort" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].protocolExclude )
+			{
+				document.getElementsByName( "protocolExclude" )[0].checked = true;
+				document.getElementsByName( "protocolExclude" )[0].disabled = false;
+				document.getElementsByName( "srcPortActive" )[0].disabled = true;
+				document.getElementsByName( "destPortActive" )[0].disabled = true;
+			}
+		}
+		
+		if(  jsClassify[ jsEditNo ].dhcp )
+		{
+			document.getElementsByName( "dhcpActive" )[0].checked = true;
+			document.getElementsByName( "dhcpOption" )[0].value = jsClassify[ jsEditNo ].dhcp;
+			document.getElementsByName( "dhcpActive" )[0].disabled = false;
+			document.getElementsByName( "dhcpOption" )[0].disabled = false;
+			
+			if(  jsClassify[ jsEditNo ].setDhcp )
+			{		
+				document.getElementsByName( "dhcpInput" )[0].value = jsClassify[ jsEditNo ].setDhcp;
+				document.getElementsByName( "dhcpInput" )[0].disabled = false;			
+			}
+
+			if ("1" == jsClassify[ jsEditNo ].dhcpExclude )
+			{
+				document.getElementsByName( "dhcpExclude" )[0].checked = true;
+				document.getElementsByName( "dhcpExclude" )[0].disabled = false;	
+			}
+		}
+	
+		if(  jsClassify[ jsEditNo ].pktLength_min )
+		{
+			document.getElementsByName( "pktLengthActive" )[0].checked = true;
+			document.getElementsByName( "pktLength_min" )[0].value = jsClassify[ jsEditNo ].pktLength_min;
+			document.getElementsByName( "pktLengthActive" )[0].disabled = false;
+			document.getElementsByName( "pktLength_min" )[0].disabled = false;
+	
+			if(  jsClassify[ jsEditNo ].pktLength_max )
+			{
+				document.getElementsByName( "pktLength_max" )[0].value = jsClassify[ jsEditNo ].pktLength_max;
+				document.getElementsByName( "pktLength_max" )[0].disabled = false;
+			}
+			
+			if ("1" == jsClassify[ jsEditNo ].pktLengthExclude )
+			{
+				document.getElementsByName( "pktLengthExclude" )[0].checked = true;
+				document.getElementsByName( "pktLengthExclude" )[0].disabled = false;
+			}
+			
+		}
+
+		if(  jsClassify[ jsEditNo ].dscp )
+		{
+			document.getElementsByName( "dscpActive" )[0].checked = true;
+			document.getElementsByName( "Dscp" )[0].value = jsClassify[ jsEditNo ].dscp;
+			document.getElementsByName( "dscpActive" )[0].disabled = false;
+			document.getElementsByName( "Dscp" )[0].disabled = false;
+
+			if ("1" == jsClassify[ jsEditNo ].dscpExclude )
+			{
+				document.getElementsByName( "dscpExclude" )[0].checked = true;
+			}
+		}
+	
+		if(  jsClassify[ jsEditNo ].vlanId )
+		{
+			document.getElementsByName( "vlanIdActive" )[0].checked = true;
+			document.getElementsByName( "vlanId" )[0].value = jsClassify[ jsEditNo ].vlanId;
+			document.getElementsByName( "vlanIdActive" )[0].disabled = false;
+			document.getElementsByName( "vlanId" )[0].disabled = false;
+			
+			if ("1" == jsClassify[ jsEditNo ].vlanIdExclude )
+			{
+				document.getElementsByName( "vlanIdExclude" )[0].checked = true;
+				document.getElementsByName( "vlanIdExclude" )[0].disabled = false;
+			}
+		}
+		
+		if(  jsClassify[ jsEditNo ].prio )
+		{
+			document.getElementsByName( "8021pActive" )[0].checked = true;
+			document.getElementsByName( "8021p" )[0].value = jsClassify[ jsEditNo ].prio;
+			document.getElementsByName( "8021pActive" )[0].disabled = false;
+			document.getElementsByName( "8021p" )[0].disabled = false;
+
+			if ("1" == jsClassify[ jsEditNo ].prioExclude )
+			{
+				document.getElementsByName( "prioExclude" )[0].checked = true;
+				document.getElementsByName( "prioExclude" )[0].disabled = false;
+			}
+		}
+		
+		if("1" == jsClassify[ jsEditNo ].tcpAckActive )
+		{
+			document.getElementsByName( "tcpAckActive" )[0].checked = true;
+			document.getElementsByName( "tcpAckActive" )[0].disabled = false;
+
+
+			if ("1" == jsClassify[ jsEditNo ].tcpAckExclude )
+			{
+				document.getElementsByName( "tcpAckExclude" )[0].checked = true;
+				document.getElementsByName( "tcpAckExclude" )[0].disabled = false;
+			}
+		}
+	
+		if(jsClassify[ jsEditNo ].set_dscp)
+		{
+			document.getElementsByName( "dscpMark" )[0].value = "mark";
+			document.getElementsByName( "setDscp" )[0].value = jsClassify[ jsEditNo ].set_dscp;
+			document.getElementsByName( "setDscp" )[0].disabled = true;
+
+		}
+		else
+		{
+			document.getElementsByName( "dscpMark" )[0].value = "unchange";
+		}
+
+		if(  jsClassify[ jsEditNo ].set_prio )
+		{
+			document.getElementsByName( "8021pMark" )[0].value = jsClassify[ jsEditNo ].set_prio;
+			document.getElementsByName( "8021pMark" )[0].disabled= false;
+		}
+
+		if(  jsClassify[ jsEditNo ].vidMark_action )
+		{	
+			document.getElementsByName( "vidMark_action" )[0].value = jsClassify[ jsEditNo ].vidMark_action;
+			if(  jsClassify[ jsEditNo ].set_vid )
+			{
+				document.getElementsByName( "setVlanId" )[0].value = jsClassify[ jsEditNo ].set_vid;
+				document.forms[0].setVlanId.disabled = false;
+			}
+		}
+		
+		if(  jsClassify[ jsEditNo ].queue )
+		{
+			document.getElementsByName( "queueName" )[0].value = jsClassify[ jsEditNo ].queue;
+		}
+		
+		document.getElementsByName( "EditID" )[0].value = jsEditNo ;
+		selectEtherType ( jsClassify[ jsEditNo ].ethType );
+		showFullPath(' <%:Management%> > Bandwidth MGMT > Class Setup'); 
+   }
+   else
+   {
+		resetDefault ( );
+		document.getElementsByName( "className" )[0].value = "";
+		document.getElementsByName( "classOrder" )[0].value = <%= (uci:get("qos_classify","general","class_count")+1)%>;	
+		document.getElementsByName( "editclassOrder" )[0].style.display = 'none';
+		document.getElementsByName( "classOrder" )[0].style.display = 'block';
+		document.getElementsByName( "formInterface" )[0].value = "na";
+		document.getElementsByName( "etherType" )[0].value = "na";
+		document.getElementsByName( "srcIp" )[0].value = "";
+		document.getElementsByName( "srcNetMask" )[0].value = "";
+		document.getElementsByName( "srcPort_min" )[0].value = "";
+		document.getElementsByName( "srcPort_max" )[0].value = "";
+		document.getElementsByName( "srcMac" )[0].value = "";
+		document.getElementsByName( "srcMacMask" )[0].value = "";
+		document.getElementsByName( "destIp" )[0].value = "";		
+		document.getElementsByName( "destNetMask" )[0].value = "";
+		document.getElementsByName( "destPort_min" )[0].value = "";
+		document.getElementsByName( "destPort_max" )[0].value = "";		
+		document.getElementsByName( "destMac" )[0].value = "";
+		document.getElementsByName( "destMacMask" )[0].value = "";
+		document.getElementsByName( "Service" )[0].value = "na";
+		document.getElementsByName( "protocol" )[0].value = "6";
+		document.getElementsByName( "protocolPort" )[0].value = "6";
+		document.getElementsByName( "dhcpInput" )[0].value = "";
+		document.getElementsByName( "pktLength_min" )[0].value = "";
+		document.getElementsByName( "pktLength_max" )[0].value = "";
+		document.getElementsByName( "Dscp" )[0].value = "";
+		document.getElementsByName( "8021p" )[0].value = "0";
+		document.getElementsByName( "vlanId" )[0].value = "";
+		document.getElementsByName( "dscpMark" )[0].value = "unchange";
+		document.getElementsByName( "setDscp" )[0].value = "";
+		document.getElementsByName( "8021pMark" )[0].value = "unchange";
+		document.getElementsByName( "vidMark_action" )[0].value = "unchange";
+		document.getElementsByName( "setVlanId" )[0].value = "";
+		document.getElementsByName( "queueName" )[0].value = "";
+		document.getElementsByName( "EditID" )[0].value = 'New';
+		showFullPath(' <%:Management%> > Bandwidth MGMT > Class Setup'); 
+   }
+}
+
+function send(entryNo,class_enable)
+{
+
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","qos","qos_classify")%>';
+	var loc = submit_url  + '?SubmitType=switch&amp;apply=Apply&amp;EditID=' + entryNo ;
+	
+	if ( class_enable == '1' )
+	{
+		loc = loc + '&amp;classActive=1';
+	}
+	var code = 'location="' + loc + '"';
+	//alert(code);
+	eval(code);
+
+	
+}
+
+
+function delClassify( entryNo, element )
+{
+	  var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","qos","qos_classify")%>';
+	  var loc = submit_url + '?delete=' + entryNo;
+	  var code = 'location="' + loc + '"';
+      eval(code);
+}
+
+function resetDefault ( )
+{
+	document.getElementsByName( "srcIpActive" )[0].disabled = true;
+	document.getElementsByName( "srcIp" )[0].disabled = true;
+	document.getElementsByName( "srcNetMask" )[0].disabled = true;
+	document.getElementsByName( "srcIpExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "srcPortActive" )[0].disabled = true;    
+	document.getElementsByName( "srcPort_min" )[0].disabled = true;
+	document.getElementsByName( "srcPort_max" )[0].disabled = true;
+	document.getElementsByName( "srcPortExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "srcMac" )[0].disabled = true;
+	document.getElementsByName( "srcMacMask" )[0].disabled = true;
+	document.getElementsByName( "srcMacExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "destIpActive" )[0].disabled = true;
+	document.getElementsByName( "destIp" )[0].disabled = true;
+	document.getElementsByName( "destNetMask" )[0].disabled = true;
+	document.getElementsByName( "destIpExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "destPortActive" )[0].disabled = true;
+	document.getElementsByName( "destPort_min" )[0].disabled = true;
+	document.getElementsByName( "destPort_max" )[0].disabled = true;
+	document.getElementsByName( "destPortExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "destMac" )[0].disabled = true;    
+	document.getElementsByName( "destMacMask" )[0].disabled = true;
+	document.getElementsByName( "destMacExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "serviceActive" )[0].disabled = true;
+	document.getElementsByName( "Service" )[0].disabled = true;
+	document.getElementsByName( "serviceExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "protocolActive" )[0].disabled = true;
+	document.getElementsByName( "protocol" )[0].disabled = true;
+	document.getElementsByName( "protocolPort" )[0].disabled = true;
+	document.getElementsByName( "protocolExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "dhcpActive" )[0].disabled = true;
+	document.getElementsByName( "dhcpOption" )[0].disabled = true;
+	document.getElementsByName( "dhcpInput" )[0].disabled = true;
+	document.getElementsByName( "dhcpExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "pktLengthActive" )[0].disabled = true;    
+	document.getElementsByName( "pktLength_min" )[0].disabled = true;
+	document.getElementsByName( "pktLength_max" )[0].disabled = true;
+	document.getElementsByName( "pktLengthExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "dscpActive" )[0].disabled = true;
+	document.getElementsByName( "Dscp" )[0].disabled = true;
+	document.getElementsByName( "dscpExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "8021pActive" )[0].disabled = true;
+	document.getElementsByName( "8021p" )[0].disabled = true;
+		document.getElementsByName( "prioExclude" )[0].disabled = true;
+	
+	document.getElementsByName( "vlanIdActive" )[0].disabled = true;
+	document.getElementsByName( "vlanId" )[0].disabled = true;
+	document.getElementsByName( "vlanIdExclude" )[0].disabled = true;
+
+	document.getElementsByName( "dscpMark" )[0].disabled = true;
+	document.getElementsByName( "setDscp" )[0].disabled = true;
+	
+	document.getElementsByName( "tcpAckActive" )[0].disabled = true;
+	document.getElementsByName( "tcpAckExclude" )[0].disabled = true;
+	document.getElementsByName( "8021pMark" )[0].disabled = true;
+	
+}
+
+function selectProtocol ( value )
+{
+
+	document.forms[0].protocolPort.disabled = true;	
+	document.forms[0].srcPortActive.disabled = true;
+	document.forms[0].destPortActive.disabled = true;
+	document.forms[0].srcPortActive.disabled = true;
+	document.forms[0].srcPort_min.disabled = true;	
+	document.forms[0].srcPort_max.disabled = true;	
+	document.forms[0].srcPortExclude.disabled = true;			
+	document.forms[0].destPortActive.disabled = true;
+	document.forms[0].destPort_min.disabled = true;	
+	document.forms[0].destPort_max.disabled = true;
+	document.forms[0].destPortExclude.disabled = true;
+	document.forms[0].tcpAckActive.disabled = true;
+	document.forms[0].tcpAckExclude.disabled = true;	
+	document.getElementsByName( "protocolPort" )[0].value = document.getElementsByName( "protocol" )[0].value;
+	
+		if( "6" == document.forms[0].protocol.value)
+		{
+			document.forms[0].srcPortActive.disabled = false;
+			document.forms[0].destPortActive.disabled = false;
+			document.forms[0].tcpAckActive.disabled = false;
+
+			if( true == document.forms[0].srcPortActive.checked)
+			{
+				document.forms[0].srcPort_min.disabled = false;	
+				document.forms[0].srcPort_max.disabled = false;	
+				document.forms[0].srcPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;
+				document.forms[0].destPortActive.disabled = true;
+			}
+			
+			if( true == document.forms[0].destPortActive.checked)
+			{
+				document.forms[0].destPort_min.disabled = false;	
+				document.forms[0].destPort_max.disabled = false;
+				document.forms[0].destPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;
+				document.forms[0].srcPortActive.disabled = true;
+			}
+
+			if( true == document.forms[0].tcpAckActive.checked)
+			{
+				document.forms[0].tcpAckExclude.disabled = false;	
+			}			
+
+		}
+		else if( "17" ==document.forms[0].protocol.value)
+		{
+			document.forms[0].srcPortActive.disabled = false;
+			document.forms[0].destPortActive.disabled = false;
+			
+			if( true == document.forms[0].srcPortActive.checked)
+			{
+				document.forms[0].srcPort_min.disabled = false;	
+				document.forms[0].srcPort_max.disabled = false;	
+				document.forms[0].srcPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;
+				document.forms[0].destPortActive.disabled = true;
+			}
+			
+			if( true == document.forms[0].destPortActive.checked)
+			{
+				document.forms[0].destPort_min.disabled = false;	
+				document.forms[0].destPort_max.disabled = false;
+				document.forms[0].destPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;
+				document.forms[0].srcPortActive.disabled = true;
+			}
+		}
+		else
+		{
+			document.forms[0].protocolExclude.disabled = false;
+		}
+
+	if  ( value == 'UserDef' )
+	{
+		document.forms[0].protocolPort.disabled = false;
+		document.getElementsByName( "protocolPort" )[0].value = "";	
+				
+	}
+}
+
+function selectDscpMark ( value )
+{
+	if ( value == 'unchange' )
+	{
+		document.forms[0].setDscp.disabled = true;	
+	}
+	else if  ( value == 'mark' )
+	{
+		document.forms[0].setDscp.disabled = false;	
+	}
+}
+
+function selectvlanId ( value )
+{
+	if ( value == 'unchange' )
+	{
+		document.forms[0].setVlanId.disabled = true;	
+		document.getElementsByName( "8021pMark" )[0].disabled= true;
+	}
+	else if  ( value == 'Remove' )
+	{
+		document.forms[0].setVlanId.disabled = true;	
+		document.getElementsByName( "8021pMark" )[0].disabled= true;	
+	}
+	else if  ( value == 'Remark' )
+	{
+		document.forms[0].setVlanId.disabled = false;	
+		document.getElementsByName( "8021pMark" )[0].disabled= false;	
+	}
+	else if  ( value == 'Add' )
+	{
+		document.forms[0].setVlanId.disabled = false;	
+		document.getElementsByName( "8021pMark" )[0].disabled= false;
+	}
+
+}
+
+function setVidCheck ()
+{
+
+	if ( document.getElementsByName("vidMark_action")[0].value == 'unchange' )
+	{
+		document.forms[0].setVlanId.disabled = true;
+		document.getElementsByName("8021pMark")[0].disabled= true;	
+	}
+	else if  ( document.getElementsByName("vidMark_action")[0].value == 'Remove' )
+	{
+		document.forms[0].setVlanId.disabled = true;
+		document.getElementsByName("8021pMark")[0].disabled= true;	
+		
+	}
+	else if  ( document.getElementsByName("vidMark_action")[0].value == 'Remark' )
+	{
+		document.forms[0].setVlanId.disabled = false;
+		document.getElementsByName("8021pMark")[0].disabled= false;		
+	}
+	else if  ( document.getElementsByName("vidMark_action")[0].value == 'Add' )
+	{
+		document.forms[0].setVlanId.disabled = false; 	
+		document.getElementsByName("8021pMark")[0].disabled= false;
+	}
+
+}
+function SAddCheck()
+{
+	if (document.forms[0].srcIpActive.checked == true)
+	{
+		document.forms[0].srcIp.disabled = false;	
+		document.forms[0].srcNetMask.disabled = false;
+		document.forms[0].srcIpExclude.disabled = false;	
+		document.forms[0].dhcpActive.disabled = true;	
+		
+		if (document.getElementsByName( "srcNetMask" )[0].value == "")
+		{
+			document.getElementsByName( "srcNetMask" )[0].value = "255.255.255.255";
+		}
+		
+	}	
+	else
+	{
+		document.forms[0].srcIp.disabled = true;
+		document.forms[0].srcNetMask.disabled = true;
+		document.forms[0].srcIpExclude.disabled = true;
+		document.forms[0].dhcpActive.disabled = false;
+	}
+}
+
+function DAddCheck()
+{
+	if (document.forms[0].destIpActive.checked == true)
+	{
+		document.forms[0].destIp.disabled = false;	
+		document.forms[0].destNetMask.disabled = false;	
+		document.forms[0].destIpExclude.disabled = false;	
+		
+		if (document.getElementsByName( "destNetMask" )[0].value == "")
+		{
+			document.getElementsByName( "destNetMask" )[0].value = "255.255.255.255";
+		}
+		
+	}	
+	else
+	{
+		document.forms[0].destIp.disabled = true;
+		document.forms[0].destNetMask.disabled = true;
+		document.forms[0].destIpExclude.disabled = true; 
+	}
+}
+
+function SMACCheck()
+{
+	if (document.forms[0].srcMacActive.checked == true)
+	{
+		document.forms[0].srcMac.disabled = false;	
+		document.forms[0].srcMacMask.disabled = false;
+		document.forms[0].srcMacExclude.disabled = false;
+		document.forms[0].dhcpActive.disabled = true;	
+		
+		if (document.getElementsByName( "srcMacMask" )[0].value == "")
+		{
+			document.getElementsByName( "srcMacMask" )[0].value = "FF:FF:FF:FF:FF:FF";
+		}
+		
+	}	
+	else
+	{
+		document.forms[0].srcMac.disabled = true;
+		document.forms[0].srcMacMask.disabled = true;
+		document.forms[0].srcMacExclude.disabled = true;
+		document.forms[0].dhcpActive.disabled = false;	
+	}
+}
+
+function DMACCheck()
+{
+	if (document.forms[0].destMacActive.checked == true)
+	{
+		document.forms[0].destMac.disabled = false;	
+		document.forms[0].destMacMask.disabled = false;	
+		document.forms[0].destMacExclude.disabled = false;	
+		
+		if (document.getElementsByName( "destMacMask" )[0].value == "")
+		{
+			document.getElementsByName( "destMacMask" )[0].value = "FF:FF:FF:FF:FF:FF";
+		}
+	}	
+	else
+	{
+		document.forms[0].destMac.disabled = true;
+		document.forms[0].destMacMask.disabled = true;
+		document.forms[0].destMacExclude.disabled = true;	
+	}
+}
+
+function SPortCheck()
+{
+	if (document.forms[0].srcPortActive.disabled == false)
+	{
+		if (document.forms[0].srcPortActive.checked == true)
+		{
+			document.forms[0].srcPort_min.disabled = false;	
+			document.forms[0].srcPort_max.disabled = false;
+			document.forms[0].srcPortExclude.disabled = false;
+			//document.forms[0].srcPortActive.disabled = false;
+			document.forms[0].destPortActive.disabled = true;
+			if (document.forms[0].protocolActive.checked == true)
+			{
+				document.forms[0].protocolExclude.disabled = true;
+			}			
+		}	
+		else
+		{
+			document.forms[0].srcPort_min.disabled = true;
+			document.forms[0].srcPort_max.disabled = true;
+			document.forms[0].srcPortExclude.disabled = true;
+			//document.forms[0].srcPortActive.disabled = true;
+			document.forms[0].destPortActive.disabled = false;
+			if (document.forms[0].protocolActive.checked == true)
+			{
+				document.forms[0].protocolExclude.disabled = false;
+			}			
+		}
+	}
+}
+
+function DPortCheck()
+{
+	if (document.forms[0].destPortActive.disabled == false)
+	{
+		if (document.forms[0].destPortActive.checked == true)
+		{
+			document.forms[0].destPort_min.disabled = false;	
+			document.forms[0].destPort_max.disabled = false;
+			document.forms[0].destPortExclude.disabled = false;
+			//document.forms[0].destPortActive.disabled = false;
+			document.forms[0].srcPortActive.disabled = true;
+			if (document.forms[0].protocolActive.checked == true)
+			{
+				document.forms[0].protocolExclude.disabled = true;
+			}			
+		}	
+		else
+		{
+			document.forms[0].destPort_min.disabled = true;
+			document.forms[0].destPort_max.disabled = true;
+			document.forms[0].destPortExclude.disabled = true;
+			//document.forms[0].destPortActive.disabled = true;
+			document.forms[0].srcPortActive.disabled = false;			
+			if (document.forms[0].protocolActive.checked == true)
+			{
+				document.forms[0].protocolExclude.disabled = false;
+			}				
+		}
+	}
+}
+
+function ServiceCheck()
+{
+
+	if (document.forms[0].serviceActive.checked == true)
+	{
+		document.forms[0].protocolActive.disabled = true;
+		//document.forms[0].protocol.disabled = true;	
+		document.forms[0].Service.disabled = false;	
+		//document.forms[0].protocolPort.disabled = true;
+		document.forms[0].serviceExclude.disabled = false;			
+	}	
+	else
+	{
+		document.forms[0].protocolActive.disabled = false;
+		//document.forms[0].protocol.disabled = false;
+		document.forms[0].Service.disabled = true;	
+		//document.forms[0].protocolPort.disabled = false;
+		document.forms[0].serviceExclude.disabled = true;			
+	}
+}
+
+function ProtocolCheck()
+{
+	if (document.forms[0].protocolActive.checked == true)
+	{
+		document.forms[0].protocol.disabled = false;
+		document.forms[0].serviceActive.disabled = true;
+		document.forms[0].protocolExclude.disabled = false;		
+		if( "6" ==document.forms[0].protocol.value)
+		{
+			document.forms[0].srcPortActive.disabled = false;
+			document.forms[0].destPortActive.disabled = false;
+			
+			if( true == document.forms[0].srcPortActive.checked)
+			{
+				document.forms[0].srcPort_min.disabled = false;	
+				document.forms[0].srcPort_max.disabled = false;	
+				document.forms[0].srcPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;	
+			}
+			
+			if( true == document.forms[0].destPortActive.checked)
+			{
+				document.forms[0].destPort_min.disabled = false;	
+				document.forms[0].destPort_max.disabled = false;
+				document.forms[0].destPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;	
+			}
+			
+
+			document.forms[0].tcpAckActive.disabled = false;
+			if( true == document.forms[0].tcpAckActive.checked)
+			{
+					document.forms[0].tcpAckExclude.disabled = false;	
+			}
+
+		}
+		else if( "17" ==document.forms[0].protocol.value)
+		{
+			document.forms[0].srcPortActive.disabled = false;
+			document.forms[0].destPortActive.disabled = false;
+
+			if( true == document.forms[0].srcPortActive.checked)
+			{
+				document.forms[0].srcPort_min.disabled = false;	
+				document.forms[0].srcPort_max.disabled = false;	
+				document.forms[0].srcPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;	
+			}
+			
+			if( true == document.forms[0].destPortActive.checked)
+			{
+				document.forms[0].destPort_min.disabled = false;	
+				document.forms[0].destPort_max.disabled = false;
+				document.forms[0].destPortExclude.disabled = false;
+				document.forms[0].protocolExclude.disabled = true;	
+			}
+			
+		}
+		else if( "UserDef" ==document.forms[0].protocol.value)		
+		{
+			document.forms[0].protocolPort.disabled = false;	
+		}
+	}	
+	else
+	{
+		document.forms[0].protocol.disabled = true;
+		document.forms[0].protocolExclude.disabled = true;
+		document.forms[0].serviceActive.disabled = false;
+		document.forms[0].srcPortActive.disabled = true;
+		document.forms[0].srcPort_min.disabled = true;	
+		document.forms[0].srcPort_max.disabled = true;	
+		document.forms[0].srcPortExclude.disabled = true;			
+		document.forms[0].destPortActive.disabled = true;
+		document.forms[0].destPort_min.disabled = true;	
+		document.forms[0].destPort_max.disabled = true;
+		document.forms[0].destPortExclude.disabled = true;
+		document.forms[0].tcpAckActive.disabled = true;
+		document.forms[0].tcpAckExclude.disabled = true;		
+	}
+	
+}
+
+function ExProtocolCheck()
+{
+	if (document.forms[0].protocolActive.checked == true)
+	{
+		if (document.forms[0].protocolExclude.checked != true)
+		{
+		
+			if ("6" == document.getElementsByName( "protocol" )[0].value  )
+			{
+		
+				document.forms[0].srcPortActive.disabled = false;
+				document.forms[0].destPortActive.disabled = false;
+				
+			}
+			else if ("17" == document.getElementsByName( "protocol" )[0].value  )
+			{	
+				document.forms[0].srcPortActive.disabled = false;
+				document.forms[0].destPortActive.disabled = false;
+			}
+
+			if( true == document.forms[0].srcPortActive.checked)
+			{
+
+				if ("6" == document.getElementsByName( "protocol" )[0].value  )
+				{
+					document.forms[0].srcPort_min.disabled = false;	
+					document.forms[0].srcPort_max.disabled = false;	
+					document.forms[0].srcPortExclude.disabled = false;
+					document.forms[0].destPortActive.disabled = true;
+				}
+				else if ("17" == document.getElementsByName( "protocol" )[0].value  )
+				{
+					document.forms[0].srcPort_min.disabled = false;	
+					document.forms[0].srcPort_max.disabled = false;	
+					document.forms[0].srcPortExclude.disabled = false;
+					document.forms[0].destPortActive.disabled = true;
+				}
+				
+			}
+				
+			if( true == document.forms[0].destPortActive.checked)
+			{
+				if ("6" == document.getElementsByName( "protocol" )[0].value  )
+				{
+					document.forms[0].destPort_min.disabled = false;	
+					document.forms[0].destPort_max.disabled = false;	
+					document.forms[0].destPortExclude.disabled = false;
+					document.forms[0].srcPortActive.disabled = true;
+				}
+				else if ("17" == document.getElementsByName( "protocol" )[0].value  )
+				{
+					document.forms[0].destPort_min.disabled = false;	
+					document.forms[0].destPort_max.disabled = false;	
+					document.forms[0].destPortExclude.disabled = false;
+					document.forms[0].srcPortActive.disabled = true;
+				}
+			}
+
+			document.forms[0].tcpAckActive.disabled = false;
+			if( true == document.forms[0].tcpAckActive.checked)
+			{
+					document.forms[0].tcpAckExclude.disabled = false;	
+			}
+				
+		}	
+		else
+		{
+			document.forms[0].srcPortActive.disabled = true;
+			document.forms[0].srcPort_min.disabled = true;	
+			document.forms[0].srcPort_max.disabled = true;	
+			document.forms[0].srcPortExclude.disabled = true;			
+			document.forms[0].destPortActive.disabled = true;
+			document.forms[0].destPort_min.disabled = true;	
+			document.forms[0].destPort_max.disabled = true;
+			document.forms[0].destPortExclude.disabled = true;
+			document.forms[0].tcpAckActive.disabled = true;
+			document.forms[0].tcpAckExclude.disabled = true;				
+		}
+	}
+}
+
+function DHCPCheck()
+{
+
+	if (document.forms[0].dhcpActive.checked == true)
+	{
+		document.forms[0].dhcpOption.disabled = false;
+		document.forms[0].dhcpInput.disabled = false;
+		document.forms[0].dhcpExclude.disabled = false;
+		document.forms[0].srcMacActive.disabled = true;
+	}	
+	else
+	{
+		document.forms[0].dhcpOption.disabled = true;
+		document.forms[0].dhcpInput.disabled = true;
+		document.forms[0].dhcpExclude.disabled = true;
+		document.forms[0].srcMacActive.disabled = false;		
+	}
+}
+
+function PktLengthCheck()
+{
+	if (document.forms[0].pktLengthActive.checked == true)
+	{
+		document.forms[0].pktLength_min.disabled = false;
+		document.forms[0].pktLength_max.disabled = false;
+		document.forms[0].pktLengthExclude.disabled = false;
+	}	
+	else
+	{
+		document.forms[0].pktLength_min.disabled = true;
+		document.forms[0].pktLength_max.disabled = true;
+		document.forms[0].pktLengthExclude.disabled = true;		
+	}
+}
+
+function DSCPCheck()
+{
+	if (document.forms[0].dscpActive.checked == true)
+	{
+		document.forms[0].Dscp.disabled = false;
+		document.forms[0].dscpExclude.disabled = false;		
+	}	
+	else
+	{
+		document.forms[0].Dscp.disabled = true;
+		document.forms[0].dscpExclude.disabled = true;		
+	}
+}
+
+function Check8021p()
+{
+	if (document.getElementsByName("8021pActive")[0].checked == true)
+	{
+		document.getElementsByName("8021p")[0].disabled= false;
+		document.getElementsByName("prioExclude")[0].disabled= false;
+	}	
+	else
+	{
+		document.getElementsByName("8021p")[0].disabled= true;
+		document.getElementsByName("prioExclude")[0].disabled= true;
+	}
+}
+
+function VlanIdCheck()
+{
+	if (document.forms[0].vlanIdActive.checked == true)
+	{
+		document.forms[0].vlanId.disabled = false;
+		document.forms[0].vlanIdExclude.disabled = false;
+
+	}	
+	else
+	{
+		document.forms[0].vlanId.disabled = true;
+		document.forms[0].vlanIdExclude.disabled = true;
+
+	}
+}
+function tcpAckCheck()
+{
+	if( true == document.forms[0].tcpAckActive.checked)
+	{
+		document.forms[0].tcpAckExclude.disabled = false;	
+	}
+	else
+	{
+		document.forms[0].tcpAckExclude.disabled = true;
+	}
+}
+
+
+function DscpMarkCheck()
+{
+
+	if  ('mark' == document.forms[0].dscpMark.value)
+	{
+		document.forms[0].setDscp.disabled = false;	
+	}
+}
+
+function selectEtherType ( value )
+{
+	resetDefault ( );
+	if ( value == 'ip' )
+	{
+		document.getElementsByName( "srcIpActive" )[0].disabled = false;
+		document.getElementsByName( "destIpActive" )[0].disabled = false;
+		document.getElementsByName( "serviceActive" )[0].disabled = false;
+		document.getElementsByName( "protocolActive" )[0].disabled = false;
+		document.getElementsByName( "dhcpActive" )[0].disabled = false;
+		document.getElementsByName( "pktLengthActive" )[0].disabled = false;
+		document.getElementsByName( "dscpActive" )[0].disabled = false;
+		document.getElementsByName( "dscpMark" )[0].disabled = false;
+		SAddCheck();
+		DAddCheck();
+		SMACCheck();
+		DMACCheck();
+		SPortCheck();
+		DPortCheck();
+		ServiceCheck();
+		DscpMarkCheck();
+		ProtocolCheck();
+		DHCPCheck();
+		PktLengthCheck();
+		DSCPCheck();
+		ExProtocolCheck();
+		setVidCheck ();
+
+
+	}
+	else if  ( value == 'arp' )
+	{
+		SMACCheck();
+		DMACCheck();
+	}
+	else if  ( value == '8021q' )
+	{
+		//document.getElementsByName( "dscpMark" )[0].disabled = false;
+		document.getElementsByName( "8021pActive" )[0].disabled = false;
+		document.getElementsByName( "vlanIdActive" )[0].disabled = false;
+		SMACCheck();
+		DMACCheck();
+		Check8021p();
+		VlanIdCheck();
+		setVidCheck ();
+
+	}
+	else if ( value == 'na' )
+	{
+		SMACCheck();
+		DMACCheck();
+	}
+	else if  ( value == '0' )
+	{
+		SMACCheck();
+		DMACCheck();
+
+	}
+
+}
+
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value );
+}
+
+function checkNetmaskFormat( value )
+{
+  return /^255\.255\.255\.(255|254|252|248|240|224|192|128|0)|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|(254|252|248|240|224|192|128)\.0\.0\.0$/.test( value );
+}
+
+function checkMacFormat( value )
+{
+	var reg_name=/[A-F\d]{2}:[A-F\d]{2}:[A-F\d]{2}:[A-F\d]{2}:[A-F\d]{2}:[A-F\d]{2}/; 
+	if(!reg_name.test(value))
+	{  
+		return false; 
+	} 
+	return true;
+}
+
+function checkNumFormat( num )
+{
+	var re = /^[0-9]+$/;
+	if (!re.test(num)){
+		return false; 
+	}
+		return true;
+}
+
+function verifySubmitData()
+{
+	//class_count
+	var class_num = parseInt(<%=class_count%>);
+	var add_class_name = document.getElementsByName( "className" )[0].value;
+	
+	if ( document.getElementsByName( "apply_status" )[0].value == 1 )
+	{
+		return false;
+	}
+		
+	while(class_num > 0) {
+		if(jsEditNo != 'New'){
+			var idx = parseInt(jsEditNo);
+			if (idx == (class_num-1))
+			{
+				class_num--;
+				continue;
+			}	
+		}		
+		
+		if(add_class_name == jsClassify[class_num-1].name)
+		{
+			alert("The class name has been used!! Please rename it.");
+			return false;
+		}	
+		class_num--;
+	}
+
+	if( "" == document.getElementsByName( "className" )[0].value)
+	{
+		alert("Please enter QoS class name.");
+		document.getElementsByName( "className" )[0].focus();
+		return false; 
+	}
+	
+	
+	if( "" == document.getElementsByName( "classOrder" )[0].value)
+	{
+		alert("Please enter Classificaiton Order.");
+		document.getElementsByName( "classOrder" )[0].focus();
+		return false; 
+	}
+	
+	if( "drop" == document.getElementsByName( "queueName" )[0].value)
+	{
+		if( "na" == document.getElementsByName( "etherType" )[0].value)
+		{
+			if ( false == document.getElementsByName( "srcMacActive" )[0].checked ) 
+			{
+				if ( false == document.getElementsByName( "destMacActive" )[0].checked ) 
+				{
+					alert("You can't select Q_DROP only with criteria \"WAN interface/LAN interface\" and \"Ether Type\".");
+					return false; 
+				}
+			}
+			
+			if ( false == document.getElementsByName( "destMacActive" )[0].checked ) 
+			{
+				if ( false == document.getElementsByName( "srcMacActive" )[0].checked ) 
+				{
+					alert("You can't select Q_DROP only with criteria \"WAN interface/LAN interface\" and \"Ether Type\".");
+					return false; 
+				}
+			}
+		}	
+	}
+	
+	if( "na" == document.getElementsByName( "formInterface" )[0].value)
+	{
+			alert("You must configure some criteria in step 2.");
+			document.getElementsByName( "formInterface" )[0].focus();
+			return false; 
+	}
+	
+	if( "drop" != document.getElementsByName( "queueName" )[0].value)
+	{
+		if( "na" == document.getElementsByName( "etherType" )[0].value)
+		{
+			if( false ==	document.getElementsByName( "srcMacActive" )[0].checked) 
+			{
+				if( false ==	document.getElementsByName( "destMacActive" )[0].checked) 
+				{
+					alert("You must configure some criteria in step 2.");
+					document.getElementsByName( "formInterface" )[0].focus();
+					return false; 
+				}
+			}
+			
+			if( false ==	document.getElementsByName( "destMacActive" )[0].checked) 
+			{
+				if( false == document.getElementsByName( "srcMacActive" )[0].checked ) 
+				{
+					alert("You must configure some criteria in step 2.");
+					document.getElementsByName( "formInterface" )[0].focus();
+					return false; 
+				}
+			}
+		}
+	}
+	
+	if( false ==document.getElementsByName( "srcIpActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "srcIpActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "srcIp" )[0].value)
+			{
+				alert("invalid source ip.");
+				document.getElementsByName( "srcIp" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkIPFormat(document.getElementsByName( "srcIp" )[0].value)))
+			{
+				alert("invalid source ip.");
+				document.getElementsByName( "srcIp" )[0].focus();
+				return false; 
+			}
+
+			if(document.getElementsByName( "srcNetMask" )[0].value)
+			{
+				if(!(checkNetmaskFormat( document.getElementsByName( "srcNetMask" )[0].value )))
+				{
+					alert("Source subnet mask "+document.getElementsByName( "srcNetMask" )[0].value+" is invalid subnet mask.");
+					document.getElementsByName( "srcNetMask" )[0].focus();
+					return false; 
+				}
+			}
+			else
+			{
+					alert("Default source subnet mask is 255.255.255.255 .");
+					document.getElementsByName( "srcNetMask" )[0].value = "255.255.255.255";
+					document.getElementsByName( "srcNetMask" )[0].focus();
+					return false; 
+			}
+			
+		}	
+	}
+
+	if( false == document.getElementsByName( "srcMacActive" )[0].disabled)
+	{	
+		if( true ==	document.getElementsByName( "srcMacActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "srcMac" )[0].value)
+			{
+				alert("	invalid source mac.");
+				document.getElementsByName( "srcMac" )[0].focus();
+				return false; 
+			}
+			document.getElementsByName( "srcMac" )[0].value = document.getElementsByName( "srcMac" )[0].value.toUpperCase();
+			if(!(checkMacFormat(document.getElementsByName( "srcMac" )[0].value)))
+			{
+				alert("	invalid source mac.");
+				document.getElementsByName( "srcMac" )[0].focus();
+				return false; 
+			}
+
+			if(document.getElementsByName( "srcMacMask" )[0].value)
+			{
+				if(!(checkMacFormat( document.getElementsByName( "srcMacMask" )[0].value )))
+				{
+					alert("Source MAC mask "+document.getElementsByName( "srcMacMask" )[0].value+" is invalid.");
+					document.getElementsByName( "srcMacMask" )[0].focus();
+					return false; 
+				}
+			}
+			else
+			{
+				alert("Default source MAC mask is FF:FF:FF:FF:FF:FF .");
+				document.getElementsByName( "srcMacMask" )[0].value = "FF:FF:FF:FF:FF:FF";
+				document.getElementsByName( "srcMacMask" )[0].focus();
+				return false; 
+			
+			}
+			
+		}	
+	}
+
+	if( false ==	document.getElementsByName( "srcPortActive" )[0].disabled)
+	{	
+		if( true ==	document.getElementsByName( "srcPortActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "srcPort_min" )[0].value)
+			{
+				alert("invalid source port range.");
+				document.getElementsByName( "srcPort_min" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "srcPort_min" )[0].value)))
+			{
+				alert("invalid source port range.");
+				document.getElementsByName( "srcPort_min" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "srcPort_min" )[0].value);
+			if(( num > 65535 ) || ( 1> num ) )
+			{
+				alert("'The start port of range of port '"+ num +" is out of range [1 ~ 65535].");
+				document.getElementsByName( "srcPort_min" )[0].focus();
+				return false; 
+			}
+			
+			if(document.getElementsByName( "srcPort_max" )[0].value)
+			{
+				if(!(checkNumFormat( document.getElementsByName( "srcPort_max" )[0].value )))
+				{
+					alert("invalid source port range.");
+					document.getElementsByName( "srcPort_max" )[0].focus();
+					return false; 
+				}
+				
+				var num = parseInt(document.getElementsByName( "srcPort_max" )[0].value);
+				if(( num > 65535 ) || ( 1> num ) )
+				{
+					alert("'The end port of range of port '"+ num +" is out of range [1 ~ 65535].");
+					document.getElementsByName( "srcPort_max" )[0].focus();
+					return false; 
+				}
+				
+				if(parseInt(document.getElementsByName( "srcPort_min" )[0].value) > parseInt(document.getElementsByName( "srcPort_max" )[0].value) )
+				{
+					alert("	invlaid source port range with wrong order.");
+					document.getElementsByName( "srcPort_min" )[0].focus();
+					return false; 
+				}
+			}
+		}	
+	}
+	
+	if( false == document.getElementsByName( "destIpActive" )[0].disabled)
+	{	
+		if( true ==	document.getElementsByName( "destIpActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "destIp" )[0].value)
+			{
+				alert("invalid destination ip.");
+				document.getElementsByName( "destIp" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkIPFormat(document.getElementsByName( "destIp" )[0].value)))
+			{
+					alert("invalid destination ip.");
+					document.getElementsByName( "destIp" )[0].focus();
+					return false; 
+			}		
+
+			if(document.getElementsByName( "destNetMask" )[0].value)
+			{
+				if(!(checkNetmaskFormat( document.getElementsByName( "destNetMask" )[0].value )))
+				{
+					alert("Destination subnet mask "+document.getElementsByName( "destNetMask" )[0].value+" is invalid subnet mask.");
+					document.getElementsByName( "destNetMask" )[0].focus();
+					return false; 
+				}
+			}
+			else
+			{
+					alert("Default destination subnet mask is 255.255.255.255 .");
+					document.getElementsByName( "destNetMask" )[0].value = "255.255.255.255";
+					document.getElementsByName( "destNetMask" )[0].focus();
+					return false; 
+			}
+		}	
+	}	
+	
+	if( false == document.getElementsByName( "destMacActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "destMacActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "destMac" )[0].value)
+			{
+				alert("	invalid destination mac.");
+				document.getElementsByName( "destMac" )[0].focus();
+				return false; 
+			}
+			document.getElementsByName( "destMac" )[0].value = document.getElementsByName( "destMac" )[0].value.toUpperCase();
+			if(!(checkMacFormat(document.getElementsByName( "destMac" )[0].value)))
+			{
+				alert("	invalid destination mac.");
+				document.getElementsByName( "destMac" )[0].focus();
+				return false; 
+			}
+			
+			if(document.getElementsByName( "destMacMask" )[0].value)
+			{
+				if(!(checkMacFormat( document.getElementsByName( "destMacMask" )[0].value )))
+				{
+					alert("Destination MAC mask "+document.getElementsByName( "destMacMask" )[0].value+" is invalid.");
+					document.getElementsByName( "destMacMask" )[0].focus();
+					return false; 
+				}
+			}
+						else
+			{
+				alert("Default destination MAC mask is FF:FF:FF:FF:FF:FF .");
+				document.getElementsByName( "destMacMask" )[0].value = "FF:FF:FF:FF:FF:FF";
+				document.getElementsByName( "destMacMask" )[0].focus();
+				return false; 
+			}
+		}	
+	}
+
+	if( false == document.getElementsByName( "destPortActive" )[0].disabled)
+	{	
+		if( true ==	document.getElementsByName( "destPortActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "destPort_min" )[0].value)
+			{
+				alert("	invlaid destination port range.");
+				document.getElementsByName( "destPort_min" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "destPort_min" )[0].value)))
+			{
+				alert("	invlaid destination port range.");
+				document.getElementsByName( "destPort_min" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "destPort_min" )[0].value);
+			if(( num > 65535 ) || ( 1> num ) )
+			{
+				alert("'The start port of range of port '"+ num +" is out of range [1 ~ 65535].");
+				document.getElementsByName( "destPort_min" )[0].focus();
+				return false; 
+			}
+
+			
+			if(document.getElementsByName( "destPort_max" )[0].value)
+			{
+				if(!(checkNumFormat( document.getElementsByName( "destPort_max" )[0].value )))
+				{
+					alert("invlaid destination port range.");
+					document.getElementsByName( "destPort_max" )[0].focus();
+					return false; 
+				}
+				
+				var num = parseInt(document.getElementsByName( "destPort_max" )[0].value);
+				if(( num > 65535 ) || ( 1> num ) )
+				{
+					alert("'The end port of range of port '"+ num +" is out of range [1 ~ 65535].");
+					document.getElementsByName( "destPort_max" )[0].focus();
+					return false; 
+				}
+				
+				if(parseInt(document.getElementsByName( "destPort_min" )[0].value) >parseInt( document.getElementsByName( "destPort_max" )[0].value) )
+				{
+					alert("	invlaid destination port range with wrong order.");
+					document.getElementsByName( "destPort_min" )[0].focus();
+					return false; 
+				}
+			}
+		}
+	}
+	
+	if( false == document.getElementsByName( "protocolActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "protocolActive" )[0].checked)
+		{
+			if( "UserDef" == document.getElementsByName( "protocol" )[0].value)
+			{
+				if( "" == checkNumFormat( document.getElementsByName( "protocolPort" )[0].value))
+				{
+					alert("Protocol number "+document.getElementsByName( "protocolPort" )[0].value+" is out of range [1-252].");
+					document.getElementsByName( "protocolPort" )[0].focus();
+					return false; 
+				}
+				
+				if(!(checkNumFormat( document.getElementsByName( "protocolPort" )[0].value)))
+				{
+					alert("Protocol number "+document.getElementsByName( "protocolPort" )[0].value+" is out of range [1-252].");
+					document.getElementsByName( "protocolPort" )[0].focus();
+					return false; 
+				}
+				
+				var num = parseInt(document.getElementsByName( "protocolPort" )[0].value);
+				if(( num > 253) || ( 0> num ) )
+				{
+					alert("Protocol number "+document.getElementsByName( "protocolPort" )[0].value+" is out of range [1-252].");
+					document.getElementsByName( "protocolPort" )[0].focus();
+					return false; 
+				}
+				
+			}
+		}
+	}
+	
+	if( false == document.getElementsByName( "dhcpActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "dhcpActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "dhcpInput" )[0].value)
+			{
+				alert("unconfigured DHCP Option Value in criteria configuration.");
+				document.getElementsByName( "dhcpInput" )[0].focus();
+				return false; 
+			}
+			
+		}
+	}
+	
+	if( false == document.getElementsByName( "pktLengthActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "pktLengthActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "pktLength_min" )[0].value)
+			{
+				alert("unconfigured IP Packet Length in criteria configuration.");
+				document.getElementsByName( "pktLength_min" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "pktLength_min" )[0].value)))
+			{
+				alert("invalid packet length range.");
+				document.getElementsByName( "pktLength_min" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "pktLength_min" )[0].value);
+			if(( num > 1504 ) || ( 46 > num ) )
+			{
+				alert("The start lenth of range of packet length "+ num +" is out of range [46-1500].");
+				document.getElementsByName( "pktLength_min" )[0].focus();
+				return false; 
+			}
+
+			var num = parseInt(document.getElementsByName( "pktLength_max" )[0].value);
+			if(!(checkNumFormat( document.getElementsByName( "pktLength_max" )[0].value )))
+			{
+				alert("The end lenth of range of packet length "+ num +" is out of range [46-1500].");
+				document.getElementsByName( "pktLength_max" )[0].focus();
+				return false; 
+			}
+			
+			if(( num > 1504 ) || ( 46 > num ) )
+			{
+				alert("The end lenth of range of packet length "+ num +" is out of range [46-1500].");
+				document.getElementsByName( "pktLength_max" )[0].focus();
+				return false; 
+			}
+			
+			if(parseInt(document.getElementsByName( "pktLength_min" )[0].value) > parseInt(document.getElementsByName( "pktLength_max" )[0].value) )
+			{
+				alert("The end lenth of range of packet length is greater than the end lenth of range of packet length");
+				document.getElementsByName( "pktLength_min" )[0].focus();
+				return false; 
+			}	
+		}
+	}
+
+	if( false ==	document.getElementsByName( "dscpActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "dscpActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "Dscp" )[0].value)
+			{
+				alert("	unconfigured DSCP in criteria configuration.");
+				document.getElementsByName( "Dscp" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "Dscp" )[0].value)))
+			{
+				alert(	"DSCP " + document.getElementsByName( "Dscp" )[0].value + "is out of range [0-63].");
+				document.getElementsByName( "Dscp" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "Dscp" )[0].value);
+			if(( num > 63 ) || ( 0 > num ) )
+			{
+				alert("DSCP "+ num +"is out of range [0-63].");
+				document.getElementsByName( "Dscp" )[0].focus();
+				return false; 
+			}
+		}
+	}
+
+	if( false == document.getElementsByName( "vlanIdActive" )[0].disabled)
+	{
+		if( true ==	document.getElementsByName( "vlanIdActive" )[0].checked)
+		{
+			if( "" == document.getElementsByName( "vlanId" )[0].value)
+			{
+				alert("unconfigured VLAN ID in criteria configuration.");
+				document.getElementsByName( "vlanId" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "vlanId" )[0].value)))
+			{
+				alert(	"VLAN ID " + document.getElementsByName( "vlanId" )[0].value + " is out of range [1-4094].");
+				document.getElementsByName( "vlanId" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "vlanId" )[0].value);
+			if(( num > 4094 ) || ( 1 > num ) )
+			{
+				alert("VLAN ID " + num + " is out of range [1-4094].");
+				document.getElementsByName( "vlanId" )[0].focus();
+				return false; 
+			}
+		}
+	}
+
+	if( false == document.getElementsByName( "setDscp" )[0].disabled)
+	{
+		if( "mark" == document.getElementsByName( "dscpMark" )[0].value )
+		{
+			if( "" == document.getElementsByName( "setDscp" )[0].value)
+			{
+				alert("Unconfig DSCP mark value.");
+				document.getElementsByName( "setDscp" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "setDscp" )[0].value)))
+			{
+				alert(	"DSCP "+document.getElementsByName( "setDscp" )[0].value+" is out of range [0-63].");
+				document.getElementsByName( "setDscp" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "setDscp" )[0].value);
+			if(( num > 63 ) || ( 0 > num ) )
+			{
+				alert("DSCP " +num+ " is out of range [0-63].");
+				document.getElementsByName( "setDscp" )[0].focus();
+				return false; 
+			}
+		}
+	}
+	
+	if( false == document.getElementsByName( "setVlanId" )[0].disabled)
+	{
+		if( ("Remark" == document.getElementsByName( "vidMark_action" )[0].value) || ("Add" == document.getElementsByName( "vidMark_action" )[0].value) )
+		{
+			if( "" == document.getElementsByName( "setVlanId" )[0].value)
+			{
+				alert("Unconfig VLAN ID mark value.");
+				document.getElementsByName( "setVlanId" )[0].focus();
+				return false; 
+			}
+			
+			if(!(checkNumFormat(document.getElementsByName( "setVlanId" )[0].value)))
+			{
+				alert("VLAN ID " + document.getElementsByName( "setVlanId" )[0].value + " is out of range [1-4094]." );
+				document.getElementsByName( "setVlanId" )[0].focus();
+				return false; 
+			}
+			
+			var num = parseInt(document.getElementsByName( "setVlanId" )[0].value);
+			if(( num > 4094 ) || ( 1 > num ) )
+			{
+				alert("VLAN ID " +num+ " is out of range [1-4094].");
+				document.getElementsByName( "setVlanId" )[0].focus();
+				return false; 	
+			}
+		}
+	}	
+
+
+			
+	if( "" == document.getElementsByName("queueName")[0].value)
+	{			
+		alert("To Queue index " + document.getElementsByName("RateLimit")[0].value + "is invalid.");
+		document.getElementsByName( "queueName" )[0].focus();
+		return false; 
+
+	}
+	
+	document.getElementsByName( "apply_status" )[0].value = 1 ;
+	return true; 		
+}
+
+</script>
+</head>
+<body >
+<div id="tabs">
+   <ul>
+	<li><a href="<%=controller%>/expert/configuration/management/qos/general" title="General"><span>General</span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/management/qos/qos_queue" title="Queue Setup"><span>Queue Setup</span></a></li>
+	<li class="hightline"><a title="Class Setup"><span>Class Setup</span></a></li>
+	<!--<li><a href="<%=controller%>/expert/configuration/management/remote/tr069" title="Monitor"><span>Monitor</span></a></li>-->
+   </ul>
+   <br class="clearfloat" />
+</div>
+
+<form name="WANForm">
+   <div id="table">
+   
+		<!--<ul id="list" style="display:none">-->
+		<ul id="list">
+         <li class="table_top"></li>
+         <li class="table_content">
+          <div class="data">
+	      <div class="title">Class Setup:</div>
+		   <div class="w_text">
+			  <ul>    
+					<input name="QueueAddBtn" value="Add New Classifier" type="button" onclick="editClassify('New')" />
+			  </ul>
+		   </div>
+		 <div class="spaceair"></div>
+               <ul>
+                  <div class="title">Current Settings:</div>
+                  <li class="left_table">Class :</li>
+                  <div class="tableframe">
+                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                        <tr>
+                           <td>
+                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                 <tr>
+                                    <td>
+                                       <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                          <tr>
+                                             <td>
+                                                <table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+                                                   <tr class="top_font" align="center">
+                                                      <td width="35">#</td>
+                                                      <td width="80">Status</td>													  
+													  <td >Class Name</td>
+                                                      <td >Classfication Criteria</td>
+                                                      <td >DSCP Mark</td>
+                                                      <td >802.1P Mark</td>
+                                                      <td >VLAN ID Tag </td>
+                                                      <td >To Queue</td>
+                                                      <td width="70"><%:Modify%></td>
+                                                   </tr>
+                                                   <% for i = 1, #luaClassify do %>
+                                  
+                                                         <tr class="table_font" align="center">
+														<td><%= i %></td>
+														<td><img <% if luaClassify[i].enable == "1" then %>src="<%=media%>/admin/images/i_active_on.gif" onclick="send( <%=i -1 %> , 0 )" title="<%:On%>"<%else%>src="<%=media%>/admin/images/i_active_off.gif" onclick="send( <%=i -1 %> , 1 )" title="<%:Off%>"<% end %> width="18" height="18" /> </td>
+														<td><%= luaClassify[i].name%></td>
+
+														<!--<td >Classfication Criteria</td>-->
+														<!--<td >From Intf: <%= luaClassify[i].fromInt%><br />-->
+							
+														<td >WAN Intf:
+														<%local group_id = luaClassify[i].fromInt%>
+														<% if group_id == "na" then %>
+															NA
+														<%else%>
+															<%local wanint = uci:get( "intfGrp", group_id ,"wanint")%>
+															<%if wanint == "WAN" then  wanint="wan" end%>
+															<%= uci:get("network",wanint,"name")%>
+														<% end %>
+														
+														<br/>
+														<%if luaClassify[i].ethType == "ip" then%>
+																Ether Type:IP<br />
+										
+																<%if luaClassify[i].srcMac  then%>Src MAC: <%= luaClassify[i].srcMac%>
+																	<%if luaClassify[i].srcMacMask then%>MASK[<%= luaClassify[i].srcMacMask%>]
+																	<%end%>
+																	<%if luaClassify[i].srcMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].srcIp  then%>Src IP: <%= luaClassify[i].srcIp%>
+																	<%if luaClassify[i].srcMask  then%>MASK[<%= luaClassify[i].srcMask%>]<%end%>
+																	<%if luaClassify[i].srcIpExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].srcPort_min  then%>Src Port: <%= luaClassify[i].srcPort_min%>
+																
+																	<%if not ( luaClassify[i].srcPort_min == luaClassify[i].srcPort_max  ) then%>
+																		<%if luaClassify[i].srcPort_max then%>:<%= luaClassify[i].srcPort_max%><%end%>
+																	<%end%>
+																	
+																	<%if luaClassify[i].srcPortExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].destMac then%>Dst MAC: <%= luaClassify[i].destMac%>
+																	<%if luaClassify[i].destMacMask then%>MASK[<%= luaClassify[i].destMacMask%>]<%end%>
+																	<%if luaClassify[i].destMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].destIp then%>Dst IP: <%= luaClassify[i].destIp%>
+																	<%if luaClassify[i].destMask then%>MASK[<%= luaClassify[i].destMask%>]<%end%>
+																	<%if luaClassify[i].destIpExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+
+																<%if luaClassify[i].destPort_min then%>Dst Port: <%= luaClassify[i].destPort_min%>
+																
+																	<%if not ( luaClassify[i].destPort_min == luaClassify[i].destPort_max  ) then%> 
+																		<%if luaClassify[i].destPort_max then%>:<%= luaClassify[i].destPort_max%><%end%>
+																	<%end%>		
+																	
+																	<%if luaClassify[i].destPortExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].protocol then%>
+																	Protocol:
+																	<%if luaClassify[i].protocol == "6"  then%>TCP
+																	<%elseif luaClassify[i].protocol == "17"  then%>UDP
+																	<%elseif luaClassify[i].protocol == "1"  then%>ICMP
+																	<%elseif luaClassify[i].protocol == "2"  then%>IGMP
+																	<%else%><%= luaClassify[i].protocol%>
+																	<%end%>
+																	<%if luaClassify[i].protocolExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>																
+																
+																<%if luaClassify[i].service then%>
+																	<%if not( "na" == luaClassify[i].service ) then%>
+																		Service: <%= luaClassify[i].service%>
+																		<%if luaClassify[i].serviceExclude == "1" then%>(E)<%end%>
+																		<br />
+																	<%end%>
+																<%end%>	
+																
+																<%if ( luaClassify[i].pktLength_min and luaClassify[i].pktLength_max ) then%>
+																	IP Length: <%= luaClassify[i].pktLength_min%>
+																	<%if not ( luaClassify[i].pktLength_min == luaClassify[i].pktLength_max ) then%>:<%= luaClassify[i].pktLength_max%> <%end%>
+																	<%if luaClassify[i].pktLengthExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>																
+			
+																<%if luaClassify[i].dhcp then%>
+																	<%if not( "na" == luaClassify[i].dhcp ) then%>
+																	DHCP OP<%= luaClassify[i].dhcp %>:<%= luaClassify[i].setDhcp %>
+																		<%if luaClassify[i].dhcpExclude == "1" then%>(E)<%end%>
+																		<br />
+																	<%end%>
+																<%end%>																	
+																
+																<%if luaClassify[i].dscp then%>DSCP: <%= luaClassify[i].dscp %>
+																	<%if luaClassify[i].dscpExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>	
+													
+																<%if luaClassify[i].tcpAckActive then%>
+																	TCP ACK
+																	<%if luaClassify[i].tcpAckExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>	
+																
+															<%elseif luaClassify[i].ethType == "arp" then%>
+																Ether Type:ARP<br />
+																<%if luaClassify[i].srcMac then%>Src MAC: <%= luaClassify[i].srcMac%>
+																	<%if luaClassify[i].srcMacMask then%>MASK[<%= luaClassify[i].srcMacMask%>]<%end%>
+																	<%if luaClassify[i].srcMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].destMac then%>Dst MAC: <%= luaClassify[i].destMac%>
+																	<%if luaClassify[i].destMacMask then%>MASK[<%= luaClassify[i].destMacMask%>]<%end%>
+																	<%if luaClassify[i].destMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+
+															<%elseif luaClassify[i].ethType == "8021q" then%>
+																Ether Type:802.1Q<br />
+																<%if luaClassify[i].srcMac then%>Src MAC: <%= luaClassify[i].srcMac%>
+																	<%if luaClassify[i].srcMacMask then%>MASK[<%= luaClassify[i].srcMacMask%>]<%end%>
+																	<%if luaClassify[i].srcMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].destMac then%>Dst MAC: <%= luaClassify[i].destMac%>
+																	<%if luaClassify[i].destMacMask then%>MASK[<%= luaClassify[i].destMacMask%>]<%end%>
+																	<%if luaClassify[i].destMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].prio then%>
+																	802.1P: 
+																	<%if luaClassify[i].prio == "0" then%>0(BE) 
+																	<%elseif luaClassify[i].prio == "1"  then%>1(BK)
+																	<%elseif luaClassify[i].prio == "2"  then%>2(SPARE)
+																	<%elseif luaClassify[i].prio == "3"  then%>3(EE)
+																	<%elseif luaClassify[i].prio == "4"  then%>4(CL)
+																	<%elseif luaClassify[i].prio == "5"  then%>5(VI)
+																	<%elseif luaClassify[i].prio == "6"  then%>6(VO)
+																	<%elseif luaClassify[i].prio == "7"  then%>7(NC)
+																	<%end%>
+																	<%if luaClassify[i].prioExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>					
+																
+																<%if luaClassify[i].vlanId then%>VLAN ID : <%= luaClassify[i].vlanId%>
+																	<%if luaClassify[i].vlanIdExclude == "1" then%>(E)<%end%>
+																<br />
+																<%end%>
+													
+															<%else%>
+															
+																<%if luaClassify[i].srcMac then%>Src MAC: <%= luaClassify[i].srcMac%>
+																	<%if luaClassify[i].srcMacMask then%>MASK[<%= luaClassify[i].srcMacMask%>]<%end%>
+																	<%if luaClassify[i].srcMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+																
+																<%if luaClassify[i].destMac then%>Dst MAC: <%= luaClassify[i].destMac%>
+																	<%if luaClassify[i].destMacMask then%>MASK[<%= luaClassify[i].destMacMask%>]<%end%>
+																	<%if luaClassify[i].destMacExclude == "1" then%>(E)<%end%>
+																	<br />
+																<%end%>
+															<%end%>												
+														
+														</td>
+
+														<td><%if luaClassify[i].set_dscp then%><%=luaClassify[i].set_dscp%><%else%>unchange<%end%></td>
+
+														<td>
+															<%if luaClassify[i].set_prio == "0" then%>0(BE) 
+															<%elseif luaClassify[i].set_prio == "1"  then%>1(BK)
+															<%elseif luaClassify[i].set_prio == "2"  then%>2(SPARE)
+															<%elseif luaClassify[i].set_prio == "3"  then%>3(EE)
+															<%elseif luaClassify[i].set_prio == "4"  then%>4(CL)
+															<%elseif luaClassify[i].set_prio == "5"  then%>5(VI)
+															<%elseif luaClassify[i].set_prio == "6"  then%>6(VO)
+															<%elseif luaClassify[i].set_prio == "7"  then%>7(NC)
+															<%else%>unchange<%end%>
+														</td>
+
+														<td>
+															<%=luaClassify[i].vidMark_action%>
+															<%if (((luaClassify[i].vidMark_action == "Add") or (luaClassify[i].vidMark_action == "Remark"))and (luaClassify[i].set_vid))then%>VID : <%=luaClassify[i].set_vid%>
+															<%elseif luaClassify[i].vidMark_action == nil then%>unchange<%end%>
+														</td>
+
+														<td>
+															<%if luaClassify[i].queue then%>
+																<%= uci:get("qos",string.lower(luaClassify[i].queue),"name")%>
+																<%if luaClassify[i].queue == "drop" then%>Q_DROP<%end%>
+															<%end%>
+																				
+														</td>
+														
+														<td align="center">
+																<a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" ><img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editClassify(<%= i - 1 %>)"/></a>
+																&nbsp;&nbsp;
+																<a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delClassify(<%= i %>, this)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																<a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+                                                            </td>
+                                                         </tr>             
+                                
+                                                    <%end%>
+                                                </table>
+                                             </td>
+                                          </tr>
+                                       </table>
+                                    </td>
+                                 </tr>
+                              </table>
+                           </td>
+                        </tr>
+                     </table>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            <ul>
+				<!--<div class="spaceair"></div>
+				<div class="w_text"> <span class="i_note">Note:</span></div>
+				<div class="w_text">
+				<span class="i_note_a">
+				Maximum of 8 configurable entries for WAN port, and maximum of 3 configurable entries for LAN port.<br /> 
+				If queue is deleted, then related classifiers will be removed too.<br /> 
+				Priority level "1" is the highest priority for QoS.<br /> 
+				Rate Limit "0" is max bandwidth.
+				</span>
+				</div>
+				<div class="spaceair"></div>-->
+            </ul>
+            </div>
+         </li>
+      </ul>
+
+	<input type="hidden" name="SubmitType" value="table"/>
+	<input type="hidden" name="EditID" />
+	<input name="apply_status" id="apply_status" value="0" type="hidden" />
+	
+		<ul id="edit" style="display:none">
+		<!--<ul id="edit" style="display">-->
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+				<div class="title">Please fill up steps 1 trough 4 to configures a QoS rule.</div>
+				<div class="space"></div>
+				<div class="title">Step 1: Class Configuration</div>
+
+				<div class="w_text">
+					<ul>
+						<li class="left_table">	
+						<input name="classActive" type="checkbox" value="1" />
+						Active  :</li>
+					</ul>
+				</div>
+				<div class="w_text">
+					<ul>
+						<li class="left_table">Class Name :</li>
+						<li class="right_table">
+						   <input name="className" size="20" maxlength="15" value="" type="text" />
+						</li>
+					</ul>
+				</div>
+				<div class="w_text">
+					<ul>
+						<li class="left_table">Classificaiton Order :</li>
+						<li class="right_table">
+						
+						<select onchange="" size="1" name="classOrder" >                  
+							<% for i = 1, #luaClassify+1 do %>
+							<option value="<%= i%>" id= "<%= "classOrder"..i%>" ><%if i == #luaClassify+1 then%>Last<%else%><%=i%><%end%></option>
+							<%end%>
+						</select>
+						<select onchange="" size="1" name="editclassOrder" >                  
+							<% for i = 1, #luaClassify do %>
+							<option value="<%= i%>" id= "<%= "classOrder"..i%>" ><%=i%></option>
+							<%end%>
+						</select>
+						</li>
+					</ul>
+				</div>
+				
+				<div class="space"></div>
+				<div class="title">Step 2: Criteria Configuration</div>
+				<div class="title">Use the fields below to specify the characteristics of a data flow that needs to managed by this QoS rule.</div>
+				<div class="title">Basic</div>
+
+				<div class="w_text">
+					<ul>
+						<li class="left_table">WAN interface(LAN interface) :</li>
+						<li class="right_table">
+							<select onchange="" size="1" name="formInterface">                  
+							<option value="na" id="formInterface" >NA</option>
+							<% for i = 1, #luaIG do %>
+				
+							<option value="<%= luaIG[i].id%>" id="formInterface" >
+							<% if (string.lower(luaIG[i].wanint) == "wan") then
+							    wan_ifname = "WAN"
+							   else
+							     wan_ifname = uci:get("network",string.lower(luaIG[i].wanint),"name")
+							   end
+							%>
+							<%=wan_ifname%>
+							&nbsp;
+							(							
+								<%local port_string = luaIG[i].lanport
+								if port_string then
+								port_string=string.gsub(port_string,"3","LAN4")
+								port_string=string.gsub(port_string,"2","LAN3")
+								port_string=string.gsub(port_string,"1","LAN2")
+								port_string=string.gsub(port_string,"0","LAN1")
+								end%>
+								
+								<%local ssid_string = luaIG[i].wlan
+								if ssid_string then
+								
+								local SSID0 = uci:get("wireless", "ath0","ssid")
+								
+								if not SSID0 then
+									local m_24g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+									SSID0="ZyXEL" .. m_24g
+								end
+
+								local SSID1 = uci:get("wireless", "ath1","ssid")
+								local SSID2 = uci:get("wireless", "ath2","ssid")
+								local SSID3 = uci:get("wireless", "ath3","ssid")
+								
+								local SSID10 = uci:get("wireless", "ath10","ssid")
+																
+								
+								if not SSID10 then
+									local mac_5g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+									SSID10="ZyXEL" .. mac_5g .."_5G"
+								end								
+								
+								local SSID11 = uci:get("wireless", "ath11","ssid")
+								local SSID12 = uci:get("wireless", "ath12","ssid")
+								local SSID13 = uci:get("wireless", "ath13","ssid")								
+
+								ssid_string=string.gsub(ssid_string,"23",SSID3)
+								ssid_string=string.gsub(ssid_string,"22",SSID2)
+								ssid_string=string.gsub(ssid_string,"21",SSID1)
+								ssid_string=string.gsub(ssid_string,"20",SSID0)        
+								ssid_string=string.gsub(ssid_string,"13",SSID13)
+								ssid_string=string.gsub(ssid_string,"12",SSID12)
+								ssid_string=string.gsub(ssid_string,"11",SSID11)
+								ssid_string=string.gsub(ssid_string,"10",SSID10)   								
+								end%>
+
+								<% if port_string then 
+								if ssid_string then%>
+								<%=port_string%><br/>
+								<%=ssid_string%>
+								<%else%>
+								<%=port_string%>
+								<%end%>
+								<%else%>
+								<%=ssid_string%>
+								<%end%>
+							)
+							</option>
+							<%end%>
+							</select>
+						</li>
+					</ul>
+				</div>
+				  
+	                 <!-- <div class="w_text">
+                     <ul>
+                        <li class="left_table">
+						<input name="ToInterfaceActive" type="checkbox" value="1" />
+						&nbsp;To Interface :</li>
+                        <li class="right_table">
+						
+							<select onchange="" size="1" name="ToInterface">                  
+							<option value="1" id="ToInterface" >NA</option>
+							<option value="2" id="ToInterface" >2</option>
+							</select>
+							
+                        </li>
+                     </ul>
+                  </div>-->
+
+				<div class="w_text">
+					<ul>
+						<li class="left_table">Ether Type :</li>
+						<li class="right_table">
+							<select onchange="selectEtherType(this.options[this.selectedIndex].value)" size="1" name="etherType">                  
+							<option value="na" id="etherType" >NA </option>
+							<option value="ip" id="etherType" >IP (0X0800)</option>
+							<option value="arp" id="etherType" >ARP (0X0806)</option>
+							<!--<option value="PPPoE_DISC" id="EtherType" >PPPoE_DISC (0X8863)</option>-->
+							<!--<option value="PPPoE_SES" id="EtherType" >PPPoE_SES (0X8864)</option>-->
+							<option value="8021q" id="etherType" >802.1Q (0X8100)</option>
+							</select>
+						</li>
+					</ul>
+				</div>
+				  
+				<div class="spaceair"></div>
+				<div class="title">Source</div>
+
+				<div class="w_text">
+				<ul>
+					<li class="table_15">
+					<input name="srcIpActive" type="checkbox" value="1" disabled="true" onclick="SAddCheck()" />
+					&nbsp;Address :
+					</li>
+
+					<li class="table_20">
+					<input name="srcIp" size="16" maxlength="15" value="" type="text" disabled="false" />
+					</li>
+
+					<li class="table_15">
+					Subnet NetMask :
+					</li>
+
+					<li class="table_30">
+					<input name="srcNetMask" size="16" maxlength="15" value="" type="text" disabled="false" />
+					</li>
+					
+					<li class="table_15">
+					<input name="srcIpExclude" type="checkbox" value="1" disabled="true" onclick="" />
+					Exclude
+					</li>
+
+				</ul>
+				</div>
+				  
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="srcPortActive" type="checkbox" value="1" disabled="false"  onclick="SPortCheck()" />
+						&nbsp;Port Range :</li>
+
+						<li class="table_45">
+						<input name="srcPort_min" size="7" maxlength="5" value="" type="text" disabled="false" />
+						&nbsp;&nbsp;~&nbsp;&nbsp;
+						<input name="srcPort_max" size="7" maxlength="5" value="" type="text" disabled="false" />
+						[1~65535]
+						</li>
+
+						<li class="table_15">
+						<input name="srcPortExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude
+						</li>
+
+					</ul>
+				</div>
+				  
+				<div class="w_text">
+					<ul>
+						<li class="table_15">
+						<input name="srcMacActive" type="checkbox" value="1" onclick="SMACCheck()" />
+						&nbsp;MAC Address :</li>
+
+						<li class="table_20">
+						<input name="srcMac" size="20" maxlength="20" value="" type="text" disabled="false" />
+						</li>
+
+						<li class="table_15">
+						MAC Mask :
+						</li>
+
+						<li class="table_30">
+						<input name="srcMacMask" size="20" maxlength="20" value="" type="text" disabled="false" />
+						</li>
+						
+						<li class="table_15">
+						<input name="srcMacExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+
+					</ul>
+				</div>					  
+				  
+
+				<div class="spaceair"></div>
+				<div class="title">Destination</div>				
+
+				<div class="w_text">
+				<ul>
+					<li class="table_15">
+					<input name="destIpActive" type="checkbox" value="1" disabled="false" onclick="DAddCheck()"  />
+					&nbsp;Address :</li>
+
+					<li class="table_20">
+					<input name="destIp" size="16" maxlength="15" value="" type="text" disabled="false" />
+					</li>
+
+					<li class="table_15">
+					Subnet NetMask :
+					</li>
+
+					<li class="table_30">
+					<input name="destNetMask" size="16" maxlength="15" value="" type="text" disabled="false" />
+					</li>
+					
+					<li class="table_15">
+					<input name="destIpExclude" type="checkbox" value="1" disabled="true" onclick="" />
+					Exclude</li>
+					
+				</ul>
+				</div>
+				  
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="destPortActive" type="checkbox" value="1" disabled="false" onclick="DPortCheck()" />
+						&nbsp;Port Range :</li>
+
+						<li class="table_45">
+						<input name="destPort_min" size="7" maxlength="5" value="" type="text" disabled="false" />
+						&nbsp;&nbsp;~&nbsp;&nbsp;
+						<input name="destPort_max" size="7" maxlength="5" value="" type="text" disabled="false" />
+						[1~65535]
+						</li>
+						
+						<li class="table_15">
+						<input name="destPortExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+
+					</ul>
+				</div>
+
+				<div class="w_text">
+					<ul>
+						<li class="table_15">
+						<input name="destMacActive" type="checkbox" value="1" onclick="DMACCheck()"  />
+						&nbsp;MAC Address :</li>
+
+						<li class="table_20">
+						<input name="destMac" size="20" maxlength="20" value="" type="text" disabled="false" />
+						</li>
+
+						<li class="table_15">
+						MAC Mask :
+						</li>
+
+						<li class="table_30">
+						<input name="destMacMask" size="20" maxlength="20" value="" type="text" disabled="false" />
+						</li>
+
+						<li class="table_15">
+						<input name="destMacExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>						
+
+					</ul>
+				</div>				  
+				
+				<div class="spaceair"></div>
+				<div class="title">Others</div>		
+		
+				<!--<div class="w_text"> -->
+				<div class="w_text" style="display: none;">
+					<ul>
+						<li class="left_table">
+						<input name="serviceActive" type="checkbox" value="1" disabled="false" onclick="ServiceCheck()" />
+						&nbsp;Service :</li>
+					
+						<li class="table_45">
+						<select onchange="" size="1" name="Service" disabled="false" >                  
+						<option value="na" id="Service" >NA</option>
+						<option value="FTP" id="Service" >FTP</option>
+						</select>
+						</li>
+						
+						<li class="table_15">
+						<input name="serviceExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+						
+					</ul>
+				</div>				  
+				  
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="protocolActive" type="checkbox" value="1" disabled="false" onclick="ProtocolCheck()" />
+						&nbsp;IP Protocol :</li>
+						
+						<li class="table_45">
+							<select onchange="selectProtocol(this.options[this.selectedIndex].value)" size="1" name="protocol" disabled="false" >                  
+							<option value="6" id="protocol" >TCP</option>
+							<option value="17" id="protocol" >UDP</option>
+							<option value="1" id="protocol" >ICMP</option>
+							<option value="2" id="protocol" >IGMP</option>
+							<option value="UserDef" id="protocol" >User Define</option>
+							</select>
+							&nbsp;
+							<input name="protocolPort" size="7" maxlength="5" value="6" type="text" disabled="false" />
+							[1~252]
+						</li>
+						
+						<li class="table_15">
+						<input name="protocolExclude" type="checkbox" value="1" disabled="true" onclick="ExProtocolCheck()" />
+						Exclude</li>
+						
+					</ul>
+				</div>
+				<!--<div class="w_text" style="display: none;">--> 
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="dhcpActive" type="checkbox" value="1" disabled="false" onclick="DHCPCheck()" />
+						&nbsp;DHCP :</li>
+						<li class="right_table">
+						<select onchange="" size="1" name="dhcpOption" disabled="false" > 							
+						<!--<option value="na" id="dhcpOption" >NA</option>-->
+						<option value="60" id="dhcpOption" >Vendor Class ID (DHCP Option 60)</option>
+						<option value="77" id="dhcpOption" >User Class ID (DHCP Option 77)</option>
+						</select>
+						</li>
+					<ul>
+					</ul>
+						<li class="left_table"></li>
+						<li class="table_45">
+						Class ID&nbsp;&nbsp;:&nbsp;&nbsp;&nbsp;&nbsp;
+						<input name="dhcpInput" size="20" maxlength="20" value="" type="text" disabled="false" />
+						(string)
+						</li>
+						
+						<li class="table_15">
+						<input name="dhcpExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+						
+					</ul>
+				</div>
+				
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="pktLengthActive" type="checkbox" value="1" disabled="false" onclick="PktLengthCheck()" />
+						&nbsp;Packet Length :</li>
+
+						<li class="table_45">
+						<input name="pktLength_min" size="7" maxlength="5" value="" type="text" disabled="false" />
+						&nbsp;&nbsp;~&nbsp;&nbsp;
+						<input name="pktLength_max" size="7" maxlength="5" value="" type="text" disabled="false" />
+						[46~1504]
+						</li>
+						
+						<li class="table_15">
+						<input name="pktLengthExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+						
+					</ul>
+				</div>
+				  
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="dscpActive" type="checkbox" value="1" disabled="false" onclick="DSCPCheck()" />
+						&nbsp;DSCP :</li>
+
+						<li class="table_45">
+						<input name="Dscp" size="7" maxlength="2" value="" type="text" disabled="false" />
+						[0~63]</li>	
+
+						<li class="table_15">
+						<input name="dscpExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+						
+					</ul>
+				</div>
+				  
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="8021pActive" type="checkbox" value="1" disabled="false" onclick="Check8021p()" />
+						&nbsp;802.1P :</li>
+						
+						<li class="table_45">
+							<select onchange="" size="1" name="8021p" disabled="false">                  
+							<option value="0" id="8021p" >0 BE</option>
+							<option value="1" id="8021p" >1 BK</option>
+							<option value="2" id="8021p" >2 SPARE</option>
+							<option value="3" id="8021p" >3 EE</option>
+							<option value="4" id="8021p" >4 CL</option>
+							<option value="5" id="8021p" >5 VI</option>
+							<option value="6" id="8021p" >6 VO</option>
+							<option value="7" id="8021p" >7 NC</option>
+							</select>
+						</li>
+						
+						<li class="table_15">
+						<input name="prioExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+					</ul>
+				</div>
+
+				<div class="w_text">
+					<ul>
+						<li class="left_table">
+						<input name="vlanIdActive" type="checkbox" value="1" disabled="false" onclick="VlanIdCheck()" />
+						&nbsp;VLAN ID :</li>
+						
+						<li class="table_45">
+						<input name="vlanId" size="7" maxlength="4" value="" type="text" disabled="false" />
+						[1~4094]</li>	
+						
+						<li class="table_15">
+						<input name="vlanIdExclude" type="checkbox" value="1" disabled="true" onclick="" />
+						Exclude</li>
+						
+					</ul>
+				</div>
+
+			<div class="w_text"> 
+                     <ul>
+                        <li class="left_table">
+						<input name="tcpAckActive" type="checkbox" value="1" disabled="false" onclick="tcpAckCheck()" />
+						&nbsp;TCP ACK </li>
+						<li class="table_45">
+						</li>
+						
+						<li class="table_15">
+						<input name="tcpAckExclude" type="checkbox" value="1" disabled="true"  />
+						Exclude</li>
+                     </ul>
+                  </div>
+
+				<div class="space"></div>
+				<div class="title">Step 3: Packet modification</div>
+				<div class="title">The content of the packet can be modified by applying the following setting :</div>
+
+				
+				<div class="w_text">
+					<ul>
+					<li class="left_table">DSCP Mark :</li>
+					
+					<li class="right_table">
+						<select onchange="selectDscpMark(this.options[this.selectedIndex].value)" size="1" name="dscpMark" disabled="false">                  
+						<option value="unchange" id="dscpMark" >unchange</option>
+						<option value="mark" id="dscpMark" >mark</option>
+						</select>
+						
+						&nbsp;
+						<input name="setDscp" size="7" maxlength="2" value="" type="text" disabled="false" />
+						[0~63]
+					</li>
+					
+					</ul>
+				</div>
+				  
+				<div class="w_text">
+					<ul>
+						<li class="left_table">802.1P Mark :</li>
+						<li class="right_table">
+							<select onchange="" size="1" name="8021pMark">                  
+							<option value="unchange" id="8021pMark" >unchange</option>
+							<option value="0" id="8021pMark" >0 BE</option>
+							<option value="1" id="8021pMark" >1 BK</option>
+							<option value="2" id="8021pMark" >2 SPARE</option>
+							<option value="3" id="8021pMark" >3 EE</option>
+							<option value="4" id="8021pMark" >4 CL</option>
+							<option value="5" id="8021pMark" >5 VI</option>
+							<option value="6" id="8021pMark" >6 VO</option>
+							<option value="7" id="8021pMark" >7 NC</option>
+							</select>
+						</li>
+					</ul>
+				</div>	
+				
+				<div class="w_text">
+					<ul>
+					<li class="left_table">VLAND ID :</li>
+					<li class="right_table">
+						<select onchange="selectvlanId(this.options[this.selectedIndex].value)" size="1" name="vidMark_action">                  
+						<option value="unchange" id="vidMark_action" >unchange</option>
+						<option value="Remark" id="vidMark_action" >Remark</option>
+						<option value="Add" id="vidMark_action" >Add</option>
+						<option value="Remove" id="vidMark_action" >Remove</option>
+						</select>
+						&nbsp;
+						<input name="setVlanId" size="7" maxlength="4" value="" type="text" disabled="false" />
+						[1~4094]
+					</li>
+					</ul>
+				</div>
+
+				<div class="space"></div>				  
+				<div class="title">Step 4: Outgoing queue selection</div>
+				<div class="title">Outgoing queue decides the priority of traffic and how traffic should be shaped in the inteface.Choose "Q_DROP" if you want to drop this kind of upstream traffic.</div>
+
+				<div class="spaceair"></div>
+				<div class="w_text">
+					<ul>
+					<li class="left_table">To Queue index :</li>
+					<li class="right_table">
+						<select onchange="" size="1" name="queueName">                  
+						<option value="drop" id="queueName" >Q_DROP</option>
+						<% for i = 1, #luaQueue do %>
+						<option value="<%= luaQueue[i].id%>" id="queueName" ><%= luaQueue[i].name%></option>
+						<%end%>
+						</select>
+					</li>
+					</ul>
+				</div>
+				
+				<div class="spaceair"></div>
+			</ul>
+		</div>
+		</li>
+		<li class="table_button">
+			<div class="button" align="center">
+				<input name="Back" value="<%:Back%>" type="submit" id="back" onclick="backToList()" />
+				  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+				<input name="apply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData()" />
+				  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+				<input name="Cancel" value="<%:Cancel%>" type="button" onclick="repaintEdit()"/>
+			</div>
+		</li>
+      </ul>
+
+   </div>
+
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Management%> > Bandwidth MGMT > Class Setup');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>
+

@@ -1,0 +1,153 @@
+#!/bin/sh
+. /lib/functions.sh
+include /lib/config
+
+# Setting routing table
+
+local defaultWan=$(uci get network.general.defaultWan)
+
+local proto=$(uci get network.$defaultWan.proto)
+local default_int=""
+local d_gw=""
+
+
+if [ "$proto" == "static" ]; then
+	d_gw=$(uci get network.$defaultWan.gateway)
+else
+	d_gw=$(uci get network.$defaultWan.isp_gw)
+fi
+
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+	default_int=$proto-$defaultWan
+
+	rm /tmp/wan_route2
+	d_gw=""
+	route -n | grep  $default_int | grep 255.255  > /tmp/wan_route2
+	exec < /tmp/wan_route2
+	while read line
+	do
+		local test=$(echo $line | awk '{print $8}' )	
+		local test2=$(echo $line | awk '{print $4}' )
+		if [ "$test" == "$default_int" ] && [ "$test2" != "UG" ] ;then
+			d_gw=$(echo $line | awk '{print $1}' | tr -d '\n')
+			break
+		fi		
+	done
+		
+	#d_gw=$(route -n | grep  $default_int | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+	if [ "$d_gw" == "" ] ;then
+		d_gw="0.0.0.0"
+	fi		
+else
+	default_int=$(uci get network.$defaultWan.ifname)	
+fi
+
+
+
+ip route delete
+route add default gw $d_gw dev $default_int
+
+/etc/init.d/dhcp6c restart
+
+
+
+lan_ipaddr=$(ifconfig br-lan | awk '/inet addr/{print $2}' | awk -F':' '{print $2}')
+lan_netmask=$(ifconfig br-lan | awk '/inet addr/{print $4}' | awk -F':' '{print $2}')
+
+lan_ip_byte1=$(echo $lan_ipaddr | awk -F'.' '{print $1}')
+lan_mask_byte1=$(echo $lan_netmask | awk -F'.' '{print $1}')
+
+
+lan_ip_byte2=$(echo $lan_ipaddr | awk -F'.' '{print $2}')
+lan_mask_byte2=$(echo $lan_netmask | awk -F'.' '{print $2}')
+
+lan_ip_byte3=$(echo $lan_ipaddr | awk -F'.' '{print $3}')
+lan_mask_byte3=$(echo $lan_netmask | awk -F'.' '{print $3}')
+
+lan_ip_byte4=$(echo $lan_ipaddr | awk -F'.' '{print $4}')
+lan_mask_byte4=$(echo $lan_netmask | awk -F'.' '{print $4}')
+
+wan_ip_byte4=$(echo $wan_ip | awk -F'.' '{print $4}')
+wan_mask_byte4=$(echo $wan_mask | awk -F'.' '{print $4}')
+
+lan_subnet=$((lan_ip_byte1&lan_mask_byte1)).$((lan_ip_byte2&lan_mask_byte2)).$((lan_ip_byte3&lan_mask_byte3)).$((lan_ip_byte4&lan_mask_byte4))
+
+local prefix_str=`/bin/ipcalc.sh $lan_ipaddr $lan_netmask | grep PREFIX`
+local prefix=$(echo $prefix_str | sed 's/PREFIX=//g')
+
+
+#ifup $defaultWan
+
+#=====  Add route table ======================================
+local doamin1=""
+local mask1=""
+
+rm /tmp/wan_routex
+route -n | grep  $default_int | grep 255.255  > /tmp/wan_routex
+exec < /tmp/wan_routex
+while read line
+do
+	local test=$(echo $line | awk '{print $8}' )	
+	local test2=$(echo $line | awk '{print $4}' )
+	if [ "$test" == "$default_int" ] && [ "$test2" != "UG" ] ;then
+		doamin1=$(echo $line | awk '{print $1}' | tr -d '\n')
+		mask1=$(echo $line | awk '{print $3}' | tr -d '\n')
+		break
+	fi		
+done
+
+ip route flush table 1
+#ip route add $doamin1/$mask1  dev $default_int table 1
+#========================================================
+
+ip route add $lan_subnet/$prefix dev br-lan table 1
+ip route del default table 1
+#ip route add default via $d_gw dev $default_int table 1
+ip rule del from $lan_subnet/$prefix table 1
+ip rule del to $lan_subnet/$prefix table 1
+ip rule add from $lan_subnet/$prefix table 1
+ip rule add to $lan_subnet/$prefix table 1
+ip route flush cache
+rm /tmp/netmask_num
+
+## Set iptables for Default Interface Group
+iptables -D IntfGrp -i br-lan  -j DROP 2>/dev/null
+iptables -I IntfGrp -i br-lan  -j DROP 2>/dev/null
+
+for iface in "" 1 2 3 4 
+do	
+    grouped=$(uci get network.wan$iface.grouped)
+    wan_enabled=$(uci get network.wan$iface.enable)
+    default_iface=$(uci get network.wan$iface.default)
+    if [ "$wan_enabled" == "1" ] ;then
+	local iface2=$(uci get network.wan$iface.proto)
+	if [ "$iface2" == "pppoe" ]; then
+		iface3=pppoe-wan"$iface"
+	else
+		iface3=$(uci get network.wan$iface.ifname)
+	fi
+	
+	if [ "$grouped" == "1" ] && [ "$default_iface" != "1" ] ; then
+		iptables -D IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+		iptables -I IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+	else
+		iptables -D IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+		iptables -I IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+	fi
+	
+    fi
+done
+
+iptables -D IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+iptables -I IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+## End Set
+
+#Pass LAN side traffic and block illegal upstream traffic.
+/sbin/configure_intfGrp set_iptables_rule
+
+/sbin/update_sys_dns
+
+/etc/init.d/dnsmasq restart
+/etc/init.d/intfGrp restart
+/etc/init.d/route boot

@@ -1,0 +1,88 @@
+<div id="sharingContainer">
+    <div class="serverSettingsTitlebarWrapper">
+        <div class="subHeader nomargin">
+            <span class="subheaderTitle" string="sharing"></span>
+        </div>
+    </div>	
+	<div class="smallServerContentSpacer"></div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="sharedfolders" />
+		</span>
+		<div class="clear" />
+    </div>
+	<div class="paddingLeft" >
+		<div>
+			<span string="sharedfolderscaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<div id="share_folders_container" key="contentdir" />
+		<a class="actionbtn" onclick="createNewSharedFolderRow()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="addnewfolder"></span><span class="actionbtn_r"></span></a>
+		<div class="serverContentSpacer">
+		</div>
+    </div>
+	<div id="divSelectDir" style="visibility:hidden" ></div>
+	<div key="rmautoshare" style="display: none;">
+		<div class="boxHeader">
+			<span class="titleWrapper">
+				<span class="title" string="removablemedia" />
+				<div id="twonkysh1" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+			</span>
+			<div class="clear" />
+		</div>
+		<div id="subheader_twonkysh1" class="hideSubheaderBody paddingLeft">
+			<div>
+				<span string="removablemediacaption" />
+			</div>
+			<br/>
+			<input id="autoshareCheckbox" type="checkbox" /><span string="rmautoshare" />
+			<div class="serverContentSpacer">
+			</div>
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="mediareceivers" />
+			<div id="twonkysh2" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkysh2" class="hideSubheaderBody paddingLeft">
+		<div id="clientautoenable"><input key="clientautoenable" type="checkbox" /><span><span string="enablesharing" /></span></div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<table id="mediareceivers" key="mediareceivers" class="mediaReceiversTable">
+		</table>	
+		<div class="smallServerContentSpacer">
+		</div>
+		<a class="actionbtn" onclick="resetClients()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="resetlist"></span><span class="actionbtn_r"></span></a>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="aggservers" />
+			<div id="twonkysh3" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkysh3" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="aggserverscaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<table id="aggservers" key="aggservers" class="aggServersTable">
+		</table>	
+	</div>
+    <div class="smallServerContentSpacer">
+   	</div>
+	<div id="actionButtonContainer">
+    	<a id="saveButton" class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="submitSharingData(1)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="savechanges"></span><span class="actionbtn_r"></span></a>
+    	<a class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="cancelSettings()"><span class="actionbtn_l"></span><span class="actionbtn_c" string="cancel"></span><span class="actionbtn_r"></span></a>
+	</div>
+	<div id="spinnerContainer" style="display: none;">
+		<div class="spinner"></div>
+	</div>
+</div>

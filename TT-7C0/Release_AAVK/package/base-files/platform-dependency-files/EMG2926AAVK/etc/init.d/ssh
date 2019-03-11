@@ -1,0 +1,201 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2010 OpenWrt.org
+START=50
+
+has_root_pwd() {
+	local pwd=$([ -f "$1" ] && cat "$1")
+		  pwd="${pwd#*root:}"
+		  pwd="${pwd%%:*}"
+	test -n "${pwd#!}"
+}
+
+boot(){
+	
+	cksshFlag=$(uci get firewall.remote_ssh) 
+	
+	if [ -z "$cksshFlag" ];then
+		uci set firewall.remote_ssh=firewall
+		uci set firewall.remote_ssh.interface=2
+		uci set firewall.remote_ssh.client_check=0
+		uci set firewall.remote_ssh.port=22
+		
+		uci set firewall.remote_ssh_WAN=firewall
+		uci set firewall.remote_ssh_WAN.client_check=1
+		uci set firewall.remote_ssh_WAN.client_count=0
+		
+		uci set firewall.remote_ssh_LAN=firewall
+		uci set firewall.remote_ssh_LAN.client_check=0
+		uci set firewall.remote_ssh_LAN.client_count=0
+	fi
+	uci commit firewall
+	start
+}
+
+ck_ssh() {
+	config_load firewall
+#check firewall config for upgrade firmware without "reset to default"	
+	cktelnetFlag=$(uci get firewall.remote_ssh_WAN)  
+	[ -z "$cktelnetFlag" ] && {
+
+		interface_status=$(uci get firewall.remote_ssh.interface) 
+		client_status=$(uci get firewall.remote_ssh.client_check) 
+
+		uci set firewall.remote_ssh_WAN=firewall
+		uci set firewall.remote_ssh_LAN=firewall
+
+		if [ "$interface_status" == "1" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_ssh_LAN.client_check=0
+			uci set firewall.remote_ssh_WAN.client_check=0
+			uci set firewall.remote_ssh_LAN.client_count=0
+			uci set firewall.remote_ssh_WAN.client_count=0
+		elif [ "$interface_status" == "1" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_ssh.client_addr)
+			uci set firewall.remote_ssh_LAN.client_check=2
+			uci set firewall.remote_ssh_WAN.client_check=2
+			uci set firewall.remote_ssh_LAN.client_count=1
+			uci set firewall.remote_ssh_LAN.client_addr1=$ip_status
+			uci set firewall.remote_ssh_WAN.client_count=1
+			uci set firewall.remote_ssh_WAN.client_addr1=$ip_status
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_ssh_LAN.client_check=0
+			uci set firewall.remote_ssh_WAN.client_check=1
+			uci set firewall.remote_ssh_LAN.client_count=0
+			uci set firewall.remote_ssh_WAN.client_count=0
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_ssh.client_addr)	
+			uci set firewall.remote_ssh_LAN.client_check=2
+			uci set firewall.remote_ssh_WAN.client_check=1
+			uci set firewall.remote_ssh_LAN.client_count=1
+			uci set firewall.remote_ssh_LAN.client_addr1=$ip_status
+			uci set firewall.remote_ssh_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_ssh_LAN.client_check=1
+			uci set firewall.remote_ssh_WAN.client_check=0
+			uci set firewall.remote_ssh_LAN.client_count=0
+			uci set firewall.remote_ssh_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_ssh.client_addr)
+			uci set firewall.remote_ssh_LAN.client_check=1
+			uci set firewall.remote_ssh_WAN.client_check=2
+			uci set firewall.remote_ssh_LAN.client_count=0
+			uci set firewall.remote_ssh_WAN.client_count=1
+			uci set firewall.remote_ssh_WAN.client_addr1=$ip_status
+		fi
+
+		uci set firewall.remote_ssh.interface=2
+		uci set firewall.remote_ssh.client_check=0
+		delete=$(uci get firewall.remote_ssh.client_addr)
+		if [ -z "$delete" ]; then
+			uci commit firewall
+		else
+			uci del firewall.remote_ssh.client_addr
+			uci commit firewall
+		fi
+		
+	}
+#end	
+}
+
+filter() {
+	config_load firewall
+	config_get ssh_port remote_ssh port
+	#config_get telnet_client_addr remote_telnet client_addr
+	config_get WAN_ssh_client_check remote_ssh_WAN client_check
+	config_get WAN_ssh_client_count remote_ssh_WAN client_count
+	config_get LAN_ssh_client_check remote_ssh_LAN client_check
+	config_get LAN_ssh_client_count remote_ssh_LAN client_count
+	
+	if [ "on" = "$1" ]; then
+		filter_type=" -I "
+	else
+		filter_type=" -D "
+	fi
+
+	## insert DROP rule
+	if [ "1" = "$WAN_ssh_client_check" ] || [ "2" = "$WAN_ssh_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT  ! -i br+  -p tcp --dport ${ssh_port:-22} -j DROP 2> /dev/null
+	fi
+
+	if [ "1" = "$LAN_ssh_client_check" ] || [ "2" = "$LAN_ssh_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT  -i br+  -p tcp --dport ${ssh_port:-22} -j DROP 2> /dev/null
+	fi
+
+	## insert ACCEPT rule
+	if [ "0" = "$WAN_ssh_client_check" ] && [ "0" = "$LAN_ssh_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT -p tcp --dport ${ssh_port:-22} -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" = "$WAN_ssh_client_check" ] && [ "0" != "$LAN_ssh_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT  ! -i br+  -p tcp --dport ${ssh_port:-22} -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" != "$WAN_ssh_client_check" ] && [ "0" = "$LAN_ssh_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT  -i br+  -p tcp --dport ${ssh_port:-22} -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "2" = "$WAN_ssh_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($WAN_ssh_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get WAN_ssh_client_addr remote_ssh_WAN $client_addr
+			addr_cmd=" -s $WAN_ssh_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT  ! -i br+  $addr_cmd -p tcp --dport ${ssh_port:-22} -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+	
+	if [ "2" = "$LAN_ssh_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($LAN_ssh_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get LAN_ssh_client_addr remote_ssh_LAN $client_addr
+			addr_cmd=" -s $LAN_ssh_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_SSH_INPUT  -i br+  $addr_cmd -p tcp --dport ${ssh_port:-22} -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+
+}
+
+start() {
+	#if ( ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
+	#   ( [ ! -x /usr/sbin/dropbear ] && [ ! -x /usr/sbin/sshd ] );
+	if [ -e /etc/passwd ];	
+	then
+			ck_ssh
+			/etc/init.d/dropbear start
+			#config_get ssh_port remote_ssh port
+			#/usr/sbin/dropbear -P /var/run/dropbear.1.pid -p ${ssh_port:-22}			
+			##check mode,if AP/UR,exit
+			local sys_mode=$(get_sys_mode)
+			[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+			insmod x_tables  2>&- >&-
+			insmod ip_tables  2>&- >&-
+			insmod ip6_tables  2>&- >&-
+			insmod iptable_filter  2>&- >&-
+			insmod xt_tcpudp  2>&- >&-
+			
+			/usr/sbin/iptables -D RMMG_SSH_INPUT
+			/usr/sbin/iptables -X RMMG_SSH_INPUT
+			/usr/sbin/iptables -F RMMG_SSH_INPUT
+			/usr/sbin/iptables -N RMMG_SSH_INPUT
+
+			filter "on"
+			local changeToSer=$(uci_get nat general changeToSer)
+			[ "$changeToSer" = "1" ] && /sbin/nat apply
+		
+	fi
+}
+
+stop() {
+	#/etc/init.d/dropbear stop 2>/dev/null
+	killall dropbear 2>/dev/null
+	filter "off"
+}

@@ -1,0 +1,222 @@
+# Copyright (C) 2006 OpenWrt.org
+
+config interface loopback
+	option ifname	lo
+	option proto	static
+	option ipaddr	127.0.0.1
+	option netmask	255.0.0.0
+
+config interface lan
+	option status	1
+	option ifname	eth1
+	option type 	bridge
+	option proto	static
+	option ipaddr	192.168.1.1
+        option ipaddrv6 '' 
+	option netmask	255.255.255.0	
+	option stp	0
+	option vid      1
+        option vlanname lan
+        option priority 0
+	option dns1	ISP,
+	option dns2	ISP,
+	option dns3	ISP,
+        option dnsv6_1  ISP,
+        option dnsv6_2  ISP,
+        option dnsv6_3  ISP,
+	option igmpmode	0
+
+config interface wan
+	option ifname eth0
+	option proto dhcp	
+        option v6_proto dhcp
+	option hostname 'EMG2926-Q10A'
+        option name     'WAN'
+        option default  1
+        option vid      0
+        option untag    1
+        option enable   1
+	option dhcp121   0
+	option dhcp125   0
+        option dhcp60   0
+        option vendorid ''
+        option clientid ''
+        option isp_gw   '0.0.0.0'
+	option dns1	ISP,
+	option dns2	ISP,
+	option dns3	ISP,
+        option dnsv6_1  ISP,
+        option dnsv6_2  ISP,
+        option dnsv6_3  ISP,
+	option v6_static  0
+	option eth_mtu	1500
+	option mtu	1500
+	option pptp_mtu	1492
+	option pppoe_mtu 1492
+	option pppoeNailedup 1
+	option grouped    1   
+	option default 1
+	option bind_LAN 'br-lan'
+	option dhcp43   0
+	option pri 0
+	option IP_version 'IPv4_Only'
+
+config interface wan1
+	option proto dhcp	
+        option v6_proto dhcp
+	option hostname 'EMG2926-Q10A'
+        option name     ''
+        option default  0
+        option vid      4500
+        option untag    1
+        option enable   0
+	option dhcp121   0
+	option dhcp125   0
+        option dhcp60   0
+        option vendorid ''
+        option clientid ''
+        option isp_gw   '0.0.0.0'
+	option dns1	ISP,
+	option dns2	ISP,
+	option dns3	ISP,
+        option dnsv6_1  ISP,
+        option dnsv6_2  ISP,
+        option dnsv6_3  ISP,
+	option v6_static  0
+	option eth_mtu	1500
+	option mtu	1500
+	option pptp_mtu	1492
+	option pppoe_mtu 1492
+	option pppoeNailedup 1
+	option grouped    0   
+	option default 0
+	option dhcp43   0
+	option pri 0
+	option IP_version 'IPv4_Only'
+
+config interface wan2
+	option proto dhcp	
+        option v6_proto dhcp
+	option hostname 'EMG2926-Q10A'
+        option name     ''
+        option default  0
+        option vid      4500
+        option untag    1
+        option enable   0
+	option dhcp121   0
+	option dhcp125   0
+        option dhcp60   0
+        option vendorid ''
+        option clientid ''
+        option isp_gw   '0.0.0.0'
+	option dns1	ISP,
+	option dns2	ISP,
+	option dns3	ISP,
+        option dnsv6_1  ISP,
+        option dnsv6_2  ISP,
+        option dnsv6_3  ISP,
+	option v6_static  0
+	option eth_mtu	1500
+	option mtu	1500
+	option pptp_mtu	1492
+	option pppoe_mtu 1492
+	option pppoeNailedup 1
+	option grouped    0   
+	option default 0
+	option dhcp43   0
+	option pri 0
+	option IP_version 'IPv4_Only'
+
+config interface wan3
+	option proto dhcp	
+        option v6_proto dhcp
+	option hostname 'EMG2926-Q10A'
+        option name     ''
+        option default  0
+        option vid      4500
+        option untag    1
+        option enable   0
+	option dhcp121   0
+	option dhcp125   0
+        option dhcp60   0
+        option vendorid ''
+        option clientid ''
+        option isp_gw   '0.0.0.0'
+	option dns1	ISP,
+	option dns2	ISP,
+	option dns3	ISP,
+        option dnsv6_1  ISP,
+        option dnsv6_2  ISP,
+        option dnsv6_3  ISP,
+	option v6_static  0
+	option eth_mtu	1500
+	option mtu	1500
+	option pptp_mtu	1492
+	option pppoe_mtu 1492
+	option pppoeNailedup 1
+	option grouped    0   
+	option default 0
+	option dhcp43   0
+	option pri 0
+	option IP_version 'IPv4_Only'
+
+config interface wan4
+	option proto dhcp	
+        option v6_proto dhcp
+	option hostname 'EMG2926-Q10A'
+        option name     ''
+        option default  0
+        option vid      4500
+        option untag    1
+        option enable   0
+	option dhcp121   0
+	option dhcp125   0
+        option dhcp60   0
+        option vendorid ''
+        option clientid ''
+        option isp_gw   '0.0.0.0'
+	option dns1	ISP,
+	option dns2	ISP,
+	option dns3	ISP,
+        option dnsv6_1  ISP,
+        option dnsv6_2  ISP,
+        option dnsv6_3  ISP,
+	option v6_static  0
+	option eth_mtu	1500
+	option mtu	1500
+	option pptp_mtu	1492
+	option pppoe_mtu 1492
+	option pppoeNailedup 1
+	option grouped    0   
+	option default 0
+	option dhcp43   0
+	option pri 0
+	option IP_version 'IPv4_Only'
+
+config switch
+	option name switch0
+	option reset 1
+	option enable_vlan 1
+
+config switch_vlan
+	option device switch0
+	option vlan 1
+	option ports '0 1 2 3 4'
+
+config switch_vlan
+	option device switch0
+	option vlan 2
+	option ports '5 6'	
+
+config network 'general'
+        option auto_ip_change         '1'
+        option 'dhcpv6pd'             '1'
+        option backup_lan_ip          '192.168.1.1'
+        option backup_lan_mask        '255.255.255.0'
+        option backup_lan_gw          ''
+        option backup_aplan_ip        '192.168.1.2'
+        option backup_aplan_mask      '255.255.255.0'
+        option backup_aplan_gw        ''
+        option defaultWan      'wan'
+
+

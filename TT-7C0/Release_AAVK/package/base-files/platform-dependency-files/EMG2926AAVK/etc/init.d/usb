@@ -1,0 +1,14 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+
+START=39
+start() {
+	[ -d /proc/bus/usb ] && {
+		/bin/mount -t usbfs none /proc/bus/usb
+	}
+
+	usb_ctrl 0 disable
+	sleep 1
+	usb_ctrl 0 enable
+	
+}

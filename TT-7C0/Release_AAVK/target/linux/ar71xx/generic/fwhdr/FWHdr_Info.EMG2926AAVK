@@ -1,0 +1,12 @@
+# this file used for $(STAGING_DIR_HOST)/bin/genImgHdr to create firmware header
+
+###Project Information###
+
+FW_VERSION="V1.00(AAVK.7)C0"
+
+OUTPUT_NAME="ras.bin"
+
+PROJECT_NAME="AAVK-EMG2926Q10A"
+
+# default extend header size to 64K if not define. it should equal to 'block/erase size' of flash
+HDR_EXTEND_SIZE=0x20000

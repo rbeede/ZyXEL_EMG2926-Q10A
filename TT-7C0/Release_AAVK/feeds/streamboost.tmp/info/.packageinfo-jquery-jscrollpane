@@ -1,0 +1,46 @@
+Source-Makefile: feeds/streamboost/jquery-jscrollpane/Makefile
+Package: jquery-jscrollpane
+Submenu: JavaScript
+Version: 2.0.0beta10-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery plugin to skin scroll bars with CSS
+Maintainer: 
+Source: 2.0.0beta10.tar.gz
+Type: ipkg
+Description:   jScrollPane is a cross-browser jQuery plugin by Kelvin Luck which
+  converts a browser's default scrollbars (on elements with a relevant
+  overflow property) into an HTML structure which can be easily skinned
+  with CSS.
+http://jscrollpane.kelvinluck.com
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-jscrollpane
+	config jquery-jscrollpane_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-jscrollpane
+		bool "Use custom package version"
+		default n
+	config jquery-jscrollpane_CUSTOM_VERSION
+		depends on jquery-jscrollpane_USE_CUSTOM_VERSION
+		string " version as string (default version: 2.0.0beta10)"
+		default "2.0.0beta10"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-jscrollpane
+	config jquery-jscrollpane_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-jscrollpane
+		bool "Use custom source directory"
+		default n
+	config jquery-jscrollpane_CUSTOM_SOURCE_DIR
+		depends on jquery-jscrollpane_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

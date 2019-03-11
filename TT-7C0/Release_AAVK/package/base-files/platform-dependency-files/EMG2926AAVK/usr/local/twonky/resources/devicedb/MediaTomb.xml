@@ -1,0 +1,14 @@
+<Server>
+	<DeviceId>
+		<DisplayName>MediaTomb</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>MediaTomb</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA0</Version>
+		</DLNA>
+	</Adaptations>
+</Server>

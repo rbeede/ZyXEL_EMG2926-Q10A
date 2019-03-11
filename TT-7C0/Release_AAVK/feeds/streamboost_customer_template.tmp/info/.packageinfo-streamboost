@@ -1,0 +1,18 @@
+Source-Makefile: feeds/streamboost_customer_template/streamboost/Makefile
+Package: streamboost
+Version: 2.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +ozker +aperture +app-flow-scripts +callhomeclient +customer-keys +wopr-db +drflocs +smoketest +luci-app-streamboost +p0f-db +luci-theme-steelblue +flux +tresbar +streamboost-misc +opkg-curl +flowmark +qdiscman +flowman +nodedetectd +overlord +sbnamed +cape +redis-server +redis-cli +policy-redis +policy-reader +sbnoded +sbmacouid +jigglyp0f +p0f +sea +settings-loader +sbsaved +celes +dumpevents @TARGET_ar71xx
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Streamboost configuration and master package
+Maintainer: Matthew McClintock <mmcclint@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Contains customer specific configuration files, and also
+dependencies for all other Streamboost packages
+Matthew McClintock <mmcclint@qca.qualcomm.com>
+@@
+
+

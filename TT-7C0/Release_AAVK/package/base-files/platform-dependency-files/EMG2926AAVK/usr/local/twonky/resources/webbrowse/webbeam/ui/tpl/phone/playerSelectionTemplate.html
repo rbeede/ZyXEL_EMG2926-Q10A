@@ -1,0 +1,19 @@
+<div id="RendererSelection" class="popup xlarge notification" data-bind="slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="popup_header_line"></div>
+    <div id="closebutton" class="button close" data-bind="click:onCancelClick"></div>
+    <div id="wm" class="watermark"></div>
+    <div id="rsTitle" class="popuptitle" data-bind="html: title"></div>
+    <div class="container">
+	    <div class="popuptext checkboxcontainer">
+	        <input type="checkbox" data-bind="checked:rememberChoice" /><span data-bind="html: rememberChoiceLabel"></span>
+	    </div>
+	    <div id="nav" class="navContainer" data-bind="columnizer: filteredPlayers">
+	        <ul class="nav multicolumn" data-bind="foreach: $data">
+	            <li class="svgGradient" data-bind="click: $parents[1].onPlayerClick">
+	                <div class="deviceimg" data-bind="style: { background: 'url(\'' + deviceImage() + '\') -0px -0px no-repeat'}"></div> <span
+	                data-bind="text: title"></span>
+	            </li>
+	        </ul>
+	    </div>
+	</div>
+</div>

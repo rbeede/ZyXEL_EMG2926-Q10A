@@ -1,0 +1,536 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+ 
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+
+<%
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+
+<script language="JavaScript" type="text/javascript">
+
+<%
+	local lanQueue_count = uci:get( "qos", "general","lanQueue_count") 
+	local wanQueue_count = uci:get( "qos", "general","wanQueue_count") 
+	local Queue_count = wanQueue_count + lanQueue_count
+%>
+function check()                                                                
+{        
+	if( "11" == <%=Queue_count%>){
+		document.getElementsByName( "QueueAddBtn" )[0].style.display = 'none';
+		document.getElementsByName( "QueueSetup_Str" )[0].style.display = 'none';
+	}
+
+}
+</script>
+</head>
+<body onload="check();">
+<%
+	local luaQueue = {}
+	--local lanQueue_count = uci:get( "qos", "general","lanQueue_count") 
+	--local wanQueue_count = uci:get( "qos", "general","wanQueue_count") 
+
+	uci:foreach( "qos", "queue", function( section )
+		local tmp = section
+		tmp.id = section[ '.name' ]
+		table.insert( luaQueue, tmp )
+	end ) 
+   
+%>
+
+<script type="text/javascript">
+
+function JSQUEUE( enable, name, interface, priority, weight, rate )
+{
+	this.enable =  ( enable == "" || enable == "0" ) ? false : true;
+	this.name = name;
+	this.interface = interface;
+	this.priority = priority;
+	this.weight = weight;
+	this.rate = rate;
+}
+
+var jsEditNo = "";
+
+var jsQueues = [
+   <%
+      for name, info in pairs(luaQueue) do
+         %> new JSQUEUE( "<%= info.enable %>", "<%= info.name %>", "<%= info.interface %>", "<%= info.priority %>", "<%= info.weight %>", "<%= info.rate %>" ), <%
+      end
+   %>
+];
+
+
+function editQueue( entryNo)
+{
+	document.getElementById( "tabs" ).style.display="none";
+	document.getElementById( "list" ).style.display="none";
+	document.getElementById( "edit" ).style.display="block";
+	document.getElementsByName( "SubmitType" )[0].value = "edit";
+
+	jsEditNo = entryNo;
+	repaintEdit();
+}
+
+
+function send(entryNo,queue_enable)
+{
+
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","qos","qos_queue")%>';
+	var loc = submit_url  + '?SubmitType=edit&amp;apply=Apply&amp;EditID=' + entryNo;
+	if ( queue_enable == '1' )
+	{
+		loc = loc + '&amp;Active=1';
+	}
+	var code = 'location="' + loc + '"';
+	//alert(code);
+	eval(code);
+
+	
+}
+
+
+function repaintEdit()
+{
+
+   if ( jsEditNo != 'New' )
+   {
+ 		document.getElementsByName( "Active" )[0].checked = jsQueues[ jsEditNo ].enable;
+		document.getElementsByName( "QueueName" )[0].value = jsQueues[ jsEditNo ].name;
+		document.getElementsByName( "Interface" )[0].value = jsQueues[ jsEditNo ].interface;
+		document.getElementsByName( "Priority" )[0].value = jsQueues[ jsEditNo ].priority;
+		document.getElementsByName( "Weight" )[0].value = jsQueues[ jsEditNo ].weight;
+		document.getElementsByName( "BufferManagement" )[0].value = 'DT';
+		document.getElementsByName( "RateLimit" )[0].value = jsQueues[ jsEditNo ].rate;
+		document.getElementsByName( "EditID" )[0].value = jsEditNo ;
+		document.getElementsByName( "apply" )[0].disabled = false;
+		document.getElementsByName( "Cancel" )[0].disabled = false;
+		showFullPath(' <%:Management%> > Bandwidth MGMT > Queue Setup'); 
+
+		if ( document.getElementsByName( "QueueName" )[0].value != 'DefaultQueue' )
+		{
+			document.getElementsByName( "Active" )[0].disabled = false;
+			//document.getElementsByName( "QueueName" )[0].disabled = false;
+			//document.getElementsByName( "Interface" )[0].disabled = false;
+			//document.getElementsByName( "Priority" )[0].disabled = false;
+			//document.getElementsByName( "Weight" )[0].disabled = false;
+			//document.getElementsByName( "BufferManagement" )[0].disabled = false;
+			//document.getElementsByName( "RateLimit" )[0].disabled =  false;
+			document.getElementsByName( "apply" )[0].disabled = false;
+			document.getElementsByName( "Cancel" )[0].disabled = false;
+		}
+		else
+		{
+			document.getElementsByName( "Active" )[0].disabled = true;
+			//document.getElementsByName( "QueueName" )[0].disabled = true;
+			document.getElementsByName( "Interface" )[0].disabled = true;
+			//document.getElementsByName( "Priority" )[0].disabled = true;
+			//document.getElementsByName( "Weight" )[0].disabled = true;
+			//document.getElementsByName( "BufferManagement" )[0].disabled = true;
+			//document.getElementsByName( "RateLimit" )[0].disabled = true;
+			document.getElementsByName( "apply" )[0].disabled = true;
+			document.getElementsByName( "Cancel" )[0].disabled = true;
+			
+			
+		}
+   }
+   else
+   {
+
+		document.getElementsByName( "Active" )[0].disabled = false;
+		//document.getElementsByName( "QueueName" )[0].disabled = false;
+		document.getElementsByName( "Interface" )[0].disabled = false;
+		//document.getElementsByName( "Priority" )[0].disabled = false;
+		//document.getElementsByName( "Weight" )[0].disabled = false;
+		//document.getElementsByName( "BufferManagement" )[0].disabled = false;
+		//document.getElementsByName( "RateLimit" )[0].disabled = false;
+		document.getElementsByName( "apply" )[0].disabled = false;
+		document.getElementsByName( "Cancel" )[0].disabled = false;
+
+   		document.getElementsByName( "Active" )[0].checked = true;
+		document.getElementsByName( "QueueName" )[0].value = "";
+		document.getElementsByName( "Interface" )[0].value = "";
+		document.getElementsByName( "Priority" )[0].value = "1";
+		document.getElementsByName( "Weight" )[0].value = "1";
+		document.getElementsByName( "BufferManagement" )[0].value = 'DT';
+		document.getElementsByName( "RateLimit" )[0].value = "0";
+		document.getElementsByName( "EditID" )[0].value = 'New';
+		showFullPath(' <%:Management%> > Bandwidth MGMT > Queue Setup'); 
+   }
+}
+
+
+function delQueue( entryNo, element )
+{
+
+	  var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","qos","qos_queue")%>';
+	  var loc = submit_url + '?delete=' + entryNo;
+	  var code = 'location="' + loc + '"';
+      eval(code);
+
+}
+
+function checkNumFormat( num )
+{
+	var re = /^[0-9]+$/;
+	if (!re.test(num)){
+		return false; 
+	}
+		return true;
+}
+
+function verifySubmitData()
+{
+			var queue_num = parseInt(<%=Queue_count%>);
+			var add_queue_name = document.getElementsByName("QueueName")[0].value;
+
+			if ( document.getElementsByName( "apply_status" )[0].value == 1 )
+			{
+				return false;
+			}
+	
+			while(queue_num > 0) {
+				if(jsEditNo != 'New'){
+					var idx = parseInt(jsEditNo);
+					if (idx == (queue_num-1))
+					{
+						queue_num--;
+						continue;
+					}	
+				}		
+				
+				if(add_queue_name == jsQueues[queue_num-1].name)
+				{
+					alert("The queue name has been used!! Please change the queue name.");
+					return false;
+				}	
+				queue_num--;
+			}
+			
+			if( "" == document.getElementsByName("QueueName")[0].value)
+			{
+				alert("Please enter QoS queue name.");
+				document.getElementsByName( "QueueName" )[0].focus();
+				return false; 
+			}
+			if(jsEditNo == 'New'){
+				if( "wan" == document.getElementsByName("Interface")[0].value)
+				{
+					if( "8" == <%=wanQueue_count%>)
+					{
+						alert("Queues of WAN interface is limited by 8.");
+						return false; 
+					}
+				}
+				
+				if( "lan" == document.getElementsByName("Interface")[0].value)
+				{
+				
+					if( "3" == <%=lanQueue_count%>)
+					{
+						alert("Queues of LAN/WLAN interface is limited by 3.");
+						return false; 
+					}
+				}
+			}
+			
+			if( "" == document.getElementsByName("Interface")[0].value)
+			{
+				if( "" == document.getElementsByName("Interface")[0].value)
+				{
+					alert("Specify an egress interface for this queue.");
+					document.getElementsByName( "Interface" )[0].focus();
+					return false; 
+				}
+			}
+			
+			var num = parseInt(document.getElementsByName( "RateLimit" )[0].value);
+			if( "" != document.getElementsByName("RateLimit")[0].value)
+			{
+				if(!(checkNumFormat(document.getElementsByName("RateLimit")[0].value)))
+				{
+					alert("	Shaping rate " + document.getElementsByName("RateLimit")[0].value + " should be between 0 and 1024000.");
+					document.getElementsByName( "RateLimit" )[0].focus();
+					return false; 
+				}
+				
+				//var num = parseInt(document.getElementsByName( "RateLimit" )[0].value);
+				//if(( num > 1024000 ) || ( 0 > num ) )
+				if( 0 > num )
+				{
+					alert("	Shaping rate " + document.getElementsByName("RateLimit")[0].value +" should be between 0 and 1024000.");
+					document.getElementsByName( "RateLimit" )[0].focus();
+					return false; 
+				}
+			}
+			
+
+			if( "wan" == document.getElementsByName("Interface")[0].value)
+			{			
+				var upload = <%=uci:get( "qos", "general","upload")%>;
+				if( num > parseInt(upload) )
+				{
+					alert("	Shaping rate " + document.getElementsByName("RateLimit")[0].value + " should be less than upload bandwidth " + upload + ".");
+					document.getElementsByName( "RateLimit" )[0].focus();
+					return false; 
+				}			
+			}
+			else
+			{
+				var download = <%=uci:get( "qos", "general","download")%>;
+				if( num > parseInt(download) )
+				{
+					alert("	Shaping rate " + document.getElementsByName("RateLimit")[0].value + " should be less than download bandwidth " + download + ".");
+					document.getElementsByName( "RateLimit" )[0].focus();
+					return false; 
+				}
+			}
+			
+			document.getElementsByName( "apply_status" )[0].value = 1 ;
+			return true; 
+}
+
+
+</script>
+
+<div id="tabs">
+	<ul>
+	<li><a href="<%=controller%>/expert/configuration/management/qos/general" title="General"><span>General</span></a></li>
+	<li class="hightline"><a title="Queue Setup"><span>Queue Setup</span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/management/qos/qos_classify" title="Class Setup"><span>Class Setup</span></a></li>
+	<!--<li><a href="<%=controller%>/expert/configuration/management/remote/tr069" title="Monitor"><span>Monitor</span></a></li>-->
+	</ul>
+	<br class="clearfloat" />
+</div>
+
+<form name="WANForm">
+   <div id="table">
+      <ul id="list">
+         <li class="table_top"></li>
+         <li class="table_content">
+            <div class="data">
+	      <div class="title" name="QueueSetup_Str" >Queue Setup:</div>
+               <div class="w_text">
+                  <ul>    
+						<input name="QueueAddBtn" value="Add New Queue" type="button" onclick="editQueue('New')" />
+                  </ul>
+               </div>
+		 <div class="spaceair"></div>
+               <ul>
+                  <div class="title">Current Settings:</div>
+                  <li class="left_table">Queue :</li>
+                  <div class="tableframe">
+                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                        <tr>
+                           <td>
+                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                 <tr>
+                                    <td>
+                                       <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                          <tr>
+                                             <td>
+                                                <table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+													<tr class="top_font" align="center">
+														<td width="35">#</td>
+														<td width="80">Status</td>
+														<td >Name</td>
+														<td >Interface </td>
+														<td >Priority</td>
+														<td >Weight</td>
+														<td >Buffer Management </td>
+														<td >Rate Limit</td>
+														<td width="70"><%:Modify%></td>
+													</tr>
+													<% for i = 1, #luaQueue do %>
+														<tr class="table_font" align="center">
+														<td><%= i %></td>
+														<td><img <% if luaQueue[i].enable == "1" then %>src="<%=media%>/admin/images/i_active_on.gif" onclick="send( <%=i -1 %> , 0 )" title="<%:On%>"<%else%>src="<%=media%>/admin/images/i_active_off.gif" onclick="send( <%= i - 1 %> ,1)" title="<%:Off%>"<% end %> width="18" height="18" /> </td>
+														<td><%= luaQueue[i].name%></td>
+														<td><%= string.upper(luaQueue[i].interface)%></td>
+														<td><%= luaQueue[i].priority%></td>
+														<td><%= luaQueue[i].weight%></td>
+														<td>DT</td>
+														<td><%= luaQueue[i].rate%></td>
+														<td align="center">
+															<a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" ><img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i -1%>)"/></a>
+															&nbsp;&nbsp;
+															<a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+															<a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+														</td>
+														</tr>
+													<%end%>	
+                                                </table>
+                                             </td>
+                                          </tr>
+                                       </table>
+                                    </td>
+                                 </tr>
+                              </table>
+                           </td>
+                        </tr>
+                     </table>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            <ul>
+               <div class="spaceair"></div>
+               <div class="w_text"> <span class="i_note">Note:</span></div>
+               <div class="w_text">
+			<span class="i_note_a">
+			Maximum of 8 configurable entries for WAN port, and maximum of 3 configurable entries for LAN port.<br />
+			If queue is deleted, then related classifiers will be removed too.<br /> 
+			Priority level "1" is the highest priority for QoS.<br /> 
+			Rate Limit "0" is max bandwidth.
+			</span>
+		  </div>
+               <div class="spaceair"></div>
+            </ul>
+            </div>
+         </li>
+      </ul>
+
+	<input type="hidden" name="SubmitType" value="table"/>
+	<input type="hidden" name="EditID" />
+	<input name="apply_status" id="apply_status" value="0" type="hidden" />
+	
+      <ul id="edit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">						
+						<input name="Active" type="checkbox" value="1" />
+						&nbsp;Active  
+						</li>
+
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table"><%:Name%> :</li>
+                        <li class="right_table">
+                           <input name="QueueName" size="9" maxlength="9" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">To Interface :</li>
+                        <li class="right_table">
+							<select onchange="" size="1" name="Interface">
+							<option value="" id="Interface"> </option>
+							<option value="lan" id="Interface" <%if pingEnable=="lan" then%> selected <%end%> >LAN/WLAN </option>
+							<option value="wan" id="Interface" <%if pingEnable=="wan" then%> selected <%end%> >WAN</option>
+							</select>
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table"><%:Priority%> :</li>
+                        <li class="right_table">
+						
+							<select onchange="" size="1" name="Priority">                  
+							<option value="1" id="QPriority" >1(High)</option>
+							<option value="2" id="QPriority" >2</option>
+							<option value="3" id="QPriority" >3</option>
+							<option value="4" id="QPriority" >4</option>
+							<option value="5" id="QPriority" >5</option>
+							<option value="6" id="QPriority" >6</option>
+							<option value="7" id="QPriority" >7</option>
+							</select>
+							
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">Weight :</li>
+                        <li class="right_table">
+							<select onchange="" size="1" name="Weight">                  
+							<option value="1" id="Weight" >1</option>
+							<option value="2" id="Weight" >2</option>
+							<option value="3" id="Weight" >3</option>
+							<option value="4" id="Weight" >4</option>
+							<option value="5" id="Weight" >5</option>
+							<option value="6" id="Weight" >6</option>
+							<option value="7" id="Weight" >7</option>
+							<option value="8" id="Weight" >8</option>
+							</select>
+							
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">Buffer Management :</li>
+                        <li class="right_table">
+							<select onchange="" size="1" name="BufferManagement">                  
+							<option value="DT" id="BufferManagement" >Drop Tail(DT)</option>
+							</select>
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">Rate Limit :</li>
+                        <li class="right_table">
+                           <input name="RateLimit" size="5" maxlength="6" value="0" type="text" />
+							&nbsp;(kbit)
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="Back" value="<%:Back%>" type="submit" id="back" onclick="backToList()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="apply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="repaintEdit()"/>
+            </div>
+         </li>
+      </ul>
+  
+	  
+	  
+   </div>
+
+
+
+
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Management%> > Bandwidth MGMT > Queue Setup');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>
+

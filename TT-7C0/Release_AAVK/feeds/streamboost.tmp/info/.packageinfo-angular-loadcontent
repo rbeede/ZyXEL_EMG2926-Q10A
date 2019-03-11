@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/angular-loadcontent/Makefile
+Package: angular-loadcontent
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery +angular +angular-mocks +angular-route +angular-translate +urijs
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Angular media loader
+Maintainer: 
+Source: angular-loadcontent-.tar.gz
+Type: ipkg
+Description:   Angular media loader
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_angular-loadcontent
+	config angular-loadcontent_USE_CUSTOM_VERSION
+		depends on PACKAGE_angular-loadcontent
+		bool "Use custom package version"
+		default n
+	config angular-loadcontent_CUSTOM_VERSION
+		depends on angular-loadcontent_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_angular-loadcontent
+	config angular-loadcontent_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_angular-loadcontent
+		bool "Use custom source directory"
+		default n
+	config angular-loadcontent_CUSTOM_SOURCE_DIR
+		depends on angular-loadcontent_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

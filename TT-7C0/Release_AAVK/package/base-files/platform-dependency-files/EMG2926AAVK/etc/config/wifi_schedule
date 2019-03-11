@@ -1,0 +1,66 @@
+config general wlan
+	option enabled        '0'
+
+config service_all everyday
+	option enabled   '0'
+	option status_onoff     '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service mon
+	option enabled   '0'
+	option status_onoff  '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service tue
+	option enabled   '0'
+	option status_onoff  '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service wed
+	option enabled   '0'
+	option status_onoff  '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service thu
+	option enabled   '0'
+	option status_onoff  '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service fri
+	option enabled   '0'
+	option status_onoff  '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service sat
+	option enabled   '0'
+	option status_onoff '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'
+
+config service sun
+	option enabled   '0'
+	option status_onoff  '0'
+	option start_hour       '0'
+	option start_min        '0'
+	option end_hour '0'
+	option end_min  '0'

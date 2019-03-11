@@ -1,0 +1,1412 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local http = require("luci.http")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/javascript">
+
+<%
+	local telnet_port=uci:get("firewall", "remote_telnet", "port")
+	local ssh_port=uci:get("firewall", "remote_ssh", "port")
+	local ftp_port=uci:get("proftpd", "global", "port")
+	
+	local http_port=uci:get("uhttpd", "main", "listen_http")
+	local https_port=uci:get("uhttpd", "main", "listen_https")
+	local host=http.getenv("HTTP_HOST")
+	local host_ip = host:match("(%d+.%d+.%d+.%d+)")
+	
+	local clientCheckHttps_LAN = tonumber(uci:get( "firewall", "remote_https_LAN", "client_check" ))
+	local clientCheckHttps_WAN = tonumber(uci:get( "firewall", "remote_https_WAN", "client_check" ))
+	local clientCheckHttp_LAN = tonumber(uci:get( "firewall", "remote_WWW_LAN", "client_check" ))
+	local clientCheckHttp_WAN = tonumber(uci:get( "firewall", "remote_WWW_WAN", "client_check" ))
+	
+	local httpslanQueue = {}
+  local httpswanQueue = {}
+  local httplanQueue = {}
+  local httpwanQueue = {}
+	local httpslanQueue_count = tonumber(uci:get( "firewall", "remote_https_LAN","client_count")) 
+	local httpswanQueue_count = tonumber(uci:get( "firewall", "remote_https_WAN","client_count")) 
+	local httplanQueue_count = tonumber(uci:get( "firewall", "remote_WWW_LAN","client_count")) 
+	local httpwanQueue_count = tonumber(uci:get( "firewall", "remote_WWW_WAN","client_count")) 
+	
+	if httpslanQueue_count > 0 then
+	   for i=1, httpslanQueue_count do
+	   		local caddr_index = "client_addr" .. i
+	   		local caddr_tmp = uci:get("firewall", "remote_https_LAN", caddr_index)
+	   		table.insert( httpslanQueue, caddr_tmp )
+	   end	
+	 end  
+   
+   if httpswanQueue_count > 0 then
+	   for i=1, httpswanQueue_count do
+	   		local caddr_index = "client_addr" .. i
+	   		local caddr_tmp = uci:get("firewall", "remote_https_WAN", caddr_index)
+	   		table.insert( httpswanQueue, caddr_tmp )
+	   end	
+	 end  
+	 
+	 if httplanQueue_count > 0 then
+	   for i=1, httplanQueue_count do
+	   		local caddr_index = "client_addr" .. i
+	   		local caddr_tmp = uci:get("firewall", "remote_WWW_LAN", caddr_index)
+	   		table.insert( httplanQueue, caddr_tmp )
+	   end	
+	 end  
+   
+   if httpwanQueue_count > 0 then
+	   for i=1, httpwanQueue_count do
+	   		local caddr_index = "client_addr" .. i
+	   		local caddr_tmp = uci:get("firewall", "remote_WWW_WAN", caddr_index)
+	   		table.insert( httpwanQueue, caddr_tmp )
+	   end	
+	 end  
+	 
+%>
+var objXMLHTTP;
+
+function sleep(ms){
+
+	var starttime= new Date().getTime();
+
+	do{
+
+	}while((new Date().getTime()-starttime)<ms)
+
+}
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function checkRange(str, num, min, max)
+{
+	d = atoi(str, num);
+	if (d > max || d < min)
+		return false;
+	return true;
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function checkIpAddr(field, ismask)
+{
+	if (field.value == "") {
+		alert("<%:IP_Error_1%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	if (isAllNum(field.value) == 0) {
+		alert("<%:IP_Error_2%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	if (ismask) {
+		if ((!checkRange(field.value, 1, 0, 255)) ||
+				(!checkRange(field.value, 2, 0, 255)) ||
+				(!checkRange(field.value, 3, 0, 255)) ||
+				(!checkRange(field.value, 4, 0, 255)))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	else {
+		if ((!checkRange(field.value, 1, 0, 255)) ||
+				(!checkRange(field.value, 2, 0, 255)) ||
+				(!checkRange(field.value, 3, 0, 255)) ||
+				(!checkRange(field.value, 4, 1, 254)))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	return true;
+}
+
+function frmload()
+{
+	document.getElementById("popup_wait").style.visibility='hidden';
+}
+function relogin()
+{	
+	with ( document.forms[0] ){
+		var submit_url
+		if (top.window.location.protocol == "https:"){
+			//var submit_url = 'https://<%=host_ip%>:' + remoteWWWPortHttps.value;
+			var submit_url = 'https://<%=host_ip%>:' + document.getElementById('remoteWWWPortHttps').value;
+		}else{
+			//var submit_url = 'http://<%=host_ip%>:' + remoteWWWPort.value;
+			var submit_url = 'http://<%=host_ip%>:' + document.getElementById('remoteWWWPort').value;
+		}
+		sleep(2000);
+		top.window.location.href = submit_url; 
+	}
+}
+
+function checkIPFormat( value )
+{
+  if (/^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value )){
+		return 1;
+	}else if(/^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}(\/([0-9]|1[0-9]|2[0-9]|3[0-2]))$/.test( value )){
+		return 2;
+	}
+	return false;		
+}
+
+function changeClient(HTTP,WAN,selected_item)
+{
+	if (HTTP)
+	{
+		if(WAN){
+	  	document.RMGMTWWWForm.HTTP_WAN_selected_item.value=selected_item;
+		
+			with (document.forms[0]){
+				if(selected_item == 0){
+					HTTPWANRemoteTable.style.display="none";
+					WANremoteHTTPClientCheck0.checked = true;
+					WANremoteHTTPClientCheck1.checked = false;
+					WANremoteHTTPClientCheck2.checked = false;
+				}else if(selected_item == 1){
+					HTTPWANRemoteTable.style.display="none";
+					WANremoteHTTPClientCheck0.checked = false;
+					WANremoteHTTPClientCheck1.checked = true;
+					WANremoteHTTPClientCheck2.checked = false;
+				}else{
+					HTTPWANRemoteTable.style.display="block";
+					WANremoteHTTPClientCheck0.checked = false;
+					WANremoteHTTPClientCheck1.checked = false;
+					WANremoteHTTPClientCheck2.checked = true;
+				}	
+			}
+	  }else{	
+			document.RMGMTWWWForm.HTTP_LAN_selected_item.value=selected_item;
+		
+			with (document.forms[0]){
+				if(selected_item == 0){
+					HTTPLANRemoteTable.style.display="none";
+					LANremoteHTTPClientCheck0.checked = true;
+					LANremoteHTTPClientCheck1.checked = false;
+					LANremoteHTTPClientCheck2.checked = false;
+				}else if(selected_item == 1){
+					HTTPLANRemoteTable.style.display="none";
+					LANremoteHTTPClientCheck0.checked = false;
+					LANremoteHTTPClientCheck1.checked = true;
+					LANremoteHTTPClientCheck2.checked = false;
+				}else{
+					HTTPLANRemoteTable.style.display="block";
+					LANremoteHTTPClientCheck0.checked = false;
+					LANremoteHTTPClientCheck1.checked = false;
+					LANremoteHTTPClientCheck2.checked = true;
+				}	
+			}
+		}
+	}else{
+		if(WAN){
+	  	document.RMGMTWWWForm.HTTPS_WAN_selected_item.value=selected_item;
+		
+			with (document.forms[0]){
+				if(selected_item == 0){
+					HTTPSWANRemoteTable.style.display="none";
+					WANremoteHTTPSClientCheck0.checked = true;
+					WANremoteHTTPSClientCheck1.checked = false;
+					WANremoteHTTPSClientCheck2.checked = false;
+				}else if(selected_item == 1){
+					HTTPSWANRemoteTable.style.display="none";
+					WANremoteHTTPSClientCheck0.checked = false;
+					WANremoteHTTPSClientCheck1.checked = true;
+					WANremoteHTTPSClientCheck2.checked = false;
+				}else{
+					HTTPSWANRemoteTable.style.display="block";
+					WANremoteHTTPSClientCheck0.checked = false;
+					WANremoteHTTPSClientCheck1.checked = false;
+					WANremoteHTTPSClientCheck2.checked = true;
+				}	
+			}
+	  }else{	
+			document.RMGMTWWWForm.HTTPS_LAN_selected_item.value=selected_item;
+		
+			with (document.forms[0]){
+				if(selected_item == 0){
+					HTTPSLANRemoteTable.style.display="none";
+					LANremoteHTTPSClientCheck0.checked = true;
+					LANremoteHTTPSClientCheck1.checked = false;
+					LANremoteHTTPSClientCheck2.checked = false;
+				}else if(selected_item == 1){
+					HTTPSLANRemoteTable.style.display="none";
+					LANremoteHTTPSClientCheck0.checked = false;
+					LANremoteHTTPSClientCheck1.checked = true;
+					LANremoteHTTPSClientCheck2.checked = false;
+				}else{
+					HTTPSLANRemoteTable.style.display="block";
+					LANremoteHTTPSClientCheck0.checked = false;
+					LANremoteHTTPSClientCheck1.checked = false;
+					LANremoteHTTPSClientCheck2.checked = true;
+				}	
+			}
+		}	
+	}		
+}	
+
+function editQueue( entryNo, HTTP, WAN )
+{
+	document.getElementById( "tabs" ).style.display="none";
+	document.getElementById( "HTTPSlist" ).style.display="none";
+	document.getElementById( "HTTPlist" ).style.display="none";
+	if (HTTP)
+	{
+		if (WAN)
+			{
+				  var client_IP = eval("document.RMGMTWWWForm.HTTP_ClientIP_WAN"+entryNo+".value");
+
+					document.getElementById( "HTTPWANRemoteEdit" ).style.display="block";
+					document.getElementsByName( "SubmitType" )[0].value = "edit";
+					document.RMGMTWWWForm.HTTPWANEditNO.value = entryNo;
+					document.RMGMTWWWForm.HTTPWANInputIP.value = client_IP;
+		  }else {
+		  		var client_IP = eval("document.RMGMTWWWForm.HTTP_ClientIP_LAN"+entryNo+".value");
+					
+					document.getElementById( "HTTPLANRemoteEdit" ).style.display="block";
+					document.getElementsByName( "SubmitType" )[0].value = "edit";
+					document.RMGMTWWWForm.HTTPLANEditNO.value = entryNo;
+					document.RMGMTWWWForm.HTTPLANInputIP.value = client_IP;
+		  }
+	}else{	
+			if (WAN)
+			{
+				  var client_IP = eval("document.RMGMTWWWForm.HTTPS_ClientIP_WAN"+entryNo+".value");
+							
+					document.getElementById( "tabs" ).style.display="none";
+					document.getElementById( "HTTPSlist" ).style.display="none";
+					document.getElementById( "HTTPlist" ).style.display="none";
+					document.getElementById( "HTTPSWANRemoteEdit" ).style.display="block";
+					document.getElementsByName( "SubmitType" )[0].value = "edit";
+					document.RMGMTWWWForm.HTTPSWANEditNO.value = entryNo;
+					document.RMGMTWWWForm.HTTPSWANInputIP.value = client_IP;
+		  }else {
+		  		var client_IP = eval("document.RMGMTWWWForm.HTTPS_ClientIP_LAN"+entryNo+".value");
+							
+					document.getElementById( "tabs" ).style.display="none";
+					document.getElementById( "HTTPSlist" ).style.display="none";
+					document.getElementById( "HTTPlist" ).style.display="none";
+					document.getElementById( "HTTPSLANRemoteEdit" ).style.display="block";
+					document.getElementsByName( "SubmitType" )[0].value = "edit";
+					document.RMGMTWWWForm.HTTPSLANEditNO.value = entryNo;
+					document.RMGMTWWWForm.HTTPSLANInputIP.value = client_IP;
+		  }
+	}	
+}
+
+function cancel(HTTP,WAN)
+{
+	document.getElementById( "tabs" ).style.display="block";
+	document.getElementById( "HTTPSlist" ).style.display="block";
+	document.getElementById( "HTTPlist" ).style.display="block";
+	if(HTTP)
+	{
+			if(WAN)
+			{
+				document.getElementById( "HTTPWANRemoteEdit" ).style.display="none";	
+			}else{
+				document.getElementById( "HTTPLANRemoteEdit" ).style.display="none";	
+			}		
+	}else{
+			if(WAN)
+			{
+				document.getElementById( "HTTPSWANRemoteEdit" ).style.display="none";	
+			}else{
+				document.getElementById( "HTTPSLANRemoteEdit" ).style.display="none";	
+			}		
+		
+	}			
+}	
+
+function getMaskedNetworkAddress(ip, mask) {
+    var bits;
+    var mbits = new Array(4);
+    var SIZE_BYTE = 8; // Prevent the annoying WP smiley faces from showing up
+ 
+    for (i = 0; i < mbits.length; i++) {
+        if (mask >= SIZE_BYTE) {
+            bits = Array(SIZE_BYTE + 1).join(1 + '');
+            mask -= SIZE_BYTE;
+        } else {
+            bits = Array(mask + 1).join(1 + '');
+            bits += Array(SIZE_BYTE + 1 - mask).join(0 + '');
+            mask -= mask;
+        }
+        mbits[i] = parseInt(bits, 2);
+    }
+    var ibits = ip.split(".");
+    var maskedip = '';
+    for (i = 0; i < mbits.length; i++) {
+        if (maskedip != '') {
+            maskedip += '.';
+        }
+        ibits[i] = parseInt(ibits[i]);
+        ibits[i] &= mbits[i];
+        maskedip += ibits[i] + '';
+    }
+ 
+    return maskedip;
+}
+
+function addRule( HTTP,WAN )
+{
+	if (HTTP)
+	{
+			if (WAN)
+			{
+				var HTTP_WAN_selected = document.RMGMTWWWForm.HTTP_WAN_selected_item.value;
+				if(HTTP_WAN_selected != "1")
+				{
+					var result = checkSecurity(HTTP_WAN_selected,1);
+					if(result == false)
+						return false;
+				}
+				
+				if(<%=httpwanQueue_count%> > 9)
+				{
+					alert("Only support up to 10 trust domains");
+					return false;
+				}	
+				var WANremoteHTTPClientAddr = document.RMGMTWWWForm.WANremoteHTTPClientAddr.value;
+				if (checkIPFormat( WANremoteHTTPClientAddr ) == 1)
+				{
+					document.RMGMTWWWForm.WANremoteHTTPClientAddr.value = WANremoteHTTPClientAddr+"/32";
+					return true;
+				}else if (checkIPFormat( WANremoteHTTPClientAddr ) == 2){
+					var ipdomain = WANremoteHTTPClientAddr.split("/");
+					var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+					var ipdomain_show = ip_show+"/"+ipdomain[1];
+					document.RMGMTWWWForm.WANremoteHTTPClientAddr.value = ipdomain_show;
+					return true;
+				}
+				alert( "<%:IP_Error_3%>" );
+		   	return false;
+			}	else{
+				if(<%=httplanQueue_count%> > 9)
+				{
+					alert("Only support up to 10 trust domains");
+					return false;
+				}	
+				var LANremoteHTTPClientAddr = document.RMGMTWWWForm.LANremoteHTTPClientAddr.value;
+				if (checkIPFormat( LANremoteHTTPClientAddr ) == 1)
+				{
+					document.RMGMTWWWForm.LANremoteHTTPClientAddr.value = LANremoteHTTPClientAddr+"/32";
+					return true;
+				}else if (checkIPFormat( LANremoteHTTPClientAddr ) == 2){
+					var ipdomain = LANremoteHTTPClientAddr.split("/");
+					var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+					var ipdomain_show = ip_show+"/"+ipdomain[1];
+					document.RMGMTWWWForm.LANremoteHTTPClientAddr.value = ipdomain_show;
+					return true;
+				}
+				alert( "<%:IP_Error_3%>" );
+		   	return false;
+			}	
+	}else{
+			if (WAN)
+			{
+				var HTTPS_WAN_selected = document.RMGMTWWWForm.HTTPS_WAN_selected_item.value;
+				if(HTTPS_WAN_selected != "1")
+				{
+					var result = checkSecurity(1,HTTPS_WAN_selected);
+					if(result == false)
+						return false;
+				}
+				if(<%=httpswanQueue_count%> > 9)
+				{
+					alert("Only support up to 10 trust domains");
+					return false;
+				}	
+				var WANremoteHTTPSClientAddr = document.RMGMTWWWForm.WANremoteHTTPSClientAddr.value;
+				if (checkIPFormat( WANremoteHTTPSClientAddr ) == 1)
+				{
+					document.RMGMTWWWForm.WANremoteHTTPSClientAddr.value = WANremoteHTTPSClientAddr+"/32";
+					return true;
+				}else if (checkIPFormat( WANremoteHTTPSClientAddr ) == 2){
+					var ipdomain = WANremoteHTTPSClientAddr.split("/");
+					var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+					var ipdomain_show = ip_show+"/"+ipdomain[1];
+					document.RMGMTWWWForm.WANremoteHTTPSClientAddr.value = ipdomain_show;
+					return true;
+				}
+				alert( "<%:IP_Error_3%>" );
+		   	return false;
+			}	else{
+				if(<%=httpslanQueue_count%> > 9)
+				{
+					alert("Only support up to 10 trust domains");
+					return false;
+				}	
+				var LANremoteHTTPSClientAddr = document.RMGMTWWWForm.LANremoteHTTPSClientAddr.value;
+				if (checkIPFormat( LANremoteHTTPSClientAddr ) == 1)
+				{
+					document.RMGMTWWWForm.LANremoteHTTPSClientAddr.value = LANremoteHTTPSClientAddr+"/32";
+					return true;
+				}else if (checkIPFormat( LANremoteHTTPSClientAddr ) == 2){
+					var ipdomain = LANremoteHTTPSClientAddr.split("/");
+					var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+					var ipdomain_show = ip_show+"/"+ipdomain[1];
+					document.RMGMTWWWForm.LANremoteHTTPSClientAddr.value = ipdomain_show;
+					return true;
+				}
+				alert( "<%:IP_Error_3%>" );
+		   	return false;
+			}	
+	}		
+}	
+
+function delQueue( entryNo, element, HTTP, WAN )
+{
+	if (HTTP)
+	{
+		if (WAN)
+		{
+			  var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote")%>';
+			  var loc = submit_url + '?httpwandelete=' + entryNo;
+			  var code = 'location="' + loc + '"';
+		    eval(code);
+		}else{
+				var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote")%>';
+			  var loc = submit_url + '?httplandelete=' + entryNo;
+			  var code = 'location="' + loc + '"';
+		    eval(code);
+		}	
+	}else{		
+		if (WAN)
+		{
+			  var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote")%>';
+			  var loc = submit_url + '?httpswandelete=' + entryNo;
+			  var code = 'location="' + loc + '"';
+		    eval(code);
+		}else{
+				var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote")%>';
+			  var loc = submit_url + '?httpslandelete=' + entryNo;
+			  var code = 'location="' + loc + '"';
+		    eval(code);
+		}	
+	}	
+}
+
+function verifySubmitData(HTTP,WAN)
+{
+	 if(HTTP)
+	 {
+			 if(WAN)
+			 {
+			 			var HTTPWANInputIP = document.RMGMTWWWForm.HTTPWANInputIP.value;
+			 			if (checkIPFormat( HTTPWANInputIP ) == 1)
+						{
+							document.RMGMTWWWForm.HTTPWANInputIP.value = HTTPWANInputIP+"/32";
+							return true;
+						}else if (checkIPFormat( HTTPWANInputIP ) == 2){
+							var ipdomain = HTTPWANInputIP.split("/");
+							var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+							var ipdomain_show = ip_show+"/"+ipdomain[1];
+							document.RMGMTWWWForm.HTTPWANInputIP.value = ipdomain_show;
+							return true;
+							return true;
+						}
+						alert( "<%:IP_Error_3%>" );
+				   	return false;
+			 }else{
+			 			var HTTPLANInputIP = document.RMGMTWWWForm.HTTPLANInputIP.value;
+			 			if (checkIPFormat( HTTPLANInputIP ) == 1)
+						{
+							document.RMGMTWWWForm.HTTPLANInputIP.value = HTTPLANInputIP+"/32";
+							return true;
+						}else if (checkIPFormat( HTTPLANInputIP ) == 2){
+							var ipdomain = HTTPLANInputIP.split("/");
+							var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+							var ipdomain_show = ip_show+"/"+ipdomain[1];
+							document.RMGMTWWWForm.HTTPLANInputIP.value = ipdomain_show;
+							return true;
+						}
+						alert( "<%:IP_Error_3%>" );
+				   	return false;
+			 }
+		}else {
+			 if(WAN)
+			 {
+			 			var HTTPSWANInputIP = document.RMGMTWWWForm.HTTPSWANInputIP.value;
+			 			if (checkIPFormat( HTTPSWANInputIP ) == 1)
+						{
+							document.RMGMTWWWForm.HTTPSWANInputIP.value = HTTPSWANInputIP+"/32";
+							return true;
+						}else if (checkIPFormat( HTTPSWANInputIP ) == 2){
+							var ipdomain = HTTPSWANInputIP.split("/");
+							var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+							var ipdomain_show = ip_show+"/"+ipdomain[1];
+							document.RMGMTWWWForm.HTTPSWANInputIP.value = ipdomain_show;
+
+							return true;
+						}
+						alert( "<%:IP_Error_3%>" );
+				   	return false;
+			 }else{
+			 			var HTTPSLANInputIP = document.RMGMTWWWForm.HTTPSLANInputIP.value;
+			 			if (checkIPFormat( HTTPSLANInputIP ) == 1)
+						{
+							document.RMGMTWWWForm.HTTPSLANInputIP.value = HTTPSLANInputIP+"/32";
+							return true;
+						}else if (checkIPFormat( HTTPSLANInputIP ) == 2){
+							var ipdomain = HTTPSLANInputIP.split("/");
+							var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+							var ipdomain_show = ip_show+"/"+ipdomain[1];
+							document.RMGMTWWWForm.HTTPSLANInputIP.value = ipdomain_show;
+							return true;
+						}
+						alert( "<%:IP_Error_3%>" );
+				   	return false;
+			 }
+		}		 	
+}
+
+function checkSecurity(HTTP_WAN_selected,HTTPS_WAN_selected)
+{
+	if(HTTP_WAN_selected != "1" || HTTPS_WAN_selected != "1" )
+	{
+		<%	
+			local luaAccount = {}
+			uci:foreach( "account", "account", function( section )
+				   if not ( nil == section.username ) then
+				    local tmp = section         
+					tmp.id = section[ '.name' ]
+					table.insert( luaAccount, tmp )
+				end
+			end )
+			
+			for i = 1, #luaAccount do 
+				if luaAccount[i].default == "1" and luaAccount[i].privilege == "2" then
+					password = luaAccount[i].password
+					username = luaAccount[i].username
+				end
+			end
+			
+		%>	
+		
+		<% if password == "1234" then %>			
+			alert('You should change account "<%=username%>" default password !!  Please go to "Maintenance > Account" modify it !!')
+			window.location.reload();
+			return false;
+		<% end %>	
+		return true;
+	}else{		
+		return true;
+	}
+	
+}
+
+function checkSubmit(remoteWWWPort_val ,remoteWWWPortHttps_val,HTTP_WAN_selected,HTTPS_WAN_selected)
+{
+	/*
+	with ( document.forms[0] ){
+		var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote")%>';
+		var loc = submit_url + '?apply=Apply';
+		//FOR HTTP
+		loc += '&RemoteWWWPort=' + remoteWWWPort.value;
+		loc += '&RemoteWWWInterface=' + remoteWWWInterface.options[remoteWWWInterface.selectedIndex].value;
+		if(remoteWWWClientCheck0.checked == true){
+			loc += '&RemoteWWWClientCheck=' + 0;
+		}
+		else{
+			loc += '&RemoteWWWClientCheck=' + 1;
+		}
+		
+		if(remoteWWWClientCheck1.checked == true){
+
+			if ( !checkIpAddr(document.RMGMTWWWForm.remoteWWWClientAddr, false) )
+			{
+			    return false;
+			}
+			else
+			{
+				loc += '&RemoteWWWClientAddr=' + remoteWWWClientAddr.value;			
+			}		
+		
+		}
+		else{
+
+			loc += '&RemoteWWWClientAddr=' + "";
+			
+		}
+		//FOR HTTPS
+		loc += '&RemoteWWWPortHttps=' + remoteWWWPortHttps.value;
+		loc += '&RemoteWWWInterfaceHttps=' + remoteWWWInterfaceHttps.options[remoteWWWInterfaceHttps.selectedIndex].value;
+		if(remoteWWWClientCheck0Https.checked == true){
+			loc += '&RemoteWWWClientCheckHttps=' + 0;
+		}
+		else{
+			loc += '&RemoteWWWClientCheckHttps=' + 1;
+		}
+		
+		if(remoteWWWClientCheck1Https.checked == true){
+
+			if ( !checkIpAddr(document.RMGMTWWWForm.remoteWWWClientAddrHttps, false) )
+			{
+			    return false;
+			}
+			else
+			{
+				loc += '&RemoteWWWClientAddrHttps=' + remoteWWWClientAddrHttps.value;			
+			}		
+		
+		}
+		else{
+
+			loc += '&RemoteWWWClientAddrHttps=' + "";
+			
+		}
+		//FOR Common
+		if(remoteWWWPort.value == "<%=http_port%>" && remoteWWWPortHttps.value == "<%=https_port%>"){
+			var code = 'location="' + loc + '"';
+     			eval(code);
+		}
+		else{
+			document.getElementById("popup_wait").style.visibility='visible';
+			
+			
+			if (window.XMLHttpRequest) {
+			     objXMLHTTP=new XMLHttpRequest();
+			}// code for IE
+			else if (window.ActiveXObject)  {
+			     objXMLHTTP=new ActiveXObject("Microsoft.XMLHTTP");
+			}
+			
+			objXMLHTTP.open("GET",loc,true);
+
+		    //let IE refresh page 
+		    //objXMLHTTP.setRequestHeader("If-Modified-Since",new Date(0));//It will fail in Chrome
+		    objXMLHTTP.setRequestHeader("Content-Type", "text/plain");
+		    
+		    objXMLHTTP.send(null);
+
+		    setTimeout("relogin()", 5000);
+		}
+	}
+	*/
+	if (remoteWWWPort_val == remoteWWWPortHttps_val){
+		alert("<%:Port_Error_3%>")
+		return false;
+	}
+
+	
+	var system_port = "<%= luci.sys.exec("cat /tmp/system_port")%>".split(" ");
+	var reject_port = [];
+
+	for (i=0 ; i<system_port.length ; i++){
+		if (system_port[i] == "<%= http_port%>"){}
+		else if (system_port[i] == "<%= https_port%>"){}
+		else{
+			reject_port.push(system_port[i])
+		}
+	}
+	
+	for (i=0 ; i<reject_port.length ; i++){
+		if (remoteWWWPort_val == reject_port[i]){
+			
+			if ( remoteWWWPort_val == <%=ftp_port%> )
+			{
+				alert("<%:Port%> " + remoteWWWPort_val + " is used by <%:FTP%>")
+				return false
+			}
+			else if	( remoteWWWPort_val == <%=ssh_port%>)
+			{
+				alert("<%:Port%> " + remoteWWWPort_val + " is used by <%:SSH%>")
+				return false
+			}
+			else if	( remoteWWWPort_val == <%=telnet_port%>)
+			{
+				alert("<%:Port%> " + remoteWWWPort_val + " is used by <%:Telnet%>")
+				return false
+			}
+			else
+			{
+				alert("<%:Port%> " + remoteWWWPort_val + " is used by Port Forwarding")
+				return false
+			}
+			
+		}
+		if (remoteWWWPortHttps_val == reject_port[i]){
+			if ( remoteWWWPortHttps_val == <%=ftp_port%> )
+			{
+				alert("<%:Port%> " + remoteWWWPortHttps_val + " is used by <%:FTP%>")
+				return false
+			}
+			else if	( remoteWWWPortHttps_val == <%=ssh_port%>)
+			{
+				alert("<%:Port%> " + remoteWWWPortHttps_val + " is used by <%:SSH%>")
+				return false
+			}
+			else if	( remoteWWWPortHttps_val == <%=telnet_port%>)
+			{
+				alert("<%:Port%> " + remoteWWWPortHttps_val + " is used by <%:Telnet%>")
+				return false
+			}
+			else
+			{
+				alert("<%:Port%> " + remoteWWWPortHttps_val + " is used by <%:Port_Forwarding%>")
+				return false
+			}
+		}
+		
+	}
+	
+	
+	if( checkSecurity(HTTP_WAN_selected,HTTPS_WAN_selected) == false){
+		return false;
+	}
+	
+	if(remoteWWWPort_val != "<%=http_port%>" || remoteWWWPortHttps_val != "<%=https_port%>"){
+
+		document.getElementById("popup_wait").style.visibility='visible';
+		setTimeout("relogin()", 5000);
+			
+		if (window.XMLHttpRequest) {
+			objXMLHTTP=new XMLHttpRequest();
+		}// code for IE
+		else if (window.ActiveXObject)  {
+			objXMLHTTP=new ActiveXObject("Microsoft.XMLHTTP");
+		}
+
+		objXMLHTTP.open("GET",loc,true);
+		objXMLHTTP.setRequestHeader("Content-Type", "text/plain");
+		objXMLHTTP.send(null);
+
+		//setTimeout("relogin()", 5000);
+	}
+	
+}
+
+</script>
+</head>
+<body onload="frmload()">
+<%
+   
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+<form name="RMGMTWWWForm">
+<div id="tabs">
+   <ul>
+      <li class="hightline"><a title="<%:WWW%>"><span><%:WWW%></span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/remote/telnet" title="<%:Telnet%>"><span><%:Telnet%></span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/remote/ssh" title=<%:SSH%>><span><%:SSH%></span></a></li>
+	  <li><a href="<%=controller%>/expert/configuration/management/remote/snmpsetting" title="SNMP"><span><%:SNMP%></span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/remote/wol" title="<%:Wake_On_LAN%>"><span><%:Wake_On_LAN%></span></a></li>
+    
+   </ul>
+   <br class="clearfloat" />
+</div>
+<div id="table">
+   <ul id="HTTPSlist">
+      <li class="table_top"></li>
+      <li class="table_content">
+         <div class="data">
+            <ul>
+	      <div class="title">HTTPS</div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Port%> : </li>
+                     <li class="right_table">
+                        <input name="remoteWWWPortHttps" id="remoteWWWPortHttps" size="5" maxlength="5" value="<%= uci:get( "firewall", "remote_https", "port" )%>" type="text" />
+                     </li>
+                  </ul>
+               </div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Access_Status%> : </li>
+                     <li class="right_table">
+                        &nbsp;LAN
+                     </li>
+                  </ul>
+               </div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Secured_Client_IP_Address%>   :</li>
+                     <li class="right_table">
+                       <input name="HTTPS_ClientIP_LAN_count" value="<%=httpslanQueue_count%>" type="hidden">
+                     	  <input name="HTTPS_LAN_selected_item" value="<%=clientCheckHttps_LAN%>" type="hidden">
+                     	  
+                     		<input name="LANremoteHTTPSClientCheck0" value="0" type="radio" <% if 0 == clientCheckHttps_LAN then%>checked="checked"<% end %> onclick="changeClient(0,0,0)"/>
+                           Enable ALL&nbsp;&nbsp;&nbsp;
+												<input name="LANremoteHTTPSClientCheck1" value="0" type="radio" <% if 1 == clientCheckHttps_LAN then%>checked="checked"<% end %> onclick="changeClient(0,0,1)"/>
+                           Disable ALL&nbsp;&nbsp;&nbsp;
+                        <input name="LANremoteHTTPSClientCheck2" value="0" type="radio" <% if 2 == clientCheckHttps_LAN then%>checked="checked"<% end %> onclick="changeClient(0,0,2)"/>
+                     			 Trust Domain&nbsp;&nbsp;
+                     		<input name="LANremoteHTTPSClientAddr" size="20" maxlength="18" value="" type="text" />						   
+												<input name="addLANremoteHTTPSClient" value="<%:Add%>" onclick="return addRule(0,0)" type="submit" />		
+                     </li>
+                     
+                     <div id="HTTPSLANRemoteTable" class="tableframe" <% if 2 == clientCheckHttps_LAN then%>style="display:block"<% else%>style="display:none"<% end%>>
+										 <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+											<tr>
+											   <td>
+												  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+													 <tr>
+														<td>
+														   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+															  <tr>
+																 <td>
+																	<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+																	   <tr>
+																		  <td height="26" colspan="9">
+																			 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																				<tr>
+																				   <td height="26" class="table_title">
+																					  Trust Domain<span class="cTitle"></span>
+																				   </td>
+																				</tr>
+																			 </table>
+																		  </td>
+																	   </tr>
+																	   <tr class="top_font" align="center">
+																		  <td width="35">#</td>
+																		  <td >IP Address/Domain </td>													  
+																		  <td width="90"><%:Modify%></td>
+																	   </tr>
+																			 <% for i = 1, #httpslanQueue do %>
+																			 		<input name="HTTPS_ClientIP_LAN<%=i%>" value="<%=httpslanQueue[i]%>" type="hidden">
+																			 
+																			 		<tr class="table_font" align="center">
+																					<td valign="top"><%= i %></td>
+																					<td><%= httpslanQueue[i]%></td>
+																						<td>
+																				   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" >
+																				   	<img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i %>,0,0)" /></a>
+																					  &nbsp;&nbsp;						  
+																				   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this, 0,0)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																					 <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																				</td>
+																					</tr>
+																			 <%end%>	
+																	</table>
+																 </td>
+															  </tr>
+														   </table>
+														</td>
+													 </tr>
+												  </table>
+											   </td>
+											</tr>
+										 </table>
+									  </div>
+                  </ul>
+               </div>
+               
+               <div class="spaceair"></div>
+               
+                <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Access_Status%> : </li>					 
+                     <li class="right_table">&nbsp;WAN</li>
+                  </ul>
+                  
+                  <ul>
+                     <li class="left_table"><%:Secured_Client_IP_Address%>   :</li>
+                     <li class="right_table">
+                     	  <input name="HTTPS_ClientIP_WAN_count" value="<%=httpswanQueue_count%>" type="hidden">
+                     	  <input name="HTTPS_WAN_selected_item" value="<%=clientCheckHttps_WAN%>" type="hidden">
+                     	  
+                        <input name="WANremoteHTTPSClientCheck0" value="0" type="radio" <% if 0 == clientCheckHttps_WAN then%>checked="checked"<% end %> onclick="changeClient(0,1,0)"/>
+                           Enable ALL&nbsp;&nbsp;&nbsp;
+                        <input name="WANremoteHTTPSClientCheck1" value="0" type="radio" <% if 1 == clientCheckHttps_WAN then%>checked="checked"<% end %> onclick="changeClient(0,1,1)"/>
+                           Disable ALL&nbsp;&nbsp;&nbsp;   
+												<input name="WANremoteHTTPSClientCheck2" value="0" type="radio" <% if 2 == clientCheckHttps_WAN then%>checked="checked"<% end %> onclick="changeClient(0,1,2)"/>
+                           Trust Domain&nbsp;&nbsp;
+                        <input name="WANremoteHTTPSClientAddr" size="20" maxlength="18" value="" type="text" />						   
+												<input name="addWANremoteHTTPSClient" value="<%:Add%>" onclick="return addRule(0,1)" type="submit" />			
+                     </li>
+               
+				             <div id="HTTPSWANRemoteTable" class="tableframe" <% if 2 == clientCheckHttps_WAN then%>style="display:block"<% else%>style="display:none"<% end%>>
+										 <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+											<tr>
+											   <td>
+												  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+													 <tr>
+														<td>
+														   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+															  <tr>
+																 <td>
+																	<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+																	   <tr>
+																		  <td height="26" colspan="9">
+																			 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																				<tr>
+																				   <td height="26" class="table_title">
+																					  Trust Domain<span class="cTitle"></span>
+																				   </td>
+																				</tr>
+																			 </table>
+																		  </td>
+																	   </tr>
+																	   <tr class="top_font" align="center">
+																		  <td width="35">#</td>
+																		  <td >IP Address/Domain </td>													  
+																		  <td width="90"><%:Modify%></td>
+																	   </tr>
+																			 <% for i = 1, #httpswanQueue do %>
+																			 		<input name="HTTPS_ClientIP_WAN<%=i%>" value="<%=httpswanQueue[i]%>" type="hidden">
+																			 
+																			 		<tr class="table_font" align="center">
+																					<td valign="top"><%= i %></td>
+																					<td><%= httpswanQueue[i]%></td>
+																						<td>
+																				   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" >
+																				   	<img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i %>,0,1)" /></a>
+																					  &nbsp;&nbsp;						  
+																				   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this,0, 1)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																					 <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																				</td>
+																					</tr>
+																			 <%end%>	
+																	</table>
+																 </td>
+															  </tr>
+														   </table>
+														</td>
+													 </tr>
+												  </table>
+											   </td>
+											</tr>
+										 </table>
+									  </div>
+				   				</ul>	
+                </div>  
+               
+               <div class="spaceair"></div>
+            </ul>
+	    <div class="space"></div>
+            <ul id="HTTPlist">
+	      <div class="title">HTTP</div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Port%> : </li>
+                     <li class="right_table">
+                        <input name="remoteWWWPort" id="remoteWWWPort" size="5" maxlength="5" value="<%= uci:get( "firewall", "remote_www", "port" )%>" type="text" />
+                     </li>
+                  </ul>
+               </div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Access_Status%> : </li>
+                     <li class="right_table">
+                        &nbsp;LAN
+                     </li>
+                  </ul>
+               </div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Secured_Client_IP_Address%>   :</li>
+                     <li class="right_table">
+                       <input name="HTTP_ClientIP_LAN_count" value="<%=httplanQueue_count%>" type="hidden">
+                     	  <input name="HTTP_LAN_selected_item" value="<%=clientCheckHttp_LAN%>" type="hidden">
+                     	  
+                     		<input name="LANremoteHTTPClientCheck0" value="0" type="radio" <% if 0 == clientCheckHttp_LAN then%>checked="checked"<% end %> onclick="changeClient(1,0,0)"/>
+                           Enable ALL&nbsp;&nbsp;&nbsp;
+												<input name="LANremoteHTTPClientCheck1" value="0" type="radio" <% if 1 == clientCheckHttp_LAN then%>checked="checked"<% end %> onclick="changeClient(1,0,1)"/>
+                           Disable ALL&nbsp;&nbsp;&nbsp;
+                        <input name="LANremoteHTTPClientCheck2" value="0" type="radio" <% if 2 == clientCheckHttp_LAN then%>checked="checked"<% end %> onclick="changeClient(1,0,2)"/>
+                     			 Trust Domain&nbsp;&nbsp;
+                     		<input name="LANremoteHTTPClientAddr" size="20" maxlength="18" value="" type="text" />						   
+												<input name="addLANremoteHTTPClient" value="<%:Add%>" onclick="return addRule(1,0)" type="submit" />		
+                     </li>
+                     
+                     <div id="HTTPLANRemoteTable" class="tableframe" <% if 2 == clientCheckHttp_LAN then%>style="display:block"<% else%>style="display:none"<% end%>>
+										 <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+											<tr>
+											   <td>
+												  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+													 <tr>
+														<td>
+														   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+															  <tr>
+																 <td>
+																	<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+																	   <tr>
+																		  <td height="26" colspan="9">
+																			 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																				<tr>
+																				   <td height="26" class="table_title">
+																					  Trust Domain<span class="cTitle"></span>
+																				   </td>
+																				</tr>
+																			 </table>
+																		  </td>
+																	   </tr>
+																	   <tr class="top_font" align="center">
+																		  <td width="35">#</td>
+																		  <td >IP Address/Domain </td>													  
+																		  <td width="90"><%:Modify%></td>
+																	   </tr>
+																			 <% for i = 1, #httplanQueue do %>
+																			 		<input name="HTTP_ClientIP_LAN<%=i%>" value="<%=httplanQueue[i]%>" type="hidden">
+																			 
+																			 		<tr class="table_font" align="center">
+																					<td valign="top"><%= i %></td>
+																					<td><%= httplanQueue[i]%></td>
+																						<td>
+																				   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" >
+																				   	<img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i %>,1,0)" /></a>
+																					  &nbsp;&nbsp;						  
+																				   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this, 1,0)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																					 <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																				</td>
+																					</tr>
+																			 <%end%>	
+																	</table>
+																 </td>
+															  </tr>
+														   </table>
+														</td>
+													 </tr>
+												  </table>
+											   </td>
+											</tr>
+										 </table>
+									  </div>
+                  </ul>
+               </div>
+               
+               <div class="spaceair"></div>
+               
+                <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Access_Status%> : </li>					 
+                     <li class="right_table">&nbsp;WAN</li>
+                  </ul>
+                  
+                  <ul>
+                     <li class="left_table"><%:Secured_Client_IP_Address%>   :</li>
+                     <li class="right_table">
+                     	  <input name="HTTP_ClientIP_WAN_count" value="<%=httpwanQueue_count%>" type="hidden">
+                     	  <input name="HTTP_WAN_selected_item" value="<%=clientCheckHttp_WAN%>" type="hidden">
+                     	  
+                        <input name="WANremoteHTTPClientCheck0" value="0" type="radio" <% if 0 == clientCheckHttp_WAN then%>checked="checked"<% end %> onclick="changeClient(1,1,0)"/>
+                           Enable ALL&nbsp;&nbsp;&nbsp;
+                        <input name="WANremoteHTTPClientCheck1" value="0" type="radio" <% if 1 == clientCheckHttp_WAN then%>checked="checked"<% end %> onclick="changeClient(1,1,1)"/>
+                           Disable ALL&nbsp;&nbsp;&nbsp;   
+												<input name="WANremoteHTTPClientCheck2" value="0" type="radio" <% if 2 == clientCheckHttp_WAN then%>checked="checked"<% end %> onclick="changeClient(1,1,2)"/>
+                           Trust Domain&nbsp;&nbsp;
+                        <input name="WANremoteHTTPClientAddr" size="20" maxlength="18" value="" type="text" />						   
+												<input name="addWANremoteHTTPClient" value="<%:Add%>" onclick="return addRule(1,1)" type="submit" />			
+                     </li>
+               
+				             <div id="HTTPWANRemoteTable" class="tableframe" <% if 2 == clientCheckHttp_WAN then%>style="display:block"<% else%>style="display:none"<% end%>>
+										 <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+											<tr>
+											   <td>
+												  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+													 <tr>
+														<td>
+														   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+															  <tr>
+																 <td>
+																	<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+																	   <tr>
+																		  <td height="26" colspan="9">
+																			 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																				<tr>
+																				   <td height="26" class="table_title">
+																					  Trust Domain<span class="cTitle"></span>
+																				   </td>
+																				</tr>
+																			 </table>
+																		  </td>
+																	   </tr>
+																	   <tr class="top_font" align="center">
+																		  <td width="35">#</td>
+																		  <td >IP Address/Domain </td>													  
+																		  <td width="90"><%:Modify%></td>
+																	   </tr>
+																			 <% for i = 1, #httpwanQueue do %>
+																			 		<input name="HTTP_ClientIP_WAN<%=i%>" value="<%=httpwanQueue[i]%>" type="hidden">
+																			 
+																			 		<tr class="table_font" align="center">
+																					<td valign="top"><%= i %></td>
+																					<td><%= httpwanQueue[i]%></td>
+																						<td>
+																				   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" >
+																				   	<img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i %>,1,1)" /></a>
+																					  &nbsp;&nbsp;						  
+																				   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this,1, 1)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																					 <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																				</td>
+																					</tr>
+																			 <%end%>	
+																	</table>
+																 </td>
+															  </tr>
+														   </table>
+														</td>
+													 </tr>
+												  </table>
+											   </td>
+											</tr>
+										 </table>
+									  </div>
+				   				</ul>	
+                </div>  
+               <div class="spaceair"></div>
+               <div class="w_text"> <span class="i_note"><%:Note%>:</span>
+               <div class="w_text">
+				<ul>
+				  <li class="all_table"><%:Remote_MGMT_Note_1%></span></li>
+				</ul>
+			  </div>
+			  <div class="w_text">
+				<ul>
+				  <li class="all_table"><span class="i_note_a">2. <%:Remote_MGMT_Note_4%></span></li>
+				</ul>
+			  </div>
+			  <div class="spaceair"></div>
+            </ul>
+         </div>
+      </li>
+      <li class="table_button">
+         <div class="button" align="center">
+            <input name="apply" value="<%:Apply%>" type="submit" onclick="return checkSubmit(remoteWWWPort.value ,remoteWWWPortHttps.value,HTTP_WAN_selected_item.value,HTTPS_WAN_selected_item.value )"/>
+               &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+            <input name="Cancel" value="<%:Cancel%>" type="submit" />
+         </div>
+      </li>
+   </ul>
+   
+   <input type="hidden" name="SubmitType" value="table"/>
+   <input type="hidden" name="HTTPSLANEditNO" />
+	 <input type="hidden" name="HTTPSWANEditNO" />
+	 <input type="hidden" name="HTTPLANEditNO" />
+	 <input type="hidden" name="HTTPWANEditNO" />
+	 
+	 <ul id="HTTPSLANRemoteEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">IP Address/Domain :</li>
+                        <li class="right_table">
+                           		<input name="HTTPSLANInputIP" size="20" maxlength="18" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+               
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         
+         <li class="table_button">
+            <div class="button" align="center">
+	               <input name="HTTPSLANRemoteEditApply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData(0,0)" />
+	                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+	               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="cancel(0,0)"/>
+            </div>
+         </li>
+      </ul>
+	 
+	 		<ul id="HTTPSWANRemoteEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">IP Address/Domain :</li>
+                        <li class="right_table">
+                         	 		<input name="HTTPSWANInputIP" size="20" maxlength="18" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+               
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         
+         <li class="table_button">
+            <div class="button" align="center">
+	            	 <input name="HTTPSWANRemoteEditApply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData(0,1)" />
+	                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+	               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="cancel(0,1)"/>
+            </div>
+         </li>
+      </ul>
+      
+      <ul id="HTTPLANRemoteEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">IP Address/Domain :</li>
+                        <li class="right_table">
+                         	 		<input name="HTTPLANInputIP" size="20" maxlength="18" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+               
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         
+         <li class="table_button">
+            <div class="button" align="center">
+	            	 <input name="HTTPLANRemoteEditApply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData(1,0)" />
+	                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+	               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="cancel(1,0)"/>
+            </div>
+         </li>
+      </ul>
+      
+      <ul id="HTTPWANRemoteEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">IP Address/Domain :</li>
+                        <li class="right_table">
+                         	 		<input name="HTTPWANInputIP" size="20" maxlength="18" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+               
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         
+         <li class="table_button">
+            <div class="button" align="center">
+	            	 <input name="HTTPWANRemoteEditApply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData(1,1)" />
+	                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+	               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="cancel(1,1)"/>
+            </div>
+         </li>
+      </ul>
+</div>
+<div id="popup_wait">
+	<table width="60%" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+			<tr>
+				<td width="19" height="37"><img src="<%=media%>/admin/images/popup_top_left.gif" width="19" height="45" /></td>
+				<td background="<%=media%>/admin/images/popup_top_center.gif" class="table_title2"><%:EMG2926-Q10A%></td>
+				<td width="15" background="<%=media%>/admin/images/popup_top_center.gif"></td>
+				<td width="19" height="45"><img src="<%=media%>/admin/images/popup_top_right.gif" width="19" height="45" /></td>
+			</tr>
+		</table></td>
+	</tr>
+	<tr>
+	<td><table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+	<td width="19" background="<%=media%>/admin/images/popup_main_left.gif">&nbsp;</td>
+	<td bgcolor="#FFFFFF"><span class="popupcontent"> 
+	<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+	<tr>
+	<td width="27%"><center>
+	<img src="<%=media%>/easy/images/loading.gif" />
+	</center>
+	</td>
+	<td width="73%" id=id_ScanningyourNetwork><%:Relogin%> . . .</td>
+	</tr>
+	</table>
+	</span></td>
+	<td width="19" background="<%=media%>/admin/images/popup_main_right.gif">&nbsp;</td>
+	</tr>
+	</table></td>
+	</tr>
+	<tr>
+	<td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+	<td width="19" height="48"><img src="<%=media%>/admin/images/popup_down_left.gif" width="19" height="48" /></td>
+	<td background="<%=media%>/admin/images/popup_down_center.gif">
+	<div class="button2"><ul>   
+	<li></li>
+	<li></li>
+	</ul></div></td>
+	<td width="19" height="37"><img src="<%=media%>/admin/images/popup_down_right.gif" width="19" height="48" /></td>
+	</tr>
+	</table></td>
+	</tr>
+	</table>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Management%> > <%:Remote_MGMT%> > <%:WWW%>');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>
+

@@ -1,0 +1,354 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("application/xhtml+xml")
+require "luci.sys"
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<script language="JavaScript">
+
+var time_id=0;
+
+function setRefreshInterval()
+{
+	polling_interval=document.forms[0].interval.selectedIndex*60
+
+	if (polling_interval>0)
+		time_id=self.setTimeout('self.location.reload();', polling_interval*1000);
+
+	document.forms[0].interval.selectedIndex=polling_interval/60;
+}
+
+function stopInterval()
+{
+	clearTimeout(time_id);
+}
+</script>
+<body onload="setRefreshInterval()">
+<form method="post" name="SetIntervalForm" action="<%=controller%>/expert/monitor/pktstats">
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:pkt_statistics%>"><span><%:pkt_statistics%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="tableframe">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+              <tr>
+                <td>
+                  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <table width="100%" cellpadding="0" cellspacing="0" >
+                                <tr>
+                                  <td height="26" colspan="9">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                      <tr>
+                                        <td height="26" class="table_title"><%:pkt_statistics%></td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+				<%
+				local ZyXEL_Mode = uci:get("system","main","system_mode")
+				
+				local wan_state_data=luci.sys.exec("sys portspeed 4")
+				local lan_state_data0=luci.sys.exec("sys portspeed 0")
+				local lan_state_data1=luci.sys.exec("sys portspeed 1")
+				local lan_state_data2=luci.sys.exec("sys portspeed 2")
+				local lan_state_data3=luci.sys.exec("sys portspeed 3")
+				local wan_state=string.match(wan_state_data,"Port 4: (%d+)")
+				local lan_state0=string.match(lan_state_data0,"Port 0: (%d+)")
+				local lan_state1=string.match(lan_state_data1,"Port 1: (%d+)")
+				local lan_state2=string.match(lan_state_data2,"Port 2: (%d+)")
+				local lan_state3=string.match(lan_state_data3,"Port 3: (%d+)")
+				local lan_state
+
+				if lan_state0 then 
+					lan_state=lan_state0 
+				elseif lan_state1 then 
+					lan_state=lan_state1 
+				elseif lan_state2 then 
+					lan_state=lan_state2 
+				elseif lan_state3 then 
+					lan_state=lan_state3 
+				end
+								
+				local wanif = uci:get("network","wan","ifname")
+				--local lanif = uci:get("network","lan","ifname")
+				local lanif = "eth1"			
+
+				if not wanif then
+					wanif="eth0"
+				end
+
+				local ra0 = "ath0"
+				local rai0 = "ath10"
+		
+				local ra0_rx_pks
+				local ra0_tx_pks
+				local ra0_collisions
+				local ra0_rx_bys
+				local ra0_tx_bys
+			
+				local rai0_rx_pks
+				local rai0_tx_pks
+				local rai0_collisions
+				local rai0_rx_bys
+				local rai0_tx_bys				
+
+				local up_time=luci.sys.uptime()
+				local wan_data=luci.sys.exec("ifconfig '"..wanif.."'")
+				local lan_data=luci.sys.exec("ifconfig '"..lanif.."'")				
+
+				local wan_rx_pks=string.match(wan_data,"RX packets:(%d+)")
+				local wan_tx_pks=string.match(wan_data,"TX packets:(%d+)")
+				local wan_collisions=string.match(wan_data,"collisions:(%d+)")
+				local wan_rxbys=luci.sys.exec("cat /tmp/wired_packet/Packet_Statistics_wanrx")
+				local wan_rx_bys=string.match(wan_rxbys,"(%d+)")
+				local wan_txbys=luci.sys.exec("cat /tmp/wired_packet/Packet_Statistics_wantx")
+				local wan_tx_bys=string.match(wan_txbys,"(%d+)")				
+
+				local lan_rx_pks=string.match(lan_data,"RX packets:(%d+)")
+				local lan_tx_pks=string.match(lan_data,"TX packets:(%d+)")
+				local lan_collisions=string.match(lan_data,"collisions:(%d+)")
+				local lan_rxbys=luci.sys.exec("cat /tmp/wired_packet/Packet_Statistics_lanrx")
+				local lan_rx_bys=string.match(lan_rxbys,"(%d+)")
+				local lan_txbys=luci.sys.exec("cat /tmp/wired_packet/Packet_Statistics_lantx")
+				local lan_tx_bys=string.match(lan_txbys,"(%d+)")
+				
+				luci.sys.exec("ifconfig '"..ra0.."' 2> /tmp/wifi_24g_interface")				
+				local wifi_24g_interface=luci.sys.exec("cat /tmp/wifi_24g_interface")
+				if wifi_24g_interface ~= "" then
+				
+					ra0_rx_pks = 0
+					ra0_tx_pks = 0
+					ra0_collisions = 0
+					ra0_rx_bys = 0
+					ra0_tx_bys = 0			
+										
+				else
+					
+					local ra0_data=luci.sys.exec("ifconfig '"..ra0.."'")				
+					ra0_rx_pks=string.match(ra0_data,"RX packets:(%d+)")
+					ra0_tx_pks=string.match(ra0_data,"TX packets:(%d+)")
+					ra0_collisions=string.match(ra0_data,"collisions:(%d+)")
+					local ra0_rxbys=luci.sys.exec("cat /tmp/wireless_packet/Packet_Statistics_rx")
+					ra0_rx_bys=string.match(ra0_rxbys,"(%d+)")
+					local ra0_txbys=luci.sys.exec("cat /tmp/wireless_packet/Packet_Statistics_tx")
+					ra0_tx_bys=string.match(ra0_txbys,"(%d+)")	
+									
+				end				
+
+				luci.sys.exec("ifconfig '"..rai0.."' 2> /tmp/wifi_5g_interface")				
+				local wifi_5g_interface=luci.sys.exec("cat /tmp/wifi_5g_interface")
+				if wifi_5g_interface ~= "" then
+				
+					rai0_rx_pks=0
+					rai0_tx_pks=0
+					rai0_collisions=0
+					rai0_rx_bys=0
+					rai0_tx_bys=0				
+					
+				else
+
+					local rai0_data=luci.sys.exec("ifconfig '"..rai0.."'")				
+					rai0_rx_pks=string.match(rai0_data,"RX packets:(%d+)")
+					rai0_tx_pks=string.match(rai0_data,"TX packets:(%d+)")
+					rai0_collisions=string.match(rai0_data,"collisions:(%d+)")
+					local rai0_rxbys=luci.sys.exec("cat /tmp/wireless_packet/Packet_Statistics_5grx")
+					rai0_rx_bys=string.match(rai0_rxbys,"(%d+)")
+					local rai0_txbys=luci.sys.exec("cat /tmp/wireless_packet/Packet_Statistics_5gtx")
+					rai0_tx_bys=string.match(rai0_txbys,"(%d+)")				
+									
+				end
+				
+				local ca_date,ca_hour,ca_minute,ca_second
+				while up_time do
+					if up_time>86399 then 
+						ca_date=math.floor(up_time/86400)
+						up_time=up_time-(ca_date*86400)
+					elseif up_time>3599 then
+						ca_hour=math.floor(up_time/3600)
+						up_time=up_time-(ca_hour*3600)
+					elseif up_time>59 then
+						ca_minute=math.floor(up_time/60)
+						up_time=up_time-(ca_minute*60)
+						if ca_minute<10 then 
+							ca_minute="0"..tostring(ca_minute) 
+						end
+					else
+						ca_second=up_time
+						if ca_second<10 then 
+							ca_second="0"..tostring(ca_second) 
+						end
+						break
+					end
+				end	
+				%>
+                                <tr class="top_font" align="center">
+                                  <td><%:pkt_statistics_port%></td>
+                                  <td><%:pkt_statistics_status%></td>
+                                  <td><%:tx_pkt%></td>
+                                  <td><%:rx_pkt%></td>
+                                  <td><%:pkt_collisions%></td>
+                                  <td><%:tx_bps%></td>
+                                  <td><%:rx_bps%></td>
+                                  <td><%:up_time%></td>
+                                </tr>
+				<% if ZyXEL_Mode == "1" then  %>
+                                <tr class="table_font" align="center">
+                                  <td><%:pkt_statistics_wan%>&nbsp;</td>
+                                  <td><%if wan_state then%><%=wan_state%>M<%else%><%:status_down%><%end%> </td>
+                                  <td><%=wan_tx_pks%> </td>
+                                  <td><%=wan_rx_pks%> </td>
+                                  <td><%=wan_collisions%></td>
+                                  <td><%=wan_tx_bys%></td>
+                                  <td><%=wan_rx_bys%></td>
+                                  <td>
+                                    <%if ca_date then%><%=ca_date%><%:up_day%><%end%>
+                                    <%if ca_hour then%><%=ca_hour%>:<%else%>00:<%end%>
+                                    <%if ca_minute then%><%=ca_minute%>:<%else%>00:<%end%>
+                                    <%if ca_second then%><%=ca_second%><%else%>00<%end%>
+                                  </td>
+                                </tr>
+				<% end %>
+                                <tr class="table_font" align="center">
+                                  <td><%:pkt_statistics_lan%>&nbsp;</td>
+                                  <td><%if lan_state then%><%=lan_state%>M<%else%><%:status_down%><%end%> </td>
+                                  <td><%=lan_tx_pks%> </td>
+                                  <td><%=lan_rx_pks%> </td>
+                                  <td><%=lan_collisions%></td>
+                                  <td><%=lan_tx_bys%></td>
+                                  <td><%=lan_rx_bys%></td>
+                                  <td>
+                                    <%if ca_date then%><%=ca_date%><%:up_day%><%end%>
+                                    <%if ca_hour then%><%=ca_hour%>:<%else%>00:<%end%>
+                                    <%if ca_minute then%><%=ca_minute%>:<%else%>00:<%end%>
+                                    <%if ca_second then%><%=ca_second%><%else%>00<%end%>
+                                  </td>
+                                </tr>
+                                <tr class="table_font" align="center">
+				<% local status_btn = luci.sys.exec("cat /tmp/wlan_on")	%>
+				<%status_btn = string.sub (status_btn, 1, 1)%>
+				<% local status = uci:get("wireless","ath0","disabled") if ( status=="1" or status_btn=="0" ) then status="Down" else status="450M" end%>
+                                  <td><%:pkt_statistics_wlan1%>&nbsp;</td>
+                                  <td><%=status%> </td>
+                                  <td><%=ra0_tx_pks%> </td>
+                                  <td><%=ra0_rx_pks%> </td>
+                                  <td><%=ra0_collisions%></td>
+                                  <td><%=ra0_tx_bys%></td>
+                                  <td><%=ra0_rx_bys%></td>
+                                  <td>
+                                    <%if ca_date then%><%=ca_date%><%:up_day%><%end%>
+                                    <%if ca_hour then%><%=ca_hour%>:<%else%>00:<%end%>
+                                    <%if ca_minute then%><%=ca_minute%>:<%else%>00:<%end%>
+                                    <%if ca_second then%><%=ca_second%><%else%>00<%end%>
+                                  </td>
+                                </tr>
+				<% local Product_Model = uci:get("system","main","product_model") %>
+				<% if Product_Model == "DUAL_BAND" then %>
+                                <tr class="table_font" align="center" >
+				<% local status5G = uci:get("wireless","ath10","disabled") if ( status5G=="1" or status_btn=="0" ) then status5G="Down" else status5G="1.3G" end%>
+                                  <td><%:pkt_statistics_wlan2%>&nbsp;</td>
+                                  <td><%=status5G%> </td>
+                                  <td><%=rai0_tx_pks%> </td>
+                                  <td><%=rai0_rx_pks%> </td>
+                                  <td><%=rai0_collisions%></td>
+                                  <td><%=rai0_tx_bys%></td>
+                                  <td><%=rai0_rx_bys%></td>
+                                  <td>
+                                    <%if ca_date then%><%=ca_date%><%:up_day%><%end%>
+                                    <%if ca_hour then%><%=ca_hour%>:<%else%>00:<%end%>
+                                    <%if ca_minute then%><%=ca_minute%>:<%else%>00:<%end%>
+                                    <%if ca_second then%><%=ca_second%><%else%>00<%end%>
+                                  </td>
+                                </tr>
+				<% end %>                                
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </ul>
+        <ul>
+          <div class="w_text"><%:system_up_time%> : <%if ca_date then%><%=ca_date%><%:up_day%><%end%><%if ca_hour then%><%=ca_hour%>:<%else%>00:<%end%> <%if ca_minute then%><%=ca_minute%>:<%else%>00:<%end%> <%if ca_second then%><%=ca_second%><%else%>00<%end%>
+          </div>
+        </ul>
+        <ul>
+          <div class="w_text"><b><%:poll_interval%> : </b>
+	  <%
+          local f = io.open("/tmp/SysStatus_interval","r") 
+	  local sec_interval
+	  if f then
+	  	sec_interval = f:read("*all")
+		f:close()
+	  end				  
+	  %>
+            <select name="interval" size="1">
+              <option value="00000000" <% if not sec_interval or sec_interval == "0" then %>selected="selected"<% end %>><%:interval_select_none%></option>
+              <option value="00000001" <% if sec_interval == "60" then %>selected="selected"<% end %>>60 <%:seconds%></option>
+              <option value="00000002" <% if sec_interval == "120" then %>selected="selected"<% end %>>120 <%:seconds%></option>
+              <option value="00000003" <% if sec_interval == "180" then %>selected="selected"<% end %>>180 <%:seconds%></option>
+              <option value="00000004" <% if sec_interval == "240" then %>selected="selected"<% end %>>240 <%:seconds%></option>
+              <option value="00000005" <% if sec_interval == "300" then %>selected="selected"<% end %>>300 <%:seconds%></option>
+            </select>
+            &nbsp;&nbsp;
+            <input onclick="setRefreshInterval();" value="<%:set_interval%>" id="StatisticsSetInterval" name="SetIntvl"  type="submit"/>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <input onclick="stopInterval();" value="<%:stop_interval%>" id="StatisticsStop" name="stopIntvl"  type="button"/>
+          </div>
+        </ul>
+        <ul>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">showFullPath(' <%:monitor%> > <%:pkt_statistics%>');</script>
+</html>

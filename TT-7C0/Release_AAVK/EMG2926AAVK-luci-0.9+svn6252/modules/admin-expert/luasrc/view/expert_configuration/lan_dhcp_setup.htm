@@ -1,0 +1,126 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+function submit_apply(){
+	showWebMessage( 1 , "<%:Message%>" , "<%:msg_config%>" );
+	
+	if ((document.forms[0].lease_hour.value >= 24) ){
+	    alert("Please enter 1~23");	
+	    return false;
+	}else if((document.forms[0].lease_minute.value >= 60)){
+		alert("Please enter 1~59");	
+		return false;
+	}else{
+		return true;
+	}
+	
+}
+function initPage()
+{
+	showWebMessage( 0 , "<%:Message%>" , "<%:Ready%>" );	
+}
+</script>
+</head>
+<body onload="initPage()">
+<form onsubmit="return submit_apply();" method="post" name="DHCP_APP" action="<%=controller%>/expert/configuration/network/dhcpserver" >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:General%>"><span><%:General%> </span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/dhcpserver/ipstatic" title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/dhcpserver/dhcptbl" title="<%:Client_List%>"><span><%:Client_List%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+        <div class="data">
+          <ul><div class="w_text">
+  <ul>
+<%local enabled = uci.get("dhcp","lan","enabled")%>
+    <li class="left_table"><%:DHCP_Server%>   :</li>
+    <li class="right_table">
+          <input name="ssid_state" id="radio" type="radio" value="1" <%if enabled =="1" then%> checked="checked" <%end%> />
+      <%:Enable%>
+      <input name="ssid_state" id="radio2" type="radio" value="0"  <%if enabled == "0" then%> checked="checked" <%end%> />
+      <%:Disable%></li>
+          </ul>
+         </div>
+<%local startIp = uci.get("network","lan","ipaddr")%>
+<%local start = uci.get("dhcp","lan","start")%>
+<%local startIp = string.match(startIp,"(%d+.%d+.%d+.)%d+")%>
+<%local lease = uci.get("dhcp","lan","lease")
+ lease = string.gsub(lease,"m","")%>
+<%local lease_day = math.floor(lease/1440)%>
+<%local lease_hour = math.floor((lease-lease_day*1440)/60)%>
+<%local lease_min = lease-lease_day*1440-lease_hour*60%> 
+
+ 
+<%startIp = startIp .. start %>
+        <%local poolSize = uci.get("dhcp","lan","limit")%>
+            <div class="w_text"><ul><li class="left_table"><%:IP_Pool_Starting_Address%> :</li><li class="right_table"><input onblur="checkIPFormat(this)" maxlength="15" size="15" value="<%=startIp%>" name="startAdd" /></li></ul></div>
+       
+			<div class="w_text"><ul><li class="left_table"><%:Pool_Size%> :</li><li class="right_table"><input onblur="checkIPFormat(this)" maxlength="15" size="5" <%if poolSize then%>value="<%=poolSize%>" <%else%>value="32"<%end%> name="poolSize" /></li></ul>
+			</div>
+			<div class="w_text"><ul><li class="left_table">DHCP Server Lease Time :</li><li class="right_table"><input maxlength="15" size="5" value="<%=lease_day%>" name="lease_day" />Day(s)
+				<input maxlength="15" size="5" value="<%=lease_hour%>" name="lease_hour" />Hour(s) 
+				<input maxlength="15" size="5" value="<%=lease_min%>" name="lease_minute" />Minute(s)</li></ul></div>
+            <div class="spaceair"></div>	
+          </ul>
+      </div>
+   <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="<%:Apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div></li>
+	  </li>
+  </ul>
+</div>
+<%
+	local code = luci.http.formvalue("rt")
+	local msg = luci.http.formvalue("errmsg")
+	if not code then
+		code = 0
+	end
+	if not msg then
+	end
+-%>
+</form>
+</body>
+<script language="JavaScript">    
+showFullPath('<%:Network%> > <%:DHCP_Server%>');
+showWebMessage( 0, '<%:Message%>', '<%:Ready%>');
+</script>
+</html>

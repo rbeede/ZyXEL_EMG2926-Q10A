@@ -1,0 +1,65 @@
+# System Mode:1:Router,2:AP,3:Repeater,4:WISP,5:WISP+UR
+
+config system main
+	option product_name NBG6716
+	option product_model DUAL_BAND
+	option hostname	NBG6716
+	option weather_city TWXX0021
+	option weather_degree c
+	option domain_name zyxel.com
+	option pwd 1234
+	option power_saving_select '2.4G'
+	option language "en"
+	option systimeout 300
+	option klogconloglevel 1
+	option log_size 128
+	option system_mode 1
+	option timezone UTC
+	option changeDefaultCg 1
+
+config rdate
+	option interface wan
+	
+
+config samba general
+	option enable 0
+	option usb1_types 0
+	option usb2_types 0
+
+config samba_user_config samba_user_1
+	option enable 0
+	option name ""
+	option passwd ""
+	option enable_usb1 0
+	option enable_usb2 0
+
+config samba_user_config samba_user_2
+	option enable 0
+	option name ""
+	option passwd ""
+	option enable_usb1 0
+	option enable_usb2 0
+
+config samba_user_config samba_user_3
+	option enable 0
+	option name ""
+	option passwd ""
+	option enable_usb1 0
+	option enable_usb2 0
+
+config samba_user_config samba_user_4
+	option enable 0
+	option name ""
+	option passwd ""
+	option enable_usb1 0
+	option enable_usb2 0
+
+config samba_user_config samba_user_5
+	option enable 0
+	option name ""
+	option passwd ""
+	option enable_usb1 0
+	option enable_usb2 0
+
+config cloud cloud
+	option do_unpair 1

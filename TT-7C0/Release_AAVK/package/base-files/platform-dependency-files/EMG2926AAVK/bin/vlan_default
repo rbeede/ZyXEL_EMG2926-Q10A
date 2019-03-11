@@ -1,0 +1,486 @@
+#!/bin/sh
+
+create_lan_inf(){
+	vconfig set_name_type DEV_PLUS_VID_NO_PAD 
+	vconfig add eth1 11
+	vconfig add eth1 12
+	vconfig add eth1 13
+	vconfig add eth1 14
+	ifconfig eth1.11 up
+	ifconfig eth1.12 up
+	ifconfig eth1.13 up
+	ifconfig eth1.14 up
+	brctl addif br-lan eth1.11
+	brctl addif br-lan eth1.12
+	brctl addif br-lan eth1.13
+	brctl addif br-lan eth1.14
+}
+
+remove_lan_inf(){
+	vconfig rem eth1.11
+	vconfig rem eth1.12
+	vconfig rem eth1.13
+	vconfig rem eth1.14
+	brctl addif br-lan eth1
+}
+
+
+#ORIAN SWITCH setting,not support double VLAN tagging
+setup_hw_switch(){
+
+	#Step1--Set 802.1Q mode
+	echo 0x660 > /proc/driver/ar8216/regAddr
+	echo 0x0014027e > /proc/driver/ar8216/regVal
+	echo 0x66c > /proc/driver/ar8216/regAddr
+	echo 0x0014027d > /proc/driver/ar8216/regVal
+	echo 0x678 > /proc/driver/ar8216/regAddr
+	echo 0x0014027b > /proc/driver/ar8216/regVal
+	echo 0x684 > /proc/driver/ar8216/regAddr
+	echo 0x00140277 > /proc/driver/ar8216/regVal
+	echo 0x690 > /proc/driver/ar8216/regAddr
+	echo 0x0014026f > /proc/driver/ar8216/regVal
+
+	# Frank : Port5 lookup control register , 00 = 802.1q disable. Use part-based VLAN only.
+	echo 0x69c > /proc/driver/ar8216/regAddr
+	#echo 0x0014005f > /proc/driver/ar8216/regVal
+	#Sean :[bug fix]  Port 5 only have one menber port (port 6),port 0~4 is not.
+	echo 0x00140040 > /proc/driver/ar8216/regVal  
+
+	# Frank:  Port6 lookup control register , 00 = 802.1q disable. Use part-based VLAN only.
+	echo 0x6a8 > /proc/driver/ar8216/regAddr
+	#echo 0x0014003f > /proc/driver/ar8216/regVal
+	#Sean :[bug fix]  Port 6 only have one menber port (port 5),port 0~4 is not.
+	echo 0x00140020 > /proc/driver/ar8216/regVal
+
+
+
+	#Step2--Set Port VID, 
+	echo 0x420 > /proc/driver/ar8216/regAddr #Port0 default CVID=1,SVID=1
+	echo 0x00010001 > /proc/driver/ar8216/regVal
+	echo 0x428 > /proc/driver/ar8216/regAddr #Port1 default CVID=11,SVID=11
+	echo 0x000b000b > /proc/driver/ar8216/regVal
+	echo 0x430 > /proc/driver/ar8216/regAddr #Port2 default CVID=12,SVID=12
+	echo 0x000c000c > /proc/driver/ar8216/regVal
+	echo 0x438 > /proc/driver/ar8216/regAddr  #Port3 default CVID=13,SVID=13
+	echo 0x000d000d > /proc/driver/ar8216/regVal
+	echo 0x440 > /proc/driver/ar8216/regAddr #Port4 default CVID=14,SVID=14
+	echo 0x000e000e > /proc/driver/ar8216/regVal
+
+	echo 0x448 > /proc/driver/ar8216/regAddr #Port5 default CVID=2,SVID=2
+	#echo 0x00080008 > /proc/driver/ar8216/regVal
+	#Sean :[bug fix] resolve port 5,6 menber port setting error ,recrove orian switch setting
+	echo 0x00020002 > /proc/driver/ar8216/regVal
+	echo 0x450 > /proc/driver/ar8216/regAddr #Port6 default CVID=2,SVID=2
+	#Sean :[bug fix] resolve port 5,6 menber port setting error ,recrove orian switch setting
+	#echo 0x00080008 > /proc/driver/ar8216/regVal
+	echo 0x00020002 > /proc/driver/ar8216/regVal
+
+
+	#Step4--Set VLAN entry for LAN1
+	echo 0x610 > /proc/driver/ar8216/regAddr # Port0-1=0-1;Port2-4=not member;Port5-6=not member;
+	echo 0x001BFF60 > /proc/driver/ar8216/regVal
+	echo 0x614 > /proc/driver/ar8216/regAddr # VID=11
+	echo 0x800b0002 > /proc/driver/ar8216/regVal
+
+	#Step4--Set VLAN entry for LAN1
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x001BFDE0 > /proc/driver/ar8216/regVal
+	echo 0x614 > /proc/driver/ar8216/regAddr # VID=12
+	echo 0x800c0002 > /proc/driver/ar8216/regVal
+
+	#Step4--Set VLAN entry for LAN1
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x001BF7E0 > /proc/driver/ar8216/regVal
+	echo 0x614 > /proc/driver/ar8216/regAddr # VID=13
+	echo 0x800d0002 > /proc/driver/ar8216/regVal
+
+	#Step4--Set VLAN entry for LAN1
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x001BDFE0 > /proc/driver/ar8216/regVal
+	echo 0x614 > /proc/driver/ar8216/regAddr # VID=14
+	echo 0x800e0002 > /proc/driver/ar8216/regVal
+
+	#Step5--Set VLAN entry for LAN2
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x00197FF0 > /proc/driver/ar8216/regVal
+	echo 0x614 > /proc/driver/ar8216/regAddr # VID=2
+	#echo 0x80080002 > /proc/driver/ar8216/regVal
+	#Sean :[bug fix] resolve port 5,6 menber port setting error ,recrove orian switchsetting
+	echo 0x80020002 > /proc/driver/ar8216/regVal
+
+
+	#Step6--VLAN type for each port.
+	echo 0x424 > /proc/driver/ar8216/regAddr # Insert tag to CPU port
+	echo 0x00002040 > /proc/driver/ar8216/regVal
+	echo 0x42c > /proc/driver/ar8216/regAddr # remove Tag to Port1
+	echo 0x00001040 > /proc/driver/ar8216/regVal
+	echo 0x434 > /proc/driver/ar8216/regAddr # Port2
+	echo 0x00001040 > /proc/driver/ar8216/regVal
+	echo 0x43c > /proc/driver/ar8216/regAddr # Port3
+	echo 0x00001040 > /proc/driver/ar8216/regVal
+	echo 0x444 > /proc/driver/ar8216/regAddr # Port4
+	echo 0x00001040 > /proc/driver/ar8216/regVal
+
+	# Frank: PORT5_VLAN_CTRL1 , 11 = Untouched
+	echo 0x44c > /proc/driver/ar8216/regAddr # Port5
+	echo 0x00003040 > /proc/driver/ar8216/regVal
+	# Frank: PORT6_VLAN_CTRL1 , 11 = Untouched
+	echo 0x454 > /proc/driver/ar8216/regAddr # Port6
+	echo 0x00003040 > /proc/driver/ar8216/regVal
+
+
+}
+
+
+setup_switch_default(){
+	#Step1--Set VLAN entry for LAN1
+	# Group port - 0,1 to VID 11 
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x00195550 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr
+	echo 0x80000002 > /proc/driver/ar8216/regVal
+
+	# Group port - 0,2 to VID 12 
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x00195550 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr 
+	echo 0x80000002 > /proc/driver/ar8216/regVal
+
+	# Group port - 0,3 to VID 13 
+	echo 0x610 > /proc/driver/ar8216/regAddr
+	echo 0x00195550 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr
+	echo 0x80000002 > /proc/driver/ar8216/regVal
+
+	# Group port - 0,4 to VID 14 
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x00195550 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr
+	echo 0x80000002 > /proc/driver/ar8216/regVal
+
+	#Step2--Set VLAN entry for LAN2
+	# Group port - 5 and 6  to VID 2
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x00183ff0 > /proc/driver/ar8216/regVal
+
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr 
+	echo 0x80020002 > /proc/driver/ar8216/regVal
+
+	#Step3-- Recognize tag packet from CPU
+	echo 0x620 > /proc/driver/ar8216/regAddr
+	echo 0x000004f0 > /proc/driver/ar8216/regVal
+	echo 0x660 > /proc/driver/ar8216/regAddr
+	echo 0x0014011e > /proc/driver/ar8216/regVal
+	echo 0x66c > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+	echo 0x678 > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+	echo 0x684 > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+	echo 0x690 > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+
+	echo 0x69c > /proc/driver/ar8216/regAddr
+	echo 0x00140140 > /proc/driver/ar8216/regVal
+	echo 0x6a8 > /proc/driver/ar8216/regAddr
+	echo 0x00140120 > /proc/driver/ar8216/regVal
+
+	#Step4--Set Port VID,Insert PVID 11/12/13/14 to LAN ports
+	echo 0x420 > /proc/driver/ar8216/regAddr #Port0 default CVID=1,SVID=1
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x428 > /proc/driver/ar8216/regAddr #Port1 default CVID=11,SVID=11
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x430 > /proc/driver/ar8216/regAddr #Port2 default CVID=12,SVID=12
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x438 > /proc/driver/ar8216/regAddr  #Port3 default CVID=13,SVID=13
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x440 > /proc/driver/ar8216/regAddr #Port4 default CVID=14,SVID=14
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+
+	# Insert PVID 2 to WAN port
+	echo 0x448 > /proc/driver/ar8216/regAddr #Port5 default CVID=2,SVID=2
+	echo 0x00020002 > /proc/driver/ar8216/regVal
+	echo 0x450 > /proc/driver/ar8216/regAddr #Port6 default CVID=2,SVID=2
+	echo 0x00020002 > /proc/driver/ar8216/regVal
+
+	#Step5--VLAN type for each port.Egress tag packet to CPU and untagged packet to LAN port
+	#core port
+	echo 0x424 > /proc/driver/ar8216/regAddr 
+	echo 0x00002240 > /proc/driver/ar8216/regVal 
+	# Port1 unmodify, TLS, disable vlan propagation 
+	echo 0x42c > /proc/driver/ar8216/regAddr
+	echo 0x00000080 > /proc/driver/ar8216/regVal
+	# Port2 
+	echo 0x434 > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal 
+	# Port3 
+	echo 0x43c > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal 
+	# Port4 
+	echo 0x444 > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal 
+
+	# Port5 
+	echo 0x44c > /proc/driver/ar8216/regAddr
+	echo 0x00000080 > /proc/driver/ar8216/regVal
+	# Port6 
+	echo 0x454 > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal
+
+	# QinQ
+	echo 0x48 > /proc/driver/ar8216/regAddr
+	echo 0x28100 > /proc/driver/ar8216/regVal
+}
+
+
+#NEW SWITCH setting,support double VLAN tagging
+setup_switch(){
+
+	#Step1--Set VLAN entry for LAN1
+	# Group port - 0,1 to VID 11 
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x001BFF60 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr
+	echo 0x800b0002 > /proc/driver/ar8216/regVal
+
+	# Group port - 0,2 to VID 12 
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x001BFDE0 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr 
+	echo 0x800c0002 > /proc/driver/ar8216/regVal
+
+	# Group port - 0,3 to VID 13 
+	echo 0x610 > /proc/driver/ar8216/regAddr
+	echo 0x001BF7E0 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr
+	echo 0x800d0002 > /proc/driver/ar8216/regVal
+
+	# Group port - 0,4 to VID 14 
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x001BDFE0 > /proc/driver/ar8216/regVal
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr
+	echo 0x800e0002 > /proc/driver/ar8216/regVal
+
+	#Step2--Set VLAN entry for LAN2
+	# Group port - 5 and 6  to VID 2
+	echo 0x610 > /proc/driver/ar8216/regAddr 
+	echo 0x00183ff0 > /proc/driver/ar8216/regVal
+
+	# BUSY is changed to bit[31],need to modify register write driver
+	echo 0x614 > /proc/driver/ar8216/regAddr 
+	echo 0x80020002 > /proc/driver/ar8216/regVal
+
+	#Step3-- Recognize tag packet from CPU
+	echo 0x620 > /proc/driver/ar8216/regAddr
+	echo 0x000004f0 > /proc/driver/ar8216/regVal
+	echo 0x660 > /proc/driver/ar8216/regAddr
+	echo 0x0014011e > /proc/driver/ar8216/regVal
+	echo 0x66c > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+	echo 0x678 > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+	echo 0x684 > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+	echo 0x690 > /proc/driver/ar8216/regAddr
+	echo 0x00140101 > /proc/driver/ar8216/regVal
+
+	echo 0x69c > /proc/driver/ar8216/regAddr
+	echo 0x00140140 > /proc/driver/ar8216/regVal
+	echo 0x6a8 > /proc/driver/ar8216/regAddr
+	echo 0x00140120 > /proc/driver/ar8216/regVal
+
+	#Step4--Set Port VID,Insert PVID 11/12/13/14 to LAN ports
+	echo 0x420 > /proc/driver/ar8216/regAddr #Port0 default CVID=1,SVID=1
+	echo 0x00010001 > /proc/driver/ar8216/regVal
+	echo 0x428 > /proc/driver/ar8216/regAddr #Port1 default CVID=11,SVID=11
+	echo 0x000b000b > /proc/driver/ar8216/regVal
+	echo 0x430 > /proc/driver/ar8216/regAddr #Port2 default CVID=12,SVID=12
+	echo 0x000c000c > /proc/driver/ar8216/regVal
+	echo 0x438 > /proc/driver/ar8216/regAddr  #Port3 default CVID=13,SVID=13
+	echo 0x000d000d > /proc/driver/ar8216/regVal
+	echo 0x440 > /proc/driver/ar8216/regAddr #Port4 default CVID=14,SVID=14
+	echo 0x000e000e > /proc/driver/ar8216/regVal
+
+	# Insert PVID 2 to WAN port
+	echo 0x448 > /proc/driver/ar8216/regAddr #Port5 default CVID=2,SVID=2
+	echo 0x00020002 > /proc/driver/ar8216/regVal
+	echo 0x450 > /proc/driver/ar8216/regAddr #Port6 default CVID=2,SVID=2
+	echo 0x00020002 > /proc/driver/ar8216/regVal
+
+	#Step5--VLAN type for each port.Egress tag packet to CPU and untagged packet to LAN port
+	#core port
+	echo 0x424 > /proc/driver/ar8216/regAddr 
+	echo 0x00002240 > /proc/driver/ar8216/regVal 
+	# Port1 unmodify, TLS, disable vlan propagation 
+	echo 0x42c > /proc/driver/ar8216/regAddr
+	echo 0x00000080 > /proc/driver/ar8216/regVal
+	# Port2 
+	echo 0x434 > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal 
+	# Port3 
+	echo 0x43c > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal 
+	# Port4 
+	echo 0x444 > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal 
+	
+	# Port5 
+	echo 0x44c > /proc/driver/ar8216/regAddr
+	echo 0x00000080 > /proc/driver/ar8216/regVal
+	# Port6 
+	echo 0x454 > /proc/driver/ar8216/regAddr 
+	echo 0x00000080 > /proc/driver/ar8216/regVal
+
+	# QinQ
+	echo 0x48 > /proc/driver/ar8216/regAddr
+	echo 0x28100 > /proc/driver/ar8216/regVal
+
+}
+
+setup_wan_inf(){
+
+	wan1_sw=$(uci get network.wan1.enable)
+	wan2_sw=$(uci get network.wan2.enable)
+	wan3_sw=$(uci get network.wan3.enable)
+	wan4_sw=$(uci get network.wan4.enable)
+
+	wan1_name=$(uci get network.wan1.ifname)
+	wan2_name=$(uci get network.wan2.ifname)
+	wan3_name=$(uci get network.wan3.ifname)
+	wan4_name=$(uci get network.wan4.ifname)
+
+	
+	if [ "$wan1_sw" == "0" ] && [ "$wan1_name" != "" ] ; then
+		ifconfig $wan1_name down
+		ifdown wan1	
+	elif [ "$wan1_sw" == "1" ] ;then
+		local wan_mac=$(uci get network.wan1.wan_set_mac)
+		ifup wan1
+		sleep 1
+		ifconfig $wan1_name down
+		sleep 1
+		ifconfig $wan1_name hw ether $wan_mac
+		sleep 1
+		ifconfig $wan1_name up
+	fi
+
+	if [ "$wan2_sw" == "0" ] && [ "$wan2_name" != "" ] ; then
+		ifconfig $wan2_name down
+		ifdown wan2
+	elif [ "$wan2_sw" == "1" ] ;then
+		local wan_mac=$(uci get network.wan2.wan_set_mac)
+		ifup wan2
+		sleep 1
+		ifconfig $wan2_name down
+		sleep 1
+		ifconfig $wan2_name hw ether $wan_mac
+		sleep 1
+		ifconfig $wan2_name up
+	fi
+
+	if [ "$wan3_sw" == "0" ] && [ "$wan3_name" != "" ] ; then
+		ifconfig $wan3_name down
+		ifdown wan3
+	elif [ "$wan3_sw" == "1" ] ;then
+		local wan_mac=$(uci get network.wan3.wan_set_mac)
+		ifup wan3
+		sleep 1
+		ifconfig $wan3_name down
+		sleep 1
+		ifconfig $wan3_name hw ether $wan_mac
+		sleep 1
+		ifconfig $wan3_name up
+	fi
+
+	if [ "$wan4_sw" == "0" ] && [ "$wan4_name" != "" ] ; then
+		ifconfig $wan4_name down
+		ifdown wan4
+	elif [ "$wan4_sw" == "1" ] ;then
+		local wan_mac=$(uci get network.wan4.wan_set_mac)
+		ifup wan4
+		sleep 1
+		ifconfig $wan4_name down
+		sleep 1
+		ifconfig $wan4_name hw ether $wan_mac
+		sleep 1
+		ifconfig $wan4_name up
+	fi
+
+	local wan_name=$(uci get network.wan.ifname)
+	local wan_mac=$(uci get network.wan.wan_set_mac)
+	ifup wan
+	sleep 1
+
+	local sys_mode=$(get_sys_mode)
+	if [ "$sys_mode" == "2" -o "$sys_mode" == "3" ]; then
+		/sbin/update_sys_dns_apmode
+	else
+		/sbin/update_sys_dns
+	fi
+
+	ifconfig $wan_name down
+	sleep 1
+	ifconfig $wan_name hw ether $wan_mac
+	sleep 1
+	ifconfig $wan_name up
+
+}
+
+setup_wan_config(){
+
+	wan1_sw=$(uci get network.wan1.enable)
+	wan2_sw=$(uci get network.wan2.enable)
+	wan3_sw=$(uci get network.wan3.enable)
+	wan4_sw=$(uci get network.wan4.enable)
+
+
+	if [ "$wan1_sw" == "0" ]; then
+		uci set network.wan1.ifname=''
+	fi
+
+	if [ "$wan2_sw" == "0" ]; then
+		uci set network.wan2.ifname=''
+	fi
+
+	if [ "$wan3_sw" == "0" ]; then
+		uci set network.wan3.ifname=''
+	fi
+
+	if [ "$wan4_sw" == "0" ]; then
+		uci set network.wan4.ifname=''
+	fi
+
+	uci commit network
+}
+
+case "$1" in
+    setup_switch)
+        setup_switch
+    ;;
+    setup_lan_inf)
+        create_lan_inf
+    ;;
+    setup_wan_inf)
+        setup_wan_inf
+        /etc/init.d/intfGrp restart
+    ;;
+    setup_wan_config)
+        setup_wan_config
+    ;;
+    remove_lan_inf)
+        remove_lan_inf
+    ;;
+    setup_switch_default)
+        setup_switch_default
+    ;;
+esac
+

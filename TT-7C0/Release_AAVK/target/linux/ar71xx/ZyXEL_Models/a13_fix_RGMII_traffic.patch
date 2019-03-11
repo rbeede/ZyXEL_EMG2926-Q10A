@@ -1,0 +1,936 @@
+diff -ruN a/arch/mips/ath79/dev-eth.c b/arch/mips/ath79/dev-eth.c
+--- a/arch/mips/ath79/dev-eth.c	2015-08-10 17:27:25.847058000 +0800
++++ b/arch/mips/ath79/dev-eth.c	2015-08-14 13:52:17.255171788 +0800
+@@ -349,7 +349,7 @@
+ 			 val, AR913X_ETH1_PLL_SHIFT);
+ 	ath79_mii_ctrl_set_speed(AR71XX_MII_REG_MII1_CTRL, speed);
+ }
+-
++#if 0
+ static void ar934x_set_speed_ge0(int speed)
+ {
+ 	void __iomem *base;
+@@ -359,6 +359,63 @@
+ 	__raw_writel(val, base + AR934X_PLL_ETH_XMII_CONTROL_REG);
+ 	iounmap(base);
+ }
++#endif
++
++static void qca955x_set_speed_ge0(int speed)
++{
++	void __iomem *base;
++	u32 val = ath79_get_eth_pll(0, speed);
++
++	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
++	__raw_writel(0x0, base + QCA955X_PLL_ETH_XMII_CONTROL_REG);
++	mdelay(1000);
++	val |= 0x80000000;
++	printk("val = %x\n",val);
++	__raw_writel(val, base + QCA955X_PLL_ETH_XMII_CONTROL_REG);
++	iounmap(base);
++}
++
++static void qca955x_set_speed_ge0_inv(int speed)
++{
++	void __iomem *base;
++	u32 val = ath79_get_eth_pll(0, speed);
++	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
++	__raw_writel(0x0, base + QCA955X_PLL_ETH_XMII_CONTROL_REG);
++	mdelay(1000);
++	val &= ~0x80000000;
++	printk("inv val = %x\n",val);
++	__raw_writel(val, base + QCA955X_PLL_ETH_XMII_CONTROL_REG);
++	iounmap(base);
++}
++
++static void qca955x_set_pll(u32 reg, u32 val)
++{
++	void __iomem *base;
++
++	base = ioremap_nocache(AR71XX_PLL_BASE, AR71XX_PLL_SIZE);
++	__raw_writel(val, base + reg);
++	iounmap(base);
++}
++
++static void qca955x_set_gmac_interface_reg(u32 reg, u32 val)
++{
++	void __iomem *base;
++
++	base = ioremap_nocache(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
++	__raw_writel(val, base + reg);
++	iounmap(base);
++}
++
++static u32 qca955x_get_gmac_interface_reg(u32 reg)
++{
++	void __iomem *base;
++	u32 t;
++
++	base = ioremap_nocache(QCA955X_GMAC_BASE, QCA955X_GMAC_SIZE);
++	t = __raw_readl(base + reg);
++	iounmap(base);
++	return t;
++}
+ 
+ static void qca955x_set_speed_xmii(int speed)
+ {
+@@ -970,7 +1027,7 @@
+ 		if (id == 0) {
+ 			pdata->reset_bit = AR934X_RESET_GE0_MAC |
+ 					   AR934X_RESET_GE0_MDIO;
+-			pdata->set_speed = ar934x_set_speed_ge0;
++			pdata->set_speed = qca955x_set_speed_ge0;
+ 		} else {
+ 			pdata->reset_bit = AR934X_RESET_GE1_MAC |
+ 					   AR934X_RESET_GE1_MDIO;
+@@ -999,11 +1056,13 @@
+ 		if (id == 0) {
+ 			pdata->reset_bit = QCA955X_RESET_GE0_MAC |
+ 					   QCA955X_RESET_GE0_MDIO;
+-			//pdata->set_speed = qca955x_set_speed_xmii;
++			pdata->set_speed = qca955x_set_speed_ge0;
++			pdata->set_speed_inv = qca955x_set_speed_ge0_inv;
+ 		} else {
+ 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
+ 					   QCA955X_RESET_GE1_MDIO;
+ 			//pdata->set_speed = qca955x_set_speed_sgmii;
++			pdata->set_speed_inv = NULL;
+ 		}
+ 
+         if ( pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII ) {
+@@ -1028,6 +1087,19 @@
+ 		BUG();
+ 	}
+ 
++ 	if ((id == 0)  && (ath79_soc == ATH79_SOC_QCA956X)) {
++ 		pdata->is_qca9561 = 1;
++	} else if ((id == 0)  && (ath79_soc == ATH79_SOC_QCA9558)) {
++		pdata->is_qca9558 = 1;
++ 	} else {
++		pdata->is_qca9558 = 0;
++ 		pdata->is_qca9561 = 0;
++ 	}
++
++	pdata->get_gmac_interface_reg = qca955x_get_gmac_interface_reg;
++	pdata->set_gmac_interface_reg = qca955x_set_gmac_interface_reg;
++	pdata->set_pll_reg = qca955x_set_pll;
++
+ 	switch (pdata->phy_if_mode) {
+ 	case PHY_INTERFACE_MODE_GMII:
+ 	case PHY_INTERFACE_MODE_RGMII:
+diff -ruN a/arch/mips/include/asm/mach-ath79/ag71xx_platform.h b/arch/mips/include/asm/mach-ath79/ag71xx_platform.h
+--- a/arch/mips/include/asm/mach-ath79/ag71xx_platform.h	2015-06-12 17:03:39.315245000 +0800
++++ b/arch/mips/include/asm/mach-ath79/ag71xx_platform.h	2015-08-14 13:53:14.904910800 +0800
+@@ -38,12 +38,18 @@
+ 	u8		has_ar8216:1;
+ 	u8		force_link:1;
+ 	u8		is_qca956x:1;
++	u8		is_qca9558:1;
++	u8		is_qca9561;
+ 
+ 	struct ag71xx_switch_platform_data *switch_data;
+ 
+ 	void		(*ddr_flush)(void);
+ 	void		(*set_speed)(int speed);
++	void		(*set_speed_inv)(int speed);
+ 	void		(*update_pll)(u32 pll_10, u32 pll_100, u32 pll_1000);
++	void		(*set_gmac_interface_reg)(u32 reg_offset,u32 value);
++	void		(*set_pll_reg)(u32 reg_offset,u32 value);
++	u32			(*get_gmac_interface_reg)(u32 reg_offset);
+ 
+ 	u32		fifo_cfg1;
+ 	u32		fifo_cfg2;
+diff -ruN a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h
+--- a/arch/mips/include/asm/mach-ath79/ar71xx_regs.h	2015-06-22 17:26:48.478301000 +0800
++++ b/arch/mips/include/asm/mach-ath79/ar71xx_regs.h	2015-08-10 13:36:05.016243000 +0800
+@@ -375,6 +375,7 @@
+ #define QCA955X_PLL_ETH_XMII_CONTROL_REG	0x28
+ #define QCA955X_PLL_ETH_SGMII_CONTROL_REG	0x48
+ 
++#define QCA955X_PLL_ETH_XMII_CONTROL_REG       0x28
+ #define QCA955X_PLL_CPU_CONFIG_NFRAC_SHIFT	0
+ #define QCA955X_PLL_CPU_CONFIG_NFRAC_MASK	0x3f
+ #define QCA955X_PLL_CPU_CONFIG_NINT_SHIFT	6
+diff -ruN a/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c b/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c
+--- a/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c	2015-08-10 17:54:30.708835000 +0800
++++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx_main.c	2015-08-14 14:51:20.692029088 +0800
+@@ -35,13 +35,27 @@
+ 	| NETIF_MSG_TX_ERR)
+ 
+ static int ag71xx_msg_level = -1;
++static int ag71xx_frame_len_mask = DESC_PKTLEN_M;
+ 
+ module_param_named(msg_level, ag71xx_msg_level, int, 0);
+ MODULE_PARM_DESC(msg_level, "Message level (-1=defaults,0=none,...,16=all)");
+ 
++void ar8216_phy_write(u32 address, u32 reg,u32 data);
++
+ #ifdef CONFIG_AG71XX_SRAM_DESCRIPTORS
+ #define MAX_AG71XX_USING_SRAM		2
+ #define MAX_AG71XX_SRAM_RINGS		(MAX_AG71XX_USING_SRAM) * 2
++#define AR8327_REG_PORT0_STATUS		0x7c
++#define AR8327_REG_PORT5_STATUS		0x90
++#define AR8327_REG_PORT6_STATUS		0x94
++#define SGMII_LINK_WAR_MAX_TRY 10
++#define SGMII_RESET_ADDRESS 0x14
++#define ETH_SGMII_SERDES 0x4c
++#define MR_AN_CONTROL_ADDRESS 0x1c
++#define SGMII_DEBUG_ADDRESS 0x58
++#define MR_AN_CONTROL_PHY_RESET_LSB		15
++#define MR_AN_CONTROL_PHY_RESET_MASK	0x00008000
++#define MR_AN_CONTROL_PHY_RESET_SET(x) (((x) << MR_AN_CONTROL_PHY_RESET_LSB) & MR_AN_CONTROL_PHY_RESET_MASK)
+ static unsigned long ag71xx_ring_bufs[MAX_AG71XX_SRAM_RINGS] = {
+ 	0x1d000000UL,
+ 	0x1d001000UL,
+@@ -452,6 +466,19 @@
+ static void ag71xx_hw_stop(struct ag71xx *ag)
+ {
+ 	/* disable all interrupts and stop the rx/tx engine */
++	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
++
++	if ((pdata->is_qca9561 || pdata->is_qca9558) && ag->phy_dev) {
++#if LPB_DEBUG
++		printk("Disable GMACs...\n");
++#endif
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT0_STATUS, 0x0);
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT5_STATUS, 0x0);
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT6_STATUS, 0x0);
++	}
++
++	/* disable all interrupts and stop the rx/tx engine */
++ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,0x0);
+ 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, 0);
+ 	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, 0);
+ 	ag71xx_wr(ag, AG71XX_REG_TX_CTRL, 0);
+@@ -461,8 +488,14 @@
+ {
+ 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+ 
++	if ((pdata->is_qca9561 || pdata->is_qca9558) && ag->phy_dev) {
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT0_STATUS, 0x0);
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT5_STATUS, 0x0);
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT6_STATUS, 0x0);
++	}
++
+ 	/* setup MAC configuration registers */
+-	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
++	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0x0);
+ 
+ 	ag71xx_sb(ag, AG71XX_REG_MAC_CFG2,
+ 		  MAC_CFG2_PAD_CRC_EN | MAC_CFG2_LEN_CHECK);
+@@ -549,11 +582,24 @@
+ 
+ static void ag71xx_hw_start(struct ag71xx *ag)
+ {
++	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
++	
+ 	/* start RX engine */
+ 	ag71xx_wr(ag, AG71XX_REG_RX_CTRL, RX_CTRL_RXE);
+ 
+ 	/* enable interrupts */
+ 	ag71xx_wr(ag, AG71XX_REG_INT_ENABLE, AG71XX_INT_INIT);
++
++	if((pdata->is_qca9561 || pdata->is_qca9558) && ag->phy_dev) {
++		/* Enable Switch Mac0's - tx,rx,flowctrl,duplx ,speed */
++#if LPB_DEBUG
++		printk("Enabling GMACs...\n");
++#endif
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT0_STATUS, 0x7e);
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT5_STATUS, 0x0);
++		ar8216_phy_write((u32)ag->phy_dev->priv, AR8327_REG_PORT6_STATUS, 0x7e);
++ 	}
++ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, MAC_CFG1_INIT);
+ }
+ 
+ static void ag71xx_disable_inline_chksum_engine(struct ag71xx *ag)
+@@ -573,12 +619,269 @@
+ 	}
+ }
+ 
++#define AG71XX_REG_RX_PKT_CNT	0xA0
++#define AG71XX_REG_TX_PKT_CNT	0xE4
++#define LPB_DEBUG 0
++#define MAX_LPB 2
++static int ag71xx_lpb_test(struct net_device *dev)
++{
++	struct ag71xx *ag = netdev_priv(dev);
++	struct ag71xx_ring *ring = &ag->tx_ring;
++	struct ag71xx_ring *rx_ring = &ag->rx_ring;
++	struct ag71xx_buf *curr = ring->curr;
++	struct ag71xx_buf *rx_curr = rx_ring->curr;
++	struct ag71xx_desc *desc = curr->desc;
++	struct ag71xx_desc *rx_desc = rx_curr->desc;
++	unsigned int used = ring->used;
++	unsigned int size = ring->size;
++	unsigned int len;
++	dma_addr_t dma_addr;
++	struct sk_buff *skb;
++	struct sk_buff *rx_skb;
++	struct ethhdr *ethh;
++	unsigned char *packet;
++	unsigned int packet_size = ETH_DATA_LEN-ETH_HLEN-NET_IP_ALIGN;
++	u32		tx_ctl, rx_ctl;
++	u32		tx_st, rx_st;
++	u32		pkt_tx, pkt_rx;
++	u32		desc_ctrl;
++	unsigned int i,j=0;
++	static int no_lpb = 0;
++	int error;
++#if LPB_DEBUG
++	printk("Prepare Loopback testing...\n");
++#endif
++	ag71xx_wr(ag, AG71XX_REG_MAC_CFG1, 0x5);
++	udelay(800);
++#if LPB_DEBUG
++	printk("MAC_CFG1 = %x\n",ag71xx_rr(ag, AG71XX_REG_MAC_CFG1));
++	tx_ctl = ag71xx_rr(ag, AG71XX_REG_TX_CTRL);
++	rx_ctl = ag71xx_rr(ag, AG71XX_REG_RX_CTRL);
++	pkt_tx = ag71xx_rr(ag, AG71XX_REG_TX_PKT_CNT);
++	pkt_rx = ag71xx_rr(ag, AG71XX_REG_RX_PKT_CNT);
++	tx_st = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
++	rx_st = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
++	printk("before: tx st=%x, rx st=%x\n",tx_st,rx_st);
++	printk("before: tx ctl=%x, rx ctl=%x\n",tx_ctl,rx_ctl);
++	printk("before: tx=%x, rx=%x\n",pkt_tx,pkt_rx);
++	printk("prepare packet...\n");
++#endif
++	/* Construct loopback skb */
++	if (!(skb = netdev_alloc_skb(dev, ETH_DATA_LEN))) {
++		goto err_drop;
++	}
++	skb_reserve(skb, NET_IP_ALIGN);
++	ethh = (struct ethhdr *)skb_put(skb, sizeof(struct ethhdr));
++	packet	= (unsigned char *)skb_put(skb, packet_size);
++	memcpy(ethh->h_source, dev->dev_addr, ETH_ALEN);
++	memset(ethh->h_dest, 0xff, ETH_ALEN);
++	ethh->h_proto = htons(ETH_P_ARP);
++	skb_set_mac_header(skb, 0);
++	for (i = 0; i < packet_size; ++i)	/* fill our packet */
++		packet[i] = (unsigned char)((i+no_lpb) & 0xff);
++	no_lpb++;
++
++	/*
++	 * We shouldn't ever see our ring fully used and reach here but just in case!
++	 */
++	if (unlikely(used == size)) {
++#if LPB_DEBUG
++		printk("%s: tx queue full\n", dev->name);
++#endif
++		ag->tx_stopped = true;
++		netif_stop_queue(dev);
++		goto err_drop;
++	}
++
++	if (unlikely(ag71xx_has_ar8216(ag))) {
++		ag71xx_add_ar8216_header(ag, skb);
++	}
++
++	len = skb->len;
++	if (unlikely(len <= 0)) {
++#if LPB_DEBUG
++		printk("%s: packet len is too small\n", dev->name);
++#endif
++		goto err_drop;
++	}
++
++	netdev_sent_queue(dev, len);
++
++	curr->skb = skb;
++	curr->len = len;
++
++#if LPB_DEBUG
++	printk("TX Packet=\n");
++	for (i=0; i < 64 ; ++i)
++	{
++		if (i % 8 == 0) printk("\n");
++		printk("%02X ", *((skb->data)+i));
++	}
++	printk("\n");
++#endif
++
++	dma_addr = dma_map_single(&dev->dev, skb->data, len, DMA_TO_DEVICE);
++
++	/* setup descriptor fields */
++	desc->data = (u32)dma_addr;
++	desc->ctrl = len & ag71xx_frame_len_mask;
++
++	curr = curr->next;
++	ring->curr = curr;
++
++	used++;
++	ring->used = used;
++
++	/*
++	 * If our transmit ring is full then stop transmitting.
++	 */
++	if (unlikely(used == size)) {
++		DBG("%s: tx queue full\n", ag->dev->name);
++		ag->tx_stopped = true;
++		netif_stop_queue(dev);
++	}
++
++#if LPB_DEBUG
++	printk("%s: packet injected into TX queue\n", ag->dev->name);
++#endif
++
++	dev->trans_start = jiffies;
++
++	wmb();
++	/* enable TX engine */
++	ag71xx_wr_fast(ag->tx_ctrl_reg, TX_CTRL_TXE);
++	ag71xx_wr_flush(ag->tx_ctrl_reg);
++
++	while (j<100)
++	{
++		tx_st = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
++		if(tx_st & 0x1)
++			break;
++		udelay(800);
++		j++;
++	}
++	if(j == 100){
++		printk("No packet sent!\n");
++		return -1;
++	}
++	else
++		printk("Sent one packet = %x\n",tx_st);
++
++	j=0;
++	while (j<1000)
++	{
++		rx_st = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
++		if(rx_st & 0x1)
++			break;
++		udelay(800);
++		j++;
++	}
++	if(j == 1000) {
++		printk("No packet received?-> %x\n",rx_st);
++	}
++	else {
++		printk("Received one packet = %x\n",rx_st);
++	}
++#if 0
++	pkt_tx = ag71xx_rr(ag, AG71XX_REG_TX_PKT_CNT);
++	pkt_rx = ag71xx_rr(ag, AG71XX_REG_RX_PKT_CNT);
++	/* Move to currect rx */
++	for (j = 1; j < pkt_rx; ++j) {
++		printk("Move to next\n");
++		rx_curr = rx_curr->next;
++	}
++	rx_skb = rx_curr->skb;
++	rx_desc = rx_curr->desc;
++	prefetch(rx_skb->data);
++	desc_ctrl = rx_desc->ctrl;
++	udelay(1000);
++	if (unlikely(desc_ctrl & DESC_EMPTY)) {
++		printk("RX desc not empty, desc_ctrl = %x\n",desc_ctrl);
++	}else{
++		printk("RX desc empty\n");
++	}
++#endif
++
++	for (j = 0; j <4; j++) {
++		udelay(1000);
++		pkt_rx = ag71xx_rr(ag, AG71XX_REG_RX_PKT_CNT);
++#if LPB_DEBUG
++		printk("==== pkt_rx=%d j=%d  \n",pkt_rx, j );
++#endif
++		if(pkt_rx >= 2) break;
++	}
++
++	j = 0;
++	do {
++#if LPB_DEBUG
++		printk("==== pkt_rx=%d chk pkt no %d\n",pkt_rx, j );
++#endif
++		rx_skb = rx_curr->skb;
++		rx_desc = rx_curr->desc;
++		prefetch(rx_skb->data);
++		desc_ctrl = rx_desc->ctrl;
++		error = memcmp(rx_skb->data, skb->data, packet_size);
++		if(error == 0) break;
++		rx_curr = rx_curr->next;
++		j++;
++	} while (j < pkt_rx);
++
++#if LPB_DEBUG
++	printk("RX Packet\n");
++	printk("\nrx len = %d, content =",rx_skb->len);
++	for (i=0; i < 64 ; ++i)
++	{
++		if(i%8==0) printk("\n");
++		printk("%02X ",*((rx_skb->data)+i));
++	}
++	printk("\n");
++	tx_ctl = ag71xx_rr(ag, AG71XX_REG_TX_CTRL);
++	rx_ctl = ag71xx_rr(ag, AG71XX_REG_RX_CTRL);
++	pkt_tx = ag71xx_rr(ag, AG71XX_REG_TX_PKT_CNT);
++	pkt_rx = ag71xx_rr(ag, AG71XX_REG_RX_PKT_CNT);
++	tx_st = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
++	rx_st = ag71xx_rr(ag, AG71XX_REG_RX_STATUS);
++	printk("after: tx st=%x, rx st=%x\n",tx_st,rx_st);
++	printk("after: tx ctl=%x, rx ctl=%x\n",tx_ctl,rx_ctl);
++	printk("after: tx=%x, rx=%x\n",pkt_tx,pkt_rx);
++#endif
++	tx_st = ag71xx_rr(ag, AG71XX_REG_TX_STATUS);
++	if (tx_st & 0x1) {
++		//error = memcmp(rx_skb->data, skb->data, packet_size);
++		if(error)
++		{
++			printk("RX packet is NOT the same as TX... invert! --> %d\n",error);
++			return -2;
++		} else {
++			printk("RX packet is the same as TX\n");
++			return 0;
++		}
++	} else {
++		printk("No packet sent\n");
++		return -1;
++	}
++
++err_drop:
++	dev->stats.tx_dropped++;
++
++	dev_kfree_skb(skb);
++	return NETDEV_TX_OK;
++}
++
+ void ag71xx_link_adjust(struct ag71xx *ag)
+ {
+ 	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+ 	u32 cfg2;
+ 	u32 ifctl;
+ 	u32 fifo5;
++	int ret = 0, j = 0;
++	static int lpb_tested = 0;
++	struct mii_bus *bus = ag->mii_bus;
++	static int invert = 0;
++
++#if LPB_DEBUG
++	printk("%s:%d:%s\n",__FILE__,__LINE__,__FUNCTION__);
++#endif
+ 
+ 	if (!ag->link) {
+ 		ag71xx_hw_stop(ag);
+@@ -588,7 +891,7 @@
+ 		return;
+ 	}
+ 
+-	if (pdata->is_ar724x)
++	if ((!pdata->is_qca9561 || !pdata->is_qca9558) && pdata->is_ar724x)
+ 		ag71xx_fast_reset(ag);
+ 
+ 	cfg2 = ag71xx_rr(ag, AG71XX_REG_MAC_CFG2);
+@@ -625,18 +928,122 @@
+ 	else
+ 		ag71xx_wr(ag, AG71XX_REG_FIFO_CFG3, 0x008001ff);
+ 
+-	if (pdata->set_speed)
++#if LPB_DEBUG
++	printk("%s:%d:%s\n",__FILE__,__LINE__,__FUNCTION__);
++#endif
++
++	if (pdata->is_qca9558) {
+ 		pdata->set_speed(ag->speed);
++		if(ag->speed == SPEED_1000) {
++			cfg2 |= (ag->duplex) ? MAC_CFG2_FDX : 0;
++			ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
++			ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
++			ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
++			ag71xx_hw_start(ag);
++			goto skip_lpb;
++		}
++		ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,0x0);
++		if (!lpb_tested)
++		{
++			// enable phy 4 loopback
++			// 1000M loopback: register 0x0 = 0x4140
++			// 100M loopback: register 0x0 = 0x6100
++			// 10M loopback: register 0x0 = 0x4100
++			cfg2 |= MAC_CFG2_FDX;
++			switch (ag->speed) {
++				case SPEED_1000:
++					mdiobus_write(bus, 4, 0x0, 0x4140);
++					break;
++				case SPEED_100:
++						mdiobus_write(bus, 4, 0x0, 0x6100);
++					break;
++				case SPEED_10:
++						mdiobus_write(bus, 4, 0x0, 0x4100);
++					break;
++				default:
++					BUG();
++					return;
++			}
++			j = 0;
++			while (j<1000)
++			{
++				ret = mdiobus_read(bus,4,0x11);
++				if(ret & (1 << 10))
++					break;
++				udelay(800);
++				j++;
++			}
++			if(j == 1000)
++				printk("link is not ready!\n");
++			else
++				printk("PHY 4 reg 0x11 = %x\n",ret);
++			ret = 0;
++			ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
++			ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
++			ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
++			/* Do loopback test */
++			for (j=0; j< MAX_LPB; j++) {
++				ag71xx_wr(ag, AG71XX_REG_MAC_CFG1,0x0);
++				ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
++				ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
++				ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
++				ag71xx_hw_start(ag);
++				udelay(500);
++				ret = ag71xx_lpb_test(ag->dev);
++				if (ret == -2) break;
++				ag71xx_hw_stop(ag);
++			}
++			if(ret == -2 && pdata->set_speed_inv)
++			{
++				printk("Invert...\n");
++				invert = 1;
++				ag71xx_hw_stop(ag);
++				mdiobus_write(bus, 4, 0x0, 0x9100);
++				pdata->set_speed_inv(ag->speed);
++				ag71xx_hw_start(ag);
++			}
++			if(ret == 0) {
++				printk("Pass loopback test... reseting phy...\n");
++				ag71xx_hw_stop(ag);
++				mdiobus_write(bus, 4, 0x0, 0x9100);
++				ag71xx_hw_start(ag);
++#if LPB_DEBUG
++	printk("%s:%d:%s\n",__FILE__,__LINE__,__FUNCTION__);
++#endif
++				invert = 0;
++				if(ag->speed == SPEED_10) lpb_tested = 1;
++			}
++			if (ret == -1) {
++				printk("Loopboack test doesn't perform correctly\n");
++			}
++		} else {
++			printk("Passed loopback test\n");
++			if(invert) pdata->set_speed_inv(ag->speed);
++			ag71xx_hw_start(ag);
++			lpb_tested = 0;
++		}
++	} else {
++		if (pdata->set_speed)
++			pdata->set_speed(ag->speed);
++	}
++ 
++ 	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
++ 	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
++ 	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
++
++skip_lpb:
+ 
+-	ag71xx_wr(ag, AG71XX_REG_MAC_CFG2, cfg2);
+-	ag71xx_wr(ag, AG71XX_REG_FIFO_CFG5, fifo5);
+-	ag71xx_wr(ag, AG71XX_REG_MAC_IFCTL, ifctl);
+-	ag71xx_hw_start(ag);
+ 
+ 	if (pdata->is_qca956x) {
+ 		ag71xx_disable_inline_chksum_engine(ag);
+ 	}
+ 
++	if(!pdata->is_qca9558) ag71xx_hw_start(ag);
++
++#if LPB_DEBUG
++	printk("%s:%d:%s\n",__FILE__,__LINE__,__FUNCTION__);
++#endif
++
+ 	netif_carrier_on(ag->dev);
+ 	if (netif_msg_link(ag))
+ 		pr_info("%s: link up (%sMbps/%s duplex)\n",
+@@ -644,22 +1051,25 @@
+ 			ag71xx_speed_str(ag),
+ 			(DUPLEX_FULL == ag->duplex) ? "Full" : "Half");
+ 
+-	DBG("%s: fifo_cfg0=%#x, fifo_cfg1=%#x, fifo_cfg2=%#x\n",
++#if LPB_DEBUG
++	printk("%s: fifo_cfg0=%#x, fifo_cfg1=%#x, fifo_cfg2=%#x\n",
+ 		ag->dev->name,
+ 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG0),
+ 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG1),
+ 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG2));
+ 
+-	DBG("%s: fifo_cfg3=%#x, fifo_cfg4=%#x, fifo_cfg5=%#x\n",
++	printk("%s: fifo_cfg3=%#x, fifo_cfg4=%#x, fifo_cfg5=%#x\n",
+ 		ag->dev->name,
+ 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG3),
+ 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG4),
+ 		ag71xx_rr(ag, AG71XX_REG_FIFO_CFG5));
+ 
+-	DBG("%s: mac_cfg2=%#x, mac_ifctl=%#x\n",
++	printk("%s: mac_cfg2=%#x, mac_ifctl=%#x\n",
+ 		ag->dev->name,
+ 		ag71xx_rr(ag, AG71XX_REG_MAC_CFG2),
+ 		ag71xx_rr(ag, AG71XX_REG_MAC_IFCTL));
++printk("%s:%d:%s\n",__FILE__,__LINE__,__FUNCTION__);
++#endif
+ }
+ 
+ static int ag71xx_open(struct net_device *dev)
+@@ -877,6 +1287,35 @@
+ 	ag71xx_open(ag->dev);
+ }
+ 
++static bool ag71xx_check_sgmii_status(struct ag71xx_platform_data *pdata)
++{
++	static int sgmii_rst_count = 0;
++	int status = 0;
++
++	/* Get SGMII status */
++	status = (pdata->get_gmac_interface_reg(SGMII_DEBUG_ADDRESS) & 0xff);
++	while (!(status == 0xf || status == 0x10)) {
++		printk ("SGMII_DEBUG_ADDRESS not in expected state: 0x%08X. Resetting SGMII....\n", status);
++		/* sgmii interface is not in a proper state. Issue sgmii reset */
++		pdata->set_pll_reg(ETH_SGMII_SERDES, 0x6);
++		udelay(200);
++		pdata->set_pll_reg(ETH_SGMII_SERDES, 0x7);
++		udelay(200);
++		pdata->set_gmac_interface_reg(SGMII_RESET_ADDRESS, 0x0);
++		udelay(200);
++		pdata->set_gmac_interface_reg(SGMII_RESET_ADDRESS, 0x1f);
++		udelay(200);
++		if (sgmii_rst_count++ > SGMII_LINK_WAR_MAX_TRY) {
++			printk ("Max resets limit reached exiting... count: %d\n", sgmii_rst_count);
++			udelay(100);
++			break;
++		}
++		status = (pdata->get_gmac_interface_reg(SGMII_DEBUG_ADDRESS) & 0xff);
++	}
++	sgmii_rst_count = 0;
++	return false;
++}
++
+ static bool ag71xx_check_dma_stuck(struct ag71xx *ag, struct net_device *dev)
+ {
+ 	u32 rx_sm, tx_sm, rx_fd;
+@@ -894,8 +1333,10 @@
+ 	tx_sm = ag71xx_rr(ag, AG71XX_REG_TX_SM);
+ 	rx_fd = ag71xx_rr(ag, AG71XX_REG_FIFO_DEPTH);
+ 	if (((tx_sm >> 4) & 0x7) == 0 && ((rx_sm & 0x7) == 0) &&
+-	    ((rx_sm >> 4) & 0x7) == 0 && rx_fd == 0)
++	    ((rx_sm >> 4) & 0x7) == 0 && rx_fd == 0) {
++		printk("\n\n\nDMA STUCK!!\n\n\n");
+ 		return true;
++		}
+ 
+ 	return false;
+ }
+@@ -904,6 +1345,7 @@
+ 			     bool is_ar7240)
+ {
+ 	struct ag71xx_ring *ring = &ag->tx_ring;
++	struct ag71xx_platform_data *pdata = ag71xx_get_pdata(ag);
+ 	unsigned int sent = 0;
+ 	unsigned int bytes_compl = 0;
+ 	struct ag71xx_buf *dirty = ring->dirty;
+@@ -937,6 +1379,9 @@
+ 			break;
+ 		}
+ 
++		//if (pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
++		//	ag71xx_check_sgmii_status(pdata);
++
+ 		sent++;
+ 		bytes_compl += dirty->len;
+ 
+@@ -1151,6 +1596,10 @@
+ 
+ 	pdata->ddr_flush();
+ 
++	/* QCA9558 WAR for SGMII wrong status */
++	if (pdata->is_qca9558 && (pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII))
++		ag71xx_check_sgmii_status(pdata);
++
+ 	/*
+ 	 * First empty any packets that we have transmitted!  In theory it might
+ 	 * seem better to handle packets that we've received but we
+@@ -1158,7 +1607,8 @@
+ 	 * the RX descriptor ring and keeping those two operations adjacent
+ 	 * will help keep any recycled skbs hotter in the D-cache.
+ 	 */
+-	tx_done = ag71xx_tx_packets(ag, dev, pdata->is_ar7240);
++	//tx_done = ag71xx_tx_packets(ag, dev, pdata->is_ar7240);
++	tx_done = ag71xx_tx_packets(ag, dev, (pdata->is_ar7240|pdata->is_qca9558));
+ 	rx_done = ag71xx_rx_packets(ag, dev, limit);
+ 
+ 	ag71xx_debugfs_update_napi_stats(ag, rx_done, tx_done);
+diff -ruN a/drivers/net/ethernet/atheros/ag71xx/ag71xx_phy.c b/drivers/net/ethernet/atheros/ag71xx/ag71xx_phy.c
+--- a/drivers/net/ethernet/atheros/ag71xx/ag71xx_phy.c	2015-06-17 15:09:43.946093000 +0800
++++ b/drivers/net/ethernet/atheros/ag71xx/ag71xx_phy.c	2015-06-23 16:50:36.950369000 +0800
+@@ -123,7 +123,7 @@
+ 		if (ag->mii_bus->phy_map[phy_addr] == NULL)
+ 			continue;
+ 
+-		DBG("%s: PHY found at %s, uid=%08x\n",
++		printk("%s: PHY found at %s, uid=%08x\n",
+ 			dev->name,
+ 			dev_name(&ag->mii_bus->phy_map[phy_addr]->dev),
+ 			ag->mii_bus->phy_map[phy_addr]->phy_id);
+diff -ruN a/drivers/net/phy/ar8216.c b/drivers/net/phy/ar8216.c
+--- a/drivers/net/phy/ar8216.c	2015-06-22 09:28:00.426571000 +0800
++++ b/drivers/net/phy/ar8216.c	2015-08-13 21:00:35.068413645 +0800
+@@ -1353,6 +1353,13 @@
+ 
+ 	case AR8327_PAD_PHY_RGMII:
+ 		t = AR8327_PAD_PHYX_RGMII_EN;
++		t |= cfg->txclk_delay_sel << AR8327_PAD_RGMII_TXCLK_DELAY_SEL_S;
++		t |= cfg->rxclk_delay_sel << AR8327_PAD_RGMII_RXCLK_DELAY_SEL_S;
++		if (cfg->rxclk_delay_en)
++			t |= AR8327_PAD_RGMII_RXCLK_DELAY_EN;
++		if (cfg->txclk_delay_en)
++			t |= AR8327_PAD_RGMII_TXCLK_DELAY_EN;
++				
+ 		break;
+ 
+ 	case AR8327_PAD_PHY_MII:
+@@ -1360,6 +1367,11 @@
+ 		break;
+ 	}
+ 
++	if (cfg->mac06_exchange) 
++	{
++		t |= AR8327_PAD_MAC06_EXCHANGE; 
++	}
++
+ 	return t;
+ }
+ 
+@@ -1410,6 +1422,9 @@
+ 	t = ar8327_get_pad_cfg(pdata->pad6_cfg);
+ 	priv->write(priv, AR8327_REG_PAD6_MODE, t);
+ 
++	if (pdata->pad6_cfg->mode == AR8327_PAD_PHY_RGMII)
++		priv->port4_phy = true; 
++	
+ 	if ( (pdata->pad0_cfg->mode==AR8327_PAD_MAC_SGMII) || 
+              (pdata->pad6_cfg->mode==AR8327_PAD_MAC_SGMII) ) {
+ 		/* due to AR8337 disable SGMII interface by default(power-on), 
+@@ -1441,8 +1456,10 @@
+ 
+ 	bus = priv->phy->bus;
+ 	for (i = 0; i < AR8327_NUM_PHYS; i++) {
+-		ar8327_phy_fixup(priv, i);
+-
++		
++		if (chip_is_ar8327(priv))
++			ar8327_phy_fixup(priv, i);
++		
+ 		/* start aneg on the PHY */
+ 		mdiobus_write(bus, i, MII_ADVERTISE, ADVERTISE_ALL |
+ 						     ADVERTISE_PAUSE_CAP |
+@@ -1451,6 +1468,18 @@
+ 		mdiobus_write(bus, i, MII_BMCR, BMCR_RESET | BMCR_ANENABLE);
+ 	}
+ 
++	if (priv->port4_phy)
++	{
++		mdiobus_write(bus, 4, 0x1d, 0x12);
++		mdiobus_write(bus, 4, 0x12, 0x4c0c);
++		mdiobus_write(bus, 4, 0x1d, 0x00);
++		mdiobus_write(bus, 4, 0x12, 0x02ee);
++		mdiobus_write(bus, 4, 0x1d, 0x5);
++		mdiobus_write(bus, 4, 0x12, 0x3d46);
++		mdiobus_write(bus, 4, 0x1d, 0xb);
++		mdiobus_write(bus, 4, 0x12, 0xbc20);
++	}
++
+ 	msleep(1000);
+ 
+ 	return 0;
+@@ -2233,6 +2262,7 @@
+ 	struct net_device *dev = pdev->attached_dev;
+ 	struct switch_dev *swdev;
+ 	int ret;
++	struct mii_bus *bus;
+ 
+ 	if (!priv) {
+ 		priv = kzalloc(sizeof(struct ar8216_priv), GFP_KERNEL);
+@@ -2242,6 +2272,11 @@
+ 
+ 	priv->phy = pdev;
+ 
++	bus = priv->phy->bus;
++	ar8216_phy_mmd_write(priv, 4, 0x7, 0x3c);
++	ar8216_phy_mmd_write(priv, 4, 0x4007, 0x0);
++	mdiobus_write(bus, 4, 0x0, 0x1200);
++
+ 	ret = ar8216_id_chip(priv);
+ 	if (ret)
+ 		goto err_free_priv;
+@@ -2319,6 +2354,13 @@
+ 		swdev->name = "Atheros AR8337";
+ 		swdev->vlans = AR8X16_MAX_VLANS;
+ 		swdev->ports = AR8327_NUM_PORTS;
++
++		if (priv->port4_phy) {
++			printk("%s: port 5 as single PHY mode (phy4)\n", __func__); 
++			/* port 5 connected to the other mac, therefore unusable */
++			swdev->ports = (AR8216_NUM_PORTS - 1);
++		}
++
+ 	} else {
+ 		swdev->name = "Atheros AR8216";
+ 		swdev->vlans = AR8216_NUM_VLANS;
+@@ -2465,6 +2507,28 @@
+ 	return ret;
+ }
+ 
++u32
++ar8216_phy_read(u32 address, u32 reg)
++{
++	struct ar8216_priv *priv = (struct ar8216_priv *)address;
++
++	if (priv == NULL)
++		return 0;
++	return priv->read(priv,reg);
++}
++EXPORT_SYMBOL(ar8216_phy_read);
++
++void
++ar8216_phy_write(u32 address, u32 reg,u32 data)
++{
++	struct ar8216_priv *priv = (struct ar8216_priv *)address;
++
++	if (priv == NULL)
++		return ;
++	priv->write(priv,(int )reg,data);
++}
++EXPORT_SYMBOL(ar8216_phy_write);
++
+ static int
+ ar8216_config_aneg(struct phy_device *phydev)
+ {
+diff -ruN a/drivers/net/phy/ar8216.h b/drivers/net/phy/ar8216.h
+--- a/drivers/net/phy/ar8216.h	2015-06-11 09:14:59.663397000 +0800
++++ b/drivers/net/phy/ar8216.h	2015-06-23 11:35:41.046393000 +0800
+@@ -293,6 +293,7 @@
+ #define   AR8327_PAD_RGMII_RXCLK_DELAY_EN	BIT(24)
+ #define   AR8327_PAD_RGMII_TXCLK_DELAY_EN	BIT(25)
+ #define   AR8327_PAD_RGMII_EN			BIT(26)
++#define   AR8327_PAD_MAC06_EXCHANGE		BIT(31)
+ 
+ #define AR8327_REG_POWER_ON_STRIP		0x010
+ #define   AR8327_POWER_ON_STRIP_POWER_ON_SEL	BIT(31)
+diff -ruN a/include/linux/ar8216_platform.h b/include/linux/ar8216_platform.h
+--- a/include/linux/ar8216_platform.h	2015-06-26 08:23:31.794236000 +0800
++++ b/include/linux/ar8216_platform.h	2015-06-26 08:23:35.332120000 +0800
+@@ -55,6 +55,7 @@
+ 	enum ar8327_clk_delay_sel txclk_delay_sel;
+ 	enum ar8327_clk_delay_sel rxclk_delay_sel;
+ 	enum ar8327_sgmii_clk_phase_sel sgmii_clk_phase_sel;
++	bool mac06_exchange;
+ };
+ 
+ enum ar8327_port_speed {

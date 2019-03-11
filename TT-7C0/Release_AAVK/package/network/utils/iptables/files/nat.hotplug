@@ -1,0 +1,9 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+if [ "$ACTION" = "ifup" -a "$INTERFACE" = "wan" ]; then
+	iptables -t nat -F PREROUTING
+	/sbin/nat reload
+fi

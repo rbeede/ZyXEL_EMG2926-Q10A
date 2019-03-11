@@ -1,0 +1,12 @@
+<Client>
+	<DeviceId>
+		<DisplayName>TwonkyRenderer</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>TwonkyRenderer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>GIVE_ALL_KNOWN_RES</Quirk>
+	</DeviceQuirks>
+</Client>

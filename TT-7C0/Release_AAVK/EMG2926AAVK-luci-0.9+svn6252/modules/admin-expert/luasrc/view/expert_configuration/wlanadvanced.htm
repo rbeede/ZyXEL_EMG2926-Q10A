@@ -1,0 +1,151 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style>
+.on {display:on}
+.off {display:none}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+</script>
+</head>
+<body  >
+<form method="post" name="wlan_adv_form" action="<%=controller%>/expert/configuration/network/wlan/wlanadvanced">
+<% local sys_op_mode = uci:get("system","main","system_mode")%>
+<div id="tabs" style="word-break:break-all;(">
+  <ul>
+<% if sys_op_mode ~= "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan" title="<%:General%>"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_multissid" title="<%:more_ap%>"><span><%:more_ap%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanmacfilter" title="<%:mac_filter%>"><span><%:mac_filter%></span></a></li>
+    <li class="hightline"><a title="<%:wireless_advance%>"><span><%:wireless_advance%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanqos" title="<%:wireless_qos%>"><span><%:wireless_qos%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwps" title="<%:wps%>"><span><%:wps%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwpsstation" title="<%:wps_station%>"><span><%:wps_station%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanscheduling" title="<%:scheduling%>"><span><%:scheduling%></span></a></li>
+<% end %>
+<% if sys_op_mode ~= "1" and sys_op_mode ~= "2" then%>
+<% if sys_op_mode == "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp" title="<%:General%>"><span><%:General%></span></a></li>
+<% else %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp" title="<%:universal_repeater%>"><span><%:universal_repeater%></span></a></li>
+<% end %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp_ur_site_survey" title="<%:site_survey%>"><span><%:site_survey%></span></a></li>
+<% end %>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <li class="title" id="GeneralWirelessAdvancedSetup"><%:wireless_advance_setup%></li>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:rts_cts_threshold%>  : </li>
+              <% local rts_Threshold = uci:get("wireless", "ath0", "rts")%>
+              <li class="right_table">
+                <input name="rts_Threshold" maxlength="15" size="15" value=<%=rts_Threshold%> <%=rts_set%>/>
+                (256 ~ 2346) 
+	      </li>
+            </ul>
+          </div>  
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:frag_threshold%>  : </li>
+	      <% local fr_threshold = uci:get("wireless", "ath0", "frag")%>
+              <li class="right_table">
+                <input name="fr_threshold" maxlength="15" size="15"   value=<%=fr_threshold%> <%=frag_set%> />
+	        (256 ~ 2346) 
+	      </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:intra_bss%> Blocking  :</li>
+	      <% local IntraBSS = uci:get("wireless", "ath0", "IntraBSS")%>
+              <li class="right_table">
+                <input name="IntraBSS_state" id="radio" type="radio" value="1" <%if IntraBSS == "1" then%>checked="CHECKED" <%end%>/>
+                <%:enable%>
+                <input name="IntraBSS_state" id="radio2" type="radio" value="0" <%if IntraBSS == "0" then%>checked="CHECKED" <%end%>/>
+                <%:disable%>
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:tx_power%>   :</li>
+	      <% local TxPower = uci:get("wireless", "wifi0", "txpower")%>
+              <li class="right_table">
+                <select name="tx_power" size="1" onchange = "TxPowerValue()">
+                  <option value = 100 <%if TxPower == "100" then%> selected <%end%> >100%</option>
+                  <option value = 90  <%if TxPower == "90"  then%> selected <%end%> >90%</option>
+                  <option value = 75  <%if TxPower == "75"  then%> selected <%end%> >75%</option>
+                  <option value = 50  <%if TxPower == "50"  then%> selected <%end%> >50%</option>
+                  <option value = 25  <%if TxPower == "25"  then%> selected <%end%> >25%</option>
+	          <option value = 10  <%if TxPower == "10"  then%> selected <%end%> >10%</option>
+                </select>
+                <script language = "JavaScript">
+	        function TxPowerValue()
+	        {
+	        	var TxPowerValue = document.forms[0].tx_power.value;
+	                //alert(TxPowerValue)
+	                document.forms[0].TxPower_value.value = TxPowerValue;
+                }
+	        </script>
+	        <input name="TxPower_value" id="TxPower_value" type= "hidden" maxlength="15" size="15" value="<%=TxPower%>" />		
+	      </li>
+            </ul>
+          </div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"> 
+      <div class="button" align="center">
+        <input name="sysSubmit" value="<%:apply%>" type="submit" />
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+	<input name="Cancel" value="<%:cancel%>" type="reset" /> 
+      </div> 
+    </li> 	
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+showFullPath(' <%:Network%> > <%:Wireless_LAN_2_dot_4_G%> > <%:wireless_advance%>');
+showWebMessage( 0, '<%:Message%>', '<%:Ready%>');
+</script>
+</html>

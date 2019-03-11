@@ -1,0 +1,50 @@
+--- linux-3.3.8/net/ipv4/udp.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/ipv4/udp.c	2017-05-17 14:57:13.710202000 +0800
+@@ -1169,6 +1169,7 @@
+ 	int peeked;
+ 	int err;
+ 	int is_udplite = IS_UDPLITE(sk);
++	bool checksum_valid = false;
+ 	bool slow;
+ 
+ 	/*
+@@ -1200,11 +1201,12 @@
+ 	 */
+ 
+ 	if (copied < ulen || UDP_SKB_CB(skb)->partial_cov) {
+-		if (udp_lib_checksum_complete(skb))
++		checksum_valid = !udp_lib_checksum_complete(skb);
++		if (!checksum_valid)
+ 			goto csum_copy_err;
+ 	}
+ 
+-	if (skb_csum_unnecessary(skb))
++	if (checksum_valid || skb_csum_unnecessary(skb))
+ 		err = skb_copy_datagram_iovec(skb, sizeof(struct udphdr),
+ 					      msg->msg_iov, copied);
+ 	else {
+--- linux-3.3.8/net/ipv6/udp.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/ipv6/udp.c	2017-05-17 14:58:49.048885000 +0800
+@@ -345,6 +345,7 @@
+ 	int peeked;
+ 	int err;
+ 	int is_udplite = IS_UDPLITE(sk);
++	bool checksum_valid = false;
+ 	int is_udp4;
+ 	bool slow;
+ 
+@@ -379,11 +380,12 @@
+ 	 */
+ 
+ 	if (copied < ulen || UDP_SKB_CB(skb)->partial_cov) {
+-		if (udp_lib_checksum_complete(skb))
++		checksum_valid = !udp_lib_checksum_complete(skb);
++		if (!checksum_valid)
+ 			goto csum_copy_err;
+ 	}
+ 
+-	if (skb_csum_unnecessary(skb))
++	if (checksum_valid || skb_csum_unnecessary(skb))
+ 		err = skb_copy_datagram_iovec(skb, sizeof(struct udphdr),
+ 					      msg->msg_iov, copied       );
+ 	else {

@@ -1,0 +1,34 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Buffalo LT-H90LAN</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>LT-H90</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/mp4</In>
+				<Out>audio/m4a-latm</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>IGNORESORT</Quirk>
+	</DeviceQuirks>
+</Client>

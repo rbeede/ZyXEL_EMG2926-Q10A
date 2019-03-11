@@ -1,0 +1,44 @@
+Source-Makefile: feeds/streamboost/relay_client/Makefile
+Package: relay_client
+Submenu: Bandwidth Control
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +libpthread +libcurl +argp-standalone
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Daemon that relays local web calls for remote login.
+Maintainer: Jason Loveman <jloveman@qca.qualcomm.com>
+Source: relay_client-.tar.gz
+Type: ipkg
+Description: relay_client relays the local http server through an https server relay
+for remote login
+Jason Loveman <jloveman@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_relay_client
+	config relay_client_USE_CUSTOM_VERSION
+		depends on PACKAGE_relay_client
+		bool "Use custom package version"
+		default n
+	config relay_client_CUSTOM_VERSION
+		depends on relay_client_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_relay_client
+	config relay_client_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_relay_client
+		bool "Use custom source directory"
+		default n
+	config relay_client_CUSTOM_SOURCE_DIR
+		depends on relay_client_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

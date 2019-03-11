@@ -1,0 +1,21 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=97
+
+start() {
+	### applying after WAN connection up ###
+	exit 0
+}
+
+stop() {
+	portTrigger stop
+}
+
+restart() {
+	portTrigger restart
+}
+
+reload() {
+	portTrigger reload
+}

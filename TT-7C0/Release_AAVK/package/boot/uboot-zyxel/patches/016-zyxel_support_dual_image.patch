@@ -1,0 +1,18 @@
+Index: u-boot-2009.11/common/cmd_jffs2.c
+===================================================================
+--- u-boot-2009.11.orig/common/cmd_jffs2.c	2014-02-13 14:32:16.035758891 +0800
++++ u-boot-2009.11/common/cmd_jffs2.c	2014-02-13 14:59:54.107980818 +0800
+@@ -421,6 +421,13 @@
+ 		part->offset = 0x00000000;
+ #endif
+ 
++#ifdef CONFIG_DUAL_IMAGE
++		{ char *part_offset=getenv("jffs2_scan_part_offset");
++			if (part_offset != NULL) {
++				part->offset = simple_strtoul(part_offset, NULL, 0);
++			}
++		}
++#endif
+ 		part->sector_size = get_part_sector_size(id, part);
+ 
+ 		part->dev = current_mtd_dev;

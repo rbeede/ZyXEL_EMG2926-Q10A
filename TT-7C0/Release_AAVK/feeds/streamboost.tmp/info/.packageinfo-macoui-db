@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/macoui-db/Makefile
+Package: macoui-db
+Submenu: Flow Detect
+Version: 20140508110915-ga84e172-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: macoui database
+Maintainer: Mo Chen <moc@qca.qualcomm.com
+Source: macoui-db-20140508110915-ga84e172-generic.tar.gz
+Type: ipkg-prebuilt
+Description: Mac OUI mappings.
+Mo Chen <moc@qca.qualcomm.com
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_macoui-db
+	config macoui-db_USE_CUSTOM_VERSION
+		depends on PACKAGE_macoui-db
+		bool "Use custom package version"
+		default n
+	config macoui-db_CUSTOM_VERSION
+		depends on macoui-db_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140508110915-ga84e172-generic)"
+		default "20140508110915-ga84e172-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_macoui-db
+	config macoui-db_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_macoui-db
+		bool "Use custom source directory"
+		default n
+	config macoui-db_CUSTOM_SOURCE_DIR
+		depends on macoui-db_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

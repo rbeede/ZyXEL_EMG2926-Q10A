@@ -1,0 +1,33 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sky Perfect STB</DisplayName>
+		<BrowseRecognition>
+			<BrowseHttpHeaders>IPI/1.0 UPnP/1.0 DLNADOC/1.50</BrowseHttpHeaders>
+			<BrowseRequestMatch>&lt;ObjectID&gt;0&lt;/ObjectID&gt;&lt;BrowseFlag&gt;BrowseDirectChildren&lt;/BrowseFlag&gt;&lt;Filter&gt;res,res@resolution,res@protocolInfo,res@size,res@duration,res@bitrate,res@sampleFrequency,res@bitsPerSample,res@nrAudioChannels,dc:creator,dc:date,upnp:genre,upnp:album,upnp:originalTrackNumber,upnp:channelNr,upnp:scheduledStartTime,upnp:scheduledEndTime,upnp:icon,upnp:albumArtURI,upnp:artist,upnp:rating,arib:objectType,upnp:channelName,upnp:radioBand&lt;/Filter&gt;&lt;RequestedCount&gt;30&lt;/RequestedCount&gt;</BrowseRequestMatch>
+		</BrowseRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEG1024x768</Target>
+			<Target>JPEG4096x4096</Target>
+		</Scaling>
+		<VideoTranscoding>
+			<Target>MPEG</Target>
+		</VideoTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>DATETIME</Quirk>
+		<Quirk>NO_KEYFRAME_SEEK</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,87 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery-1.2.6.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery.blockUI.js" ></script>
+<script type="text/javascript">
+	function block()
+	{
+		$.blockUI({ message: null,
+								css: {
+				            border: 'none',
+				            padding: '15px',
+				            backgroundColor: '#000',
+				            '-webkit-border-radius': '10px',
+				            '-moz-border-radius': '10px',
+				            opacity: .9,
+				            color: '#fff'
+		        		}
+			}); 
+	}	
+	
+	function unblock()
+	{
+		$.unblockUI(); 
+	}	
+
+	function actionLogout()
+	{
+		var flag;
+		flag=confirm("<%:msg_confirm_1%>");
+		if (flag)
+			top.location.href="<%=controller%>/easy/logout";
+	}
+</script>
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="topbg">
+<div id="topdiv" style="z-index:999;filter: alpha(opacity=80);-moz-opacity:0.5; opacity:0.8;position:absolute;width:100%;height:100%;left:0px;top:0px;display:none">
+</div>
+<div id="wrapper">
+  <div id="top">
+    <div>
+      <div class="logo"><img src="<%=media%>/admin/images/advance_logo.jpg" width="102" height="29" /></div>
+      <div class="modelname">EMG2926-Q10A</div>
+      <div class="quick_link">
+        <ul>
+          <!--<li class="easy" title="Easy Mode"><a href="<%=controller%>/easy/networkmap" target="_parent"><%:easy_mode%> </a></li>-->
+          <li class="about"><a href="#" title="About" onclick="MM_openBrWindow('<%=media%>/htm/about.htm','','width=410,height=165')"><%:about%></a></li>
+		  <li  style=" margin-right:12px;"><a href="javascript:actionLogout();" title="Logout"><%:logout%></a></li>
+          <li class="line"></li>
+		  <% local uname = luci.dispatcher.context.authuser %>
+          <li><%:welcome%>:<%=uname%></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div id="blueline"></div>
+</div>
+</body>
+</html>

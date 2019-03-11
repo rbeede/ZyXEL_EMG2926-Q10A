@@ -1,0 +1,184 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+local load1, load5, load15 = luci.sys.loadavg()
+local request  = require("luci.dispatcher").context.path
+local category = request[1]
+local tree     = luci.dispatcher.node()
+local cattree  = category and luci.dispatcher.node(category)
+local node     = luci.dispatcher.context.dispatched
+local hostname = luci.sys.hostname()
+
+local c = tree
+for i,r in ipairs(request) do
+	if c.nodes and c.nodes[r] then
+		c = c.nodes[r]
+		c._menu_selected = true
+	end
+end
+
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"  />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/dtree.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/dtree.js"></script>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery-1.2.6.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery.blockUI.js" ></script>
+<script language="JavaScript" type="text/javascript">
+function block()
+{
+	$.blockUI({ message: null,
+							css: {
+		            border: 'none',
+		            padding: '15px',
+		            backgroundColor: '#000',
+		            '-webkit-border-radius': '10px',
+		            '-moz-border-radius': '10px',
+		            opacity: .9,
+		            color: '#fff'
+        		}
+		}); 
+}	
+
+function unblock()
+{
+	$.unblockUI(); 
+}	
+</script>	
+</head>
+<body>
+<div id="topdiv" style="z-index:999;filter: alpha(opacity=80);-moz-opacity:0.5; opacity:0.8;position:absolute;width:100%;height:100%;left:0px;top:0px;display:none">
+</div>
+<div id="top"></div>
+<div id="leftframe">
+  <div class="contentframe">
+    <ul>
+      <li>
+        <div class="submenu2">
+          <ul>
+            <li class="i_dashboard" title="<%:Dashboard%>"><a href="<%=controller%>/expert/status" title="<%:Dashboard%>" target="_parent"></a></li> 
+            <li class="i_monitor" title="<%:Monitor%>"><a href="<%=controller%>/expert/monitor" title="<%:Monitor%>" target="_parent"></a></li>
+            <li class="i_config" title="<%:Configuration%>"></li>
+            <li class="i_maintenance"><a href="<%=controller%>/expert/maintenance" title="<%:Maintenance%>" target="_parent"></a></li>
+          </ul>  
+          <br class="clearfloat" />
+        </div>
+      </li>
+      <li>
+        <div class="menu">
+          <ul>
+            <li class="menuline">
+              <div>
+                <ul>
+                  <li class="menu_top"><br/>&nbsp;&nbsp;<%:Configuration%></li>
+                  <li class="leftspace">
+                    <p><a href="javascript: d.openAll();" class="fastbutton"><%:open_all%> &nbsp;|&nbsp;</a><a href="javascript: d.closeAll();"><%:close_all%></a></p>
+                  </li>
+                  <li>
+                    <div class="dtree" style="*margin-top:-10px;">
+                      <script type="text/javascript">
+			d = new dTree('d');
+			d.add(0,-1,'');
+			d.clearCookie();
+			<%	--chek username
+				local uname = luci.dispatcher.context.authuser
+				local libuci = require("luci.model.uci").cursor()
+				local privilege
+				if uname ~= nil then
+					privilege = libuci:get("account",uname,"privilege")
+				end
+				if not privilege then
+					privilege = "1"
+				end
+			-%>
+			<%
+			if cattree and cattree.nodes then
+				local index = {}
+				local config = cattree.nodes["configuration"]
+				local p_name
+				local p_id
+				local url
+				local node_select = 1
+
+				for j, v in pairs(config.nodes) do
+					table.insert(index, {name=j, order=v.order or 100})
+					if v.nodes then
+						for n, t in pairs(v.nodes) do
+							table.insert(index, {name=n, order=t.order or 100})
+						end
+					end
+				end
+
+				table.sort(index, function(a, b) return a.order < b.order end)
+
+				for i, k in ipairs(index) do
+					local subnode = config.nodes[k.name]
+					if subnode then
+						url = controller .. "/" .. "expert/configuration/" .. k.name
+			-%>
+						d.add(<%=i%>,0,'<%=subnode.title%>','<%=url%>');
+			<%
+						p_name = k.name
+						p_id = i
+					else
+						subnode = config.nodes[p_name].nodes[k.name]
+						if privilege ~= "1" and k.name == "remote" then node_select = 0 else node_select = 1 end
+		
+						if subnode and node_select == 1 then
+							url = controller .. "/" .. "expert/configuration/" .. p_name .. "/" .. k.name
+			-%>
+							d.add(<%=i%>,<%=p_id%>,'<%=subnode.title%>','<%=url%>');      
+			<%
+						end
+					end
+				end
+			end
+			-%>
+			document.open("text/html");
+			document.writeln(d);
+			document.close();
+			d.oAll(true);
+		      </script>
+                    </div>
+                  </li>
+                  <li>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+          <br class="clearfloat" />
+        </div>
+      </li>
+    </ul>
+    <br class="clearfloat" />
+  </div>
+</div>
+<div class="menubottom" ></div>
+</body>
+</html>

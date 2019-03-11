@@ -1,0 +1,55 @@
+--- a/networking/traceroute.c	2012-02-05 03:34:24.000000000 +0800
++++ b/networking/traceroute.c	2014-04-25 02:31:26.917464000 +0800
+@@ -1136,6 +1136,11 @@
+ 				if (icmp_code == 0)
+ 					continue;
+ 
++#if 1 /*for collecting*/
++				print(read_len, &from_lsa->u.sa, to);
++				memcpy(lastaddr, &from_lsa->u.sa, from_lsa->len);
++				gotlastaddr = 1;
++#else
+ 				if (!gotlastaddr
+ 				 || (memcmp(lastaddr, &from_lsa->u.sa, from_lsa->len) != 0)
+ 				) {
+@@ -1143,7 +1148,7 @@
+ 					memcpy(lastaddr, &from_lsa->u.sa, from_lsa->len);
+ 					gotlastaddr = 1;
+ 				}
+-
++#endif
+ 				print_delta_ms(t1, t2);
+ 				ip = (struct ip *)recv_pkt;
+ 
+@@ -1152,8 +1157,12 @@
+ 						printf(" (%d)", ip->ip_ttl);
+ 
+ 				/* time exceeded in transit */
+-				if (icmp_code == -1)
++				if (icmp_code == -1){
++					printf(" |%2d",ttl);
+ 					break;
++				}else { /*for collecting*/
++					printf(" icmpCode:%d",icmp_code-1);
++				}
+ 				icmp_code--;
+ 				switch (icmp_code) {
+ #if ENABLE_TRACEROUTE6
+@@ -1232,12 +1241,16 @@
+ 					++unreachable;
+ 					break;
+ 				}
++				/*for collecting*/
++				printf(" |%2d",ttl);
+ 				break;
+ 			} /* while (wait and read a packet) */
+ 
+ 			/* there was no packet at all? */
+-			if (read_len == 0)
++			if (read_len == 0){
+ 				printf("  *");
++				printf(" |%2d",ttl);
++			}
+ 		} /* for (nprobes) */
+ 
+ 		bb_putchar('\n');

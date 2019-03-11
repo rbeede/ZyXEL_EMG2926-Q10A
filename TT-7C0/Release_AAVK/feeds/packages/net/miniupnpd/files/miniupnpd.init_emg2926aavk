@@ -1,0 +1,47 @@
+#!/bin/sh /etc/rc.common
+START=95
+
+. /etc/functions.sh
+include /lib/config
+
+boot() {
+	config_load "upnpd"
+        config_get upnp_enable config enabled 
+	[ "$upnp_enable" -eq 1 ] && {
+		/sbin/act_miniupnpd
+		echo "miniupnpd starting ..."
+	}
+}
+
+start() {
+	config_load "upnpd"
+	config_get upnp_enable config enabled 
+	[ "$upnp_enable" -eq 1 ] && {
+		/sbin/act_miniupnpd
+		echo "miniupnpd starting ..."
+		## iptables app reorder	
+		iptables -t nat -N MINIUPNPD 2>/dev/null
+		iptables -N MINIUPNPD 2>/dev/null
+
+		defaultwan=$(uci get network.general.defaultWan)
+		proto=$(uci_get network $defaultwan proto)
+		if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+			WAN="$proto"-"$defaultwan"
+		else
+			WAN=$(uci_get network $defaultwan ifname)
+		fi
+		#### Move to /sbin/nat to control
+#		iptables -t nat -I PREROUTING -i $WAN -j MINIUPNPD 2>/dev/null			
+		/lib/firewall/iptables_app_order
+	}
+}
+
+stop() {
+	pnpd_pid=$(cat /var/run/miniupnpd.pid) 2>&- >&-
+	kill $pnpd_pid 2>&-
+
+	iptables -t nat -F MINIUPNPD 2>/dev/null
+	iptables -t nat -X MINIUPNPD 2>/dev/null
+	iptables -F MINIUPNPD 2>/dev/null
+	iptables -X MINIUPNPD 2>/dev/null
+}

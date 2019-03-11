@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/tresbar/Makefile
+Package: tresbar
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +d3js
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: 3d bar charts for d3.js
+Maintainer: 
+Source: tresbar-.tar.gz
+Type: ipkg
+Description: 3D bar chart d3 reusable component
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_tresbar
+	config tresbar_USE_CUSTOM_VERSION
+		depends on PACKAGE_tresbar
+		bool "Use custom package version"
+		default n
+	config tresbar_CUSTOM_VERSION
+		depends on tresbar_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_tresbar
+	config tresbar_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_tresbar
+		bool "Use custom source directory"
+		default n
+	config tresbar_CUSTOM_SOURCE_DIR
+		depends on tresbar_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

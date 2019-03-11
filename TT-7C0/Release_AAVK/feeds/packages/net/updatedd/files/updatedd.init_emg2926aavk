@@ -1,0 +1,114 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+START=50
+
+[ -e "/tmp/ddns_noip_log" ] && rm /tmp/ddns_noip_log
+[ -e "/tmp/ddns_myzyxel_log" ] && rm /tmp/ddns_myzyxel_log
+
+##check mode,if AP/UR,exit
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+	
+start_service () {
+	local section="$1"
+	config_get service  "$section" service
+	config_get username "$section" username
+	config_get password "$section" password
+	config_get host     "$section" host
+	config_get update   "$section" update
+
+	[ "$update" = 1 ] && {
+		if [ "$service" = "dyndns" ]; then
+			wget http://checkip.dyndns.org -O /tmp/updatedd_ip_check
+			current_ip=`cat /tmp/updatedd_ip_check |cut -d':' -f2|cut -d'<' -f1 |cut -d' ' -f2`
+			rm /tmp/updatedd_ip_check
+			old_ip=`nslookup "$host" |grep "$host" -A 1 |grep Address |cut -d' ' -f3`
+			if [ "$current_ip" = "$old_ip" ]; then
+				echo "Preventing abusive update"
+				abusive=1
+			fi
+		fi
+		
+		if [ "$abusive" != "1" ]; then
+		
+			if [ "$service" = "noip" ]; then
+			        
+				/bin/inadyn -u $username -p $password -a $host --dyndns_system default@no-ip.com &
+				
+				sleep 10
+				
+				date=$(date "+%b %d %T")
+				device_name=$(uci_get system main product_name)
+				
+				inadyn_process=$(ps | grep "/bin/inadyn" | grep -v "grep" | awk '{print $1}')
+				
+				if [ "$inadyn_process" != "" ]; then
+				
+					kill -9 $inadyn_process		
+					#echo "$date $device_name process.inadyn inadyn[1234]: $host: update ddns success" > /tmp/ddns_noip_log
+					echo "$date $device_name process.inadyn inadyn[1234]: $host: update 0" > /tmp/ddns_noip_log
+					
+				else
+				
+					#echo "$date $device_name process.inadyn inadyn[1234]: $host: update ddns fail" > /tmp/ddns_noip_log
+					echo "$date $device_name process.inadyn inadyn[1234]: $host: update -1" > /tmp/ddns_noip_log
+				
+				fi				
+			
+			else
+			
+				/usr/bin/updatedd -Y $service -- $username:$password $host
+				
+			fi
+			
+		fi
+		
+		if [ "$service" = "myzyxel" ]; then
+		
+			device_name=$(uci_get system main product_name)
+
+			##http://www.myzyxel.in.th/update.php?username=ok&pass=123456&ip=127.0.0.1&host=myzyxel.in.th
+			wget "http://www.myzyxel.in.th/update.php?username=$username&pass=$password&host=myzyxel.in.th"
+
+			message=`cat update.php*`
+			date=$(date "+%b %d %T")
+
+			if [ "$message" == "0" ]; then
+				echo "$date $device_name process.wget wget[1234]: $host: update ddns success" > /tmp/ddns_myzyxel_log
+			else
+				echo "$date $device_name process.wget wget[1234]: $host: $message" > /tmp/ddns_myzyxel_log
+			fi
+
+			rm update.php*
+			
+		fi
+	}
+}
+
+start() {		
+	defaultwan=$(uci get network.general.defaultWan)
+	ETH_WAN=$(uci_get network $defaultwan ifname)
+	PPPOE_WAN="pppoe"-"$defaultwan"
+
+	ETH_WANIP=$(ifconfig $ETH_WAN | grep "inet addr")
+	PPPOE_WANIP=$(ifconfig $PPPOE_WAN | grep "inet addr")
+
+	if [ "$ETH_WANIP" == "" ] && [ "$PPPOE_WANIP" == "" ]; then
+	        exit 0
+	fi
+	
+	config_load "updatedd"
+	config_foreach start_service updatedd
+
+}
+
+stop() {
+	killall updatedd
+	
+	inadyn_process=$(ps | grep "/bin/inadyn" | grep -v "grep" | awk '{print $1}')
+	
+	if [ "$inadyn_process" != "" ]; then
+		kill -9 $inadyn_process
+	fi	
+
+}

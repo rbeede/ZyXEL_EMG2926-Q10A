@@ -1,0 +1,18 @@
+<Client>
+  <DeviceId>
+    <DisplayName>LPTT</DisplayName>
+    <HttpRecognition>
+      <HttpText>LPTT:</HttpText>
+    </HttpRecognition>
+    <MappingUpdatePolicy>FIXPC1</MappingUpdatePolicy>
+  </DeviceId>
+  <Adaptations>
+    <DefaultView>flat</DefaultView>
+    <DLNA>
+      <Version>DLNA15</Version>
+    </DLNA>
+  </Adaptations>
+  <DeviceQuirks>
+    <Quirk>LINKPROT_USE_MPEG_FRAME_ALIGNMENT_FOR_SEEK</Quirk>
+  </DeviceQuirks>
+</Client>

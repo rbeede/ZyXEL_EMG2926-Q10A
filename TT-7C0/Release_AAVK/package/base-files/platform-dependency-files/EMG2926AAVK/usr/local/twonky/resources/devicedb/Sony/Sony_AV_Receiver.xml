@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony AV Receiver</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>STR-DA5600ES</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>STR-DA5600ES</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+			<Target>JPEG160x160</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

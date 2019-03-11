@@ -1,0 +1,29 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2011 OpenWrt.org
+START=97
+
+. /etc/functions.sh
+include /lib/config
+
+start() {
+	uci_set wireless5G_macfilter general0 reset 1
+        uci_set wireless5G_macfilter general1 reset 1
+        uci_set wireless5G_macfilter general2 reset 1
+        uci_set wireless5G_macfilter general3 reset 1
+
+	uci_commit wireless5G_macfilter
+
+	macfilter5G start
+}
+
+stop() {
+	macfilter5G stop
+}
+
+restart() {
+	macfilter5G restart
+}
+
+reload() {
+	macfilter5G reload
+}

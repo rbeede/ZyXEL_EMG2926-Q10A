@@ -1,0 +1,39 @@
+diff -ruN a/interface-ip.c b/interface-ip.c
+--- a/interface-ip.c	2012-12-28 16:57:31.000000000 +0800
++++ b/interface-ip.c	2017-01-04 13:40:18.641595261 +0800
+@@ -525,7 +525,8 @@
+ {
+ 	struct interface *iface;
+ 	char *path = alloca(strlen(resolv_conf) + 5);
+-	FILE *f;
++	FILE *f,*f2;
++	char wan_set[5],path2[64];
+ 
+ 	sprintf(path, "%s.tmp", resolv_conf);
+ 	unlink(path);
+@@ -545,6 +546,25 @@
+ 		    vlist_simple_empty(&iface->config_ip.dns_servers))
+ 			continue;
+ 
++		memset(wan_set,0,sizeof(wan_set));
++		memset(path2,0,sizeof(path2));
++		sprintf(wan_set,iface->name);
++		
++		sprintf(path2, "/tmp/%s_dns", wan_set);
++		
++		f2 = fopen(path2, "w");
++		if (!f2) {
++			D(INTERFACE, "Failed to open %s for writing\n", path2);
++			fclose(f);
++			unlink(path);
++			return;
++		}
++		//fprintf(f2, "# Interface %s\n", iface->name);
++		write_resolv_conf_entries(f2, &iface->config_ip);
++		if (!iface->proto_ip.no_dns)
++			write_resolv_conf_entries(f2, &iface->proto_ip);
++		fclose(f2);
++		
+ 		fprintf(f, "# Interface %s\n", iface->name);
+ 		write_resolv_conf_entries(f, &iface->config_ip);
+ 		if (!iface->proto_ip.no_dns)

@@ -1,0 +1,9 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Rudeo Play &amp; Control</DisplayName>
+		<HttpRecognition>
+			<HttpText>Rudeo</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+</Client>

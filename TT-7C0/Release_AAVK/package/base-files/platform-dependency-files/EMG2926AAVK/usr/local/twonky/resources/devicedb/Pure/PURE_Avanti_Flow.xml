@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>PURE Avanti Flow</DisplayName>
+		<HttpRecognition>
+			<HttpText>PURE Avanti Flow D1R</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

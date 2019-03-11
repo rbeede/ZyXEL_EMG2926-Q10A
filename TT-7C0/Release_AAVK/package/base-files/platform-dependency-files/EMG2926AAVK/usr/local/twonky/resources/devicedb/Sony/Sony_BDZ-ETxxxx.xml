@@ -1,0 +1,33 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony BDZ-ETxxxx Recorder</DisplayName>
+		<HttpRecognition>
+			<HttpText>Blu-ray Disc Player</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>BDZ-20</DescriptionText>
+			<DescriptionText>Sony Corporation</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<DTCP/>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<DTCPMoveSinkUserAgent>UPnP/1.0</DTCPMoveSinkUserAgent>
+		</HTTP>
+		<DTCP>
+			<AkeSocketScheme>ONE_SOCKET_SCHEME</AkeSocketScheme>
+		</DTCP>			
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>POLL_AVT_STATE</Quirk>
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<Quirk>SUPPRESS_STATE_EVENTS</Quirk>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+	</DeviceQuirks>
+</Client>

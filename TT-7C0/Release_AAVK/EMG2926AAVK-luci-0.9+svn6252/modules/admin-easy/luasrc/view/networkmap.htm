@@ -1,0 +1,713 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+
+<%
+require("luci.sys")
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+local sys_op_mode = uci:get("system","main","system_mode")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+local lanDev, wlanDev 
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+
+<script type="text/javascript" src="<%=media%>/easy/js/jquery-1.5.1.min.js"></script>  
+<script type="text/javascript" src="<%=media%>/easy_streamboost/js/networkmap.js"></script>
+<script type="text/javascript" src="<%=media%>/easy/js/jquery.jcontext.1.0.js"></script> 
+<script type="text/javascript" src="<%=media%>/js/DST.js" ></script>
+
+	<script language="javascript" type="text/javascript" src="/js/fxEnvironment.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxPageMenu.js"></script>	
+
+    <!-- include the prerequisite libraries for the flux kit-->
+	<script src="/js/excanvas.min.js" type="text/javascript"></script>	 
+	<script src="/js/jquery-ui-1.8.21.custom.min.js" type="text/javascript"></script>
+	<script src="/js/jquery.contextMenu.js" type="text/javascript"></script>
+	<link href="/css/jquery.contextMenu.css" rel="stylesheet" type="text/css" /> 
+
+	<!-- include flux itself-->
+	<script language="javascript" type="text/javascript" src="/js/fxNetwork.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxData.js"></script>
+	
+<!-- <link href="brick.css" rel="stylesheet" type="text/css" /> -->
+<link href="<%=media%>/easy_streamboost/css/brick.css" rel="stylesheet" type="text/css" />
+
+<script language="javascript" type="text/javascript"></script>
+
+
+
+<style type="text/css"></style>
+
+		<%
+			local lan_ipaddr = uci.get("network","lan","ipaddr")
+			local lanInfo_cmd=luci.sys.exec("ifconfig br-lan")
+			local lan_mac=string.match(lanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")			
+		%>
+		
+		<script>
+		
+			var RouterMacId = null;
+			var RouterIPAddr = null;
+						
+			RouterIPAddr = "<%=lan_ipaddr%>";			
+			RouterMacId = "<%=lan_mac%>";
+			
+		</script>
+		
+		<script>
+				var lan_mac;
+				var lan_ip;
+				var lan_name;
+				var lan_type;
+				var wlan_mac;
+				var wlan_ip;
+				var wlan_name;
+				var wlan_type;
+				var current_ethernet_start_index = 0;
+				var current_wireless_start_index = 0;
+				var showmax = 4;
+
+				var easy_job_setting=0;
+				var button_status=new Array(6);
+
+				var flag_timeout = 0;
+				var flag_click   = 0;  
+
+				var objXMLHTTP;
+
+				function sleep( seconds ) {
+					var timer = new Date();
+					var time = timer.getTime();
+					do
+						timer = new Date();
+					while( (timer.getTime() - time) < (seconds * 1000) );
+				}
+
+				function stateChangeIE(_frame)
+					{ 
+					 if (_frame.readyState=="complete")//state: loading ,interactive,   complete
+					 {
+					 var loader = document.getElementById("load"); 
+						loader.innerHTML      = "";    
+						loader.style.display = "none";  
+						_frame.style.visibility = "visible";   
+					 }   
+					}
+					function stateChangeFirefox(_frame)
+					{ 
+					 var loader = document.getElementById("load"); 
+						loader.innerHTML      = "";    
+						loader.style.display = "none";  
+						_frame.style.visibility = "visible";   
+					}
+
+				function MM_findObj(n, d) { //v4.01
+				  var p,i,x;  if(!d) d=document; if((p=n.indexOf("?"))>0&&parent.frames.length) {
+					d=parent.frames[n.substring(p+1)].document; n=n.substring(0,p);}
+				  if(!(x=d[n])&&d.all) x=d.all[n]; for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+				  for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+				  if(!x && d.getElementById) x=d.getElementById(n); return x;
+				}
+
+				function MM_showHideLayers() { //v6.0
+				  var i,p,v,obj,args=MM_showHideLayers.arguments;
+				  for (i=0; i<(args.length-2); i+=3) if ((obj=MM_findObj(args[i]))!=null) { v=args[i+2];
+					if (obj.style) { obj=obj.style; v=(v=='show')?'visible':(v=='hide')?'hidden':v; }
+					obj.visibility=v; }
+				}
+
+				<%
+					wifi_select = uci:get("system","main","power_saving_select")
+					if wifi_select == "2.4G" then
+						cfg = "wifi_schedule"
+					else
+						cfg = "wifi_schedule5G"
+					end
+					
+					local schEnable = 0
+					if uci:get(cfg,"wlan","enabled") == "enable" then
+						schEnable = 1
+					end
+				%>
+
+				<%
+				game_enable=nil
+				parental_enable=uci:get("parental","general","enable")
+				dos_enable=uci:get("firewall","general","dos_enable")
+				internel=nil
+				wifi_disabled=uci:get("wireless","ath0","disabled")
+
+				if sys_op_mode == "2" or sys_op_mode == "3" then
+					parental_enable=nil
+					dos_enable=nil
+				elseif sys_op_mode == "4" then
+					wifi_disabled=nil
+					schEnable=nil
+				end
+				%>
+
+				<%if game_enable then%>button_status[0]=0<%else%>button_status[0]=0<%end%>
+				<%if schEnable then%>button_status[1]=<%=schEnable%><%else%>button_status[1]=0<%end%>
+				<%if parental_enable then%>button_status[2]=<%=uci:get("parental","general","enable")%><%else%>button_status[2]=0<%end%>
+				<%if dos_enable then%>button_status[3]=<%=uci:get("firewall","general","dos_enable")%><%else%>button_status[3]=0<%end%>
+				<%if internel then%>button_status[4]=0<%else%>button_status[4]=0<%end%>
+				<%if wifi_disabled then%>button_status[5]=<%=uci:get("wireless","ath0","disabled")%><%else%>button_status[5]=0<%end%>
+
+				function handleStateChange(){
+					if (objXMLHTTP.readyState == 4) { 
+						if (objXMLHTTP.status == 200) {
+							var ret = objXMLHTTP.responseText;
+							self.location.href = '<%=controller%>/easy/networkmap';
+						}
+				   }
+				}
+
+				function easy_set_option(job, mode)
+				{
+				//job - 1:Game Engine 2:Power Saving 3:Parental Control 4:Firewall 5:Internet Setting 6:Wireless Security
+				//mode - 0:OFF 1:ON
+					if (button_status[job-1]!=mode)
+					{
+						easy_job_setting=1;
+						document.easy_set_info.easy_set_button_job.value=job;
+						document.easy_set_info.easy_set_button_mode.value=mode;
+						document.easy_set_info.submit();
+					}
+				}
+
+				function logout_set()
+				{
+					flag_timeout = 1;
+				}
+
+				function logout_check()
+				{
+					if (flag_timeout == 1 && flag_click == 0)
+					 top.window.location.href="/";  // return to index.htm
+					else 
+					 flag_click = 0;
+				}
+
+				function time_out_counter()
+				{
+					var time_out = document.ROOT.timeout.value * 1000;  // setTimeout function using 1/1000 second
+					if(time_out > 0){
+					 setTimeout("logout_set();",time_out);
+					}
+				}
+
+
+				function on_click()
+				{
+					flag_click = 1;  //Click "Status" or "Network Map"
+				}
+
+				function Power_Saving(){
+					var e = document.getElementById("b-title");
+					e.innerHTML = "<%:net_map_pwsaving%>";
+				}
+
+				function Content_Filter(){
+					var e = document.getElementById("b-title");
+					e.innerHTML = "<%:parental_control%>";
+				}
+				
+				function Firewall(){
+					var e = document.getElementById("b-title");
+					e.innerHTML = "<%:net_map_firewall%>";
+				}
+
+				function Internet_Set(){
+					var e = document.getElementById("b-title");
+					e.innerHTML = "<%:net_map_internet%>";
+				}					
+
+				function Wireless_Security(){
+					var e = document.getElementById("b-title");
+					e.innerHTML = "<%:net_map_wireless_security%>";
+				}
+				
+				//!!!!!! none of this will work unless authorized with the router !!!!!!!
+		 
+				//handler function for mouse clicks
+				function handler(icon,name,x,y,node,id)
+				{ 
+				   var pathname = '<%=controller%>/easy/networkmap';
+
+					pathname = pathname + "/streamboost_node";
+					  
+				//send the browser to the node page
+				  window.open(pathname+'?nodeid='+id,"","width=1024,height=768");
+
+				};
+
+				//when the document loads run this function
+				$(document).ready(function () {
+
+				var isSBEnabled = "<%= uci:get("appflow","tccontroller","enable_streamboost")%>";
+				
+				//if streamboost is on we can draw the page
+				if(isSBEnabled == "1")
+				{
+					//create the data object with the path to nodes
+					var data = new fxData("/cgi-bin/ozker/api/nodes");//("/luci-static/resources/testnodes.json");
+
+					//create the flux network class
+					var net = new fxNetwork("Display",  //div to draw into
+										     data,       //data to display
+											 handler);   //mouse handler
+
+					// Show menu when #myDiv is clicked
+					$("#Display").contextMenu({
+						menu: 'myMenu'
+					},
+					function(action, el, pos) {
+					    $.ajax(
+					    {
+							type: "PUT",
+							async: true,
+							url: "/cgi-bin/ozker/api/debug/flashy",
+							dataType: "json",
+							//-------------------------------------------------------------------
+							// Issue callback with result data
+							success: function(data, status, request)
+							{
+							  var data1 = data;
+							}
+						});
+
+					},
+					function()
+					{
+					});
+				}
+			  });
+
+		</script>
+  
+</head>
+
+
+
+<body onload="time_out_counter();" onClick="logout_check();">
+
+	<form name="ROOT">
+	<% local Timer = uci:get("luci","sauth","sessiontime") %>
+	<input name="timeout" type="hidden" value="<%=Timer%>">
+	<div id="popup" style="display:none;"></div>
+	<!--Top start-->
+
+<div id="framecontentTop">
+	
+	<div id="wrapper">
+
+		<div class="top_image">
+			<div class="unit_myrouter"></div>
+			<div class="unit_title" id="unitword">EMG2926-Q10A</div>
+			
+			
+			<div class="hotkey" id="Hotkey">
+			  <table  border="0" align="right" cellpadding="0" cellspacing="2">
+				<tr>
+				  <!-- <td><div class="home"><a href="<%=controller%>/easy/logout"><%:net_map_home%></a></div ></td> -->
+				  <td><div class="expert"><a href="<%=controller%>/expert/configuration"><%:net_map_expert%></a></div></td>
+				  <!--<td><div class="easy123"><a href="<%=controller%>/easy/eaZy123">eaZy123</a></div></td>-->
+				  <td><div class="logout"><a href="<%=controller%>/easy/logout"><%:net_map_logout%></a></div></td>
+				</tr>
+			  </table>
+			  </div>
+			</div>
+		
+		</div>	
+
+	</div>
+		
+</div>
+
+
+
+<!--bottom end-->
+<div id="framecontentBottom">
+<div class="menu" id="menu" >
+	    <table border="0" align="center" cellpadding="0" cellspacing="0" style="width:760px;">
+	   
+		<tr>
+		   <!--
+		   <td><div <% if sys_op_mode == "2" or sys_op_mode == "3" then%> class="gamex"> <%:net_map_game_engine%> <% else %> class="game"><a href="<%=controller%>/easy/game" target="contenthtml" onClick="Game_Engine();"><%:net_map_game_engine%></a> <% end %> </div></td>
+		   <td rowspan="2"><img src="<%=media%>/easy/images/line.jpg" width="2" height="76" /></td>
+		   -->
+		   <td><div <% if sys_op_mode == "4" then%> class="powersafex"> <%:net_map_pwsaving%> <% else %> class="powersafe"><a href="<%=controller%>/easy/pwsaving" target="contenthtml" onClick="Power_Saving();"><%:net_map_pwsaving%></a>  <% end %> </div></td>
+		   <td rowspan="2"><img src="<%=media%>/easy/images/line.jpg" width="2" height="76" /></td>
+		   <td><div <% if sys_op_mode == "2" or sys_op_mode == "3" then%> class="parentalx"> <%:parental_control%> <% else %> class="parental"><a href="<%=controller%>/easy/ctfilter" target="contenthtml" onClick="Content_Filter();"><%:parental_control%></a>  <% end %> </div></td>
+		   <td rowspan="2"><img src="<%=media%>/easy/images/line.jpg" width="2" height="76" /></td>
+		   <td><div <% if sys_op_mode == "2" or sys_op_mode == "3" then%> class="firewallx"> <%:net_map_firewall%> <% else %> class="firewall"><a href="<%=controller%>/easy/firewall" target="contenthtml" onClick="Firewall();"><%:net_map_firewall%></a> <% end %> </div></td>
+		   <td rowspan="2"><img src="<%=media%>/easy/images/line.jpg" width="2" height="76" /></td>
+		   <td><div <% if sys_op_mode == "2" or sys_op_mode == "3" then%> class="internetx"> <%:net_map_internet%> <% else %> class="internet"><a href="<%=controller%>/easy/internet" target="contenthtml" onClick="Internet_Set();"><%:net_map_internet%></a>  <% end %> </div></td>
+		   <td rowspan="2"><img src="<%=media%>/easy/images/line.jpg" width="2" height="76" /></td>		   
+		   <td><div <% if sys_op_mode == "4" then%> class="wirelessx"> <%:net_map_wireless_security%> <% else %> class="wireless"><a href="<%=controller%>/easy/wlan" target="contenthtml" onClick="Wireless_Security();"><%:net_map_wireless_security%></a> <% end %> </div></td>
+		</tr>
+		 
+		<tr>
+		  <!--
+		  <td> <% if sys_op_mode == "2" or sys_op_mode == "3" then%> <div class="on_offx"> <% else %> <div class="on_off"> <% end %>
+				<script>
+					if(button_status[0])
+						document.write("<ul><li class='on_on' ><a href='#'></a></li><li class='off'><a href='#'></a></li></ul>");
+					else
+						document.write("<ul><li class='on' ><a href='#'></a></li><li class='off_on'><a href='#'></a></li></ul>");
+				</script>
+		    </div>
+		   </td>
+		   -->
+		   
+		   <td> <% if sys_op_mode == "4" then%> <div class="on_off2x"> <% else %> <div class="on_off2"> <% end %>
+				<script>
+					if(button_status[1])
+						document.write("<ul><li class='on_on' ><a href='#'></a></li><li class='off'><a href='#'></a></li></ul>");
+					else
+						document.write("<ul><li class='on' ><a href='#'></a></li><li class='off_on'><a href='#'></a></li></ul>");
+				</script>
+			</div>
+		   </td>
+			
+		   <td><% if sys_op_mode == "2" or sys_op_mode == "3" then%> <div class="on_off3x"> <% else %> <div class="on_off3"> <% end %>
+				<script>
+					if(button_status[2])
+						document.write("<ul><li class='on_on' ><a href='#'></a></li><li class='off'><a href='#'></a></li></ul>");
+					else
+						document.write("<ul><li class='on' ><a href='#'></a></li><li class='off_on'><a href='#'></a></li></ul>");
+				</script>
+			</div>
+		   </td>
+			
+		   <td> <% if sys_op_mode == "2" or sys_op_mode == "3" then%> <div class="on_off4x"> <% else %> <div class="on_off4"> <% end %>
+				<script>
+					if(button_status[3])
+						document.write("<ul><li class='on_on' ><a href='#'></a></li><li class='off'><a href='#'></a></li></ul>");
+					else
+						document.write("<ul><li class='on' ><a href='#'></a></li><li class='off_on'><a href='#'></a></li></ul>");
+				</script>
+			</div>
+		   </td>
+		   
+		   <!--
+		   <td><% if sys_op_mode == "2" or sys_op_mode == "3" then%> <div class="on_off5x"> <% else %> <div class="on_off5"> <% end %>
+				<script>
+					if(button_status[4])
+						document.write("<ul><li class='on_on' ><a href='#'></a></li><li class='off'><a href='#'></a></li></ul>");
+					else
+						document.write("<ul><li class='on' ><a href='#'></a></li><li class='off_on'><a href='#'></a></li></ul>");
+				</script>
+			</div>
+		   </td>
+		   -->
+		   
+		   <td>&nbsp;</td>
+		   
+		</tr>
+		 
+	   </table>
+	</div>
+
+</div>
+<!--bottom end-->	
+
+<!--Top end-->
+
+
+
+<!--popup start-->
+	<div class="layer1" id="layer1">
+	  <div class="bandwidthframe" id="b-bandwidthframe">
+		<ul>
+		  <li class="popup_top"></li>
+		  <li class="popup_main"></li>
+		  <li class="popup_down"></li>
+		</ul>
+	  </div>
+		
+	  <div class="unit_bandwidth_icon" id="b-icon"></div>
+	  <div class="unit_bandwidth_title" id="b-title"><%:net_map_internet%></div>
+	  <div class="close"id="b-close"><a href="<%=controller%>/easy/networkmap" target="_parent" ></a></div>
+
+	  <div class="bandwidth_content" id="bandwidth_content">
+		<iframe  id="contenthtml" name = "contenthtml" style="border:0px solid orange; " frameborder="0" width="600" height="390" scrolling="no"></iframe>
+	  </div>
+	</div>
+<!--popup end-->
+	
+
+
+<!--Main frame start-->
+<div id="maincontent">
+<div class="widearea">
+
+			<% enable_streamboost = uci:get("appflow","tccontroller","enable_streamboost") 
+			   if enable_streamboost == "1" then 
+			%>   
+
+				<div id="position">
+
+					<div class="i_status" id="i_status"><a href="#" onClick="on_click();"><%:net_map_status%></a></div>
+					  <div id="Display" style="width:740px;height:100%;"></div>
+					  
+				</div>
+
+				<div id="position2" style="display:none" >
+				
+			<% else %>
+			
+				<div id="position2" >			
+			
+			<% end %>			
+
+				<%
+				local wanif = uci:get("network","wan","ifname")
+				if not wanif then
+					wanif="eth0"
+				end
+				local wanInfo_cmd = luci.sys.exec("ifconfig '"..wanif.."'")
+				local wan_mac = string.match(wanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")
+				local wanProtocol = uci:get("network","wan","proto")
+				local wan_ip=string.match(wanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+				local wan_Bcast=string.match(wanInfo_cmd,"Bcast:(%d+.%d+.%d+.%d+)")
+				local wan_netmask=string.match(wanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+				local wanInfo_cmd2=luci.sys.exec("ifconfig pppoe-wan")
+				local wan_ip2=string.match(wanInfo_cmd2,"inet addr:(%d+.%d+.%d+.%d+)")
+				local wanInfo_cmd3=luci.sys.exec("ifconfig ppptp-wan")
+				local wan_ip3=string.match(wanInfo_cmd3,"inet addr:(%d+.%d+.%d+.%d+)")
+				%>
+				<%
+					
+				local file3
+				local fw_ver
+				if io.open( "/tmp/firmware_version", "r" ) then
+					file3 = io.open( "/tmp/firmware_version", "r" )
+					fw_ver = file3:read("*line")
+					file3:close()
+				else
+					fw_ver = "TEST_FW_VERSION"
+				end		
+
+				local security_24G
+				local security_5G
+				local security24G = uci:get("wireless","ath0","auth")
+				local security5G = uci:get("wireless","ath10","auth")
+				local refresh = luci.http.formvalue("refresh")
+
+				if security24G == "WPAPSK" then
+					security_24G="WPA-PSK"
+				elseif security24G == "WPA2PSK" then
+					security_24G="WPA2-PSK"
+				elseif security24G == "WEPAUTO" or security24G == "SHARED" then
+					security_24G="WEP"
+				elseif security24G == "OPEN" then
+					security_24G="No Security"
+				else
+					security_24G = security24G
+				end
+
+				if security5G == "WPAPSK" then
+					security_5G="WPA-PSK"
+				elseif security5G == "WPA2PSK" then
+					security_5G="WPA2-PSK"
+				elseif security5G == "WEPAUTO" or security5G == "SHARED" then
+					security_5G="WEP"
+				elseif security5G == "OPEN" then
+					security_5G="No Security"
+				else
+					security_5G = security5G
+				end
+					
+					
+					%>
+
+
+				<div class="map_word">
+				  <table width="434" border="0" cellpadding="0" cellspacing="0">
+					<tr><td class="map_title"> <%:net_map_name%> : </td><td class="map_content">ZyXEL EMG2926-Q10A</td></tr>
+					<tr><td class="map_title"> <%:net_map_time%> : </td> <td class="map_content"><label id="mtenCurrent_Date"></label>/<label id="mtenCurrent_Time"></label></td> </tr>
+					<tr><td class="map_title"> <%:net_map_wanip%> : </td> <td class="map_content"><%if wanProtocol=="dhcp" or wanProtocol=="static" then%><%=wan_ip%><%elseif wanProtocol=="pppoe" then%><%=wan_ip2%><%else%><%=wan_ip3%><%end%></td></tr>
+					<tr> <td class="map_title"><%:MAC_Address%> : </td><td class="map_content"><%=wan_mac%></td></tr>
+					<tr><td class="map_title"><%:fw_version%> : </td><td class="map_content"><%=fw_ver%></td></tr>
+					<% if sys_op_mode ~= "4" then%>
+					<tr><td colspan="2" class="line_map">&nbsp;</td> </tr>
+					<%
+					local ssid_24g = uci:get("wireless","ath0","ssid")
+					if not ssid_24g then
+						local mac_24g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+						ssid_24g="ZyXEL" .. mac_24g
+					end
+					%>
+					<%
+					local ssid_5g = uci:get("wireless","ath10","ssid")
+					if not ssid_5g then
+						local mac_5g=luci.sys.exec("cat /tmp/AR71XX_5G.dat | grep MacAddress | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+						ssid_5g="ZyXEL" .. mac_5g
+					end
+					%>
+					<% local Product_Model = uci:get("system","main","product_model") %>
+					<tr><td class="map_title"><%:net_map_wlan24G_name%> : </td><td class="map_content"><%=ssid_24g%></td></tr> 
+					<tr><td class="map_title"><%:security%> : </td><td class="map_content"><%=security_24G%></td></tr>
+					<% if Product_Model == "DUAL_BAND" then %>	
+					<tr><td class="map_title"><%:net_map_wlan5G_name%> : </td><td class="map_content"><%=ssid_5g%></td></tr> 
+					<tr><td class="map_title"><%:security%> : </td><td class="map_content"><%=security_5G%></td></tr>
+					<% end %>
+					<% end %>
+				  </table>	  
+				</div>
+
+				
+				<% enable_streamboost = uci:get("appflow","tccontroller","enable_streamboost") 
+				   if enable_streamboost == "1" then 
+				%>
+				
+					<div class="i_map" id="i_map"><a href="#" onClick="on_click();"><%:net_map%></a></div>
+			
+				<% end %>				
+				
+			</div>
+
+		</div>
+
+</div>
+<!-- main frame end-->
+
+
+	<div class="mask" id="b-mask" style="display:none;"></div>
+
+	<div id="load" class="load" align="center">
+		<img src="<%=media%>/easy/images/loading.gif" /><%:net_map_loading%>
+	</div>
+	  
+
+
+	<div id="popup3_table">
+	  <table width="60%" border="0" cellspacing="0" cellpadding="0">
+	  
+		  <tr>
+			<td>
+				<table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+					  <tr>
+						<td width="19" height="37"><img src="<%=media%>/admin/images/popup_top_left.gif" width="19" height="45" /></td>
+						<td background="<%=media%>/admin/images/popup_top_center.gif" class="table_title">Log Out</td>
+						<td width="15" background="<%=media%>/admin/images/popup_top_center.gif"><a href="#" class="iclose" onclick="MM_showHideLayers('popup','','hide','popup3_table','','hide')"></a></td>
+						<td width="19" height="45"><img src="<%=media%>/admin/images/popup_top_right.gif" width="19" height="45" /></td>
+					  </tr>
+				</table>
+			</td>
+		  </tr>
+		  
+		  <tr>
+			 <td>
+			  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+			   <tr>
+				 <td width="19" background="<%=media%>/admin/images/popup_main_left.gif">&nbsp;</td>
+				 <td bgcolor="#FFFFFF">
+				  <span class="popupcontent"> 
+				   <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+					 <tr>
+					   <td width="27%">
+						   <center>
+							 <img src="<%=media%>/admin/images/popup_i_message.gif" width="38" height="35" />
+						   </center>
+					   </td>
+					   <td width="73%">Are you sure you want to log out?</td>
+					 </tr>
+				   </table>
+				  </span>
+				 </td>
+				 <td width="19" background="<%=media%>/admin/images/popup_main_right.gif">&nbsp;</td>
+			   </tr>
+			  </table>
+			 </td>
+		  </tr>
+		 
+		  <tr>
+			<td>
+				<table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+				  <tr>
+					<td width="19" height="48"><img src="<%=media%>/admin/images/popup_down_left.gif" width="19" height="48" /></td>
+					<td background="<%=media%>/admin/images/popup_down_center.gif">
+						<div class="button2">
+						  <ul>   
+							<li><a href="#" title="Reset"><span onclick="MM_showHideLayers('popup','','hide','popup3_table','','hide')">No</span></a></li>
+							<li><a href="<%=controller%>/easy/logout" title="Reset"><span>Yes</span></a></li>
+						  </ul>
+						</div>
+					</td>
+					<td width="19" height="37"><img src="<%=media%>/admin/images/popup_down_right.gif" width="19" height="48" /></td>
+				  </tr>
+				</table>
+			</td>
+		  </tr>
+		  
+	 </table> 
+	</div>
+
+	</form>
+
+	<form method="post" name="easy_set_info" action="<%=controller%>/easy/easysetapply">
+		<input type="hidden" name="easy_set_button_job" value="0" />
+		<input type="hidden" name="easy_set_button_mode" value="0" />
+	</form>
+
+</body>
+
+
+
+<form method="post" name="NTP">
+	<input type="hidden" name="mtenCurrent_Hour" value='<%=string.match(luci.sys.exec("date +%H"),"(%d+)")%>' />
+	<input type="hidden" name="mtenCurrent_Min" value='<%=string.match(luci.sys.exec("date +%M"),"(%d+)")%>' />
+	<input type="hidden" name="mtenCurrent_Sec" value='<%=string.match(luci.sys.exec("date +%S"),"(%d+)")%>' />
+	<input type="hidden" name="mtenCurrent_Year" value='<%=string.match(luci.sys.exec("date +%Y"),"(%d+)")%>' />
+	<input type="hidden" name="mtenCurrent_Mon" value='<%=string.match(luci.sys.exec("date +%m"),"(%d+)")%>' />
+	<input type="hidden" name="mtenCurrent_Day" value='<%=string.match(luci.sys.exec("date +%d"),"(%d+)")%>' />
+</form>
+
+<script language="JavaScript">
+	start_Mon='<%=uci:get("time", "DST", "start_month")%>';
+	start_Hour='<%=uci:get("time", "DST", "start_clock")%>'; 
+	end_Mon='<%=uci:get("time", "DST", "end_month")%>';
+	end_Hour='<%=uci:get("time", "DST", "end_clock")%>';
+	enable_dst = '<%=uci:get("time", "DST", "enable")%>';
+
+	start_Num='<%=uci:get("time", "DST", "start_num")%>';
+	end_Num='<%=uci:get("time", "DST", "end_num")%>';
+	start_D='<%=uci:get("time", "DST", "start_d")%>';
+	end_D='<%=uci:get("time", "DST", "end_d")%>';
+
+	modes='<%=uci:get("time", "main", "mode")%>';
+	mtensNew_Year='<%=uci:get("time","main","manual_year")%>';
+/*
+	if(enable_dst=='1')
+	{
+		daylightsaving();
+	}
+*/
+	initDateAndTime();
+	IncreaseSec();	
+</script>
+
+</html>

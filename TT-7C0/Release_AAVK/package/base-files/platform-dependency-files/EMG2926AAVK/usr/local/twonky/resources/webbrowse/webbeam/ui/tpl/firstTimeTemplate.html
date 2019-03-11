@@ -1,0 +1,18 @@
+<div id="firstTimer" class="popup large centerContent" data-bind="slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="popup_header_line"></div>
+    <div class="closeContainer">
+        <div id="closebutton" class="button close" data-bind="click: onCloseClick"></div>
+    </div>
+    <div id="wm" class="watermark"></div>
+    <div class="ftContainer">
+        <div class="ftTitle text headerTitle" data-bind="html: title"></div>
+        <div class="ftThumbContainer">
+            <div class="ftThumb"></div>
+        </div>
+        <div class="ftInfoContainer">
+            <div class="ftMessage text NEWtitle marginBottom" data-bind="html: message"></div>
+            <div class="ftSubMessage text subTitle marginBottom" data-bind="html: subMessage"></div>
+            <div class="boxButton mediumButton svgGradient" data-bind="click: onRequirementsCheckClick, html: buttonText"></div>
+        </div>
+    </div>
+</div>

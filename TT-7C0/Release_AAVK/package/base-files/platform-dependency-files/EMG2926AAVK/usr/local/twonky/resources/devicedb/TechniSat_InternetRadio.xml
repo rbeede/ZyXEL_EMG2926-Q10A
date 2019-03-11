@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>TechniSat InternetRadio</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>TechniSat InternetRadio</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+	</DeviceQuirks>
+</Client>

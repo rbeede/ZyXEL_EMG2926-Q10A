@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DirectTV HD DVR</DisplayName>
+		<HttpRecognition>
+			<HttpText>DIRECTTV</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

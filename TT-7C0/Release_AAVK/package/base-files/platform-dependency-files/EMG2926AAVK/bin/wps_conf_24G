@@ -1,0 +1,69 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+lock /tmp/.wps_conf_24G.lock
+#last_chksum=$(cat /tmp/conf_chksum_24G)
+#current_chksum=$(chksum /tmp/hostapd/hostapd-ath0.conf | grep "checksum" | awk '{print $4}')
+
+wps_status_old=$(cat /tmp/wps_chk_status_24G)
+wps_status=$(hostapd_cli -p /tmp/run/hostapd-wifi0/ -i ath0 get_config |grep wps_state=| awk -F"=" '{print $2}') 
+flag=0
+	auth=
+    ssid=$(cat /tmp/run/hostapd-ath0.conf | grep -v '#WPS#' | grep ssid= | awk -F"=" '{print $2}')
+    #auth=$(cat /tmp/hostapd/hostapd-ath0.conf | grep -v '#' |grep wpa_key_mgmt= | awk -F"=" '{print $2}')
+    encryption=$(cat /tmp/run/hostapd-ath0.conf | grep -v '#WPS#' |grep wpa_pairwise= | awk -F"=" '{print $2}')
+    wpapsk=$(cat /tmp/run/hostapd-ath0.conf | grep -v '#WPS#' | grep wpa_passphrase= | awk -F"=" '{print $2}')
+    auth_wpa=$(cat /tmp/run/hostapd-ath0.conf | grep -v '#WPS' |grep wpa= | awk -F"=" '{print $2}')
+	
+if [ "$auth_wpa" == "1" ]; then
+	auth="WPAPSK"
+	encryption="WPAPSK"
+elif [ "$auth_wpa" == "2" ]; then
+	auth="WPA2PSK"
+	encryption="WPA2PSK"
+elif [ "$auth_wpa" == "3" ]; then
+	auth="WPA2PSK"
+	encryption="WPA2PSK"
+elif [ "$auth_wpa" == "0" ]; then
+        auth="NONE"
+        encryption="NONE"
+else
+	auth="WPA2PSK"
+	encryption="WPA2PSK"		
+fi
+
+old_ssid=$(uci get wireless.ath0.ssid)
+old_auth=$(uci get wireless.ath0.auth)
+old_encrytion=$(uci get wireless.ath0.encryption)
+old_WPAPSKkey=$(uci get wireless.ath0.WPAPSKkey)
+[ "$old_ssid" == "$ssid" ] || {
+	uci_set wireless ath0 ssid "$ssid"
+	flag=1
+}
+[ "$old_auth" == "$auth" ] || {
+	uci_set wireless ath0 auth "$auth"
+    flag=1
+}
+[ "$old_encrytion" == "$encryption" ] || {
+	uci_set wireless ath0 encryption "$encryption"
+    flag=1
+}
+[ "$old_WPAPSKkey" == "$wpapsk" ] || {
+	uci_set wireless ath0 WPAPSKkey "$wpapsk"
+    flag=1
+}
+[ "$flag" == 1 ] && {
+	uci_set wireless ath0 WPAPSKCompatible 1
+    uci_commit wireless
+}
+	
+if [ "$wps_status_old" == "not configured" -a "$wps_status" == "configured" ]; then
+	uci_set wps wps conf 1
+    uci_commit wps
+fi
+
+#echo $current_chksum > /tmp/conf_chksum_24G
+echo $wps_status > /tmp/wps_chk_status_24G
+lock -u /tmp/.wps_conf_24G.lock
+

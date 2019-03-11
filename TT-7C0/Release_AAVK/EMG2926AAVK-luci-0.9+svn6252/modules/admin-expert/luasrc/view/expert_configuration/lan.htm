@@ -1,0 +1,637 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local i18n = require("luci.i18n")
+local uci = require("luci.model.uci").cursor()
+local http = require("luci.http")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+<%
+	local http_port=uci:get("uhttpd", "main", "listen_http")
+	local sys_op_mode = uci:get("system","main","system_mode")
+	
+	local lanInfo_cmd=luci.sys.exec("ifconfig br-lan")                           
+	lan_ipaddr = string.match(lanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+
+	if not lan_ipaddr then                                  
+		lan_ipaddr = uci:get("network", "lan", "ipaddr")  
+	end 
+	
+	if not lan_ipaddr then                                                                                               
+		lan_ipaddr = "192.168.1.2"                                                                                   
+	end 
+	
+	local luaIP = {}
+
+	uci:foreach( "network", "interface", function( section )
+		local tmp = section
+		tmp.id = section[ '.name' ]
+		if not ( section_name == tmp.id ) then
+			if not ( nil == section.ipaddr or nil == section.netmask ) then
+				table.insert( luaIP, tmp )
+			end
+		end
+	end )
+	
+	uci:foreach( "wireless", "wifi-iface", function( section )
+		local tmp = section
+		tmp.id = section[ '.name' ]
+		if not ( nil == section.guest_ip or nil == section.guest_ip_mask ) then
+			tmp.ipaddr = section.guest_ip
+			tmp.netmask = section.guest_ip_mask
+			table.insert( luaIP, tmp )
+		end
+	end )
+%>	
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value );
+}
+
+function checkNetmaskFormat( value )
+{
+  return /^255\.255\.255\.(255|254|252|248|240|224|192|128|0)|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|(254|252|248|240|224|192|128)\.0\.0\.0$/.test( value );
+}
+
+function checkGatewayIPFormat( value )
+{
+	if ( value == "" )
+	{
+		return 1;
+	}
+	else
+	{
+		return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value );
+	}
+}
+
+ 
+function verifySubmitData()
+{
+  <% if sys_op_mode == "2" or sys_op_mode == "3" then%>
+  if (document.lanIpCfg.LAN_IP_Auto[0].checked == true){
+	return true;
+  }
+  <% end %>	
+  var ipaddr = document.getElementById( "ipaddr" );
+  var netmask = document.getElementById( "netmask" );
+  var gateway = document.getElementById( "gateway" );
+  
+  if ( !checkIPFormat( ipaddr.value ) )
+  {
+    alert( "<%:LAN_Error_1%>" );
+    return false;
+  }
+ 
+  if ( !checkNetmaskFormat( netmask.value ) )
+  {
+    alert( "<%:LAN_Error_2%>" );
+    return false;
+  }
+    <% if sys_op_mode == "1" then%>
+		<%for i = 1, #luaIP do%>
+			if (  document.getElementById( "ipaddr" ).value == "<%=luaIP[i].ipaddr%>" ){
+			  alert("The IP Address has been allocated.");
+			  return false;
+			}
+		<%end%>
+  	<%end%>
+
+<% if sys_op_mode == "2" or sys_op_mode == "3" then%>
+
+    if ( !checkGatewayIPFormat( gateway.value ) )
+  {
+    alert( "<%:LAN_Error_1%>" );
+    return false;
+  }
+
+  if (document.lanIpCfg.dns1Type.options.selectedIndex == 1) //DNS1 User-Defined
+  {
+         if(document.lanIpCfg.staticPriDns.value == "")
+         {
+            alert("<%:WAN_Error_12%>");
+            return false;
+         }
+         if(document.lanIpCfg.staticPriDns.value == "0.0.0.0")
+         {
+            alert("<%:WAN_Error_13%>");
+            return false;
+         }
+         if (!checkIpAddr(document.lanIpCfg.staticPriDns, false))
+				return false;
+  }
+  if (document.lanIpCfg.dns2Type.options.selectedIndex == 1)
+  {
+         if(document.lanIpCfg.staticSecDns.value == "")
+         {
+            alert("<%:WAN_Error_14%>");
+            return false;
+         }
+         if(document.lanIpCfg.staticSecDns.value == "0.0.0.0")
+         {
+            alert("<%:WAN_Error_15%>");
+            return false;
+         }
+        if (!checkIpAddr(document.lanIpCfg.staticSecDns, false))
+				 return false;
+  }
+  if (document.lanIpCfg.dns3Type.options.selectedIndex == 1)
+  {
+         if(document.lanIpCfg.staticThiDns.value == "")
+         {
+            alert("<%:WAN_Error_16%>");
+            return false;
+         }
+         if(document.lanIpCfg.staticThiDns.value == "0.0.0.0")
+         {
+            alert("<%:WAN_Error_17%>");
+            return false;
+         }
+         if (!checkIpAddr(document.lanIpCfg.staticThiDns, false))
+				 return false;
+   }
+<% end %>
+  return true;
+}
+function frmLoad()
+{
+	document.getElementById("popup_wait").style.visibility='hidden';
+}
+function relogin()
+{	
+	<% if sys_op_mode == "2" or sys_op_mode == "3" then%>
+		if (document.lanIpCfg.LAN_IP_Auto[0].checked == true) //DHCP
+		{		
+			var submit_url = 'http://' + '<%=lan_ipaddr%>' + ':' + <%=http_port%>;
+		}
+		else{
+			var submit_url = 'http://' + document.getElementById("ipaddr").value + ':' + <%=http_port%>;
+		}
+	<% else %>
+		var submit_url = 'http://' + document.getElementById("ipaddr").value + ':' + <%=http_port%>;
+	<% end %>
+	top.window.location.href = submit_url; 
+}
+function btnApply()
+{
+	var verifyFlag,lan_mode
+	<% if sys_op_mode == "2" or sys_op_mode == "3" then%>
+	if (document.lanIpCfg.LAN_IP_Auto[0].checked == true){
+	    lan_mode = 1;
+	    verifyFlag = 1;
+  	}else{
+	    verifyFlag = verifySubmitData();	
+	}     
+	<% else %>
+	    verifyFlag = verifySubmitData();
+	<% end %>
+
+        if (verifyFlag){
+		with(document.lanIpCfg){
+			alert("<%:msg_relogin%>");
+		
+			var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","network", "lan")%>';
+			var loc = submit_url + '?apply=Apply';
+		
+			loc += '&ipaddr=' + ipaddr.value;
+			loc += '&netmask=' + netmask.value;
+			<% if sys_op_mode == "2" or sys_op_mode == "3" then%>
+			loc += '&LAN_IP_Auto=' + lan_mode;
+			loc += '&gateway=' + gateway.value;
+			loc += '&dns1Type=' + dns1Type.value;
+			loc += '&dns2Type=' + dns2Type.value;
+			loc += '&dns3Type=' + dns3Type.value;
+			loc += '&staticPriDns=' + staticPriDns.value;
+			loc += '&staticSecDns=' + staticSecDns.value;
+			loc += '&staticThiDns=' + staticThiDns.value;
+			<% end %>
+		
+			document.getElementById("popup_wait").style.visibility='visible';
+		
+			var objXMLHTTP;
+		
+			if (window.XMLHttpRequest) {
+		     	objXMLHTTP=new XMLHttpRequest();
+			}// code for IE
+			else if (window.ActiveXObject)  {
+		     	objXMLHTTP=new ActiveXObject("Microsoft.XMLHTTP");
+			}	
+		
+			objXMLHTTP.open("GET",loc,true);
+
+	    		/*let IE refresh page */
+	    		//objXMLHTTP.setRequestHeader("If-Modified-Since",new Date(0)); /*It will fail in Chrome*/
+	    		objXMLHTTP.setRequestHeader("Content-Type", "text/plain");
+	    
+	    		objXMLHTTP.send(null);
+
+	    		setTimeout("relogin()", 50000);
+		
+			}//end with
+        }//end if (verifyFlag)
+}
+
+function ethernet_mode_switch()
+{
+    if (document.lanIpCfg.LAN_IP_Auto[0].checked == true) //DHCP
+	{		
+		document.lanIpCfg.ipaddr.disabled = true;
+	    	document.lanIpCfg.netmask.disabled = true;
+      		document.lanIpCfg.gateway.disabled = true;
+        	document.lanIpCfg.dns1Type.options.selectedIndex=0;
+        	document.lanIpCfg.dns2Type.options.selectedIndex=0;
+		document.lanIpCfg.dns3Type.options.selectedIndex=0;
+
+		document.getElementById("staticPriDns").readOnly = true;
+		document.getElementById("staticSecDns").readOnly = true;
+		document.getElementById("staticThiDns").readOnly = true;
+	}
+    else //Static IP
+	{
+		document.lanIpCfg.ipaddr.disabled = false;
+	    	document.lanIpCfg.netmask.disabled = false;
+        	document.lanIpCfg.gateway.disabled = false;
+        	document.lanIpCfg.dns1Type.options.selectedIndex=1;
+        	document.lanIpCfg.dns2Type.options.selectedIndex=1;
+		document.lanIpCfg.dns3Type.options.selectedIndex=1;
+        	document.lanIpCfg.staticPriDns.disabled = false;
+        	document.lanIpCfg.staticSecDns.disabled = false;
+		document.lanIpCfg.staticThiDns.disabled = false;
+		document.getElementById("staticPriDns").readOnly = false;
+		document.getElementById("staticSecDns").readOnly = false;
+		document.getElementById("staticThiDns").readOnly = false;
+	}
+}
+
+function DNS1TypeSwitch()
+{
+   if (document.lanIpCfg.dns1Type.options.selectedIndex == 0)
+   {
+        document.getElementById("staticPriDns").readOnly = true;
+   }
+   else
+   {
+        document.getElementById("staticPriDns").readOnly = false;
+   }
+   
+   if (document.lanIpCfg.dns1Type.options.selectedIndex == 2)
+   {
+        document.lanIpCfg.staticPriDns.disabled = true;
+   }
+   else
+   {
+        document.lanIpCfg.staticPriDns.disabled = false;
+   }
+   
+}
+
+function DNS2TypeSwitch()
+{
+   if (document.lanIpCfg.dns2Type.options.selectedIndex == 0)
+   {
+        document.getElementById("staticSecDns").readOnly = true;
+   }
+   else
+   {
+        document.getElementById("staticSecDns").readOnly = false;
+   }
+   
+   if (document.lanIpCfg.dns2Type.options.selectedIndex == 2)
+   {
+        document.lanIpCfg.staticSecDns.disabled = true;
+   }
+   else
+   {
+        document.lanIpCfg.staticSecDns.disabled = false;
+   }
+   
+}
+
+function DNS3TypeSwitch()
+{
+   if (document.lanIpCfg.dns3Type.options.selectedIndex == 0)
+   {
+        document.getElementById("staticThiDns").readOnly = true;
+   }
+   else
+   {
+        document.getElementById("staticThiDns").readOnly = false;
+   }
+   
+   if (document.lanIpCfg.dns3Type.options.selectedIndex == 2)
+   {
+        document.lanIpCfg.staticThiDns.disabled = true;
+   }
+   else
+   {
+        document.lanIpCfg.staticThiDns.disabled = false;
+   }
+   
+}
+
+function checkIpAddr(field, ismask)
+{
+	if (field.value == "") {
+		alert("<%:IP_Error_1%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	if (isAllNum(field.value) == 0) {
+		alert("<%:IP_Error_2%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	if (ismask) {
+		if ((!checkRange(field.value, 1, 0, 255)) ||
+				(!checkRange(field.value, 2, 0, 255)) ||
+				(!checkRange(field.value, 3, 0, 255)) ||
+				(!checkRange(field.value, 4, 0, 255)))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	else {
+		if ((!checkRange(field.value, 1, 0, 255)) ||
+				(!checkRange(field.value, 2, 0, 255)) ||
+				(!checkRange(field.value, 3, 0, 255)) ||
+				(!checkRange(field.value, 4, 1, 254)))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	return true;
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function checkRange(str, num, min, max)
+{
+	d = atoi(str, num);
+	if (d > max || d < min)
+		return false;
+	return true;
+}
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+</script>
+</head>
+<body onload="frmLoad()">
+<div id="tabs"> 
+  <ul> 
+    <li class="hightline"><a title="<%:IP%>"><span><%:IP%></span></a></li> 
+    <li><a href="<%=controller%>/expert/configuration/network/lan/ipalias" title="<%:IP_Alias%>"><span><%:IP_Alias%></span></a></li> 
+<% if  ( sys_op_mode == "1" ) then    %>
+	<li><a href="<%=controller%>/expert/configuration/network/lan/ipv6LAN" title="<%:IPv6_LAN%>"><span><%:IPv6_LAN%></span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/network/lan/igmp_snooping" title="IGMP Snooping"><span>IGMP Snooping</span></a></li>
+<%end%>
+  </ul> 
+  <br class="clearfloat" /> 
+</div> 
+<!-- Tab --> 
+<div id="table">
+<% if sys_op_mode ~= "2" and sys_op_mode ~= "3" then%>
+  <form name="lanIpCfg"> 
+    <ul> 
+      <li class="table_top"></li> 
+      <li class="table_content"> 
+          <div class="data"> 
+            <ul><div class="w_text"> 
+              <ul> 
+                <li class="left_table"><%:IP_Address%> :</li> 
+                <li class="right_table"> 
+				<% local ipaddr = uci:get("network", "lan", "ipaddr") %>
+                  <input name="ipaddr" id="ipaddr" maxlength="15" size="15" <%if ipaddr then%> value="<%= ipaddr %>" <%end%> /> 
+                </li> 
+              </ul> 
+              </div> 
+              <div class="w_text"> 
+                <ul> 
+                  <li class="left_table"><%:IP_Subnet_Mask%> :</li> 
+                  <li class="right_table"> 
+				 <% local netmask = uci:get("network", "lan", "netmask") %>
+                    <input name="netmask" id="netmask" maxlength="15" size="15" <%if netmask then%> value="<%= netmask %>" <%end%> /> 
+                  </li> 
+                </ul> 
+              </div> 
+              <div class="spaceair"></div>	
+            </ul> 
+        </div> 
+      </li> 
+<% else %>
+    <% local proto = uci:get("network","lan","proto") %>
+    <form name="lanIpCfg"> 
+    <ul>
+      <li class="table_top"></li> 
+      <li class="table_content"> 
+          <div class="data">            
+            <ul>
+            <div class="title"><%:IP_Address%></div>
+            <div class="w_text"><input type="radio" value="1" onclick="ethernet_mode_switch()" name="LAN_IP_Auto" <% if proto ~= "static" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Obtain_an_IP_Address_Automatically%></div>
+            <div class="w_text"><input type="radio" value="0" onclick="ethernet_mode_switch()" name="LAN_IP_Auto" <% if proto == "static" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Static_IP_Address%>  </div>
+            <div class="w_text">
+              <ul><% local ipaddr = uci:get("network","lan","ipaddr") %>
+                <li class="left_table"><%:IP_Address%> : </li>
+                <li class="right_table">
+                  <input name="ipaddr" id="ipaddr" maxlength="15" size="15" <% if ipaddr then %>value="<%=ipaddr%>"<% else %>value="" <% end %> <% if proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local netmask = uci:get("network","lan","netmask") %>
+                <li class="left_table"><%:Subnet_Mask%>  : </li>
+                <li class="right_table">
+                  <input name="netmask" id="netmask" maxlength="15" size="15" <%if netmask then%>value="<%=netmask%>"<%else%>value="" <%end%> <% if proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local gateway = uci:get("network","lan","gateway") %>
+                <li class="left_table"><%:Gateway_IP_address%> : </li>
+                <li class="right_table">
+                  <input name="gateway" id="gateway" maxlength="15" size="15" <%if gateway then%>value="<%=gateway%>"<%else%>value="" <%end%> <% if proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+            </div>
+            </ul>         
+		
+	<%
+		local offset = 0
+		local t={}
+		t=luci.sys.net.getDNS()
+		local dns1Type, dns2Type, dns3Type
+		if uci:get("network","lan","dns1") then dns1Type=string.match(uci:get("network","lan","dns1"),"%a+") end
+		if uci:get("network","lan","dns2") then dns2Type=string.match(uci:get("network","lan","dns2"),"%a+") end
+		if uci:get("network","lan","dns3") then dns3Type=string.match(uci:get("network","lan","dns3"),"%a+") end
+	-%>
+            <div class="space"></div>
+            <div class="title"><b><font class="NaviText"><%:DNS_Server%></font></b></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:First_DNS_Server%> :</li>
+                <li class="right_table">
+                  <select name="dns1Type" size="1" onChange="DNS1TypeSwitch();" >
+                    <option value="ISP" id="lanDNSISP"<%if dns1Type=="ISP" then%>selected<%end%> ><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="lanDNSUSER"<%if dns1Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="lanDNSNONE"<%if dns1Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticPriDns" id="staticPriDns" type="text"  size="15" maxlength="15" <% if dns1Type == "NONE" then offset=offset+1 %> value="0.0.0.0" <%else%> value="<%=t[1]%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Second_DNS_Server%>  :</li>
+                <li class="right_table">
+                  <select name="dns2Type" size="1" onChange="DNS2TypeSwitch();" >
+                    <option value="ISP" id="lanDNS2ISP"<%if dns2Type=="ISP" then%>selected<%end%>><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="lanDNS2USER"<%if dns2Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="lanDNS2NONE"<%if dns2Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticSecDns" id="staticSecDns" type="text" size="15" maxlength="15" <% if dns2Type == "NONE" then offset=offset+1%> value="0.0.0.0" <%else%> value="<%=t[2 - offset]%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Third_DNS_Server%> :</li>
+                <li class="right_table">
+                  <select name="dns3Type" size="1" onChange="DNS3TypeSwitch();" >
+                    <option value="ISP" id="lanDNS3ISP"<%if dns3Type=="ISP" then%>selected<%end%>><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="lanDNS3USER"<%if dns3Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="lanDNS3NONE"<%if dns3Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticThiDns" id="staticThiDns" type="text" size="15" maxlength="15" <% if dns3Type == "NONE" then%> value="0.0.0.0" <%else%> value="<%=t[3 - offset]%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+			<div class="spaceair"></div>
+		</div>	
+      </li>	
+<% end %>
+        <li class="table_button"> 
+          <div class="button" align="center"> 
+            <input name="apply" value="<%:Apply%>" type="button" onclick="btnApply()"/>    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;<input name="Cancel" value="<%:Cancel%>" type="reset" /> 
+          </div> 
+        </li> 
+    </ul>
+    <div id="popup_wait">
+      <table width="60%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+	  <td>
+            <table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+	      <tr>
+                <td width="19" height="37"><img src="<%=media%>/admin/images/popup_top_left.gif" width="19" height="45" /></td>
+                <td background="<%=media%>/admin/images/popup_top_center.gif" class="table_title2"><%:EMG2926-Q10A%></td>
+                <td width="15" background="<%=media%>/admin/images/popup_top_center.gif"></td>
+		<td width="19" height="45"><img src="<%=media%>/admin/images/popup_top_right.gif" width="19" height="45" /></td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+		<td><table width="100%" border="0" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="19" background="<%=media%>/admin/images/popup_main_left.gif">&nbsp;</td>
+		<td bgcolor="#FFFFFF"><span class="popupcontent"> 
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="27%"><center>
+		<img src="<%=media%>/easy/images/loading.gif" />
+		</center>
+		</td>
+		<td width="73%" id=id_ScanningyourNetwork><%:Relogin%> . . .</td>
+		</tr>
+		</table>
+		</span></td>
+		<td width="19" background="<%=media%>/admin/images/popup_main_right.gif">&nbsp;</td>
+		</tr>
+		</table></td>
+		</tr>
+		<tr>
+		<td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="19" height="48"><img src="<%=media%>/admin/images/popup_down_left.gif" width="19" height="48" /></td>
+		<td background="<%=media%>/admin/images/popup_down_center.gif">
+		<div class="button2"><ul>   
+		<li></li>
+		<li></li>
+		</ul></div></td>
+		<td width="19" height="37"><img src="<%=media%>/admin/images/popup_down_right.gif" width="19" height="48" /></td>
+		</tr>
+		</table></td>
+		</tr>
+		</table>
+	</div> 
+  </form> 
+</div>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Network%> > <%:LAN%> ');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

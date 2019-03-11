@@ -1,0 +1,17 @@
+config igmpproxy general
+	option igmpEnabled 'enable'
+
+config 'interface' 'wan'
+	option 'igmpEnabled' 'enable'
+	
+config 'interface' 'wan1'
+	option 'igmpEnabled' 'disable'
+        
+config 'interface' 'wan2'
+	option 'igmpEnabled' 'disable'
+        
+config 'interface' 'wan3'
+	option 'igmpEnabled' 'disable'
+        
+config 'interface' 'wan4'
+	option 'igmpEnabled' 'disable'

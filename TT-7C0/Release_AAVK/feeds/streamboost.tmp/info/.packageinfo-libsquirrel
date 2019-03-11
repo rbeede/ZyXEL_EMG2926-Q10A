@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/libsquirrel/Makefile
+Package: libsquirrel
+Submenu: Utilities
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libopenssl
+Menu-Depends: 
+Provides: 
+Section: Bigfoot
+Category: Bigfoot
+Title: Configuration file decryption library.
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: libsquirrel-.tar.gz
+Type: ipkg
+Description:  This package contains a library for decrypting Streamboost daemon configuration files.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_libsquirrel
+	config libsquirrel_USE_CUSTOM_VERSION
+		depends on PACKAGE_libsquirrel
+		bool "Use custom package version"
+		default n
+	config libsquirrel_CUSTOM_VERSION
+		depends on libsquirrel_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_libsquirrel
+	config libsquirrel_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_libsquirrel
+		bool "Use custom source directory"
+		default n
+	config libsquirrel_CUSTOM_SOURCE_DIR
+		depends on libsquirrel_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

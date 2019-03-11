@@ -1,0 +1,123 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=41
+STOP=41
+
+. /etc/functions.sh
+include /lib/config
+
+start() {
+	## work around to avoid kernel panic
+	#/bin/dmesg -n 8
+
+	## to prevent the wireless config ruined after wireless crash
+	chk_wirelessconfig=$(uci show wireless | grep ath13 | wc -l)
+	chk_wps5G=$(uci show wps5G | wc -l)
+	[ -f "/etc/bakconfig/wireless" ] && {
+		[ "$chk_wirelessconfig" -gt 30 ] || cp /etc/bakconfig/wireless /etc/config/
+		[ "$chk_wps5G" -gt 3 ] || cp /rom/etc/config/wps5G /etc/config/
+		sleep 1
+		## double check again
+		double_chk=$(uci show wireless | grep ath13 | wc -l)
+		[ "$double_chk" -gt 30 ] || cp /rom/etc/config/wireless /etc/config/
+	}
+	
+	insmod asf
+	insmod adf
+	insmod ath_hal
+	insmod ath_rate_atheros
+	insmod ath_dfs
+	insmod ath_spectral
+	insmod hst_tx99
+	insmod ath_dev
+	insmod umac
+	insmod ath_pktlog
+
+	## get the wlan HW button status to know boot on wireless or not
+	wlan_btn=$(cat /tmp/wlan_on | sed 's/"//g' )
+	wifi_disable=$(uci get wireless.wifi0.disabled)
+	wifi5G_disable=$(uci get wireless.wifi1.disabled)
+
+        wifi24GVap1_disable=$(uci get wireless.ath1.disabled)
+        wifi24GVap2_disable=$(uci get wireless.ath2.disabled)
+        wifi24GVap3_disable=$(uci get wireless.ath3.disabled)
+        if [ "$wifi24GVap1_disable" == "0" ] || [ "$wifi24GVap2_disable" == "0" ] || [ "$wifi24GVap3_disable" == "0" ]; then
+                sleep 15
+        fi
+	
+	[ "$wlan_btn" == "1" ] && {
+		if [ "$wifi_disable" == "0" ] || [ "$wifi5G_disable" == "0" ]; then
+			/sbin/wifi up	
+		fi
+	}
+
+	echo "0" > /tmp/wps_btn
+	echo "0" > /tmp/wps5G_btn
+
+
+	if [ "$(uci get wps.wps.conf)" == "0" ] && [ "$(uci get wps.wps.PinEnable)" == "1" ];then
+		wps ath0 on
+	fi
+
+	if [ "$(uci get wps5G.wps.conf)" == "0" ] && [ "$(uci get wps5G.wps.PinEnable)" == "1" ];then
+		wps5G ath10 on
+	fi			
+}
+
+restart() {
+
+	## for link_monitor flag, its for fixing 5G Radio can't emit beacon after rebooting DUT
+        rm /tmp/chkflag
+
+	device24g=$(cat /tmp/WirelessDev | grep wifi0)
+	device5g=$(cat /tmp/WirelessDev | grep wifi1)
+	
+	ckwifi=$(ps | grep "wifi up" | grep -v "grep")
+	ckwificall=$(ps |grep "/sbin/luci-reload wireless" | grep -v "grep" | wc -l)
+	times=0
+	#/sbin/wifi detect
+	wlan_btn=$(cat /tmp/wlan_on | sed 's/"//g' )
+	[ "$wlan_btn" == "1" ] && {
+		[ $ckwificall -gt 3 ] && return 0
+		while [ -n "$ckwifi" ]
+		do
+			[ $times -gt 10 ] && return 0
+			times=$(($times+1))
+
+			sleep 10
+			ckwifi=$(ps | grep "wifi up" | grep -v "grep")
+		done
+
+        	 #sync VT 2016/06/08, check two band, restart if need
+			if [ -n "$device24g" ]; then
+				/sbin/wifi up wifi0
+			fi
+			if [ -n "$device5g" ]; then
+				/sbin/wifi up wifi1
+			fi
+        	print_log "/sbin/wifi up $device"
+        }
+	rm /tmp/WirelessDev
+	rm /tmp/WirelessDev_tr69
+	
+	##to prevent the wireless config ruined after wireless crash
+	cp /etc/config/wireless /etc/bakconfig/
+}
+
+stop() {
+	/sbin/wifi down
+
+	## for fixing 5G radio can't emit beacon after rebooting DUT.
+	sleep 1
+        rmmod ath_pktlog
+        rmmod umac
+        rmmod ath_dev
+	rmmod hst_tx99
+        rmmod ath_spectral
+        rmmod ath_dfs
+        rmmod ath_rate_atheros
+        rmmod ath_hal
+        rmmod adf
+        rmmod asf
+}

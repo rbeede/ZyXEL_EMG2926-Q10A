@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/callhomeclient/Makefile
+Package: callhomeclient
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +curl +openssl-util +customer-keys
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Client for the callhome server
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: callhomeclient-.tar.gz
+Type: ipkg
+Description: Client for the callhome server
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_callhomeclient
+	config callhomeclient_USE_CUSTOM_VERSION
+		depends on PACKAGE_callhomeclient
+		bool "Use custom package version"
+		default n
+	config callhomeclient_CUSTOM_VERSION
+		depends on callhomeclient_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_callhomeclient
+	config callhomeclient_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_callhomeclient
+		bool "Use custom source directory"
+		default n
+	config callhomeclient_CUSTOM_SOURCE_DIR
+		depends on callhomeclient_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

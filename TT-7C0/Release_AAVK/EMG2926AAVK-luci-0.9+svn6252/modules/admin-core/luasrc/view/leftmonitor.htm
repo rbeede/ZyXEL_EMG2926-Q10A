@@ -1,0 +1,117 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+local load1, load5, load15 = luci.sys.loadavg()
+local request  = require("luci.dispatcher").context.path
+local category = request[1]
+local tree     = luci.dispatcher.node()
+local cattree  = category and luci.dispatcher.node(category)
+local node     = luci.dispatcher.context.dispatched
+local hostname = luci.sys.hostname()
+
+local c = tree
+for i,r in ipairs(request) do
+	if c.nodes and c.nodes[r] then
+		c = c.nodes[r]
+		c._menu_selected = true
+	end
+end
+
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"  />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/dtree.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/dtree.js"></script>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body>
+<div id="top"></div>
+<div id="leftframe">
+<div class="contentframe"><ul>
+<li><div class="submenu2"><ul><li class="i_dashboard" title="Dashboard"><a href="<%=controller%>/expert/status" title="<%:Dashboard%>" target="_parent"></a></li> 
+      <li class="i_monitor" title="<%:Monitor%>"></li>
+      <li class="i_config"><a href="<%=controller%>/expert/configuration" title="<%:Configuration%>" target="_parent"></a></li>
+      <li class="i_maintenance"><a href="<%=controller%>/expert/maintenance" title="<%:Maintenance%>" target="_parent"></a></li>
+</ul>  
+<br class="clearfloat" /></div>
+</li>
+<li><div class="menu">
+          <ul>
+            <li class="menuline">
+              <div>
+                <ul>
+                  <li class="menu_top"><br/>
+                  &nbsp;&nbsp;<%:Monitor%></li>
+                  <li>
+                    <div class="dtree" style="*margin-top:-10px;">
+                      <script type="text/javascript">
+			d = new dTree('d');
+			d.clearCookie();
+                      	d.add(0,-1,'');
+			<%
+			if cattree and cattree.nodes then
+				local index = {}
+				local monitor = cattree.nodes["monitor"]
+				for j, v in pairs(monitor.nodes) do
+					table.insert(index, {name=j, order=v.order or 100})
+				end
+				
+				table.sort(index, function(a, b) return a.order < b.order end)
+				
+				for i, k in ipairs(index) do
+					local subnode = monitor.nodes[k.name]
+					local url = controller .. "/" .. "expert/monitor/" .. k.name
+				
+					if subnode then
+			-%>
+						d.add(<%=i%>,0,'<%=subnode.title%>','<%=url%>');
+			<%
+					end
+				end
+			end
+			-%>
+			document.open("text/html");
+			document.writeln(d);
+			document.close();
+		      </script>
+                    </div>
+                  </li>
+                  <li></li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+          <br class="clearfloat" />
+        </div>
+      </li>
+    </ul>
+  <br class="clearfloat" />
+  </div>
+</div>
+<div class="menubottom" ></div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<html>
+<head>
+ <title>DTCP Upload</title>
+</head>
+
+<body>
+
+<form enctype="multipart/form-data" action="/dtcpupload" method="post">
+ <table>   
+  <tr>
+    <td>File:</td><td><input id="dtcp-file" type="file" name="file" /></td>
+  </tr>
+  <tr>
+    <td>Title:</td><td><input id="dtcp-title" type="text" name="title" /></td>
+  </tr>
+  <tr>
+    <td>Emi:</td><td>
+
+<select id="dtcp-emi" name="emi">
+<option value="12">Copy Never (12)</option>
+<option value="10">Copy One Generation - Format cognizant (10)</option>
+<option value="8">Copy One Generation - Format non cognizant (8)</option>
+<option value="6">Move (6)</option>
+<option value="4">No More Copies (4)</option>
+<option value="2">Copy Free with EPN asserted (2)</option>
+<option value="0">Copy Free (0)</option>
+</select>
+
+    </td>
+  </tr>
+  <tr>
+    <td>Copy count:</td><td><input id="dtcp-count" type="text" name="count" value="10" /></td>
+  </tr>
+  <tr>
+    <td><input type="submit" value="Upload"></td>
+  </tr>
+ </table>
+</form>
+
+</body>
+
+</html>

@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Bang &amp; Olufsen</DisplayName>
+		<HttpRecognition>
+			<HttpText>B&amp;O DLNAClient1 DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

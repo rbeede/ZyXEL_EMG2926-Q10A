@@ -1,0 +1,40 @@
+#!/bin/sh
+# Copyright (C) 2006-2010 OpenWrt.org
+# Copyright (C) 2010 Vertical Communications
+
+find_mount_jffs2() {
+    mkdir -p /tmp/overlay
+    mount -o noatime -t jffs2 "$(find_mtd_part rootfs_data)" /tmp/overlay
+    mtd -qq unlock rootfs_data
+    ##chk rootfs data,if empty copy RomD data to overlay
+    local ck_rfs=$(ls /tmp/overlay)
+    if [ -z "$ck_rfs" ];then
+	mkdir -p /tmp/RomD
+	mount "$(find_mtd_part romd)" /tmp/RomD -t jffs2
+
+	local romDchk=$(ls /tmp/RomD/etc)
+	if [ -n "$romDchk" ];then
+		cp -rf /tmp/RomD/* /tmp/overlay
+	fi
+	umount -f "$(find_mtd_part romd)"
+	rm -r /tmp/RomD
+
+    fi
+}
+
+jffs2_not_mounted() {
+    if [ "$pi_jffs2_mount_success" != "true" ]; then
+	return 0
+    else
+	return 1
+    fi
+}
+
+do_mount_jffs2() {
+    check_skip || {
+	find_mount_jffs2 && pi_jffs2_mount_success=true
+    }
+}
+
+boot_hook_add preinit_mount_root do_mount_jffs2
+

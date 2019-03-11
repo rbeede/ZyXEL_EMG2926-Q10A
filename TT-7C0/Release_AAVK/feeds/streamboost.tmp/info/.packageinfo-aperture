@@ -1,0 +1,23 @@
+Source-Makefile: feeds/streamboost/aperture/Makefile
+Package: aperture
+Submenu: Utilities
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +curl +libxml2
+Menu-Depends: 
+Provides: 
+Build-Depends: jansson argp-standalone curl libxml2
+Section: opt
+Category: Bigfoot
+Title: Automatic Bandwidth Monitor
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: aperture-.tar.gz
+Type: ipkg
+Description: Aperture continuously monitors the available upload and download rate and
+adjusts the TBF of the root interfaces accordingly.
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+       select PACKAGE_app-flow-scripts if !PACKAGE_app-flow-scripts-noload
+@@
+
+

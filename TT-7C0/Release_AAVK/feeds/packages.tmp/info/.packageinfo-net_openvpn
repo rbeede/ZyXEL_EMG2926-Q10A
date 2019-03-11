@@ -1,0 +1,42 @@
+Source-Makefile: feeds/packages/net/openvpn/Makefile
+Package: openvpn
+Submenu: VPN
+Version: 2.1.4-3
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +kmod-tun +libopenssl +PACKAGE_openvpn_complzo:liblzo
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: Open source VPN solution using SSL
+Maintainer: 
+Source: openvpn-2.1.4.tar.gz
+Type: ipkg
+Description: 	 Open source VPN solution using SSL
+http://openvpn.net
+
+@@
+Config:
+config PACKAGE_openvpn_complzo
+	bool "Enable --comp-lzo compression option"
+	depends on PACKAGE_openvpn
+	default y
+@@
+
+Package: openvpn-easy-rsa
+Submenu: VPN
+Version: 2.1.4-3
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +openssl-util
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: Simple shell scripts to manage a Certificate Authority
+Maintainer: 
+Source: openvpn-2.1.4.tar.gz
+Type: ipkg
+Description: Simple shell scripts to manage a Certificate Authority
+http://openvpn.net
+
+@@
+
+

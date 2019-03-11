@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost_customer_template/policy-redis/Makefile
+Package: policy-redis
+Submenu: Flow Detect
+Version: 20140710141214-g725dc2f-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli +redis-server
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: policy database in Redis commands
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: policy-redis-20140710141214-g725dc2f-generic.tar.gz
+Type: ipkg-prebuilt
+Description: policy definitions to load into Redis
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_policy-redis
+	config policy-redis_USE_CUSTOM_VERSION
+		depends on PACKAGE_policy-redis
+		bool "Use custom package version"
+		default n
+	config policy-redis_CUSTOM_VERSION
+		depends on policy-redis_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140710141214-g725dc2f-generic)"
+		default "20140710141214-g725dc2f-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_policy-redis
+	config policy-redis_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_policy-redis
+		bool "Use custom source directory"
+		default n
+	config policy-redis_CUSTOM_SOURCE_DIR
+		depends on policy-redis_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

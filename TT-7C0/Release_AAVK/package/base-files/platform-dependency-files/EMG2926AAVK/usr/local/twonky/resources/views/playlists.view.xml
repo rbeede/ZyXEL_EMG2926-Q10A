@@ -1,0 +1,13 @@
+<view name='playlists' path='playlist.view'>
+	<navtree>
+		<container id='music'>
+			<link id='music/playlists' />
+		</container>
+		<container id='picture' >
+			<link id='picture/playlists' />
+		</container>
+		<container id='video' >
+			<link id='video/playlists' />
+		</container>
+	</navtree>
+</view>

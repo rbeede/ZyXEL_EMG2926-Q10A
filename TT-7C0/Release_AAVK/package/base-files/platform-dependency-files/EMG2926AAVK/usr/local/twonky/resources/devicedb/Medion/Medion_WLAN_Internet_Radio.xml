@@ -1,0 +1,49 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Medion WLAN Internet Radio</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Medion WLAN Internet Radio</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>audio/x-aiff</In>
+				<Out>audio/aiff</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-flac</In>
+				<Out>audio/flac</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/L16</In>
+				<Out>audio/lpcm</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/mp1</In>
+				<Out>audio/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-mpeg</In>
+				<Out>audio/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>application/ogg</In>
+				<Out>audio/x-ogg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+</Client>

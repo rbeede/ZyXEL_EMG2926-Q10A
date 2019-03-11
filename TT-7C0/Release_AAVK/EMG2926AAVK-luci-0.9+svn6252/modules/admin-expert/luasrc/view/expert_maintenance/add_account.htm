@@ -1,0 +1,205 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<%
+   local luaAccount = {}
+   uci:foreach( "account", "account", function( section )
+           if not ( nil == section.username ) then
+             local tmp = section         
+             tmp.id = section[ '.name' ]
+	     table.insert( luaAccount, tmp )
+	   end
+   end )
+%>
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<!--
+<link href="images/inside.css" rel="stylesheet" type="text/css" />
+<link href="images/table.css" rel="stylesheet" type="text/css" />
+-->
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"> 
+
+function CheckValue()
+{
+	<%for i = 1, #luaAccount do%>
+		var username="<%=luaAccount[i].username%>";
+		if(document.PASSWD_APP.username.value==username){	
+			alert("The username has been allocated ");
+			document.PASSWD_APP.username.value = "";
+			return false;	
+		}
+	<%end%>
+
+	if(document.PASSWD_APP.username.value=="")
+	{
+		alert("Your <Username> is empty!");
+		return false;
+	}
+	else if(document.PASSWD_APP.username.value=="root")
+	{
+		alert("Your <Username> can not be 'root' !");
+		return false;
+	} 
+	else if(document.PASSWD_APP.password.value=="")
+	{
+		alert("Your <Password> is empty!");
+		return false;
+	}  
+	else if(document.PASSWD_APP.confirm_password.value=="")
+	{
+		alert("Your <Retype to Confirm> is empty!");
+		return false;
+	}
+	else if(document.PASSWD_APP.confirm_password.value!=document.PASSWD_APP.password.value)
+	{
+		alert("Your <Password> is not equal to <Retype to Confirm>!");
+		document.PASSWD_APP.confirm_password.value = "";
+		document.PASSWD_APP.password.value = "";
+		return false;
+	}
+	else if(Check_Username(document.PASSWD_APP.username.value) == false)
+	{
+		return false;
+	}
+
+	return true; 
+}
+
+function check()
+{
+	document.PASSWD_APP.username.value=="";
+	document.PASSWD_APP.password.value=="";
+	document.PASSWD_APP.confirm_password.value=="";
+}
+
+function Check_Username(username)
+{
+	var stralarm = new Array("@");
+	var result = false;
+	var ch;
+	for (var i=0;i<stralarm.length;i++){
+		for (var j=0;j<username.length;j++)
+		{
+			ch=username.substr(j,1);
+			if (ch==stralarm[i]) 
+			{
+				result = true;
+			}
+		} 
+	}
+	if (result){
+		alert("Username include '@' characters ,Please change another characters"); 
+		return false;
+	}
+	
+}
+
+</script>
+</head>
+<body onload="check();">
+<form method="post" name="PASSWD_APP" action="<%=controller%>/expert/maintenance/account" onSubmit="return CheckValue();" >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="Account Setup"><span><%:Account_Setup%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+<% local Timer = uci:get("luci","sauth","sessiontime") %>
+<input name="timeout" type="hidden" value="<%=Timer%>">
+<input name="Addaccount" type="hidden" value="1">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>     
+     <li class="table_content">
+        <div class="data">
+          <ul>
+	    <input type="hidden" name="sectionName" size="30" maxlength="127" <%if section_name then%> value="<%=section_name%>" <%else%> value="" <%end%> />
+	    <div class="w_text">
+            <ul>
+              <li class="left_table"><%:Username%> : </li>
+              <li class="right_table">
+               <input name="username" size="30" maxlength="127" value="" />
+              </li>
+            </ul>
+            </div>
+			
+	     <div class="w_text">
+              <ul>
+                <li class="left_table"><%:main_password%> :</li>
+                <li class="right_table">
+                  <input name="password" size="30" maxlength="127" value="" type="password" />
+                </li>
+              </ul>
+            </div>	
+		<div class="w_text">
+              <ul>
+                <li class="left_table"><%:confirm_password%> :</li>
+                <li class="right_table">
+                  <input name="confirm_password" size="30" maxlength="127" value="" type="password" />
+                </li>
+              </ul>
+            </div>
+
+	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Group%> :</li>
+                <li class="right_table">
+				<!-- <%:User%> 
+				<input name="group" size="30" maxlength="127" value="2" type="hidden" /> --> 
+				<select name="group" size="1" <%if userprivilege then%>value="<%=userprivilege%>"<%end%> <%if privileg ~= "1" then%> readonly=true <%end%>>
+				<option value="1" <% if userprivilege == "1" then %>selected="selected"<% end %> >Administrator </option>
+				<option value="2" <% if userprivilege == "2" then %>selected="selected"<% end %> >User </option>
+                </select> 
+				
+                </li>
+              </ul>
+            </div>
+            <div class="spaceair"></div>	
+          </ul>
+      </div>
+    </li>
+        <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="apply" value="<%:apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:cancel%>" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript"> showFullPath(' <%:maintenance%> > <%:main_password%>');</script>
+</html>

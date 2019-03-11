@@ -1,0 +1,355 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style>
+td {white-space: nowrap;}
+</style>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function btnApply()
+{
+	var i,j;
+	var idx;
+	var idx2;
+	var number;
+	var userNameCheck1 = "";
+	var userNameCheck2 = "";		
+	var usb1Type = "";
+	var usb2Type = "";
+	var userEnable = "";
+	var userName = "";
+	var userPasswd = "";
+	var upValue = "";
+	var downValue = "";	
+	
+	
+with ( document.forms[0] ){
+	
+		d1 = atoi(document.FTPSetup.httpPort.value, 1);
+		
+		if(isAllNum( document.FTPSetup.httpPort.value ) == 0){
+			alert("<%:port_Error_1%>");		
+			//alert("The value of port is invalid value.");
+			document.QoSSetup.UploadBandwidth_value.focus();
+			return false;
+		}
+
+		if(d1 < 1024){
+			
+			if(d1 != 21){
+				alert("<%:port_Error_2%>");			
+				//alert("Please set value port 21 or 1024~65535");
+				document.FTPSetup.httpPort.focus();
+				return false;
+			}
+				
+		}
+
+		if(d1 > 65535){
+			alert("<%:port_Error_2%>");
+			//alert("Please set value port 21 or 1024~65535");
+			document.FTPSetup.httpPort.focus();
+			return false;
+				
+		}
+			
+		//------------------------------------ftp add start---
+		if(ftpEnable.checked == true){
+			//loc += '&ftpEnable=' + 1;
+			document.FTPSetup.ftpEnable.value=1;
+		}
+
+		//------------------------------------ftp add end-----		
+
+		for (i=1;i<=4;i++){
+		
+			userNameCheck1 = document.getElementById("userName" + i).value;
+
+			if(userNameCheck1 == "supervisor"){
+				alert("supervisor can't setup in here.");						
+				return false;					
+			}
+			
+			if(userNameCheck1 == "admin"){
+				alert("admin can't setup in here.");						
+				return false;					
+			}
+			
+			if(userNameCheck1 == "root"){
+				alert("root can't setup in here.");						
+				return false;					
+			}
+						
+			if(userNameCheck1 != ""){
+					for (j=i+1;j<=5;j++){
+				
+						userNameCheck2 = document.getElementById("userName" + j).value;
+					
+						if(userNameCheck1 == userNameCheck2){
+							alert("<%:Accounts_Error%>");						
+							//alert("Input Accouts Error");
+							return false;					
+						}			
+				}
+			}
+		}
+		
+		for (i=1;i<=5;i++){
+
+			number = document.getElementById("upValue" + i).value;
+			if(number != ""){
+			
+				d1 = atoi(number, 1);
+				if(isAllNum( number ) == 0){
+					alert("<%:upstream_bandwidth_Error%>");				
+					//alert("The value of upstream bandwitdth is invalid.");
+					return false;
+				}
+			}
+			
+			number = document.getElementById("downValue" + i).value;
+			if(number != ""){
+
+				d1 = atoi(number, 1);
+				if(isAllNum( number ) == 0){
+					alert("<%:downstream_bandwidth_Error%>");				
+					//alert("The value of downstream bandwidth is invalid.");
+					return false;
+				}
+			}
+		}		
+		
+		/* for user-defined cfg */
+		for (i=1;i<=5;i++){
+		
+			if(document.getElementById("userEnable" + i).checked == true){
+				//userEnable += "1";
+				document.FTPSetup.getElementById("userEnable" + i).value = 1;
+						
+			}
+			
+		}	
+	}
+}
+
+</script>
+</head>
+<!--     body      -->
+<body>
+<form method="post" name="FTPSetup" action="<%=controller%>/expert/configuration/management/media_sharing/ftp" onSubmit="return btnApply();">
+
+<div id="tabs">
+  <ul>
+    <li><a href="<%=controller%>/expert/configuration/management/media_sharing/dlna" title="<%:DLNA%>"><span><%:DLNA%></span></a></li>  
+    <li><a href="<%=controller%>/expert/configuration/management/media_sharing/samba" title="<%:SAMBA%>"><span><%:SAMBA%></span></a></li>
+    <li class="hightline"><a  title="<%:FTP%>"><span><%:FTP%></span></a></li>	
+  </ul>
+  <br class="clearfloat" />
+</div>
+
+<input type="hidden" id="max_connection" name="max_connection" value="10">
+<input type="hidden" id="interface" name="interface" value="0">
+
+<div id="table">
+<ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+    <div class="data">
+      	<ul>
+		
+			<li class="title">
+            <table border="0" cellpadding="0" cellspacing="0">
+				<tr><td nowrap id="bmTitle"><%:FTP_Setup%></td> 				
+				</tr></table>
+			</li>
+			
+			<li class="w_text">
+			<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+
+				<ul>
+					<% enable = uci:get("proftpd","global","enable") %>					
+					<li class="left_table"><input type="checkbox" name="ftpEnable" id="ftpEnable" value=1 <%if enable == "1" then%>checked<%end%> ><font>Enable  FTP</font></li>
+					<li class="right_table"></li>
+				</ul>				
+				
+				<ul>
+					<li class="left_table"><%:Port%> </li>
+						<li class="right_table">
+                        <input name="httpPort" size="5" maxlength="5" value="<%= uci:get("proftpd", "global", "port" )%>" type="text" />
+					</li>		
+				</ul>
+								
+			</table>
+			</li>
+			
+			<li></li>
+			
+		</ul>	
+	</div>		
+	</li>
+	
+    <li class="table_content">
+    <div class="data">
+      	<ul>
+		
+		    <div class="space"></div>
+						
+			<li class="w_text2">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+
+              <tr>
+                <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td><table width="100%" cellpadding="0" cellspacing="0" >
+                                  <tr>
+                                    <td height="26" colspan="8"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <td height="26"class="table_title"><%:user_accounts%></td>
+                                        </tr>
+                                    </table></td>
+                                  </tr>
+                                  <tr align="center"  class="top_font">
+                                    <td width="10">#</td>
+                                    <td width="10"><%:Enable%></td>
+                                    <td width="15" ><%:User_Name%></td>
+                                    <td width="15" ><%:Password%></td>
+                                    <td width="10" ><%:usb1%></td>
+                                    <td width="10"><%:usb2%></td>
+									<td width="15"><%:Upstream_Bandwidth%></td>
+									<td width="15"><%:Downstream_Bandwidth%></td>
+                                  </tr>
+							
+									<% for i=1,5 do %>
+								 
+									<% userCfg = uci:get_all("proftpd","profile" .. i)%>
+								 
+									<tr align="center" class="table_font" cellpadding="8">
+									
+										<td><%=i%></td>
+								
+										<td><input type="checkbox" id="userEnable<%=i%>" name="userEnable<%=i%>" value=1 <%if userCfg["enable"] == "1" then %>checked<%end%> ></td>
+									
+										<td><input type="text" size=16 maxlength=20 id="userName<%=i%>" name="userName<%=i%>" <% if userCfg["name"] == "" then %>value=""<%else%>value='<%=userCfg["name"]%>'<%end%> ></td>
+									
+										<td><input type="password" size=16 maxlength=14 id="userPasswd<%=i%>" name="userPasswd<%=i%>" <% if userCfg["sum"] == "" then %>value=""<%else%>value='<%=userCfg["sum"]%>'<%end%> ></td>
+
+										<td><select id="usb1_types<%=i%>" name="usb1_types<%=i%>">
+										<option value="0" <%if userCfg["usb1_rw"] == "0" then%> selected <%end%> ><%:None%></option>
+										<option value="1" <%if userCfg["usb1_rw"] == "1" then%> selected <%end%> ><%:Read%></option>
+										<option value="2" <%if userCfg["usb1_rw"] == "2" then%> selected <%end%> ><%:Read_Write%></option>
+										</select></td>
+										
+										<td><select id="usb2_types<%=i%>" name="usb2_types<%=i%>">
+										<option value="0" <%if userCfg["usb2_rw"] == "0" then%> selected <%end%> ><%:None%></option>
+										<option value="1" <%if userCfg["usb2_rw"] == "1" then%> selected <%end%> ><%:Read%></option>
+										<option value="2" <%if userCfg["usb2_rw"] == "2" then%> selected <%end%> ><%:Read_Write%></option>
+										</select></td>
+										
+										<td><input type="text" size=8 maxlength=12 id="upValue<%=i%>" name="upValue<%=i%>" <% if userCfg["uplo_speed"] == "" then %>value=""<%else%>value='<%=userCfg["uplo_speed"]%>'<%end%> >&nbsp;&nbsp;&nbsp; KBytes</td>
+
+										<td><input type="text" size=8 maxlength=12 id="downValue<%=i%>" name="downValue<%=i%>" <% if userCfg["downlo_speed"] == "" then %>value=""<%else%>value='<%=userCfg["downlo_speed"]%>'<%end%> >&nbsp;&nbsp;&nbsp; KBytes</td>
+										
+									</tr>
+									
+									<% end %>
+							  
+									
+                                  </table>
+							 </td>
+                                  
+							</tr>
+						 </table>
+                        </td>
+                     </tr>
+					</table>
+			    </td>
+			   </tr>
+            </table></td>
+			</li>			
+			
+		</ul>	
+	</div>
+    <div class="spaceair"></div>	
+	</li>
+
+	<center>
+		<li class="table_button">
+			<input type="submit" value="<%:Apply%>" id="advApply" name="apply" > &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<input type="reset" value="<%:cancel%>" id="advReset" name="reset" onClick="window.location.reload()" >
+		</li>
+    </center>
+	
+</ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Media%> > <%:FTP%>');
+</script>
+</html>
+

@@ -1,0 +1,148 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta http-equiv='content-type' content='text/html;charset=utf-8;IE=9'>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"></script>
+<style type="text/css"></style>
+
+	<script language="javascript" type="text/javascript" src="/js/fxEnvironment.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxPageMenu.js"></script>	
+
+    <!-- include the prerequisite libraries for the flux kit-->
+	<script src="/js/excanvas.min.js" type="text/javascript"></script>	 
+	<script src="/js/jquery.min.js" type="text/javascript"></script>
+	<script src="/js/jquery-ui-1.8.21.custom.min.js" type="text/javascript"></script>
+	<script src="/js/jquery.contextMenu.js" type="text/javascript"></script>
+	<link href="/css/jquery.contextMenu.css" rel="stylesheet" type="text/css" /> 
+
+	<!-- include flux itself-->
+	<script language="javascript" type="text/javascript" src="/js/fxData.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxPriority.js"></script>	
+        
+        <!-- code to start the page -->
+        <script>
+          //set the global streamboost depent variable
+          var g_bIsStreamboost = true;
+
+          //!!!!!! none of this will work unless authorized with the router !!!!!!!
+
+		  function verifyReadyData()
+		  {
+		     showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+
+			  <% enable_streamboost = uci:get("appflow","tccontroller","enable_streamboost") 
+			     if enable_streamboost == "0" then 
+			  %>   
+				  alert("<%:Streamboost_on_warning%>");
+			  <% end %>
+		  }		  
+		  
+          function drawit() {
+                $("#Display").empty();
+                $("#pageactions").remove();
+					  
+				var isSBEnabled = "<%= uci:get("appflow","tccontroller","enable_streamboost")%>";
+			  
+                //if streamboost is on we can draw the page
+                if(isSBEnabled == "1")
+                {
+                    //create the data object with the path to nodes
+                    //var node = new fxData("/luci-static/resources/testnodes.json");
+
+                    var node = new fxData("/cgi-bin/ozker/api/nodes");
+
+                    //create the flux node class
+                    var priority = new fxPriority("Display",  //div to display in
+                                                  node,       //data path the flows in a fxData Object
+                                                  null,       //no external save routine
+                                                  true,      //show save/cancel buttons = true
+                                                  function()
+                                                  {
+                                                    //call save for save handler
+                                                    priority.save();
+                                                  },
+                                                  function()
+                                                  {
+                                                    //reload the page on cancel
+                                                    window.location = window.location.href;
+                                                  });
+                }
+                else
+                {
+                  $("#maincontent").hide();
+                }
+				
+            }
+			
+			//when the document loads run this function
+			$(document).ready(drawit);			
+
+      </script>
+	  
+	  
+</head>
+<body onload="verifyReadyData();">
+
+	<div id="tabs">
+	  <ul>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost" title="Bandwidth"><span><%:Bandwidth%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_network" title="Network"><span><%:Network%></span></a></li>
+		<li class="hightline"><a title="Priorities"><span><%:Priorities%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_uptime" title="UpTime"><span><%:Up_Time%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_bytes" title="Bytes"><span><%:Byetes%></span></a></li>	
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_allevents" title="AllEvents"><span><%:All_Events%></span></a></li>	
+	  </ul>
+	  <br class="clearfloat" />
+	</div>
+
+	<div id="table">
+	
+		<li class="table_content">
+		  <div class="data">
+			<div id="Display" style="width:800px;height:100%;"></div>		  
+			<!-- <div id="Display" style="margin-top:10px;"></div> -->		  			
+		  </div>
+		</li>
+
+		<li class="table_content">
+		  <div class="data"></div>
+		</li>		
+		
+	</div>
+	
+</body>
+
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Streamboost%> > <%:Priorities%>');
+</script>
+
+</html>

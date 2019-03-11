@@ -1,0 +1,1128 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+uci = require("luci.model.uci").cursor()
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/DST.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+function myrefresh()
+{
+      self.location.reload();
+}
+
+function pageRefresh()
+{
+       window.location.reload();
+}
+
+var aaa;
+function init()
+{
+	var newIndex=document.forms[0].refresh_interval.selectedIndex;
+	if (newIndex==0)
+		{setTimeout('myrefresh();',86400000);}
+	if (newIndex==1)
+		{setTimeout('myrefresh();',5000);}
+	if (newIndex==2)
+		{setTimeout('myrefresh()',10000);}
+	if (newIndex==3)
+		{setTimeout('myrefresh()',15000);}
+	if (newIndex==4)
+		{setTimeout('myrefresh()',20000);}
+	if (newIndex==5)
+		{setTimeout('myrefresh()',25000);}
+	if (newIndex==6)
+		{setTimeout('myrefresh()',30000);}
+}
+function setRefreshInterval()
+{
+	var newIndex=document.forms[0].refresh_interval.selectedIndex;
+	
+	if (newIndex==0)	aaa=0;
+	if (newIndex==1) 	aaa=5;
+	if (newIndex==2)	aaa=10;
+	if (newIndex==3)	aaa=15;
+	if (newIndex==4)	aaa=20;
+	if (newIndex==5)	aaa=25;
+	if (newIndex==6)	aaa=30;
+
+      	document.forms[0].refreshInteval.value=aaa;
+      	document.forms[0].submit();
+}
+</script>
+</head>
+<body onload="init()">
+<form method="post"  action="<%=controller%>/expert/status" >
+<div id="wrapper">
+  <div id="top">
+    <div class="logo"><img src="<%=media%>/admin/images/advance_logo.jpg" width="102" height="29" /></div>
+    <div class="modelname">EMG2926-Q10A</div>
+    <div class="quick_link">
+      <ul>
+        <!--<li class="easy" title="<%:easy_mode%>"><a href="<%=controller%>/easy/networkmap" target="_parent"><%:easy_mode%></a></li>-->
+        <li class="about"><a href="#" title="<%:about%>" onclick="MM_openBrWindow('<%=media%>/htm/about.htm','','width=410,height=165')"><%:about%></a></li>
+        <li ><a href="javascript:var flag;flag=confirm('<%:logout_confirm%>');if (flag)top.location.href='<%=controller%>/easy/logout';else top.location.href='';" title="<%:logout%>"><%:logout%></a></li>
+        <li class="line"></li>
+        <li><%:welcome%>: Admin</li>
+      </ul>
+    </div>
+  </div>
+  <div id="blueline"></div>
+</div>
+<div id="contentframe">
+  <div class="mainconent">
+    <table width="100%" border="0" cellspacing="0" cellpadding="0"><tr>
+      <td ><img src="<%=media%>/admin/images/air.gif" width="1" height="38" /></td>
+        <td width="100%"  valign="top" bgcolor="#39639e">
+		<div class="contentdata">
+		  <div class="content_title"><%:device_status%></div>
+         <!-- Modify  07/01"-->
+		  <div class="refresh">
+              <ul>
+                <li class="refresh_left"></li>
+                <li class="refresh_center">
+		<%	local f = io.open("/tmp/refresh","r")
+			local sec_interval
+			if f then
+			sec_interval = f:read("*all")
+			f:close()
+			end
+		%>
+                  <table width="400" border="0" cellpadding="0" cellspacing="0">
+                    <tbody>
+                      <tr>
+                        <td width="65%" background="home_data/refresh_bg.gif" height="26"><%:refresh_interval%>:
+                          <select  size="1" name="refresh_interval" onchange="setRefreshInterval()">
+				<option value="00000000" <% if sec_interval == "0" then %>selected="selected"<%end%>><%:interval_select_none%> </option>
+				<option value="00000001" <% if sec_interval == "5" then %>selected="selected"<%end%>>5 <%:seconds%> </option>
+				<option value="00000002" <% if sec_interval == "10" then %>selected="selected"<%end%>>10 <%:seconds%> </option>
+				<option value="00000003" <% if sec_interval == "15" then %>selected="selected"<%end%>>15 <%:seconds%> </option>
+				<option value="00000004" <% if sec_interval == "20" then %>selected="selected"<%end%>>20 <%:seconds%> </option>
+				<option value="00000005" <% if sec_interval == "25" then %>selected="selected"<%end%>>25 <%:seconds%> </option>
+				<option value="00000006" <% if sec_interval == "30" then %>selected="selected"<%end%>>30 <%:seconds%> </option>
+			  </select>
+                        </td>
+                        <td align="center" background="home_data/refresh_bg.gif"><input  value="<%:refresh_now%>" onclick="pageRefresh();" type="submit"/></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </li>
+                <li class="refresh_right"></li>
+              </ul>
+            </div>
+		</div> 
+		<!-- Modify  07/01"-->
+		<br class="clearfloat" />
+        <div class="pannel2">
+            <div class="leftpannel"><br/>
+              <div class="tableframe">
+                <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                  <tr>
+                    <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td><table width="100%" cellpadding="0" cellspacing="0" >
+                                    <tr>
+                                      <td height="26" colspan="2"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                          <tr>
+                                            <td height="26" class="table_title"><%:device_info%></td>
+                                          </tr>
+                                        </table></td>
+                                    </tr>
+				    <%local hostname = uci.get("system","main","hostname")
+					  local serial_number=luci.sys.exec("fw_printenv serialnum | awk -F '=' '{print $2}'") 
+					%>
+					<%
+						local ssid_24g = uci.get("wireless","ath0","ssid")
+	    			    if not ssid_24g then
+				      		local mac_24g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+							ssid_24g="ZyXEL" .. mac_24g
+	  					end
+					%>
+				    <%local channel_24g = luci.sys.exec("iwlist ath0 channel | grep 'Current Frequency'| awk -F 'Channel ' '{print $2}'| awk -F ')' '{print $1}'|sed 's/\"//g'")%>
+				    <%
+						local ssid_5g = uci.get("wireless","ath10","ssid")
+						if not ssid_5g then
+				      		local mac_ssid=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+							ssid_5g="ZyXEL" .. mac_ssid .. "_5G"
+						end
+					%>					
+				    <%local channel_5g = luci.sys.exec("iwlist ath10 channel | grep 'Current Frequency'| awk -F 'Channel ' '{print $2}'| awk -F ')' '{print $1}'|sed 's/\"//g'")%>
+				    <%local firewall_enable = uci.get("firewall","general","dos_enable")%>
+                                    <tr class="top_font">
+                                      <td width="60%"><%:dashboard_item%></td>
+                                      <td width="50%"><%:dashboard_data%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td ><%:device_host_name%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=hostname%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td ><%:device_model_number%>: </td>
+                                      <td style=" color:#0b70fc;">EMG2926-Q10A</td>
+                                    </tr>
+									<tr class="table_font">
+                                      <td ><%:device_serial_number%>: </td>
+                                      <td style=" color:#0b70fc;"><%=serial_number%></td>
+                                    </tr>
+									
+				    <%
+					local sys_op_mode = uci:get("system","main","system_mode")
+					local lan_ipaddr
+					local lan_netmask
+					if sys_op_mode == "3" then
+						local lanInfo_cmd=luci.sys.exec("ifconfig br-lan")
+						lan_ipaddr = string.match(lanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+						lan_netmask = string.match(lanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")					
+					else
+						local lan_mode = uci:get("network","lan","proto")
+						if lan_mode == "dhcp" then
+							local lanInfo_cmd=luci.sys.exec("ifconfig br-lan")
+							lan_ipaddr = string.match(lanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+							lan_netmask = string.match(lanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+						else
+							lan_ipaddr = uci.get("network","lan","ipaddr")
+							lan_netmask = uci.get("network","lan","netmask")
+						end
+					end
+
+					--local default_wan = uci.get("network","general","defaultWan")
+					local wanif = uci.get("network","wan","ifname")
+
+					if not wanif then
+						wanif="eth0"
+					end
+					local wanProtocol = uci.get("network","wan" ,"proto")
+					local wanInfo_cmd=luci.sys.exec("ifconfig '"..wanif.."'")
+					local wan_mac=string.match(wanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")
+					local wan_ip=string.match(wanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+					local wan_netmask=string.match(wanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+					local wanInfo_cmd2=luci.sys.exec("ifconfig pppoe-wan")
+					local wan_ip2=string.match(wanInfo_cmd2,"inet addr:(%d+.%d+.%d+.%d+)")
+					local wan_netmask2=string.match(wanInfo_cmd2,"Mask:(%d+.%d+.%d+.%d+)")
+					local wanInfo_cmd3=luci.sys.exec("ifconfig pptp-wan")
+					local wan_ip3=string.match(wanInfo_cmd3,"inet addr:(%d+.%d+.%d+.%d+)")
+					local wan_netmask3=string.match(wanInfo_cmd3,"Mask:(%d+.%d+.%d+.%d+)")
+					local wanGW_cmd=luci.sys.exec("route -n")
+					local wanGW_ethernet
+					local wanIP_ethernet
+
+					if wanProtocol=="dhcp" or wanProtocol=="static" then
+						wanIP_ethernet = wan_ip
+					elseif wanProtocol=="pppoe" then
+						wanIP_ethernet = wan_ip2
+					else
+						wanIP_ethernet = wan_ip3
+					end
+					
+					if ( wanProtocol == "static" ) then
+						wanGW_ethernet = uci.get("network","wan" ,"gateway")
+					elseif ( wanProtocol == "pppoe" ) then
+						wanGW_ethernet = string.match(wanGW_cmd,"(%d+.%d+.%d+.%d+)%s+0.0.0.0%s+(%d+.%d+.%d+.%d+)%s+[0-9a-zA-Z.]+%s+%d+%s+%d+%s+%d+%s+pppoe+[-]+wan+%s")
+					elseif ( wanProtocol == "dhcp" ) then
+						wanGW_ethernet = uci.get("network","wan" ,"isp_gw")
+					end
+
+
+					if wan_ip2 == "10.64.64.64" then
+						wan_ip2 = ""
+						wan_netmask2 = ""
+						wanGW_pppoe = ""
+					end
+					local lan_mac = luci.sys.exec("ifconfig br-lan | grep HWaddr | awk '{print $5}'")
+                                        local wlan_mac_24G = luci.sys.exec("cat /tmp/AR71XX_24G.dat | awk -F '=' '{print $2}'")
+					local wlan_mac_5G = luci.sys.exec("cat /tmp/AR71XX_5G.dat | awk -F '=' '{print $2}'")
+
+					local wlan_mac_client = luci.sys.exec("ifconfig -a apcli0 | grep HWaddr | awk '{print $5}'")
+					local wlan_ssid_client = uci.get("wireless_client","general","ApCliSsid")
+					local wlan_sec_client = uci.get("wireless_client","general","ApCliAuthMode")
+					local wlan_status_client
+					local wlan_channel_client
+					if wlan_ssid_client then
+						wlan_channel_client = uci.get("wireless","ath0","channel")
+						local wlan_ssidck_client = luci.sys.exec("iwconfig apcli0 | grep '"..wlan_ssid_client.."' ")
+						if wlan_ssidck_client ~= "" then
+							wlan_status_client = "Associated" 							
+						else
+							wlan_status_client = "Disassociated"
+					
+						end
+					else
+						wlan_status_client = "Disassociated"				
+					end
+				    %>
+                                    <tr class="table_font">
+                                      <td ><%:fw_version%>:</td>
+                                      <td style=" color:#0b70fc;"><%=firmware_version%></td>
+                                    </tr>
+				    <tr class="table_font">
+                                      <td ><%:sys_op_mode%>:</td>
+                                      <td style=" color:#0b70fc;"><% if sys_op_mode == "1" then%> ROUTER Mode <% elseif sys_op_mode == "2" then%> AP Mode <% elseif sys_op_mode == "3" then%>  Universal Repeater Mode  <% elseif sys_op_mode == "4" then%> WISP Mode <% elseif sys_op_mode == "5" then%> WISP + UR Mode <% end %></td>
+                                    </tr>
+				    <% if sys_op_mode ~= "2" and sys_op_mode ~= "3" then%>
+<!-- Default WAN Start   "-->			
+                                    <tr class="table_font">
+                                      <td ><%:wan_info%></td>
+                                      <td  style=" color:#0b70fc;"><a href="rpFWUpload.html"></a></td>
+                                    </tr>
+                                    <tr class="table_font">
+				      <td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+				      <td  style=" color:#0b70fc;"><%=wan_mac%></td>
+				    </tr>						
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:ip_addr%>:</td>
+                                      <td  style=" color:#0b70fc;"> <%=wanIP_ethernet%> </td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:ip_subnet_mask%>:</td>
+                                      <td  style=" color:#0b70fc;"><%if wanProtocol=="dhcp" or wanProtocol=="static" then%><%=wan_netmask%><%elseif wanProtocol=="pppoe" then%><%=wan_netmask2%><%else%><%=wan_netmask3%><%end%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:default_gw%>:</td>
+                                      <td  style=" color:#0b70fc;"><%if wanIP_ethernet ~= nil then%><%=wanGW_ethernet%><%end%></td>
+                                    </tr>
+                                     <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:IPv6_Address%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=wan_addr_v6%></td>
+                                    </tr>
+<!--  WAN1 Start  "-->				
+<%					if  uci.get("network","wan1","enable") == "1" then
+							local wanif = uci.get("network","wan1","ifname")
+							local wanProtocol = uci.get("network","wan1" ,"proto")
+							local wanInfo_cmd=luci.sys.exec("ifconfig '"..wanif.."'")
+							local wan_mac=string.match(wanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")
+							local wan_ip=string.match(wanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask=string.match(wanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd2=luci.sys.exec("ifconfig pppoe-wan1")
+							local wan_ip2=string.match(wanInfo_cmd2,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask2=string.match(wanInfo_cmd2,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd3=luci.sys.exec("ifconfig pptp-wan1")
+							local wan_ip3=string.match(wanInfo_cmd3,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask3=string.match(wanInfo_cmd3,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanGW_cmd=luci.sys.exec("route -n")
+							local wanGW_ethernet
+							local wanIP_ethernet
+
+							if wanProtocol=="dhcp" or wanProtocol=="static" then
+								wanIP_ethernet = wan_ip
+							elseif wanProtocol=="pppoe" then
+								wanIP_ethernet = wan_ip2
+							else
+								wanIP_ethernet = wan_ip3
+							end
+							
+							if ( wanProtocol == "static" ) then
+								wanGW_ethernet = uci.get("network","wan1" ,"gateway")
+							elseif ( wanProtocol == "pppoe" ) then
+								wanGW_ethernet = string.match(wanGW_cmd,"(%d+.%d+.%d+.%d+)%s+0.0.0.0%s+(%d+.%d+.%d+.%d+)%s+[0-9a-zA-Z.]+%s+%d+%s+%d+%s+%d+%s+pppoe+[-]+wan1+%s")
+							elseif ( wanProtocol == "dhcp" ) then
+								wanGW_ethernet = uci.get("network","wan1" ,"isp_gw")
+							end
+
+%>
+							<tr class="table_font">
+							<td >WAN1 Information</td>
+							<td  style=" color:#0b70fc;"><a href="rpFWUpload.html"></a></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+							<td  style=" color:#0b70fc;"><%=wan_mac%></td>
+							</tr>						
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_addr%>:</td>
+							<td  style=" color:#0b70fc;"> <%=wanIP_ethernet%> </td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_subnet_mask%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanProtocol=="dhcp" or wanProtocol=="static" then%><%=wan_netmask%><%elseif wanProtocol=="pppoe" then%><%=wan_netmask2%><%else%><%=wan_netmask3%><%end%></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:default_gw%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanIP_ethernet ~= nil then%><%=wanGW_ethernet%><%end%></td>
+							</tr> 
+					<%end%>
+<!--  WAN2 Start  "-->				
+<%					if  uci.get("network","wan2","enable") == "1" then
+							local wanif = uci.get("network","wan2","ifname")
+							local wanProtocol = uci.get("network","wan2" ,"proto")
+							local wanInfo_cmd=luci.sys.exec("ifconfig '"..wanif.."'")
+							local wan_mac=string.match(wanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")
+							local wan_ip=string.match(wanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask=string.match(wanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd2=luci.sys.exec("ifconfig pppoe-wan2")
+							local wan_ip2=string.match(wanInfo_cmd2,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask2=string.match(wanInfo_cmd2,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd3=luci.sys.exec("ifconfig pptp-wan2")
+							local wan_ip3=string.match(wanInfo_cmd3,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask3=string.match(wanInfo_cmd3,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanGW_cmd=luci.sys.exec("route -n")
+							local wanGW_ethernet
+							local wanIP_ethernet
+
+							if wanProtocol=="dhcp" or wanProtocol=="static" then
+								wanIP_ethernet = wan_ip
+							elseif wanProtocol=="pppoe" then
+								wanIP_ethernet = wan_ip2
+							else
+								wanIP_ethernet = wan_ip3
+							end
+							
+							if ( wanProtocol == "static" ) then
+								wanGW_ethernet = uci.get("network","wan2" ,"gateway")
+							elseif ( wanProtocol == "pppoe" ) then
+								wanGW_ethernet = string.match(wanGW_cmd,"(%d+.%d+.%d+.%d+)%s+0.0.0.0%s+(%d+.%d+.%d+.%d+)%s+[0-9a-zA-Z.]+%s+%d+%s+%d+%s+%d+%s+pppoe+[-]+wan2+%s")
+							elseif ( wanProtocol == "dhcp" ) then
+								wanGW_ethernet = uci.get("network","wan2" ,"isp_gw")
+							end
+
+%>
+							<tr class="table_font">
+							<td >WAN2 Information</td>
+							<td  style=" color:#0b70fc;"><a href="rpFWUpload.html"></a></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+							<td  style=" color:#0b70fc;"><%=wan_mac%></td>
+							</tr>						
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_addr%>:</td>
+							<td  style=" color:#0b70fc;"> <%=wanIP_ethernet%> </td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_subnet_mask%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanProtocol=="dhcp" or wanProtocol=="static" then%><%=wan_netmask%><%elseif wanProtocol=="pppoe" then%><%=wan_netmask2%><%else%><%=wan_netmask3%><%end%></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:default_gw%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanIP_ethernet ~= nil then%><%=wanGW_ethernet%><%end%></td>
+							</tr> 
+					<%end%>
+<!--  WAN3 Start  "-->				
+<%					if  uci.get("network","wan3","enable") == "1" then
+							local wanif = uci.get("network","wan3","ifname")
+							local wanProtocol = uci.get("network","wan3" ,"proto")
+							local wanInfo_cmd=luci.sys.exec("ifconfig '"..wanif.."'")
+							local wan_mac=string.match(wanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")
+							local wan_ip=string.match(wanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask=string.match(wanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd2=luci.sys.exec("ifconfig pppoe-wan3")
+							local wan_ip2=string.match(wanInfo_cmd2,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask2=string.match(wanInfo_cmd2,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd3=luci.sys.exec("ifconfig pptp-wan3")
+							local wan_ip3=string.match(wanInfo_cmd3,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask3=string.match(wanInfo_cmd3,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanGW_cmd=luci.sys.exec("route -n")
+							local wanGW_ethernet
+							local wanIP_ethernet
+
+							if wanProtocol=="dhcp" or wanProtocol=="static" then
+								wanIP_ethernet = wan_ip
+							elseif wanProtocol=="pppoe" then
+								wanIP_ethernet = wan_ip2
+							else
+								wanIP_ethernet = wan_ip3
+							end
+							
+							if ( wanProtocol == "static" ) then
+								wanGW_ethernet = uci.get("network","wan3" ,"gateway")
+							elseif ( wanProtocol == "pppoe" ) then
+								wanGW_ethernet = string.match(wanGW_cmd,"(%d+.%d+.%d+.%d+)%s+0.0.0.0%s+(%d+.%d+.%d+.%d+)%s+[0-9a-zA-Z.]+%s+%d+%s+%d+%s+%d+%s+pppoe+[-]+wan3+%s")
+							elseif ( wanProtocol == "dhcp" ) then
+								wanGW_ethernet = uci.get("network","wan3" ,"isp_gw")
+							end
+
+%>
+							<tr class="table_font">
+							<td >WAN3 Information</td>
+							<td  style=" color:#0b70fc;"><a href="rpFWUpload.html"></a></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+							<td  style=" color:#0b70fc;"><%=wan_mac%></td>
+							</tr>						
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_addr%>:</td>
+							<td  style=" color:#0b70fc;"> <%=wanIP_ethernet%> </td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_subnet_mask%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanProtocol=="dhcp" or wanProtocol=="static" then%><%=wan_netmask%><%elseif wanProtocol=="pppoe" then%><%=wan_netmask2%><%else%><%=wan_netmask3%><%end%></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:default_gw%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanIP_ethernet ~= nil then%><%=wanGW_ethernet%><%end%></td>
+							</tr> 
+					<%end%>
+<!--  WAN4 Start  "-->				
+<%					if  uci.get("network","wan4","enable") == "1" then
+							local wanif = uci.get("network","wan4","ifname")
+							local wanProtocol = uci.get("network","wan4" ,"proto")
+							local wanInfo_cmd=luci.sys.exec("ifconfig '"..wanif.."'")
+							local wan_mac=string.match(wanInfo_cmd,"HWaddr (%x+:%x+:%x+:%x+:%x+:%x+)")
+							local wan_ip=string.match(wanInfo_cmd,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask=string.match(wanInfo_cmd,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd2=luci.sys.exec("ifconfig pppoe-wan4")
+							local wan_ip2=string.match(wanInfo_cmd2,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask2=string.match(wanInfo_cmd2,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanInfo_cmd3=luci.sys.exec("ifconfig pptp-wan4")
+							local wan_ip3=string.match(wanInfo_cmd3,"inet addr:(%d+.%d+.%d+.%d+)")
+							local wan_netmask3=string.match(wanInfo_cmd3,"Mask:(%d+.%d+.%d+.%d+)")
+							local wanGW_cmd=luci.sys.exec("route -n")
+							local wanGW_ethernet
+							local wanIP_ethernet
+
+							if wanProtocol=="dhcp" or wanProtocol=="static" then
+								wanIP_ethernet = wan_ip
+							elseif wanProtocol=="pppoe" then
+								wanIP_ethernet = wan_ip2
+							else
+								wanIP_ethernet = wan_ip3
+							end
+							
+							if ( wanProtocol == "static" ) then
+								wanGW_ethernet = uci.get("network","wan4" ,"gateway")
+							elseif ( wanProtocol == "pppoe" ) then
+								wanGW_ethernet = string.match(wanGW_cmd,"(%d+.%d+.%d+.%d+)%s+0.0.0.0%s+(%d+.%d+.%d+.%d+)%s+[0-9a-zA-Z.]+%s+%d+%s+%d+%s+%d+%s+pppoe+[-]+wan4+%s")
+							elseif ( wanProtocol == "dhcp" ) then
+								wanGW_ethernet = uci.get("network","wan4" ,"isp_gw")
+							end
+
+%>
+							<tr class="table_font">
+							<td >WAN4 Information</td>
+							<td  style=" color:#0b70fc;"><a href="rpFWUpload.html"></a></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+							<td  style=" color:#0b70fc;"><%=wan_mac%></td>
+							</tr>						
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_addr%>:</td>
+							<td  style=" color:#0b70fc;"> <%=wanIP_ethernet%> </td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:ip_subnet_mask%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanProtocol=="dhcp" or wanProtocol=="static" then%><%=wan_netmask%><%elseif wanProtocol=="pppoe" then%><%=wan_netmask2%><%else%><%=wan_netmask3%><%end%></td>
+							</tr>
+							<tr class="table_font">
+							<td >&nbsp;&nbsp;- <%:default_gw%>:</td>
+							<td  style=" color:#0b70fc;"><%if wanIP_ethernet ~= nil then%><%=wanGW_ethernet%><%end%></td>
+							</tr> 
+					<%end%>
+<!-- WAN4 End   "-->			
+				    <% end %>
+                                    <tr class="table_font">
+                                      <td><%:lan_info%>:</td>
+                                      <td  style=" color:#0b70fc;"></td>
+                                    </tr>
+				    <tr class="table_font">
+				      <td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+				      <td  style=" color:#0b70fc;"><%=lan_mac%></td>  
+				    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:ip_addr%>: </td>
+                                      <td  style=" color:#0b70fc;"><%=lan_ipaddr%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:ip_subnet_mask%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=lan_netmask%></td>
+                                    </tr>
+				    <%
+					local lanDHCP 
+					if sys_op_mode == "2" then
+						lanDHCP = "0"
+					elseif sys_op_mode == "3" then
+						lanDHCP = uci.get("network","lan","proto")
+					else
+						lanDHCP = uci.get("dhcp","lan","enabled")
+					end
+				    %>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:dhcp_mode%>:</td>
+                                      <td  style=" color:#0b70fc;"><%if lanDHCP=="1" then%><%:dhcp_server%><%elseif lanDHCP=="dhcp" then%><%:DHCP_Client%><%else%><%:dchp_none%><%end%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:IPv6_Address%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=lan_addr_v6%></td>
+                                    </tr>
+									
+                    <%local wan6rd_enable = uci:get("network","general","wan6rd_enable")%>
+                    <%if wan6rd_enable and wan6rd_enable == "1" then%>
+                                    <tr class="table_font">
+                                        <td><%:wan6rd_info%>:</td>
+                                        <td  style=" color:#666666;"></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                        <td >&nbsp;&nbsp;- <%:IPv6_Address%>:</td>
+                                        <td  style=" color:#0b70fc;"><%=wan6rd_addr_v6%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                        <td >&nbsp;&nbsp;- <%:wan6rd_border_router_ip%>:</td>
+                                        <td  style=" color:#0b70fc;"><%=border_router_ip%></td>
+                                    </tr>
+                    <%end%>
+ 									
+				    <tr class="table_font">
+				      <td><%:wlan24G_info%>:</td>
+				      <td  style=" color:#0b70fc;"></td>
+				    </tr>				    
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:wlan_op_mode%>:</td>
+                                      <td  style=" color:#0b70fc;"><% if sys_op_mode == "1" then%> Access Point Mode <% elseif sys_op_mode == "2" then%> Access Point Mode <% elseif sys_op_mode == "3" then%> AP + Wireless Client Mode <% elseif sys_op_mode == "4" then%> Wireless Client Mode <% elseif sys_op_mode == "5" then%> AP + Wireless Client Mode <% end %></td>
+                                    </tr>
+				    <% if sys_op_mode ~= "4" then%>			    
+				    <tr class="table_font">
+				      <td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+				      <td  style=" color:#0b70fc;"><%=wlan_mac_24G%></td>
+				    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- SSID:</td>
+                                      <td  style=" color:#0b70fc;"><%=ssid_24g%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:channel%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=channel_24g%></td>
+                                    </tr>
+				    <% if sys_op_mode ~= "1" and sys_op_mode ~= "2" then%>
+				    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:wlan_stat%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=wlan_status_client%> <% if wlan_ssid_client then %> (<%=wlan_ssid_client%>) <% end %></td>
+                                    </tr>
+				    <% end %>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:security%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=security_24g%></td>
+                                    </tr>
+				    <% else %>
+				    <tr class="table_font">
+				      <td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+				      <td  style=" color:#0b70fc;"><%=wlan_mac_client%></td>
+				    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- SSID:</td>
+                                      <td  style=" color:#0b70fc;"><%=wlan_ssid_client%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:channel%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=wlan_channel_client%></td>
+                                    </tr>
+				    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:Connect_Status%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=wlan_status_client%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:security%>:</td>
+                			<%if wlan_sec_client == "OPEN" then%>
+						<td  style=" color:#0b70fc;">No Security</td>
+					<%elseif wlan_sec_client == "SHARED" then%>
+						<td  style=" color:#0b70fc;">WEP</td>
+					<%elseif wlan_sec_client == "WPAPSK" then%>
+						<td  style=" color:#0b70fc;">WPA-PSK</td>
+					<%elseif wlan_sec_client == "WPA2PSK" then%>
+						<td  style=" color:#0b70fc;">WPA2-PSK</td>
+					<%else%>
+						<td  style=" color:#0b70fc;"><%=wlan_sec_client%></td>
+					<%end%>                    
+                                    </tr>
+				    <% end %>				    
+			
+				    <% local Product_Model = uci:get("system","main","product_model") %>
+				    <% if Product_Model == "DUAL_BAND" then %>
+                                    <tr class="table_font">
+                                      <td><%:wlan5G_info%>:</td>
+                                      <td  style=" color:#0b70fc;"></td>
+                                    </tr>
+				    <tr class="table_font">
+				      <td >&nbsp;&nbsp;- <%:mac_addr%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=wlan_mac_5G%></td>
+				    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- SSID:</td>
+                                      <td  style=" color:#0b70fc;"><%=ssid_5g%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td >&nbsp;&nbsp;- <%:channel%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=channel_5g%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;- <%:security%>:</td>
+                                      <td  style=" color:#0b70fc;"><%=security_5g%></td>
+                                    </tr>
+				    <% end %>
+				    <% if sys_op_mode ~= "2" and sys_op_mode ~= "3" then%>
+				    <tr class="table_font">
+                                      <td><%:dashboard_firewall%>:</td>
+                                      <td  style=" color:#0b70fc;"><% if firewall_enable == "0" then %><%:disable%><%else%><%:enable%><%end%></td>
+                                    </tr>
+				    <% end %>
+                                    <tr class="table_font">
+                                      <td>&nbsp;&nbsp;</td>
+                                      <td  style=" color:#0b70fc;"></td>
+                                    </tr>
+                                  </table></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                </table>
+                <br />
+              </div>
+	      <div class="tableframe">
+		<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                  <tr>
+                    <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td><table width="100%" cellpadding="0" cellspacing="0">
+                                    <tr>
+                                      <td height="26"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                          <tr>
+                                            <td height="26" class="table_title"><%:dashboard_summary%></td>
+                                          </tr>
+                                      </table></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td><%:pkt_statistics%><a target="_blank" href="<%=luci.dispatcher.build_url("expert", "monitor", "pktstats")%>">(<%:details%>)</a></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td><%:wlan24G_status%><a target="_blank" href="<%=luci.dispatcher.build_url("expert", "monitor", "wlanstats_24g")%>">(<%:details%>)</a></td>
+                                    </tr>
+				    <% if Product_Model == "DUAL_BAND" then %>
+                                    <tr class="table_font">
+                                      <td><%:wlan5G_status%><a target="_blank" href="<%=luci.dispatcher.build_url("expert", "monitor", "wlanstats_5g")%>">(<%:details%>)</a></td>
+                                    </tr>
+				    <% end %>
+                                    <!--<tr class="table_font">
+                                      <td ><%:ipsec_vpn_status%><a target="_blank" href="<%=luci.dispatcher.build_url("expert", "monitor", "vpnmonitor")%>">(<%:details%>)</a></td>
+                                    </tr> -->
+                                    <tr class="table_font">
+                                      <td >&nbsp;</td>
+                                    </tr>
+                                </table></td>
+                              </tr>
+                          </table></td>
+                        </tr>
+                    </table></td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <div class="rightpannel">
+              <div class="tableframe">
+                <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                  <tr>
+                    <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td><table width="100%" cellpadding="0" cellspacing="0" >
+                                  <tr>
+                                    <td height="26" colspan="3"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <td height="26"  class="table_title"><%:system_status%></td>
+                                        </tr>
+                                    </table></td>
+                                  </tr>
+                                  <tr class="top_font">
+                                    <td width="54%" ><%:dashboard_item%></td>
+                                    <td colspan="2" ><%:dashboard_data%></td>
+                                  </tr>
+                                  <%
+					local up_time=luci.sys.uptime()
+					local ca_date=up_time/86400
+					local ca_hour=(up_time/3600)%24
+					local ca_minute=(up_time/60)%60
+					local ca_second=up_time%60
+				  %>
+                                  <tr class="table_font">
+                                    <td ><%:system_up_time%>:</td>
+                                    <td colspan="2" style=" color:#0b70fc;"><%=math.floor(ca_date)%><%:day%> <%=math.floor(ca_hour)%><%:hr%><%=math.floor(ca_minute)%><%:min%> <%=ca_second%><%:sec%></td>
+                                  </tr>
+                                  <tr class="table_font">
+                                    <td ><%:current_date_time%>:</td>
+                                    <td colspan="2" style=" color:#0b70fc;"><label id="mtenCurrent_Date"></label>/<label id="mtenCurrent_Time"></label></td>
+                                  </tr>
+                                  <tr class="table_font">
+                                    <td><%:system_resource%>:</td>
+                                    <td colspan="2"></td>
+                                  </tr>
+<%
+local cpuUsage_cmd=luci.sys.exec("cat /proc/stat")
+local cpu_user,cpu_nice,cpu_system,cpu_idle=string.match(cpuUsage_cmd,"cpu%s+(%d+)%s+(%d+)%s+(%d+)%s+(%d+)%s+%d+%s+%d+%s+%d+%s+%d+%s+%d+")
+local cpu_total=cpu_user+cpu_nice+cpu_system+cpu_idle
+local cpu_usage=cpu_user+cpu_nice+cpu_system
+local cpu_percent=cpu_usage/cpu_total*100
+local memUsage_cmd=luci.sys.exec("cat /proc/meminfo")
+local mem_total=string.match(memUsage_cmd,"MemTotal:%s+(%d+) kB")
+local mem_free=string.match(memUsage_cmd,"MemFree:%s+(%d+) kB")
+local mem_percent=(mem_total-mem_free)/mem_total*100
+%>
+				  <tr class="percentage ">
+                                    <td class="percentage">&nbsp;&nbsp;- <%:cpu_usage%>:</td>
+                                    <td width="37%" valign="middle" class="percentage"><table width="100%" height="18" border="1" cellpadding="0" cellspacing="0" style=" border:1px #7895c8 solid; margin-bottom:3px;"  >
+                                        <tr>
+                                          <td background="<%=media%>/admin/images/i_percentage_center.gif"><table width="<%=cpu_percent%>%" border="0" cellspacing="0" cellpadding="0">
+                                              <tr>
+                                                <td height="18" background="<%=media%>/admin/images/i_percentage_blue.gif">&nbsp;</td>
+                                              </tr>
+                                          </table></td>
+                                        </tr>
+                                    </table></td>
+                                    <td width="9%" valign="middle" style="color:#0b70fc;" class="percentage"><%=math.floor(cpu_percent)%>%</td>
+                                  </tr>
+                                  
+                                  <tr class="percentage">
+                                    <td class="percentage">&nbsp;&nbsp;- <%:memory_usage%>:</td>
+                                    <td valign="middle" class="percentage"><table width="100%" height="18" border="1" cellpadding="0" cellspacing="0" style=" border:1px #7895c8 solid; margin-bottom:3px;">
+                                        <tr>
+                                          <td background="<%=media%>/admin/images/i_percentage_center.gif"><table width="<%=mem_percent%>%" border="0" cellspacing="0" cellpadding="0">
+                                              <tr>
+                                                <td height="18" background="<%=media%>/admin/images/i_percentage_blue.gif">&nbsp;</td>
+                                              </tr>
+                                          </table></td>
+                                        </tr>
+                                    </table></td>
+                                    <td valign="middle" style="color:#0b70fc;"  class="percentage"><%=math.floor(mem_percent)%>%</td>
+                                  </tr>
+                                  <tr  class="table_font">
+                                    <td colspan="3">&nbsp;</td>
+                                  </tr>
+                                </table></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                </table>
+              </div>
+              <div class="tableframe">
+                <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                  <tr>
+                    <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td><table width="100%" cellpadding="0" cellspacing="0" >
+                                    <tr>
+                                      <td height="26" colspan="3"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                          <tr>
+                                            <td height="26" class="table_title"><%:interface_status%></td>
+                                          </tr>
+                                        </table></td>
+                                    </tr>
+                                    <tr class="top_font">
+                                      <td><%:iface%></td>
+                                      <td><%:iface_status%></td>
+                                      <td><%:iface_rate%></td>
+                                    </tr>
+                                    <%
+					local wanSpeed_cmd=luci.sys.exec("sys portspeed 4")
+					local wan_rate=string.match(wanSpeed_cmd,"Port 4: (%d+M)")
+					
+					local lan4Speed_cmd=luci.sys.exec("sys portspeed 3")
+					local lan4_rate=string.match(lan4Speed_cmd,"Port 3: (%d+M)")
+					
+					local lan3Speed_cmd=luci.sys.exec("sys portspeed 2")
+					local lan3_rate=string.match(lan3Speed_cmd,"Port 2: (%d+M)")
+					
+					local lan2Speed_cmd=luci.sys.exec("sys portspeed 1")
+					local lan2_rate=string.match(lan2Speed_cmd,"Port 1: (%d+M)")
+					
+					local lan1Speed_cmd=luci.sys.exec("sys portspeed 0")
+					local lan1_rate=string.match(lan1Speed_cmd,"Port 0: (%d+M)")
+				    %>
+				    <% if sys_op_mode == "1" then%>
+                                    <tr class="table_font">
+                                      <td><%:iface_wan%></td>
+                                      <td ><%if wan_rate then%><%:iface_up%><%else%><%:iface_down%><%end%></td>
+                                      <td ><%=wan_rate%></td>
+                                    </tr>
+				    <% end %>
+                                    <tr class="table_font">
+                                      <td ><%:iface_lan1%></td>
+                                      <td ><%if lan1_rate then%><%:iface_up%><%else%><%:iface_down%><%end%></td>
+                                      <td ><%=lan1_rate%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td ><%:iface_lan2%></td>
+                                      <td ><%if lan2_rate then%><%:iface_up%><%else%><%:iface_down%><%end%></td>
+                                      <td ><%=lan2_rate%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td ><%:iface_lan3%></td>
+                                      <td ><%if lan3_rate then%><%:iface_up%><%else%><%:iface_down%><%end%></td>
+                                      <td ><%=lan3_rate%></td>
+                                    </tr>
+                                    <tr class="table_font">
+                                      <td ><%:iface_lan4%></td>
+                                      <td ><%if lan4_rate then%><%:iface_up%><%else%><%:iface_down%><%end%></td>
+                                      <td ><%=lan4_rate%></td>
+                                    </tr>
+				    <% if sys_op_mode ~= "1" then%>
+                                    <tr class="table_font">
+                                      <td>LAN5</td>
+                                      <td ><%if wan_rate then%><%:iface_up%><%else%><%:iface_down%><%end%></td>
+                                      <td ><%=wan_rate%></td>
+                                    </tr>
+				    <% end %>
+				    <%local wifi_disabled_24g = uci.get("wireless","wifi0","disabled")%>
+				    <%local wifi_disabled_5g = uci.get("wireless","wifi1","disabled")%>
+				    <%local wifi_Sche_24g = uci.get("wifi_schedule","wlan","enabled")%>
+                    <%local wifi_Sche_5g = uci.get("wifi_schedule5G","wlan","enabled")%>
+					<%local wifi_mode_24g = uci.get("wireless","wifi0","hwmode")%>
+					<%local wifi_mode_5g = uci.get("wireless","wifi1","hwmode")%>
+					<%local wifi_width_24g = uci.get("wireless","wifi0","channel_width")%>
+					<%local wifi_width_5g = uci.get("wireless","wifi1","channel_width")%>
+                    <%local wirelessSt_24g = luci.sys.exec("cat /tmp/wifi24G_on")%>
+					<%wirelessSt_24g = string.sub (wirelessSt_24g, 1, 1)%>
+                    <%local wirelessSt_5g = luci.sys.exec("cat /tmp/wifi5G_on")%>
+					<%wirelessSt_5g = string.sub (wirelessSt_5g, 1, 1)%>
+                    <%local wifi_hw_button = luci.sys.exec("cat /tmp/wlan_on")%>
+					<%wifi_hw_button = string.sub (wifi_hw_button, 1, 1)%>
+				   
+				    <tr class="table_font">
+                                      <td ><%:iface_wlan1%></td>
+					<% local tmp24g = luci.sys.exec("ifconfig ath0 | grep ath0 | awk '{print $1}'  | tr -d '\n'") %>
+					<%if wifi_Sche_24g == "enable" and tmp24g == "ath0" then%>
+						<%if wifi_disabled_24g == "0" and wifi_hw_button == "1" then%>
+							<%if wifi_mode_24g == "11gn" or  wifi_mode_24g == "11n" or wifi_mode_24g == "11bgn" then%>
+								<%if wifi_width_24g == "40" or  wifi_width_24g == "Auto" then%>
+									<% local wlan_24g_rate = luci.sys.exec("iwconfig ath0  | grep Bit   | awk -F\":\" '{print $2}' | awk -F\" \" '{print $1}' | tr -d '\n' ") %>
+									<%if wlan_24g_rate == "450" then%>
+									<td ><%:iface_up%></td>
+									<td >450M</td>
+									<%else%>
+									<td ><%:iface_up%></td>
+									<td >225M</td>	
+									<%end%>
+								<%else%>
+									<td ><%:iface_up%></td>
+									<td >225M</td>
+								<%end%>
+							<%elseif wifi_mode_24g == "11b" then%>
+								<td ><%:iface_up%></td>
+								<td >11M</td>
+							<%elseif wifi_mode_24g == "11g" or wifi_mode_24g == "11bg" then%>
+								<td ><%:iface_up%></td>
+								<td >54M</td>
+							<%else%>
+								<td ><%:iface_down%></td>
+								<td >N/A</td>
+							<%end%>
+						<%else%>
+							<td ><%:iface_down%></td>
+							<td >N/A</td>
+						<%end%>
+ 
+					<%else%>
+						<%if wifi_disabled_24g == "0" and wifi_hw_button == "1" and tmp24g == "ath0" then%>
+							<%if wifi_mode_24g == "11gn" or  wifi_mode_24g == "11n" or wifi_mode_24g == "11bgn" then%>
+								<%if wifi_width_24g == "40" or  wifi_width_24g == "Auto" then%>
+									<% local wlan_24g_rate = luci.sys.exec("iwconfig ath0  | grep Bit   | awk -F\":\" '{print $2}' | awk -F\" \" '{print $1}' | tr -d '\n' ") %>
+									<%if wlan_24g_rate == "450" then%>
+									<td ><%:iface_up%></td>
+									<td >450M</td>
+									<%else%>
+									<td ><%:iface_up%></td>
+									<td >225M</td>	
+									<%end%>
+								<%else%>
+									<td ><%:iface_up%></td>
+									<td >225M</td>
+								<%end%>
+							<%elseif wifi_mode_24g == "11b" then%>
+								<td ><%:iface_up%></td>
+								<td >11M</td>
+							<%elseif wifi_mode_24g == "11g" or wifi_mode_24g == "11bg" then%>
+								<td ><%:iface_up%></td>
+								<td >54M</td>
+							<%else%>
+								<td ><%:iface_down%></td>
+								<td >N/A</td>
+							<%end%>
+						<%else%>
+							<td ><%:iface_down%></td>
+							<td >N/A</td>
+						<%end%>
+					<%end%>
+                                    </tr>
+				    <% if Product_Model == "DUAL_BAND" then %>
+                                    <tr class="table_font">
+                                      <td ><%:iface_wlan2%></td>
+					<% local tmp5g = luci.sys.exec("ifconfig ath10 | grep ath10 | awk '{print $1}'  | tr -d '\n'") %>
+					<%if wifi_Sche_5g == "enable" and tmp5g == "ath10" then%>
+						<%if wifi_disabled_5g == "0" and wifi_hw_button == "1" then%>
+							<%if wifi_mode_5g == "11ac" then%>
+								<%if wifi_width_5g == "80" or wifi_width_5g == "Auto" then%>
+									<td ><%:iface_up%></td>
+									<td >1.3G</td>
+								<%elseif wifi_width_5g == "40" then%>
+									<td ><%:iface_up%></td>
+									<td >650M</td>
+								<%elseif wifi_width_5g == "20" then%>
+									<td ><%:iface_up%></td>
+									<td >325M</td>
+								<%else%>
+									<td ><%:iface_down%></td>
+									<td >N/A</td>
+								<%end%>
+							<%elseif wifi_mode_5g == "11a" then%>
+								<td ><%:iface_up%></td>
+								<td >54M</td>
+							<%elseif wifi_mode_5g == "11an" then%>
+								<%if wifi_width_5g == "40" or wifi_width_5g == "Auto" then%>
+									<td ><%:iface_up%></td>
+									<td >450M</td>
+								<%else%>
+									<td ><%:iface_up%></td>
+									<td >225M</td>
+								<%end%>
+							<%else%>
+								<td ><%:iface_down%></td>
+								<td >N/A</td>
+							<%end%>
+						<%else%>
+							<td ><%:iface_down%></td>
+							<td >N/A</td>
+						<%end%>
+ 
+					<%else%>
+						<%if wifi_disabled_5g == "0" and wifi_hw_button == "1" and tmp5g == "ath10" then%>
+							<%if wifi_mode_5g == "11ac" then%>
+								<%if wifi_width_5g == "80" or wifi_width_5g == "Auto" then%>
+									<td ><%:iface_up%></td>
+									<td >1.3G</td>
+								<%elseif wifi_width_5g == "40" then%>
+									<td ><%:iface_up%></td>
+									<td >650M</td>
+								<%elseif wifi_width_5g == "20" then%>
+									<td ><%:iface_up%></td>
+									<td >325M</td>
+								<%else%>
+									<td ><%:iface_down%></td>
+									<td >N/A</td>
+								<%end%>
+							<%elseif wifi_mode_5g == "11a" then%>
+								<td ><%:iface_up%></td>
+								<td >54M</td>
+							<%elseif wifi_mode_5g == "11an" then%>
+								<%if wifi_width_5g == "40" or wifi_width_5g == "Auto" then%>
+									<td ><%:iface_up%></td>
+									<td >450M</td>
+								<%else%>
+									<td ><%:iface_up%></td>
+									<td >225M</td>
+								<%end%>
+							<%else%>
+								<td ><%:iface_down%></td>
+								<td >N/A</td>
+							<%end%>
+						<%else%>
+							<td ><%:iface_down%></td>
+							<td >N/A</td>
+						<%end%>
+					<%end%>
+				    </tr>
+				    <% end %>
+                                    <tr class="table_font">
+                                      <td >&nbsp;</td>
+                                      <td >&nbsp;</td>
+                                      <td >&nbsp;</td>
+                                    </tr>
+                                  </table></td>
+                              </tr>
+                            </table></td>
+                        </tr>
+                      </table></td>
+                  </tr>
+                </table>
+              </div>
+              <br />
+            </div>
+          </div>
+            <br class="clearfloat" />
+            <br />
+          <br />        </td>
+        <td ><img src="<%=media%>/admin/images/air.gif" width="1" height="38" /></td>
+      </tr>
+    </table>
+    <div id="floor">
+      <div class="r4"></div>
+      <div class="r3"></div>
+      <div class="r2"></div>
+      <div class="r1"></div>
+    </div>
+  </div>
+  <br /> 
+<div class="submenu2"><ul><li class="i_dashboard" title="<%:Dashboard%>"></li> 
+      <li class="i_monitor" title="<%:Monitor%>"><a href="<%=controller%>/expert/monitor" title="<%:Monitor%>" target="_parent"></a></li>
+      <li class="i_config"><a href="<%=controller%>/expert/configuration" title="<%:Configuration%>" target="_parent"></a></li>
+      <li class="i_maintenance"><a href="<%=controller%>/expert/maintenance" title="<%:Maintenance%>" target="_parent"></a></li>
+</ul>  
+<br class="clearfloat" /></div>
+</div>
+<input type="hidden" name="refreshInteval" value="100">
+</form>
+</body>
+
+<form method="post" name="NTP">
+<input type="hidden" name="mtenCurrent_Hour" value='<%=string.match(luci.sys.exec("date +%H"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Min" value='<%=string.match(luci.sys.exec("date +%M"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Sec" value='<%=string.match(luci.sys.exec("date +%S"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Year" value='<%=string.match(luci.sys.exec("date +%Y"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Mon" value='<%=string.match(luci.sys.exec("date +%m"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Day" value='<%=string.match(luci.sys.exec("date +%d"),"(%d+)")%>' />
+</form>
+<script language="JavaScript">
+	start_Mon='<%=uci:get("time", "DST", "start_month")%>';
+	start_Hour='<%=uci:get("time", "DST", "start_clock")%>'; 
+	end_Mon='<%=uci:get("time", "DST", "end_month")%>';
+	end_Hour='<%=uci:get("time", "DST", "end_clock")%>';
+	enable_dst = '<%=uci:get("time", "DST", "enable")%>';
+
+	start_Num='<%=uci:get("time","DST","start_num")%>';
+	end_Num='<%=uci:get("time","DST","end_num")%>';
+	start_D='<%=uci:get("time","DST","start_d")%>';
+	end_D='<%=uci:get("time","DST","end_d")%>';
+
+	modes='<%=uci:get("time","main","mode")%>';
+	mtensNew_Year='<%=uci:get("time","main","manual_year")%>';
+/*
+	if(enable_dst=='1'){
+		daylightsaving();
+	}
+*/
+	initDateAndTime();
+	IncreaseSec();	
+</script>
+</html>

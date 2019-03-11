@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips Streamium Audio</DisplayName>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>LIVEWITHLENGTH</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

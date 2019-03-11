@@ -1,0 +1,6 @@
+<view name='storage' path='storage.view'>
+	<navtree>
+		<container id='source/folders'>
+		</container>
+	</navtree>
+</view>

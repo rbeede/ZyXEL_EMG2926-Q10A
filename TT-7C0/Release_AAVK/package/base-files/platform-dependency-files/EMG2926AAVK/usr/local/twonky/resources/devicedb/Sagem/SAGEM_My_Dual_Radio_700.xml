@@ -1,0 +1,33 @@
+<Client>
+	<DeviceId>
+		<DisplayName>SAGEM My Dual Radio 700</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>DUAL Radio Player</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>audio/mp1</In>
+				<Out>audio/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-mpeg</In>
+				<Out>audio/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+</Client>

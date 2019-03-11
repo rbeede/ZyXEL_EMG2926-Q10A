@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>BridgeCo Firmware based</DisplayName>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+	</DeviceQuirks>
+</Client>

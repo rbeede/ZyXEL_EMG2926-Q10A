@@ -1,0 +1,11 @@
+diff -ruN d_2926/net/netfilter/nf_conntrack_core.c e_2926/net/netfilter/nf_conntrack_core.c
+--- d_2926/net/netfilter/nf_conntrack_core.c	2014-09-11 12:17:58.276292000 +0800
++++ e_2926/net/netfilter/nf_conntrack_core.c	2015-01-28 11:44:55.949401326 +0800
+@@ -688,6 +688,7 @@
+ 
+ 	if (nf_conntrack_max &&
+ 	    unlikely(atomic_read(&net->ct.count) > nf_conntrack_max)) {
++	    //printk(KERN_WARNING "The number of sessions through the NAPT exceeds the number of supported.\n");
+ 		if (!early_drop(net, hash_bucket(hash, net))) {
+ 			atomic_dec(&net->ct.count);
+ 			if (net_ratelimit())

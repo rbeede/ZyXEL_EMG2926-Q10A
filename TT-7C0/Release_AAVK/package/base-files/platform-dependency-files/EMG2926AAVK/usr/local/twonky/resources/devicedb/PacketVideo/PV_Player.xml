@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>PV Player</DisplayName>
+		<HttpRecognition>
+			<HttpText>PVPLAYER</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+		<Quirk>GIVE_ALL_KNOWN_RES</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,107 @@
+#!/bin/sh
+
+rm /tmp/wifi_24g_dbm_temp
+rm /tmp/wifi_5g_dbm_temp
+rm /tmp/wifi_24g_dbm
+rm /tmp/wifi_5g_dbm
+
+WiFi24g(){
+
+	Standard=$(iwconfig ath0 | grep Noise |awk '{print $7 }' | tr -d 'level=' | tr -d '\n')
+
+	ath0=$(uci get wireless.ath0.disabled)
+	ath1=$(uci get wireless.ath1.disabled)
+	ath2=$(uci get wireless.ath2.disabled)
+	ath3=$(uci get wireless.ath3.disabled)
+
+	if [ $ath0 == 0 ];then
+		wlanconfig ath0 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_24g_dbm_temp  
+	fi
+
+	if [ $ath1 == 0 ];then
+		wlanconfig ath1 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_24g_dbm_temp  
+	fi
+
+	if [ $ath2 == 0 ];then
+		wlanconfig ath2 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_24g_dbm_temp  
+	fi
+
+	if [ $ath3 == 0 ];then
+		wlanconfig ath3 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_24g_dbm_temp  
+	fi
+
+	echo ""  
+	echo ""  
+	echo "Wireless 2.4G   dBm   List"  
+	echo "====================================================" 
+	while read LINE
+	do
+		mac=$(echo $LINE | awk '{print $1 }' )
+		RSSI=$( echo $LINE | awk '{print $2 }' )
+		time=$( echo $LINE | awk '{print $3 }' )
+		let dbm=RSSI+Standard
+		echo "mac=$mac     dBm=$dbm      RSSI=$RSSI" 
+		echo "$mac $dbm $RSSI" >> /tmp/wifi_24g_dbm
+	done   < /tmp/wifi_24g_dbm_temp
+	echo "===================================================="  
+	echo ""  
+	echo ""  
+	echo ""  
+}
+
+WiFi5g(){
+
+	Standard=$(iwconfig ath10 | grep Noise |awk '{print $7 }' | tr -d 'level=' | tr -d '\n')
+
+	ath10=$(uci get wireless.ath10.disabled)
+	ath11=$(uci get wireless.ath11.disabled)
+	ath12=$(uci get wireless.ath12.disabled)
+	ath13=$(uci get wireless.ath13.disabled)
+
+	if [ $ath10 == 0 ];then
+		wlanconfig ath10 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_5g_dbm_temp  
+	fi
+
+	if [ $ath11 == 0 ];then
+		wlanconfig ath11 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_5g_dbm_temp  
+	fi
+
+	if [ $ath12 == 0 ];then
+		wlanconfig ath12 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_5g_dbm_temp  
+	fi
+
+	if [ $ath13 == 0 ];then
+		wlanconfig ath13 list|awk '{print $1 " "  $6 " "  $15}'| grep  -v RSSI   >> /tmp/wifi_5g_dbm_temp  
+	fi
+
+	echo ""  
+	echo ""  
+	echo "Wireless 5G   dBm   List" 
+	echo "====================================================" 
+	while read LINE
+	do
+		mac=$(echo $LINE | awk '{print $1 }' )
+		RSSI=$( echo $LINE | awk '{print $2 }' )
+		time=$( echo $LINE | awk '{print $3 }' )
+		let dbm=RSSI+Standard
+		echo "mac=$mac     dBm=$dbm      RSSI=$RSSI" 
+		echo "$mac $dbm $RSSI" >> /tmp/wifi_5g_dbm
+	done   < /tmp/wifi_5g_dbm_temp
+	echo "===================================================="
+	echo ""  
+	echo ""  
+	echo ""  
+}
+
+case $1 in
+	wifi24g)
+		WiFi24g
+	;;
+	wifi5g)
+		WiFi5g
+        ;;
+        "")
+		WiFi24g
+		WiFi5g
+	;;
+esac

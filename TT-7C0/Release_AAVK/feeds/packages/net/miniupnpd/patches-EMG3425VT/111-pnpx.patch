@@ -1,0 +1,147 @@
+--- miniupnpd-1.6/upnpurns.h	
++++ miniupnpd-1.6/upnpurns.h	
+@@ -24,6 +24,11 @@
+ #define DEVICE_TYPE_WANC    "urn:schemas-upnp-org:device:WANConnectionDevice:1"
+ #define SERVICE_TYPE_WANIPC "urn:schemas-upnp-org:service:WANIPConnection:1"
+ #define SERVICE_ID_WANIPC   "urn:upnp-org:serviceId:WANIPConn1"
++/*Support PNP-X*/
++#define PNPX1	"urn:www-zyxel-com:device:WirelessRouter:EMG2926 VEN_0033&amp;DEV_0008&amp;REV_01"
++#define PNPX2   "NetworkInfrastructure.Router"
++#define DF1		"ZyXEL Wireless Router"
++#define DF2		"Network.Router.Wireless"
+ #endif
+ 
+ #endif
+--- miniupnpd-1.6/upnpdescgen.c	
++++ miniupnpd-1.6/upnpdescgen.c	
+@@ -30,6 +30,8 @@
+ #define PORTMAPPINGNUMBEROFENTRIES_MAGICALVALUE (253)
+ #define EXTERNALIPADDRESS_MAGICALVALUE (254)
+ #define DEFAULTCONNECTIONSERVICE_MAGICALVALUE (255)
++//Support PNPX
++#define PNPX_ENABLE 4
+ 
+ 
+ static const char * const upnptypes[] =
+@@ -136,9 +138,9 @@
+ 	{root_device, INITHELPER(1,2)},
+ 	{"specVersion", INITHELPER(3,2)},
+ #if defined(ENABLE_L3F_SERVICE) || defined(HAS_DUMMY_SERVICE) || defined(ENABLE_DP_SERVICE)
+-	{"device", INITHELPER(5,13)},
++	{"device", INITHELPER(5,13+PNPX_ENABLE)},
+ #else
+-	{"device", INITHELPER(5,12)},
++	{"device", INITHELPER(5,12+PNPX_ENABLE)},
+ #endif
+ 	{"/major", "1"},
+ 	{"/minor", "0"},
+@@ -148,6 +150,14 @@
+ 	{"/friendlyName", ROOTDEV_FRIENDLYNAME},	/* required */
+ 	{"/manufacturer", ROOTDEV_MANUFACTURER},		/* required */
+ /* 8 */
++#if PNPX_ENABLE
++/* support PNPX */
++	{"/pnpx:X_hardwareId", PNPX1},
++	{"/pnpx:X_deviceCategory", PNPX2},
++	{"/df:X_modelId", DF1},
++	{"/df:X_deviceCategory", DF2},
++/* support PNPX END*/
++#endif
+ 	{"/manufacturerURL", ROOTDEV_MANUFACTURERURL},	/* optional */
+ 	{"/modelDescription", ROOTDEV_MODELDESCRIPTION}, /* recommended */
+ 	{"/modelName", ROOTDEV_MODELNAME},	/* required */
+@@ -180,16 +190,16 @@
+ #define NSERVICES3 0
+ #endif
+ #define NSERVICES (NSERVICES1+NSERVICES2+NSERVICES3)
+-	{"serviceList", INITHELPER(SERVICES_OFFSET,NSERVICES)},
+-	{"deviceList", INITHELPER(18,1)},
++	{"serviceList", INITHELPER(SERVICES_OFFSET+PNPX_ENABLE,NSERVICES)},
++	{"deviceList", INITHELPER(18+PNPX_ENABLE,1)},
+ 	{"/presentationURL", presentationurl},	/* recommended */
+ #else
+-	{"deviceList", INITHELPER(18,1)},
++	{"deviceList", INITHELPER(18+PNPX_ENABLE,1)},
+ 	{"/presentationURL", presentationurl},	/* recommended */
+ 	{0,0},
+ #endif
+ /* 18 */
+-	{"device", INITHELPER(19,13)},
++	{"device", INITHELPER(19+PNPX_ENABLE,13)},
+ /* 19 */
+ 	{"/deviceType", DEVICE_TYPE_WAN}, /* required */
+ 		/* urn:schemas-upnp-org:device:WANDevice:1 or 2 */
+@@ -204,10 +214,10 @@
+ 	{"/UDN", uuidvalue},
+ 	{"/UPC", WANDEV_UPC},
+ /* 30 */
+-	{"serviceList", INITHELPER(32,1)},
+-	{"deviceList", INITHELPER(38,1)},
++	{"serviceList", INITHELPER(32+PNPX_ENABLE,1)},
++	{"deviceList", INITHELPER(38+PNPX_ENABLE,1)},
+ /* 32 */
+-	{"service", INITHELPER(33,5)},
++	{"service", INITHELPER(33+PNPX_ENABLE,5)},
+ /* 33 */
+ 	{"/serviceType",
+ 			"urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1"},
+@@ -217,7 +227,7 @@
+ 	{"/eventSubURL", WANCFG_EVENTURL},
+ 	{"/SCPDURL", WANCFG_PATH},
+ /* 38 */
+-	{"device", INITHELPER(39,12)},
++	{"device", INITHELPER(39+PNPX_ENABLE,12)},
+ /* 39 */
+ 	{"/deviceType", DEVICE_TYPE_WANC},
+ 		/* urn:schemas-upnp-org:device:WANConnectionDevice:1 or 2 */
+@@ -232,13 +242,13 @@
+ 	{"/UDN", uuidvalue},
+ 	{"/UPC", WANCDEV_UPC},
+ #ifdef ENABLE_6FC_SERVICE
+-	{"serviceList", INITHELPER(51,2)},
++	{"serviceList", INITHELPER(51+PNPX_ENABLE,2)},
+ #else
+-	{"serviceList", INITHELPER(51,1)},
++	{"serviceList", INITHELPER(51+PNPX_ENABLE,1)},
+ #endif
+ /* 51 */
+-	{"service", INITHELPER(53,5)},
+-	{"service", INITHELPER(58,5)},
++	{"service", INITHELPER(53+PNPX_ENABLE,5)},
++	{"service", INITHELPER(58+PNPX_ENABLE,5)},
+ /* 53 */
+ 	{"/serviceType", SERVICE_TYPE_WANIPC},
+ 		/* urn:schemas-upnp-org:service:WANIPConnection:2 for v2 */
+@@ -257,8 +267,8 @@
+ #endif
+ /* 58 / 63 = SERVICES_OFFSET*/
+ #if defined(HAS_DUMMY_SERVICE) || defined(ENABLE_L3F_SERVICE) || defined(ENABLE_DP_SERVICE)
+-	{"service", INITHELPER(SERVICES_OFFSET+2,5)},
+-	{"service", INITHELPER(SERVICES_OFFSET+7,5)},
++	{"service", INITHELPER(SERVICES_OFFSET+2+PNPX_ENABLE,5)},
++	{"service", INITHELPER(SERVICES_OFFSET+7+PNPX_ENABLE,5)},
+ #endif
+ #ifdef HAS_DUMMY_SERVICE
+ /* 60 / 65 = SERVICES_OFFSET+2 */
+@@ -864,7 +874,21 @@
+ 			{
+ 				/*printf("<%s>%s<%s>\n", eltname+1, p[i].data, eltname); */
+ 				str = strcat_char(str, len, tmplen, '<');
++#if PNPX_ENABLE
++				if (strstr("pnpx:X_hardwareId",eltname+1)){
++					str = strcat_str(str, len, tmplen, "pnpx:X_hardwareId xmlns:pnpx=\"http://schemas.microsoft.com/windows/pnpx/2005/11\"");
++				}else if (strstr("pnpx:X_deviceCategory",eltname+1)){
++					str = strcat_str(str, len, tmplen, "pnpx:X_deviceCategory xmlns:pnpx=\"http://schemas.microsoft.com/windows/pnpx/2005/11\"");
++				}else if (strstr("df:X_modelId",eltname+1)){
++					str = strcat_str(str, len, tmplen, "df:X_modelId xmlns:df=\"http://schemas.microsoft.com/windows/2008/09/devicefoundation\"");
++				}else if (strstr("df:X_deviceCategory",eltname+1)){
++					str = strcat_str(str, len, tmplen, "df:X_deviceCategory xmlns:df=\"http://schemas.microsoft.com/windows/2008/09/devicefoundation\"");
++				}else {
++					str = strcat_str(str, len, tmplen, eltname+1);
++				}
++#else
+ 				str = strcat_str(str, len, tmplen, eltname+1);
++#endif
+ 				str = strcat_char(str, len, tmplen, '>');
+ 				str = strcat_str(str, len, tmplen, p[i].data);
+ 				str = strcat_char(str, len, tmplen, '<');

@@ -1,0 +1,668 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body  >
+<%   
+	local telnet_port=uci:get("firewall", "remote_telnet", "port")
+	local ssh_port=uci:get("firewall", "remote_ssh", "port")
+	local ftp_port=uci:get("proftpd", "global", "port")
+	local http_port=uci:get("uhttpd", "main", "listen_http")
+	local https_port=uci:get("uhttpd", "main", "listen_https")
+	 
+	 local clientCheckTelnet_LAN = tonumber(uci:get( "firewall", "remote_telnet_LAN", "client_check" ))
+	 local clientCheckTelnet_WAN = tonumber(uci:get( "firewall", "remote_telnet_WAN", "client_check" ))
+
+   local lanQueue = {}
+   local wanQueue = {}
+	 local lanQueue_count = tonumber(uci:get( "firewall", "remote_telnet_LAN","client_count")) 
+	 local wanQueue_count = tonumber(uci:get( "firewall", "remote_telnet_WAN","client_count")) 
+   
+   if lanQueue_count > 0 then
+	   for i=1, lanQueue_count do
+	   		local caddr_index = "client_addr" .. i
+	   		local caddr_tmp = uci:get("firewall", "remote_telnet_LAN", caddr_index)
+	   		table.insert( lanQueue, caddr_tmp )
+	   end	
+	 end  
+   
+   if wanQueue_count > 0 then
+	   for i=1, wanQueue_count do
+	   		local caddr_index = "client_addr" .. i
+	   		local caddr_tmp = uci:get("firewall", "remote_telnet_WAN", caddr_index)
+	   		table.insert( wanQueue, caddr_tmp )
+	   end	
+	 end
+	local uname = luci.dispatcher.context.authuser
+	local privilege
+	if uname ~= nil then
+		privilege = uci:get("account",uname,"privilege")
+	end
+	if not privilege then
+		privilege = "1"
+	end  
+	 
+%>
+
+<script type="text/javascript">
+
+function checkIPFormat( value )
+{
+  if (/^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value )){
+		return 1;
+	}else if(/^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}(\/([0-9]|1[0-9]|2[0-9]|3[0-2]))$/.test( value )){
+		return 2;
+	}
+	return false;		
+}
+
+function getMaskedNetworkAddress(ip, mask) {
+    var bits;
+    var mbits = new Array(4);
+    var SIZE_BYTE = 8; // Prevent the annoying WP smiley faces from showing up
+ 
+    for (i = 0; i < mbits.length; i++) {
+        if (mask >= SIZE_BYTE) {
+            bits = Array(SIZE_BYTE + 1).join(1 + '');
+            mask -= SIZE_BYTE;
+        } else {
+            bits = Array(mask + 1).join(1 + '');
+            bits += Array(SIZE_BYTE + 1 - mask).join(0 + '');
+            mask -= mask;
+        }
+        mbits[i] = parseInt(bits, 2);
+    }
+    var ibits = ip.split(".");
+    var maskedip = '';
+    for (i = 0; i < mbits.length; i++) {
+        if (maskedip != '') {
+            maskedip += '.';
+        }
+        ibits[i] = parseInt(ibits[i]);
+        ibits[i] &= mbits[i];
+        maskedip += ibits[i] + '';
+    }
+ 
+    return maskedip;
+}
+
+function addRule( WAN )
+{
+	if (WAN)
+	{
+		var WAN_selected_item = document.RMGMTTelnetForm.WAN_selected_item.value;
+		if(WAN_selected_item != "1")
+		{
+			if(checkSubmit(WAN_selected_item) == false)
+				return false;
+		}
+		
+		if (<%=wanQueue_count%> > 9 )
+		{
+			alert("Only support up to 10 trust domains");
+			return false;
+		}	
+		
+		var WANremoteTelnetClientAddr = document.RMGMTTelnetForm.WANremoteTelnetClientAddr.value;
+		if (checkIPFormat( WANremoteTelnetClientAddr ) == 1)
+		{
+			document.RMGMTTelnetForm.WANremoteTelnetClientAddr.value = WANremoteTelnetClientAddr+"/32";
+			return true;
+		}else if (checkIPFormat( WANremoteTelnetClientAddr ) == 2){
+			var ipdomain = WANremoteTelnetClientAddr.split("/");
+			var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+			var ipdomain_show = ip_show+"/"+ipdomain[1];
+			document.RMGMTTelnetForm.WANremoteTelnetClientAddr.value = ipdomain_show;
+			
+			return true;
+		}
+		alert( "<%:IP_Error_3%>" );
+   	return false;
+	}	else{
+		if (<%=lanQueue_count%> > 9 )
+		{
+			alert("Only support up to 10 trust domains");
+			return false;
+		}	
+		
+		var LANremoteTelnetClientAddr = document.RMGMTTelnetForm.LANremoteTelnetClientAddr.value;
+		if (checkIPFormat( LANremoteTelnetClientAddr ) == 1)
+		{
+			document.RMGMTTelnetForm.LANremoteTelnetClientAddr.value = LANremoteTelnetClientAddr+"/32";
+			return true;
+		}else if (checkIPFormat( LANremoteTelnetClientAddr ) == 2){
+			var ipdomain = LANremoteTelnetClientAddr.split("/");
+			var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+			var ipdomain_show = ip_show+"/"+ipdomain[1];
+			document.RMGMTTelnetForm.LANremoteTelnetClientAddr.value = ipdomain_show;
+			
+			return true;
+		}
+		alert( "<%:IP_Error_3%>" );
+   	return false;
+	}	
+}	
+
+function WANchangeClient(selected_item)
+{
+	document.RMGMTTelnetForm.WAN_selected_item.value=selected_item;
+	
+	with (document.forms[0]){
+		if(selected_item == 0){
+			WANRemoteTable.style.display="none";
+			WANremoteTelnetClientCheck0.checked = true;
+			WANremoteTelnetClientCheck1.checked = false;
+			WANremoteTelnetClientCheck2.checked = false;
+		}else if(selected_item == 1){
+			WANRemoteTable.style.display="none";
+			WANremoteTelnetClientCheck0.checked = false;
+			WANremoteTelnetClientCheck1.checked = true;
+			WANremoteTelnetClientCheck2.checked = false;
+		}else{
+			WANRemoteTable.style.display="block";
+			WANremoteTelnetClientCheck0.checked = false;
+			WANremoteTelnetClientCheck1.checked = false;
+			WANremoteTelnetClientCheck2.checked = true;
+		}	
+	}
+	
+}	
+
+function LANchangeClient(selected_item)
+{
+	document.RMGMTTelnetForm.LAN_selected_item.value=selected_item;
+	
+	with (document.forms[0]){
+		if(selected_item == 0){
+			LANRemoteTable.style.display="none";
+			LANremoteTelnetClientCheck0.checked = true;
+			LANremoteTelnetClientCheck1.checked = false;
+			LANremoteTelnetClientCheck2.checked = false;
+		}else if(selected_item == 1){
+			LANRemoteTable.style.display="none";
+			LANremoteTelnetClientCheck0.checked = false;
+			LANremoteTelnetClientCheck1.checked = true;
+			LANremoteTelnetClientCheck2.checked = false;
+		}else{
+			LANRemoteTable.style.display="block";
+			LANremoteTelnetClientCheck0.checked = false;
+			LANremoteTelnetClientCheck1.checked = false;
+			LANremoteTelnetClientCheck2.checked = true;
+		}	
+	}
+}	
+
+function editQueue( entryNo, WAN )
+{
+	if (WAN)
+	{
+		  var client_IP = eval("document.RMGMTTelnetForm.ClientIP_WAN"+entryNo+".value");
+					
+			document.getElementById( "tabs" ).style.display="none";
+			document.getElementById( "list" ).style.display="none";
+			document.getElementById( "WANRemoteEdit" ).style.display="block";
+			document.getElementsByName( "SubmitType" )[0].value = "edit";
+			document.RMGMTTelnetForm.WANEditNO.value = entryNo;
+			document.RMGMTTelnetForm.WANInputIP.value = client_IP;
+  }else {
+  		var client_IP = eval("document.RMGMTTelnetForm.ClientIP_LAN"+entryNo+".value");
+					
+			document.getElementById( "tabs" ).style.display="none";
+			document.getElementById( "list" ).style.display="none";
+			document.getElementById( "LANRemoteEdit" ).style.display="block";
+			document.getElementsByName( "SubmitType" )[0].value = "edit";
+			document.RMGMTTelnetForm.LANEditNO.value = entryNo;
+			document.RMGMTTelnetForm.LANInputIP.value = client_IP;
+  }	
+}
+
+function cancel(WAN)
+{
+	if (WAN){
+			document.getElementById( "tabs" ).style.display="block";
+			document.getElementById( "list" ).style.display="block";
+			document.getElementById( "WANRemoteEdit" ).style.display="none";
+	}else{
+			document.getElementById( "tabs" ).style.display="block";
+			document.getElementById( "list" ).style.display="block";
+			document.getElementById( "LANRemoteEdit" ).style.display="none";
+	}	
+}	
+
+function delQueue( entryNo, element, WAN )
+{
+		if (WAN)
+		{
+			  var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote","telnet")%>';
+			  var loc = submit_url + '?wandelete=' + entryNo;
+			  var code = 'location="' + loc + '"';
+		    eval(code);
+		}else{
+				var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote","telnet")%>';
+			  var loc = submit_url + '?landelete=' + entryNo;
+			  var code = 'location="' + loc + '"';
+		    eval(code);
+		}	
+}
+
+function verifySubmitData(WAN)
+{
+	 if(WAN)
+	 {
+	 			var WANInputIP = document.RMGMTTelnetForm.WANInputIP.value;
+	 			if (checkIPFormat( WANInputIP ) == 1)
+				{
+					document.RMGMTTelnetForm.WANInputIP.value = WANInputIP+"/32";
+					return true;
+				}else if (checkIPFormat( document.RMGMTTelnetForm.WANInputIP.value ) == 2){
+					var ipdomain = WANInputIP.split("/");
+					var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+					var ipdomain_show = ip_show+"/"+ipdomain[1];
+					document.RMGMTTelnetForm.WANInputIP.value = ipdomain_show;
+					return true;
+				}
+				alert( "<%:IP_Error_3%>" );
+		   	return false;
+	 }else{
+	 			var LANInputIP = document.RMGMTTelnetForm.LANInputIP.value;
+	 			if (checkIPFormat( LANInputIP ) == 1)
+				{
+					document.RMGMTTelnetForm.LANInputIP.value = LANInputIP+"/32";
+					return true;
+				}else if (checkIPFormat( document.RMGMTTelnetForm.LANInputIP.value ) == 2){
+					var ipdomain = LANInputIP.split("/");
+					var ip_show = getMaskedNetworkAddress(ipdomain[0],parseInt(ipdomain[1]));
+					var ipdomain_show = ip_show+"/"+ipdomain[1];
+					document.RMGMTTelnetForm.LANInputIP.value = ipdomain_show;
+					return true;
+				}
+				alert( "<%:IP_Error_3%>" );
+		   	return false;
+	 }	
+}
+	
+function checkSubmit(WAN_selected_item)	
+{
+	var system_port = "<%= luci.sys.exec("cat /tmp/system_port")%>".split(" ");
+	var reject_port = [];
+	var TelnetPort = document.RMGMTTelnetForm.RemoteTelnetPort.value;
+	
+	for (i=0 ; i<system_port.length ; i++){
+		if (system_port[i] == <%=telnet_port%>){}
+		else{
+			reject_port.push(system_port[i])
+		}
+	}
+	
+	for (i=0 ; i<reject_port.length ; i++){
+		if (TelnetPort == reject_port[i]){
+			
+			if ( TelnetPort == <%=ftp_port%> )
+			{
+				alert("<%:Port%> " + TelnetPort + " is used by <%:FTP%>")
+				return false
+			}
+			else if	( TelnetPort == <%=ssh_port%>)
+			{
+				alert("<%:Port%> " + TelnetPort + " is used by <%:SSH%>")
+				return false
+			}
+			else if	( TelnetPort == <%=http_port%>)
+			{
+				alert("<%:Port%> " + TelnetPort + " is used by HTTP")
+				return false
+			}
+			else if	( TelnetPort == <%=https_port%>)
+			{
+				alert("<%:Port%> " + TelnetPort + " is used by HTTPS")
+				return false
+			}
+			else
+			{
+				alert("<%:Port%> " + TelnetPort + " is used by <%:Port_Forwarding%>")
+				return false
+			}
+			
+		}
+	}
+	
+	if(WAN_selected_item != "1" )
+	{
+		<%	
+			local luaAccount = {}
+			uci:foreach( "account", "account", function( section )
+				   if not ( nil == section.username ) then
+				    local tmp = section         
+					tmp.id = section[ '.name' ]
+					table.insert( luaAccount, tmp )
+				end
+			end )
+			
+			for i = 1, #luaAccount do 
+				if luaAccount[i].default == "1" and luaAccount[i].privilege == "2" then
+					password = luaAccount[i].password
+					username = luaAccount[i].username
+				end
+			end
+			
+		%>	
+			
+		<% if password == "1234" then %>
+			alert('You should change account "<%=username%>" default password !!  Please go to "Maintenance > Account" modify it !!')
+			window.location.reload();
+			return false;
+		<% end %>
+		
+	}
+}	
+</script>
+<form name="RMGMTTelnetForm">
+<div id="tabs">
+   <ul>
+      <li ><a href="<%=controller%>/expert/configuration/management/remote" title="<%:WWW%>" ><span><%:WWW%></span></a></li>
+      <li class="hightline"><a  title="<%:Telnet%>"><span><%:Telnet%></span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/remote/ssh" title="<%:SSH%>"><span><%:SSH%></span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/remote/snmpsetting" title="SNMP"><span><%:SNMP%></span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/remote/wol" title="<%:Wake_On_LAN%>"><span><%:Wake_On_LAN%></span></a></li>
+    
+   </ul>
+   <br class="clearfloat" />
+</div>
+<div id="table">
+   <ul id="list">
+      <li class="table_top"></li>
+      <li class="table_content">
+         <div class="data">
+            <ul>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Port%> : </li>
+                     <li class="right_table">
+                        <input name="RemoteTelnetPort" size="5" maxlength="5" value="<%= uci:get( "firewall", "remote_telnet", "port" ) %>"  type="text" />
+                     </li>
+                  </ul>
+               </div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Access_Status%> : </li>
+                     <li class="right_table">
+                        &nbsp;LAN
+                     </li>
+                  </ul>
+               </div>
+               <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Secured_Client_IP_Address%>   :</li>
+                     <li class="right_table">
+                     		<input name="ClientIP_LAN_count" value="<%=lanQueue_count%>" type="hidden">
+                     	  <input name="LAN_selected_item" value="<%=clientCheckTelnet_LAN%>" type="hidden">
+                     	  
+                     		<input name="LANremoteTelnetClientCheck0" value="0" type="radio" <% if 0 == clientCheckTelnet_LAN then%>checked="checked"<% end %> onclick="LANchangeClient(0)"/>
+                           Enable ALL&nbsp;&nbsp;&nbsp;
+												<input name="LANremoteTelnetClientCheck1" value="0" type="radio" <% if 1 == clientCheckTelnet_LAN then%>checked="checked"<% end %> onclick="LANchangeClient(1)"/>
+                           Disable ALL&nbsp;&nbsp;&nbsp;
+                        <input name="LANremoteTelnetClientCheck2" value="0" type="radio" <% if 2 == clientCheckTelnet_LAN then%>checked="checked"<% end %> onclick="LANchangeClient(2)"/>
+                     			 Trust Domain&nbsp;&nbsp;
+                     		<input name="LANremoteTelnetClientAddr" size="20" maxlength="18" value="" type="text" />						   
+												<input name="addLANremoteTelnetClient" value="<%:Add%>" onclick="return addRule(0)" type="submit" />			
+                     </li>
+                     
+             <div id="LANRemoteTable" class="tableframe" <% if 2 == clientCheckTelnet_LAN then%>style="display:block"<% else%>style="display:none"<% end%>>
+						 <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+							<tr>
+							   <td>
+								  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+									 <tr>
+										<td>
+										   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+											  <tr>
+												 <td>
+													<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+													   <tr>
+														  <td height="26" colspan="9">
+															 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																<tr>
+																   <td height="26" class="table_title">
+																	  Trust Domain<span class="cTitle"></span>
+																   </td>
+																</tr>
+															 </table>
+														  </td>
+													   </tr>
+													   <tr class="top_font" align="center">
+														  <td width="35">#</td>
+														  <td >IP Address/Domain </td>													  
+														  <td width="90"><%:Modify%></td>
+													   </tr>
+															 <% for i = 1, #lanQueue do %>
+															 		<input name="ClientIP_LAN<%=i%>" value="<%=lanQueue[i]%>" type="hidden">
+															 
+															 		<tr class="table_font" align="center">
+																	<td valign="top"><%= i %></td>
+																	<td><%= lanQueue[i]%></td>
+																		<td>
+																   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" >
+																   	<img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i %>,0)" /></a>
+																	  &nbsp;&nbsp;						  
+																   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this, 0)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																	 <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																</td>
+																	</tr>
+															 <%end%>	
+													</table>
+												 </td>
+											  </tr>
+										   </table>
+										</td>
+									 </tr>
+								  </table>
+							   </td>
+							</tr>
+						 </table>
+					  </div>
+                  </ul>
+               </div>
+               
+               <div class="spaceair"></div>
+               
+                <div class="w_text">
+                  <ul>
+                     <li class="left_table"><%:Access_Status%> : </li>					 
+                     <li class="right_table">&nbsp;WAN</li>
+                  </ul>
+
+                  <ul>
+                     <li class="left_table"><%:Secured_Client_IP_Address%>   :</li>
+                     <li class="right_table">
+                     	  <input name="ClientIP_WAN_count" value="<%=wanQueue_count%>" type="hidden">
+                     	  <input name="WAN_selected_item" value="<%=clientCheckTelnet_WAN%>" type="hidden">
+                     	  
+                        <input name="WANremoteTelnetClientCheck0" value="0" type="radio" <% if 0 == clientCheckTelnet_WAN then%>checked="checked"<% end %> onclick="WANchangeClient(0)"/>
+                           Enable ALL&nbsp;&nbsp;&nbsp;
+                        <input name="WANremoteTelnetClientCheck1" value="0" type="radio" <% if 1 == clientCheckTelnet_WAN then%>checked="checked"<% end %> onclick="WANchangeClient(1)"/>
+                           Disable ALL&nbsp;&nbsp;&nbsp;   
+												<input name="WANremoteTelnetClientCheck2" value="0" type="radio" <% if 2 == clientCheckTelnet_WAN then%>checked="checked"<% end %> onclick="WANchangeClient(2)"/>
+                           Trust Domain&nbsp;&nbsp;
+                        <input name="WANremoteTelnetClientAddr" size="20" maxlength="18" value="" type="text" />						   
+												<input name="addWANremoteTelnetClient" value="<%:Add%>" onclick="return addRule(1)" type="submit" />			
+                     </li>
+               
+             <div id="WANRemoteTable" class="tableframe" <% if 2 == clientCheckTelnet_WAN then%>style="display:block"<% else%>style="display:none"<% end%>>
+						 <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+							<tr>
+							   <td>
+								  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+									 <tr>
+										<td>
+										   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+											  <tr>
+												 <td>
+													<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+													   <tr>
+														  <td height="26" colspan="9">
+															 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																<tr>
+																   <td height="26" class="table_title">
+																	  Trust Domain<span class="cTitle"></span>
+																   </td>
+																</tr>
+															 </table>
+														  </td>
+													   </tr>
+													   <tr class="top_font" align="center">
+														  <td width="35">#</td>
+														  <td >IP Address/Domain </td>													  
+														  <td width="90"><%:Modify%></td>
+													   </tr>
+															 <% for i = 1, #wanQueue do %>
+															 		<input name="ClientIP_WAN<%=i%>" value="<%=wanQueue[i]%>" type="hidden">
+															 
+															 		<tr class="table_font" align="center">
+																	<td valign="top"><%= i %></td>
+																	<td><%= wanQueue[i]%></td>
+																		<td>
+																   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" >
+																   	<img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editQueue(<%= i %>,1)" /></a>
+																	  &nbsp;&nbsp;						  
+																   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="delQueue(<%= i %>, this, 1)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																	 <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																</td>
+																	</tr>
+															 <%end%>	
+													</table>
+												 </td>
+											  </tr>
+										   </table>
+										</td>
+									 </tr>
+								  </table>
+							   </td>
+							</tr>
+						 </table>
+					  </div>
+				   </ul>				    
+               </div>		
+               <div class="spaceair"></div>
+               <div class="w_text"> <span class="i_note"><%:Note%>:</span>
+               </div>
+               <div class="w_text"> <span class="i_note_a"><%:Remote_MGMT_Note_4%>
+               </div>
+               <div class="spaceair"></div>
+            </ul>
+         </div>
+      </li>
+      <li class="table_button">
+         <div class="button" align="center">
+            <input name="apply" value="<%:Apply%>" type="submit" onclick="return checkSubmit(WAN_selected_item.value)"/>
+               &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+            <input name="Cancel" value="<%:Cancel%>" type="submit" onclick=""/>
+         </div>
+      </li>
+   </ul>
+   
+   <input type="hidden" name="SubmitType" value="table"/>
+   <input type="hidden" name="LANEditNO" />
+	 <input type="hidden" name="WANEditNO" />
+	 
+	 <ul id="LANRemoteEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">IP Address/Domain :</li>
+                        <li class="right_table">
+                           <input name="LANInputIP" size="20" maxlength="18" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+               
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="LANRemoteEditApply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData(0)" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="cancel(0)"/>
+            </div>
+         </li>
+      </ul>
+	 
+	 <ul id="WANRemoteEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">IP Address/Domain :</li>
+                        <li class="right_table">
+                           <input name="WANInputIP" size="20" maxlength="18" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+               <!--   
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">Domain :</li>
+                        <li class="right_table">
+						
+							<select onchange="" size="1" name="Domain">                  
+							<option value="32" id="IP_Domain" >32</option>
+							<option value="24" id="IP_Domain" >24</option>
+							</select>
+							
+                        </li>
+                     </ul>
+                  </div>
+                -->  
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="WANRemoteEditApply" value="<%:Apply%>" type="submit" onclick="return verifySubmitData(1)" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="cancel(1)"/>
+            </div>
+         </li>
+      </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Management%> > <%:Remote_MGMT%> > <%:Telnet%>');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

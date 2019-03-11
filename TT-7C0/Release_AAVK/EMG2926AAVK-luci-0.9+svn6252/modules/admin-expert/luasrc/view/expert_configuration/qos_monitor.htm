@@ -1,0 +1,267 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<title> </title>
+<meta http-equiv='content-type' content='text/html;charset=iso-8859-1'>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+ var interval = 15 ; //sec
+ setInterval("window.location.reload();", interval * 1000);
+
+</script>
+<style type="text/css">
+<!--
+.wtext_3 {font-family:Arial, Helvetica, sans-serif;color:#000000;font-size:11px;}
+.cfg_title{ font-family:Arial, Helvetica, sans-serif; color:#385f95; font-size:11px; font-weight:bold; height:25px; line-height:25px;}
+-->
+
+</style>
+
+
+</head>
+<body>
+<div id="tabs">
+  <ul>
+  	<li><a  href="<%=controller%>/expert/configuration/management/qos" title="General"><span>General</span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/management/qos/advance" title="Advance"><span>Advance</span></a></li>
+	<li class="hightline"><a title="Monitor"><span>Monitor</span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<div id="table">
+	<ul>
+    	<li class="table_content">
+      		<div class="data">
+        		<ul>
+			   		<li class="title" id="moniTitle">Monitor</li>
+					<li>&nbsp;</li>
+				</ul>
+    		</div>
+
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>XBox Live</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>XBox Live</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>MSN Game Zone</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>MSN Game Zone</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>Battlenet</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>VoIP</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>Instant Messenger </td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>Web Surfing</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>FTP</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>eMule</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>BitTorrent</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>E-Mail</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table> 
+<table width=90% border=0 align=center cellspacing=0 class=wtext_3> 
+<tr><td><table width=100% border=0 cellspacing=0 cellpadding=0> 
+<tr><td width=30% align=center>test</td> 
+<td height=10> 
+<table width=100% border=1 cellpadding=0 cellspacing=0  bordercolor="#000000" ><tr> 
+<td height=20 background="<%=media%>/admin/images/i_percentage_center.gif"> 
+<table border=0 cellspacing=0 cellpadding=0 width=0%> 
+<tr><td background="<%=media%>/admin/images/i_percentage_blue.gif"  height=20></td> 
+</tr></table></td></tr></table></td> 
+<td width=30% align=center>0 / 32768   &nbsp;kbps </td></tr> 
+
+<tr><td width=30% align=right></td> 
+<td align=center>0%</td> 
+<td></td></tr></table></td></tr></table>
+
+
+	<table border="0" cellspacing="0" cellpadding="0" width="300" align=center>
+		<tr>
+			<td>&nbsp;</td>
+		</tr>
+		<tr>
+			<td>&nbsp;</td>
+		</tr>
+	</table>
+
+   </li>
+</ul>
+</div>
+</body>
+<script language="JavaScript">
+	showFullPath(' Management > Bandwidth MGMT > Monitor');
+</script>
+</html>

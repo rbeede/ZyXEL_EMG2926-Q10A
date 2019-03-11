@@ -1,0 +1,186 @@
+--- ntpclient-2007/ntpclient.c	2015-01-18 17:49:58.219264000 -0800
++++ ntpclient-2007/ntpclient.c	2015-03-10 23:55:00.778410000 -0700
+@@ -43,6 +43,7 @@
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
++#include <syslog.h>
+ #include <netinet/in.h>
+ #include <netdb.h>     /* gethostbyname */
+ #include <arpa/inet.h>
+@@ -147,7 +148,8 @@
+ 	struct timex txc;
+ 	txc.modes=0;
+ 	if (adjtimex(&txc) < 0) {
+-		perror("adjtimex"); exit(1);
++		syslog(LOG_ERR, "adjtimex ERR\n");
++		perror("ntp client adjtimex"); exit(1);
+ 	}
+ 	return txc.freq;
+ #else
+@@ -164,7 +166,8 @@
+ 	txc.modes = ADJ_FREQUENCY;
+ 	txc.freq = new_freq;
+ 	if (adjtimex(&txc) < 0) {
+-		perror("adjtimex"); exit(1);
++		syslog(LOG_ERR, "adjtimex ERR\n");
++		perror("ntp client adjtimex"); exit(1);
+ 	}
+ 	return txc.freq;
+ #else
+@@ -183,7 +186,8 @@
+ 	/* divide xmttime.fine by 4294.967296 */
+ 	tv_set.tv_nsec = USEC(new->fine)*1000;
+ 	if (clock_settime(CLOCK_REALTIME, &tv_set)<0) {
+-		perror("clock_settime");
++		syslog(LOG_ERR, "clock_settime ERR\n");
++		perror("ntp client clock_settime");
+ 		exit(1);
+ 	}
+ 	if (debug) {
+@@ -198,7 +202,8 @@
+ 	/* divide xmttime.fine by 4294.967296 */
+ 	tv_set.tv_usec = USEC(new->fine);
+ 	if (settimeofday(&tv_set,NULL)<0) {
+-		perror("settimeofday");
++		syslog(LOG_ERR, "settimeofday ERR\n");
++		perror("ntp client settimeofday");
+ 		exit(1);
+ 	}
+ 	if (debug) {
+@@ -239,6 +244,7 @@
+ 	if (debug) fprintf(stderr,"Sending ...\n");
+ 	if (sizeof data != 48) {
+ 		fprintf(stderr,"size error\n");
++		syslog(LOG_ERR, "size err\n");
+ 		return;
+ 	}
+ 	memset(data,0,sizeof data);
+@@ -259,7 +265,8 @@
+ 	/* XXX broken */
+ 	struct timeval udp_arrival;
+ 	if ( ioctl(usd, SIOCGSTAMP, &udp_arrival) < 0 ) {
+-		perror("ioctl-SIOCGSTAMP");
++		syslog(LOG_ERR, "ioctl-SIOCGSTAMP ERR\n");
++		perror("ntp client ioctl-SIOCGSTAMP");
+ 		gettimeofday(&udp_arrival,NULL);
+ 	}
+ 	udp_arrival_ntp->coarse = udp_arrival.tv_sec + JAN_1970;
+@@ -272,6 +279,7 @@
+ 
+ static int check_source(int data_len, struct sockaddr *sa_source, unsigned int sa_len, struct ntp_control *ntpc)
+ {
++	if (debug) fprintf(stderr,"check_source ...\n");
+ 	struct sockaddr_in *sa_in=(struct sockaddr_in *)sa_source;
+ 	(void) sa_len;  /* not used */
+ 	if (debug) {
+@@ -288,12 +296,12 @@
+ 	 * wrong too often. */
+ #if 0
+ 	if (memcmp(ntpc->serv_addr, &(sa_in->sin_addr), 4)!=0) {
+-		return 1;  /* fault */
++		return 1;  /* fault */	
+ 	}
+ #else
+ 	(void) ntpc; /* not used */
+ #endif
+-	if (NTP_PORT != ntohs(sa_in->sin_port)) {
++	if (NTP_PORT != ntohs(sa_in->sin_port)) {		
+ 		return 1;  /* fault */
+ 	}
+ 	return 0;
+@@ -444,6 +452,7 @@
+ 	struct hostent *ntpserver;
+ 	ntpserver=gethostbyname(hostname);
+ 	if (ntpserver == NULL) {
++		syslog(LOG_ERR, "ntp host name ERR\n");
+ 		herror(hostname);
+ 		exit(1);
+ 	}
+@@ -465,6 +474,7 @@
+ 	if(bind(usd,(struct sockaddr *) &sa_rcvr,sizeof sa_rcvr) == -1) {
+ 		perror("bind");
+ 		fprintf(stderr,"could not bind to udp port %d\n",port);
++		syslog(LOG_ERR, "ntp host could not bind to udp port %d\n",port);
+ 		exit(1);
+ 	}
+ 	/* listen(usd,3); this isn't TCP; thanks Alexander! */
+@@ -479,7 +489,7 @@
+ 	memcpy(ntpc->serv_addr,&(sa_dest.sin_addr),4); /* XXX asumes IPv4 */
+ 	sa_dest.sin_port=htons(port);
+ 	if (connect(usd,(struct sockaddr *)&sa_dest,sizeof sa_dest)==-1)
+-		{perror("connect");exit(1);}
++		{syslog(LOG_ERR, "ntp client connect ERR\n");perror("connect");exit(1);} 
+ }
+ 
+ static void primary_loop(int usd, struct ntp_control *ntpc)
+@@ -487,6 +497,7 @@
+ 	fd_set fds;
+ 	struct sockaddr sa_xmit;
+ 	int i, pack_len, probes_sent, error;
++	int test_count=0; // steven test
+ 	unsigned int sa_xmit_len;
+ 	struct timeval to;
+ 	struct ntptime udp_arrival_ntp;
+@@ -503,10 +514,13 @@
+ 	for (;;) {
+ 		FD_ZERO(&fds);
+ 		FD_SET(usd,&fds);
+-		i=select(usd+1,&fds,NULL,NULL,&to);  /* Wait on read or error */
++		i=select(usd+1,&fds,NULL,NULL,&to);  /* Wait on read or error */	
+ 		if ((i!=1)||(!FD_ISSET(usd,&fds))) {
++			test_count++;
++			//if (debug) fprintf(stderr,"i =%d ,test_count=%d...\n",i,test_count);
++			if (test_count!=1)  {syslog(LOG_ERR, "ntp client can't get data from ntp server\n");}  //Steven 2015.0209
+ 			if (i<0) {
+-				if (errno != EINTR) perror("select");
++				if (errno != EINTR) {syslog(LOG_ERR, "ntp client select ERR\n");perror("select");}
+ 				continue;
+ 			}
+ 			if (to.tv_sec == 0) {
+@@ -519,14 +533,17 @@
+ 			}
+ 			continue;
+ 		}
++		test_count=0;
+ 		pack_len=recvfrom(usd,incoming,sizeof_incoming,0,
+ 		                  &sa_xmit,&sa_xmit_len);
+ 		error = ntpc->goodness;
+ 		if (pack_len<0) {
++			syslog(LOG_ERR, "ntp client recvfrom ERR\n");
+ 			perror("recvfrom");
+ 		} else if (pack_len>0 && (unsigned)pack_len<sizeof_incoming){
+ 			get_packet_timestamp(usd, &udp_arrival_ntp);
+-			if (check_source(pack_len, &sa_xmit, sa_xmit_len, ntpc)!=0) continue;
++			syslog(LOG_INFO, "ntp client get data successful\n");
++			if (check_source(pack_len, &sa_xmit, sa_xmit_len, ntpc)!=0)	continue;
+ 			if (rfc1305print(incoming_word, &udp_arrival_ntp, ntpc, &error)!=0) continue;
+ 			/* udp_handle(usd,incoming,pack_len,&sa_xmit,sa_xmit_len); */
+ 		} else {
+@@ -575,6 +592,7 @@
+ 			simulated_freq = contemplate_data(absolute, skew, errorbar, freq);
+ 		} else {
+ 			fprintf(stderr,"Replay input error\n");
++			syslog(LOG_ERR, "ntp client Replay input error\n");
+ 			exit(2);
+ 		}
+ 	}
+@@ -612,7 +630,7 @@
+ 	ntpc.cycle_time=600;          /* seconds */
+ 	ntpc.goodness=0;
+ 	ntpc.cross_check=1;
+-
++	
+ 	for (;;) {
+ 		c = getopt( argc, argv, "c:" DEBUG_OPTION "f:g:h:i:lp:q:" REPLAY_OPTION "stD");
+ 		if (c == EOF) break;
+@@ -705,7 +723,7 @@
+ 
+ 	/* Startup sequence */
+ 	if ((usd=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP))==-1)
+-		{perror ("socket");exit(1);}
++		{syslog(LOG_ERR, "ntp client socket ERR\n");perror ("socket");exit(1);}
+ 
+ 	setup_receive(usd, INADDR_ANY, udp_local_port);
+ 
+

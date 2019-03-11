@@ -1,0 +1,12 @@
+<div id="beamingWarning" class="popup medium notification" data-bind="slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="popup_header_line error"></div>
+    <div id="closebutton" class="button close" data-bind="click: onCloseClick"></div>
+    <div class="warningContent">
+        <div class="warningIcon" ></div>
+        <div class="warningTitle" data-bind="html: title"></div>
+        <div class="warningMsg" data-bind="html: message"></div>
+        <br><br>
+        <div class="boxButton mediumButton svgGradient" data-bind="click: onYesClick, html: textYes"></div>
+        <div class="boxButton mediumButton svgGradient" data-bind="click: onNoClick, html: textNo"></div>
+    </div>
+</div>

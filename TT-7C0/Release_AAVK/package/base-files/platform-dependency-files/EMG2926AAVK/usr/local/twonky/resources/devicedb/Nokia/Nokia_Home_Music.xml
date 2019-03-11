@@ -1,0 +1,29 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Nokia Home Music</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Nokia Home Music</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>NokiaHomeMusic</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG160x160</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>BROKEN_NEXT</Quirk>
+	</DeviceQuirks>
+</Client>

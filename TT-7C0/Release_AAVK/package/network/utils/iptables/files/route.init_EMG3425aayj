@@ -1,0 +1,199 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=90
+
+##check mode,if AP/UR,exit
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+print_log()
+{
+	echo "========= print log ==========>  $1 " 1> /dev/null
+}
+
+wan_iface2=""
+
+check_interface()
+{
+	wan_iface2=""
+	for ii in "" 1 2 3 4
+	do
+		if_enable=$(uci get network.wan$ii.enable)
+		if_ifname=$(uci get network.wan$ii.ifname)
+		if_proto=$(uci get network.wan$ii.proto)
+		if [ "$if_enable" == "1" ] && [ "$if_ifname" == "$1" ];then
+			if [ "$if_proto" == "pppoe" ] ;then
+				wan_iface2=pppoe-wan$ii
+			else
+				wan_iface2=$1
+			fi
+		else
+			continue
+		fi
+	done
+}
+
+boot() {
+	config_load route
+	count=`uci get route.general.routes_count`
+	gw_enable=$(uci get route.route1.gateway_enable)
+	i=1
+	while [ $i -le $count ]
+	do
+		print_log "==== boot  i =$i  "
+		enable=`uci get route.route$i.enable`
+		dst=`uci get route.route$i.dest_ip`
+		mask=`uci get route.route$i.netmask`
+		gateway=`uci get route.route$i.gateway`
+		gateway_enable=`uci get route.route$i.gateway_enable`
+		wan_iface=`uci get route.route$i.wan_iface`
+		check_interface $wan_iface
+		wan_iface=$wan_iface2
+		mask_num=$(/bin/ipcalc.sh $dst $mask | grep PREFIX | sed 's/PREFIX=//g' | tr -d '\n' )
+		
+		[[ -z "$gw_enable" ]] && {
+			uci set route.route$i.gateway_enable=1
+		}
+		
+		if [ "$enable" = "1" ] ; then
+			if [ "$gateway_enable" = "1" ] ; then
+				
+				if [ "$wan_iface" != "" ] ; then
+					uci set route.route$i.wan_iface=''
+				fi
+				
+					route add -net $dst netmask $mask gw $gateway
+					print_log "2 route add -net $dst netmask $mask gw $gateway" 
+
+			else
+				route add -net $dst netmask $mask dev $wan_iface
+				 print_log "3 route add -net $dst netmask $mask dev $wan_iface" 
+
+			fi
+		fi
+		i=`expr $i + 1`
+	done
+	
+	uci commit route
+
+	#sean
+	#re-apply route table	
+	/sbin/configure_intfGrp setup_routing
+
+}
+
+start() {
+	count=`uci get route.general.routes_count`
+	i=1
+	while [ $i -le $count ]
+	do
+		print_log "==== start  i =$i  "
+		new=`uci get route.route$i.new`
+		edit=`uci get route.route$i.edit`
+		delete=`uci get route.route$i.delete`
+		dst=`uci get route.route$i.dest_ip`
+		mask=`uci get route.route$i.netmask`
+		gateway=`uci get route.route$i.gateway`
+		enable=`uci get route.route$i.enable`
+		gateway_enable=`uci get route.route$i.gateway_enable`
+		wan_iface=`uci get route.route$i.wan_iface`
+		check_interface $wan_iface
+		wan_iface=$wan_iface2
+		mask_num=$(/bin/ipcalc.sh $dst $mask | grep PREFIX | sed 's/PREFIX=//g' | tr -d '\n' )
+
+		if [ "$new" = "1" ] ; then
+			if [ "$enable" = "1" ] ; then
+				if [ "$gateway_enable" = "1" ] ; then
+					route add -net $dst netmask $mask gw $gateway
+					print_log "5 route add -net $dst netmask $mask gw $gateway"
+				else
+					route add -net $dst netmask $mask dev $wan_iface
+					print_log "6 route add -net $dst netmask $mask dev $wan_iface"
+				fi
+			fi
+			uci set route.route$i.new=0
+			uci commit route
+		fi
+		if [ "$edit" = "1" ] ; then
+			oldenable=`uci get route.route$i.enable_old`
+			olddst=`uci get route.route$i.dest_ip_old`
+			oldmask=`uci get route.route$i.netmask_old`
+			oldgateway=`uci get route.route$i.gateway_old`
+			OldGatewayEnable=`uci get route.route$i.gateway_enable_old`
+			OldWanIface=`uci get route.route$i.wan_iface_old`
+			check_interface $OldWanIface
+			OldWanIface=$wan_iface2
+			Oldmask_num=$(/bin/ipcalc.sh $olddst $oldmask | grep PREFIX | sed 's/PREFIX=//g' | tr -d '\n' )
+				
+			if [ "$oldenable" = "1" ] ; then
+				if [ "$OldGatewayEnable" = "1" ] ; then
+					route del -net $olddst netmask $oldmask gw $oldgateway		
+					print_log "8 route del -net $olddst netmask $oldmask gw $oldgateway"				
+				else
+					route del -net $olddst netmask $oldmask dev $OldWanIface
+					print_log "9 route del -net $olddst netmask $oldmask dev $OldWanIface"
+				fi
+			fi
+
+			if [ "$enable" = "1" ] ; then
+				if [ "$gateway_enable" = "1" ] ; then
+					route add -net $dst netmask $mask gw $gateway
+					print_log "11 route add -net $dst netmask $mask gw $gateway"
+				else
+					route add -net $dst netmask $mask dev $wan_iface
+					print_log "12 route add -net $dst netmask $mask dev $wan_iface"	
+				fi
+			fi
+			uci set route.route$i.edit=0
+			uci commit route
+		fi
+		if [ "$delete" = "1" ] ; then
+			if [ "$enable" = "1" ] ; then
+				if [ "$gateway_enable" = "1" ] ; then
+					route del -net $dst netmask $mask gw $gateway dev $wan_iface
+					route del -net $dst netmask $mask gw $gateway
+					print_log "14 route del -net $dst netmask $mask gw $gateway"
+
+				else
+				
+					route del -net $dst netmask $mask dev $wan_iface
+					print_log "15 route del -net $dst netmask $mask dev $wan_iface"
+
+				fi				
+			fi
+			routeid=$i
+			uci del route.route$routeid
+			while [ $routeid -lt $count ]
+			do
+				uci rename route.route`expr $routeid + 1`=route$routeid
+				routeid=`expr $routeid + 1`
+			done
+			count=`expr $count - 1`
+			i=`expr $i - 1`
+			uci set route.general.routes_count=$count
+			uci commit route
+		fi
+		if  [ "$1" == "replug" ] && [ "$enable" = "1" ] ; then
+
+			if [ "$gateway_enable" = "1" ] ; then
+				
+				route add -net $dst netmask $mask gw $gateway
+				print_log "17 route add -net $dst netmask $mask gw $gateway"
+
+			else
+			
+				route add -net $dst netmask $mask dev $wan_iface
+				print_log "18 route add -net $dst netmask $mask dev $wan_iface"	
+
+			fi
+		fi
+		
+		i=`expr $i + 1`
+	done
+
+	#sean
+	#re-apply route table
+	/sbin/configure_intfGrp setup_routing
+
+}

@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Intervideo WinDVD</DisplayName>
+		<HttpRecognition>
+			<HttpText>Intervideo</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

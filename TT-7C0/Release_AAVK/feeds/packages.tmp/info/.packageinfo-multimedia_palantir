@@ -1,0 +1,21 @@
+Source-Makefile: feeds/packages/multimedia/palantir/Makefile
+Package: palantir
+Version: 2.7-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libjpeg +libpthread
+Menu-Depends: 
+Provides: 
+Build-Depends: libjpeg
+Section: multimedia
+Category: Multimedia
+Title: A multichannel interactive streaming solution
+Maintainer: 
+Source: palantir-2.7.tgz
+Type: ipkg
+Description: 	Palantir is a Linux-based streaming system designed to transmit live
+	video, audio and data over a TCP/IP network, as well as to control
+	remote devices.
+http://www.fastpath.it/products/palantir/
+
+@@
+
+

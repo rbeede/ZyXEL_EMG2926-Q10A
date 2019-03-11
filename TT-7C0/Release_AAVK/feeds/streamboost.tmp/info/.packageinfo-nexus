@@ -1,0 +1,19 @@
+Source-Makefile: feeds/streamboost/nexus/Makefile
+Package: kmod-nexus
+Submenu: Flow Detect
+Version: <LINUX_VERSION>-1
+Depends: 
+Menu-Depends: 
+Provides: 
+Section: kernel
+Category: Bigfoot
+Title: StreamBoost Nexus
+Maintainer: 
+Source: nexus-.tar.gz
+Type: ipkg
+Kernel-Config: CONFIG_NETFILTER=y CONFIG_NETFILTER_NETLINK=y CONFIG_NF_CONNTRACK_EVENTS=y CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y
+Description: StreamBoost Nexus
+
+@@
+
+

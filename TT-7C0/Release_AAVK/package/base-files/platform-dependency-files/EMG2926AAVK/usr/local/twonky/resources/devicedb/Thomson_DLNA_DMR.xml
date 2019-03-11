@@ -1,0 +1,12 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Thomson DLNA DMR</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Thomson DLNA DMR</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>ADD_HTTP_GET</Quirk>
+	</DeviceQuirks>
+</Client>

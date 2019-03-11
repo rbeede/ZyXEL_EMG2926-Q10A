@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/sbnamed/Makefile
+Package: sbnamed
+Submenu: Node Management
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +leash
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: sbnamed
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: sbnamed-.tar.gz
+Type: ipkg
+Description:  sbnamed updates node names based on dhcp leases.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sbnamed
+	config sbnamed_USE_CUSTOM_VERSION
+		depends on PACKAGE_sbnamed
+		bool "Use custom package version"
+		default n
+	config sbnamed_CUSTOM_VERSION
+		depends on sbnamed_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sbnamed
+	config sbnamed_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sbnamed
+		bool "Use custom source directory"
+		default n
+	config sbnamed_CUSTOM_SOURCE_DIR
+		depends on sbnamed_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

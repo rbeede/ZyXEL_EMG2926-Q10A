@@ -1,0 +1,72 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+[ -f /tmp/bootflag ] && {
+        exit 0
+}
+
+chk_init=$(cat /tmp/initial_process)
+twonky_enabled=$(uci get dlna.main.enabled)
+
+# kill watch /bin/streamboost_monitor daemon
+streamboost_monitor_pid=$(ps | grep "/bin/streamboost_monitor" | grep "grep" -v | awk '{print $1}')			
+if [ "$streamboost_monitor_pid" != "" ]; then
+	kill $streamboost_monitor_pid
+fi
+
+[ "$twonky_enabled" == "1" -a "$chk_init" == "0" ] && {
+/etc/init.d/dlna stop &
+sleep 3
+}
+
+. /etc/appflow/rc.appflow
+. $STREAMBOOST_USER_CFG
+
+[ "$enable_streamboost" != "yes" ] && exit
+
+[ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "wan" ] && {
+	/etc/init.d/streamboost ifdn
+	/etc/init.d/streamboost ifup
+}
+
+[ "$ACTION" = "ifdown" ] && [ "$INTERFACE" = "wan" ] && {
+	/etc/init.d/streamboost ifdn
+}
+
+[ "$ACTION" = "ifup" ] && [ "$INTERFACE" = "lan" ] && {
+	/etc/init.d/streamboost ifdn
+	/etc/init.d/streamboost ifup
+}
+
+[ "$ACTION" = "ifdown" ] && [ "$INTERFACE" = "lan" ] && {
+	/etc/init.d/streamboost ifdn
+}
+
+dlna_live=$(ps | grep twonkystarter | grep -v grep )
+[ "$twonky_enabled" == "1" -a -z "$dlna_live" -a "$chk_init" == "0" ] && /etc/init.d/dlna start
+
+# create watch /bin/streamboost_monitor daemon
+local proto
+local wan_status
+local wan_type=$(uci get network.wan.proto)
+
+config_load appflow	
+local enable_streamboost=$(uci_get appflow tccontroller enable_streamboost)
+streamboost_monitor_pid=$(ps | grep "/bin/streamboost_monitor" | grep "grep" -v | awk '{print $1}')
+
+if [ "$wan_type" == "pppoe" ] || [ "$wan_type" == "pptp" ]; then
+	proto=$wan_type-wan
+else
+	proto=$(uci get network.wan.ifname)
+fi
+
+wan_status=$(ifconfig $proto | grep "inet addr:")
+			
+if [ "$streamboost_monitor_pid" == "" ] && [ "$enable_streamboost" == "1" ]; then
+
+	if [ "$wan_status" != "" ]; then
+	   watch -tn 60 /bin/streamboost_monitor 1>/dev/null 2>&1 &
+	fi
+	
+fi

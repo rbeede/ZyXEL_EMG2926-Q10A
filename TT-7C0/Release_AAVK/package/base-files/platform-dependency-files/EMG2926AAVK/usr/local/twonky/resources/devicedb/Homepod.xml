@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Homepod</DisplayName>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOUTF8</Quirk>
+	</DeviceQuirks>
+</Client>

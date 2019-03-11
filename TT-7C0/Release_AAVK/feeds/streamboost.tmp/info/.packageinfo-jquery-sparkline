@@ -1,0 +1,45 @@
+Source-Makefile: feeds/streamboost/jquery-sparkline/Makefile
+Package: jquery-sparkline
+Submenu: JavaScript
+Version: 1.4.3-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery plugin to generate small inline charts
+Maintainer: 
+Source: jquery.sparkline.min.js
+Type: ipkg
+Description:   This jQuery plugin generates sparklines (small inline charts) directly
+  in the browser using data supplied either inline in the HTML, or
+  via javascript.
+http://omnipotent.net/jquery.sparkline
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-sparkline
+	config jquery-sparkline_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-sparkline
+		bool "Use custom package version"
+		default n
+	config jquery-sparkline_CUSTOM_VERSION
+		depends on jquery-sparkline_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.4.3)"
+		default "1.4.3"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-sparkline
+	config jquery-sparkline_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-sparkline
+		bool "Use custom source directory"
+		default n
+	config jquery-sparkline_CUSTOM_SOURCE_DIR
+		depends on jquery-sparkline_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

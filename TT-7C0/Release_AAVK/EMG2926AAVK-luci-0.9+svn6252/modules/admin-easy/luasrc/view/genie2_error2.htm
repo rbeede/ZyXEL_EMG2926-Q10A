@@ -1,0 +1,117 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+local lanDev, wlanDev 
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/brick.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/images/table.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body>
+<div id="popup"></div>
+<div id="wrapper">
+<div class="top_image"></div>
+<div id="close"><a href="#"onclick="MM_showHideLayers('popup','','show','popup3_table','','show')" title="Exit"></a></div>
+<div class="unit_eazy"></div>
+<div class="unit_title" id="g2-2easy123">eaZy 123</div>
+<div class="genie_logo"></div>
+<div class="genie_color"></div>
+<div class="set"><ul>
+<li class="g_ing"><%:connect_to_internet%><div class="set_now">
+  <ul><li>1</li>
+</ul></div> </li> 
+<li class="g_arrow"></li><li class="g_default"><%:router_password%><div class="set_no2"><ul> <li>2</li> </ul></div></li> 
+<li class="g_arrow"></li><li class="g_default"><%:net_map_wireless_security%><div class="set_no3"><ul><li>3</li></ul></div></li>
+</ul></div>
+<div class="i_error"><ul><li class="i_warning"></li><li class="w_word"><%:eaZy123_2_error2_note_1%></li></ul></div>
+<div class="g_content"><ul><li class="b_word"><%:eaZy123_2_error2_note_2%></li></ul></div>
+<div class="gbutton2">
+     <div align="right">
+       <input name="button" type="button" onclick="javascript:checkExit();" value="<%:eaZy123_exit%>" />
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+       <input type="button" onclick="MM_goToURL('parent','<%=controller%>/easy/eaZy123/genie2-1');return document.MM_returnValue" value="<%:eaZy123_back%>" />
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+       <input type="button" onclick="MM_goToURL('parent','<%=controller%>/easy/eaZy123/genie3');return document.MM_returnValue" value="<%:ignore%>" />
+    </div>
+  </div>
+<div class="index_bg" id="index_bg"></div>
+<div class="in_line" id="topline" ></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_left.gif);width:9px;height:501px;z-index: 1;top: 0px;"></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_right.gif);width:9px;height:501px;right:-2px;z-index: 1;top: 0px;"></div>
+<div class="copyright" id="copyright"><%:copy_right%></div>
+</div>
+<div id="popup3_table">
+  <table width="60%" border="0" cellspacing="0" cellpadding="0">
+  <tr>
+    <td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="19" height="37"><img src="<%=media%>/images/popup_top_left.gif" width="19" height="45" /></td>
+        <td background="<%=media%>/images/popup_top_center.gif" class="table_title">Log Out</td>
+        <td width="15" background="<%=media%>/images/popup_top_center.gif"><a href="#" class="iclose" onclick="MM_showHideLayers('popup','','hide','popup3_table','','hide')"></a></td>
+        <td width="19" height="45"><img src="<%=media%>/images/popup_top_right.gif" width="19" height="45" /></td>
+      </tr>
+    </table></td>
+  </tr>
+  <tr>
+    <td><table width="100%" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="19" background="<%=media%>/images/popup_main_left.gif">&nbsp;</td>
+        <td bgcolor="#FFFFFF"><span class="popupcontent"> 
+          <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="27%"><center>
+                <img src="<%=media%>/images/i_info.jpg" width="50" height="49" />
+              </center>
+              </td>
+              <td width="73%">Are you sure you want to Exit?</td>
+            </tr>
+          </table>
+         
+        </span></td>
+        <td width="19" background="<%=media%>/images/popup_main_right.gif">&nbsp;</td>
+      </tr>
+    </table></td>
+  </tr>
+  <tr>
+    <td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td width="19" height="48"><img src="<%=media%>/images/popup_down_left.gif" width="19" height="48" /></td>
+        <td background="<%=media%>/images/popup_down_center.gif">
+		<div class="button2"><ul>   
+    <li><a href="#" title="Reset"><span onclick="MM_showHideLayers('popup','','hide','popup3_table','','hide')">No</span></a></li>
+	<li><a href="/" title="Reset"><span>Yes</span></a></li>
+	</ul></div></td>
+        <td width="19" height="37"><img src="<%=media%>/images/popup_down_right.gif" width="19" height="48" /></td>
+      </tr>
+    </table></td>
+  </tr>
+</table></div>
+</body>
+</html>

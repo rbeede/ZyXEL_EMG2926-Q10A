@@ -1,0 +1,39 @@
+#!/bin/sh
+
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/rc.appflow
+
+# standard settings - accept overrides from the calling environment
+DISPLAY_NAME="settings-loader"
+REDIS_PORT=6379
+
+EXTRA_COMMANDS=status
+
+export DISPLAY_NAME
+
+start() {
+	[ -f $STREAMBOOST_USER_CFG ] || {
+		$LOGGER "User config file $STREAMBOOST_USER_CFG does not exist, exiting"
+		echo >&2 "User config file $STREAMBOOST_USER_CFG does not exist, exiting"
+		return 1
+	}
+	. $STREAMBOOST_USER_CFG
+	redis-cli set settings:bw:up $uplimit > /dev/null
+	redis-cli set settings:bw:down $downlimit > /dev/null
+}
+
+stop() {
+	return 0
+}
+
+status() {
+	EXISTS=$(redis-cli exists settings:bw:up)
+	if [ "$EXISTS" = "1" ]; then
+		echo "Settings have been loaded."
+	else
+		echo "Settings have not been loaded."
+		return 1
+	fi
+}
+
+action "$@"
+exit $?

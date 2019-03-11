@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/flux/Makefile
+Package: flux
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery +jquery-ui +jquery-contextmenu +jquery-jscrollpane +jquery-swapsies +jquery-flot +jquery-flot-axislabels +jquery-flot-gant +jquery-sparkline +raphael +tresbar +angular +angular-mocks +angular-route +angular-translate +urijs +angular-ozker +angular-loadcontent
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Killer Router Web UI Toolkit
+Maintainer: 
+Source: flux-.tar.gz
+Type: ipkg
+Description:   Killer Router Web UI Toolkit
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flux
+	config flux_USE_CUSTOM_VERSION
+		depends on PACKAGE_flux
+		bool "Use custom package version"
+		default n
+	config flux_CUSTOM_VERSION
+		depends on flux_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flux
+	config flux_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flux
+		bool "Use custom source directory"
+		default n
+	config flux_CUSTOM_SOURCE_DIR
+		depends on flux_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

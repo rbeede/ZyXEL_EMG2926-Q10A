@@ -1,0 +1,37 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WD TV Live Hub</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WD TV Live Hub</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-wd-live.xml</DescriptionFile>
+		</DLNA>
+		<ExtraProtocolInfo>http-get:*:audio/mp4:*,http-get:*:audio/vnd.dlna.adts:*,http-get:*:audio/x-aac:*,http-get:*:audio/x-ac3:*,http-get:*:video/3gpp:*,http-get:*:audio/x-flac:*,http-get:*:audio/x-matroska:*,http-get:*:video/x-matroska:*,http-get:*:video/quicktime:*,http-get:*:audio/L16:*</ExtraProtocolInfo>
+		<MimeTranslations>
+			<!-- Suppress PNG only for push, since pull works -->
+			<MimeTypeSuppress op="push">image/png</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NEEDS_THUMBNAIL_CI_FLAG</Quirk>
+		<Quirk>TV4IDS</Quirk>
+		<Quirk>POLL_AVT_STATE</Quirk>
+		<Quirk>NOARTISTROLECOMPOSER</Quirk>
+		<Quirk>UNKNOWNSIZE_BYTESEEK</Quirk>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+        <!-- Device picks thumbnail instead of HD image in push case.
+             So send only the HD image to the device. -->
+		<Quirk>REDUCED_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

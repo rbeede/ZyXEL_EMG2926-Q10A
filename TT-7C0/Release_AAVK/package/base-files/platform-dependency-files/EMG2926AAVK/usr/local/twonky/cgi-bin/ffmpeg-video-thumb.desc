@@ -1,0 +1,8 @@
+# generate video thumbs
+#(c) 2015 by Lynx Technology
+exec: ffmpeg  -ss $videothumbtime -i $infile -vcodec mjpeg -vframes 1 -an -f image2 -y -ss 5 -s $targetgeometry -aspect 1:1 $outfile
+# capabilities
+from=video/*
+to=image/jpeg
+videothumb
+synchronous

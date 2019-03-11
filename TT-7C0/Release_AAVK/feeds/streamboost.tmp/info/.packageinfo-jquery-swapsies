@@ -1,0 +1,47 @@
+Source-Makefile: feeds/streamboost/jquery-swapsies/Makefile
+Package: jquery-swapsies
+Submenu: JavaScript
+Version: 20100709-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Swap and Re-Order Divs Smoothly Using jQuery
+Maintainer: 
+Source: jquery-swapsies.js
+Type: ipkg
+Description:   The requirement was to be able to swap two divs smoothly. Not just
+  swap the contents of the divs in question, that was too easy, but to
+  physically move the divs. One div to where the second div was positioned
+  and vice versa, making the animation visible to the user to emphasise
+  the movement.
+http://biostall.com/swap-and-re-order-divs-smoothly-using-jquery-swapsie-plugin
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-swapsies
+	config jquery-swapsies_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-swapsies
+		bool "Use custom package version"
+		default n
+	config jquery-swapsies_CUSTOM_VERSION
+		depends on jquery-swapsies_USE_CUSTOM_VERSION
+		string " version as string (default version: 20100709)"
+		default "20100709"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-swapsies
+	config jquery-swapsies_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-swapsies
+		bool "Use custom source directory"
+		default n
+	config jquery-swapsies_CUSTOM_SOURCE_DIR
+		depends on jquery-swapsies_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

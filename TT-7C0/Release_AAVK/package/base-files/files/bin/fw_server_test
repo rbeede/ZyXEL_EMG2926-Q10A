@@ -1,0 +1,21 @@
+#!/bin/sh
+
+count=0
+
+while [ 1 -eq 1 ];
+do
+        status=""
+        status=$(ping ftp2.zyxel.com -c 2 | grep "100% packet loss")
+
+        if [ "$status" != "" ]; then
+                count=$(($count+1))
+        else
+                sleep 1
+        fi
+
+        if [ "$count" == "2" ]; then
+                rm /tmp/rootfs
+                killall wget
+                break
+        fi
+done

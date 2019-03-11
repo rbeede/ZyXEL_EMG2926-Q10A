@@ -1,0 +1,34 @@
+#!/bin/sh 
+# Copyright (C) 2009 OpenWrt.org
+
+. /bin/define-usb-slot "$DEVPATH"
+
+dev_node=`basename $DEVPATH`
+
+case "$ACTION" in
+	add)	
+		dev="$(echo $dev_node | awk -F"[0-9]" '{print $1}')"
+		
+		total_part=$(ls /dev/$dev|grep "^/dev/$dev[0-9]" | wc -l)
+	
+		# no partition table	
+		if [ "$total_part" -eq 0 ]; then
+			total_part=1
+		fi
+		
+		mount_part=$(df | grep "^/dev/$dev" | wc -l)
+		
+		if [ "$total_part" -eq "$mount_part" ]; then
+			/bin/usb-app "stop"
+			/bin/usb-app "start"
+		fi	
+
+	;;
+	remove)	
+		if ! df | grep "${USB_SLOT}_${USB_NODE}"; then
+			/bin/usb-app "start"
+		fi
+
+	;;
+esac	
+

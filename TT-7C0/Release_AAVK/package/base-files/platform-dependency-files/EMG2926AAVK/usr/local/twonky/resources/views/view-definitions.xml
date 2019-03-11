@@ -1,0 +1,146 @@
+<view name='base' viewlist='advanced,folder,ipodlike,simple,classified,mobile,flat,storage' guilist='advanceddefault,ipodlike,simpledefault,byfolder,mobile'>
+	<navtree sortcriteria='+upnp:originalTrackNumber'>
+		<container name='storage' id='source/folders' upnp:originalTrackNumber='4' class='object.container.storageFolder' createClass='object.item.audioItem.musicTrack,object.item.videoItem.movie,object.item.imageItem.photo'>
+			<container buildon='res' createClass='object.item.audioItem.musicTrack,object.item.videoItem.movie,object.item.imageItem.photo' class='object.container.storageFolder' />
+		</container>
+		<container name='music' id='music' upnp:originalTrackNumber='1' createClass='object.item.audioItem.musicTrack,object.item.audioItem.online.musicTrack,object.item.audioItem.audioBroadcast,object.item.audioItem.online1.musicTrack,object.item.audioItem.playlist.musicTrack,object.item.audioItem.audioBook'>
+			<container name='alltracks' id='music/all' createClass='object.item.audioItem.musicTrack' class='object.container'/>
+			<container name='artist' id='music/artists' class='object.container' createClass='object.item.audioItem.musicTrack'>
+				<container buildon='upnp:artist' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.musicTrack'/>
+			</container>
+			<container name='artistindex' id='music/artistindex' class='object.container' createClass='object.item.audioItem.musicTrack'>
+				<container buildon='upnp:artist[3]' albumart='1' class='object.container' createClass='object.item.audioItem.musicTrack'>
+					<container buildon='upnp:artist' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.musicTrack'>
+						<container name='allname' createClass='object.item.audioItem.musicTrack' class='object.container' />
+						<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+					</container>
+				</container>
+			</container>
+			<container name='composer' id='music/composers' createClass='object.item.audioItem.musicTrack' class='object.container' >
+				<container buildon='upnp:author@role' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.musicTrack'>
+					<container name='allname' createClass='object.item.audioItem.musicTrack' class='object.container' />
+					<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+				</container>
+			</container>
+			<container name='rating' id='music/rating' createClass='object.item.audioItem.musicTrack' class='object.container' >
+				<container buildon='pv:rating' albumart='1' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+			</container>
+			<container name='artistalbum' id='music/artistalbum' class='object.container' createClass='object.item.audioItem.musicTrack'>				
+				<container buildon='upnp:artist' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.musicTrack'>
+					<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+				</container>
+			</container>
+			<container name='genre' id='music/genre' class='object.container' createClass='object.item.audioItem.musicTrack'>
+				<container buildon='upnp:genre' albumart='1' class='object.container.genre.musicGenre' createClass='object.item.audioItem.musicTrack' />
+			</container>
+			<container name='genrealbum' id='music/genrealbum' class='object.container' createClass='object.item.audioItem.musicTrack'>
+				<container buildon='upnp:genre' albumart='1' class='object.container.genre.musicGenre' createClass='object.item.audioItem.musicTrack' >
+					<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+				</container>
+			</container>
+			<container name='genreartistalbum' id='music/genreartistalbum' class='object.container' createClass='object.item.audioItem.musicTrack'>
+				<container buildon='upnp:genre' albumart='1' class='object.container.genre.musicGenre' createClass='object.item.audioItem.musicTrack'>
+					<container buildon='upnp:artist' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.musicTrack'>
+						<container name='allname' createClass='object.item.audioItem.musicTrack' class='object.container' />
+						<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+					</container>
+				</container>
+			</container>
+			<container name='album' id='music/albums' createClass='object.item.audioItem.musicTrack' class='object.container' >
+				<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.musicTrack' class='object.container.album.musicAlbum' />
+			</container>
+			<container name='byfolder' id='music/folders' class='object.container.storageFolder' createClass='object.item.audioItem.musicTrack,object.item.audioItem.audioBook'>
+				<container buildon='res' albumart='1' createClass='object.item.audioItem.musicTrack,object.item.audioItem.audioBook' class='object.container.storageFolder' />
+			</container>
+			<container name='playlists' id='music/playlists' class='object.container' createClass='object.item.audioItem.musicTrack,object.item.audioItem.online.musicTrack,object.item.audioItem.playlist.musicTrack' sortcriteria='+upnp:originalTrackNumber,+dc:title'   restricted='0' >
+				<container name='playlistrecentlyaddedaudio' filteron='pv:addedLast60' albumart='1' sortcriteria='-pv:addedTime' createClass='object.item.audioItem.musicTrack' upnp:originalTrackNumber='3' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlistmostplayedaudio' filteron='pv:playcount' albumart='1' sortcriteria='-pv:playcount' createClass='object.item.audioItem.musicTrack' upnp:originalTrackNumber='1'  restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlistlastplayedaudio' filteron='pv:lastPlayedTime' albumart='1' sortcriteria='-pv:lastPlayedTime' createClass='object.item.audioItem.musicTrack' upnp:originalTrackNumber='2' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlisthighlyrated' filteron='pv:highrated' albumart='1' sortcriteria='-pv:rating' createClass='object.item.audioItem.musicTrack' upnp:originalTrackNumber='4' class='object.container.playlistContainer' restricted='1'  flags='pv:smartplaylist=1' />
+				<container buildon='upnp:album' albumart='1' sortcriteria='+upnp:originalTrackNumber' upnp:originalTrackNumber='6' createClass='object.item.audioItem.playlist.musicTrack' class='object.container.playlistContainer' />
+			</container>
+			<container name='music_online' id='music/online' createClass='object.item.audioItem.online1.musicTrack' class='object.container' flags='skip_navtree_builder'/>
+			<container name='audiobooks' id='music/audiobooks' createClass='object.item.audioItem.audioBook' class='object.container' >
+				<container name='allaudiobooks' id='music/audiobooksall' createClass='object.item.audioItem.audioBook' class='object.container' flags='skip_navtree_builder'/>
+				<container name='audiobookartist' albumart='1' class='object.container' createClass='object.item.audioItem.audioBook'>
+					<container buildon='upnp:artist' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.audioBook'>
+						<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.audioBook' class='object.container.audiobookContainer' />
+					</container>
+				</container>
+				<container name='audiobookauthor' albumart='1' createClass='object.item.audioItem.audioBook' class='object.container' >
+					<container buildon='upnp:author@role' albumart='1' class='object.container.person.musicArtist' createClass='object.item.audioItem.audioBook'>
+						<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.audioBook' class='object.container.audiobookContainer' />
+					</container>
+				</container>
+				<container name='audiobookalbum' albumart='1' createClass='object.item.audioItem.audioBook' class='object.container' >
+					<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.audioBook' class='object.container.audiobookContainer' />
+				</container>
+				<container name='audiobookgenre' albumart='1' class='object.container' createClass='object.item.audioItem.audioBook'>
+					<container buildon='upnp:genre' albumart='1' class='object.container.genre.musicGenre' createClass='object.item.audioItem.audioBook' >
+						<container buildon='upnp:album' albumart='1' sortcriteria='+pv:numberOfThisDisc,+upnp:originalTrackNumber' createClass='object.item.audioItem.audioBook' class='object.container.audiobookContainer' />
+					</container>
+				</container>
+			</container>
+		</container>
+		<container name='pictures' id='picture' upnp:originalTrackNumber='2' createClass='object.item.imageItem.photo,object.item.imageItem.online.photo,object.item.imageItem.online1.photo,object.item.imageItem.playlist.photo' class='object.container'>
+			<container name='allpictures' id='picture/all' createClass='object.item.imageItem.photo' class='object.container'/>
+			<container name='byfolder' id='picture/folders' class='object.container.storageFolder' restricted='0' createClass='object.item.imageItem.photo'>
+				<container buildon='res' albumart='1' createClass='object.item.imageItem.photo' class='object.container.storageFolder'/>
+			</container>
+			<container name='bydate' id='picture/date' createClass='object.item.imageItem.photo' class='object.container'>
+				<container buildon='pv:year' albumart='1' createClass='object.item.imageItem.photo' class='object.container'>
+					<container name='allname' createClass='object.item.imageItem.photo' class='object.container.album.photoAlbum' sortcriteria='+dc:date' />
+					<container buildon='pv:month' albumart='1' createClass='object.item.imageItem.photo' class='object.container.album.photoAlbum' sortcriteria='+dc:date' />
+				</container>
+			</container>
+			<container name='keywords' id='picture/keywords' createClass='object.item.imageItem.photo'  class='object.container' >
+				<container buildon='pv:avKeywords' albumart='1' createClass='object.item.imageItem.photo' class='object.container.album.photoAlbum' />
+			</container>
+			<container name='album' id='picture/albums' createClass='object.item.imageItem.photo'  class='object.container' >
+				<container buildon='upnp:album' albumart='1' createClass='object.item.imageItem.photo' class='object.container.album.photoAlbum' />
+			</container>
+			<container name='rating' id='picture/rating' createClass='object.item.imageItem.photo' class='object.container' >
+				<container buildon='pv:rating' albumart='1' createClass='object.item.imageItem.photo' class='object.container.album.photoAlbum' />
+			</container>
+			<container name='slideshows' id='picture/playlists' class='object.container' createClass='object.item.imageItem.photo,object.item.imageItem.online.photo,object.item.imageItem.playlist.photo' sortcriteria='+upnp:originalTrackNumber,+dc:title' restricted='0' >
+				<container name='playlistrecentlyaddedimage' filteron='pv:addedLast60' albumart='1' sortcriteria='-pv:addedTime' createClass='object.item.imageItem.photo' upnp:originalTrackNumber='3' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlistmostviewedimage' filteron='pv:playcount' albumart='1' sortcriteria='-pv:playcount' createClass='object.item.imageItem.photo' upnp:originalTrackNumber='1' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlistlastviewedimage' filteron='pv:lastPlayedTime' albumart='1' sortcriteria='-pv:lastPlayedTime' createClass='object.item.imageItem.photo' upnp:originalTrackNumber='2' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlisthighlyrated' filteron='pv:highrated' albumart='1' sortcriteria='-pv:rating' createClass='object.item.imageItem.photo' upnp:originalTrackNumber='4' class='object.container.playlistContainer' restricted='1' flags='pv:smartplaylist=1' />
+				<container buildon='upnp:album' albumart='1' sortcriteria='+upnp:originalTrackNumber' createClass='object.item.imageItem.playlist.photo' upnp:originalTrackNumber='6' class='object.container.playlistContainer' />
+			</container>
+			<container name='picture_online' id='picture/online' createClass='object.item.imageItem.online1.photo' class='object.container' flags='skip_navtree_builder'/>
+		</container>
+		<container name='videos' id='video' upnp:originalTrackNumber='3' createClass='object.item.videoItem.movie,object.item.videoItem.classified.movie,object.item.videoItem.online.movie,object.item.videoItem.videoBroadcast,object.item.videoItem.online1.movie,object.item.videoItem.playlist.movie' class='object.container'>
+			<container name='allvideos' id='video/all' createClass='object.item.videoItem.movie' class='object.container'/>
+			<container name='byfolder' id='video/folders' class='object.container.storageFolder' restricted='0' createClass='object.item.videoItem.movie'>
+				<container buildon='res' albumart='1' createClass='object.item.videoItem.movie' class='object.container.storageFolder'/>
+			</container>
+			<container name='title' id='video/titleindex' class='object.container' createClass='object.item.videoItem.movie'>
+				<container buildon='dc:title[3]' albumart='1' class='object.container' createClass='object.item.videoItem.movie' />
+			</container>
+			<container name='bydate' id='video/date' createClass='object.item.videoItem.movie' class='object.container'>
+				<container buildon='pv:year' albumart='1' createClass='object.item.videoItem.movie' class='object.container' sortcriteria='+dc:date'>
+					<container buildon='pv:month' albumart='1' createClass='object.item.videoItem.movie' class='object.container' sortcriteria='+dc:date'/>
+				</container>
+			</container>
+			<container name='live_tv' id='video/live_tv'  createClass='object.item.videoItem.videoBroadcast' class='object.container' >
+			</container>
+			<container name='album' id='video/albums' createClass='object.item.videoItem.movie' class='object.container' >
+				<container buildon='upnp:album' albumart='1' createClass='object.item.videoItem.movie' class='object.container' />
+			</container>
+			<container name='rating' id='video/rating' createClass='object.item.videoItem.movie' class='object.container' >
+				<container buildon='pv:rating' albumart='1' createClass='object.item.videoItem.movie' class='object.container' />
+			</container>
+			<container name='playlists' id='video/playlists' class='object.container' createClass='object.item.videoItem.movie,object.item.videoItem.online.movie,object.item.videoItem.playlist.movie' sortcriteria='+upnp:originalTrackNumber,+dc:title' restricted='0' >
+				<container name='playlistrecentlyaddedvideo' filteron='pv:addedLast60' albumart='1' sortcriteria='-pv:addedTime' createClass='object.item.videoItem.movie' upnp:originalTrackNumber='3' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlistmostviewedvideo' filteron='pv:playcount' albumart='1' sortcriteria='-pv:playcount' createClass='object.item.videoItem.movie' upnp:originalTrackNumber='1' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1'  />
+				<container name='playlistlastviewedvideo' filteron='pv:lastPlayedTime' albumart='1' sortcriteria='-pv:lastPlayedTime' createClass='object.item.videoItem.movie' upnp:originalTrackNumber='2' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container name='playlisthighlyrated' filteron='pv:highrated' albumart='1' sortcriteria='-pv:rating' createClass='object.item.videoItem.movie' upnp:originalTrackNumber='4' restricted='1' class='object.container.playlistContainer' flags='pv:smartplaylist=1' />
+				<container buildon='upnp:album' albumart='1' sortcriteria='+upnp:originalTrackNumber' createClass='object.item.videoItem.playlist.movie' upnp:originalTrackNumber='6' class='object.container.playlistContainer'  />
+			</container>
+			<container name='classifiedvideos' id='video/classified' class='object.container'  createClass='object.item.videoItem.classified.movie'/>
+			<container name='video_online' id='video/online' createClass='object.item.videoItem.online1.movie' class='object.container' flags='skip_navtree_builder'/>
+		</container>
+	</navtree>
+</view>

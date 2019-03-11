@@ -1,0 +1,456 @@
+--- b/file.c	2012-12-28 01:34:28.000000000 +0800
++++ a/file.c	2013-07-16 14:33:26.724368000 +0800
+@@ -27,6 +27,7 @@
+ #include <glob.h>
+ #include <string.h>
+ #include <stdlib.h>
++#include <dlfcn.h>
+ 
+ #include "uci.h"
+ #include "uci_internal.h"
+@@ -34,6 +35,8 @@
+ #define LINEBUF	32
+ #define LINEBUF_MAX	4096
+ 
++int UCIFROMZCMD = 0;
++
+ /*
+  * Fetch a new line from the input stream and resize buffer if necessary
+  */
+@@ -721,6 +724,10 @@
+ 			path = NULL;
+ 		}
+ 
++		/* get changed data for ZCFG */
++		if (!UCIFROMZCMD){
++			uci_changed_get_zy(ctx,p);
++		}
+ 		/* flush delta */
+ 		if (!uci_load_delta(ctx, p, true))
+ 			goto done;
+@@ -743,6 +750,106 @@
+ 		UCI_THROW(ctx, ctx->err);
+ }
+ 
++/*
++ * Get changed data at commit time for trigger ZCFG command
++ */
++
++void uci_changed_get_zy(struct uci_context *ctx, struct uci_package *p)
++{
++	struct uci_parse_context *pctx;
++	char *filename = NULL;
++	FILE *stream = NULL;
++	char cmd[1024];
++	int chk_chaged = 0;
++	void *handle;
++	void (*uci2tr98Collect)(char *);
++	void (*uci2tr98Set)(void);
++	void (*initChangedPackageUse)(void);
++	char *error;
++
++	handle = dlopen("/usr/lib/libtr98_map_uci.so", RTLD_LAZY);
++
++	if (!handle) {
++		sprintf(cmd,"echo open fail -- %s >> /tmp/uciDlopenFailLog",dlerror());
++		system(cmd);
++		fprintf (stderr, "%s\n", dlerror());
++		goto done;
++	}
++
++	UCI_TRAP_SAVE(ctx, done);
++
++	if ((asprintf(&filename, "%s/%s", ctx->savedir, p->e.name) < 0) || !filename)
++			UCI_THROW(ctx, UCI_ERR_MEM);
++
++	stream = uci_open_stream(ctx, filename, SEEK_SET, false, false);
++
++	/* make sure no memory from previous parse attempts is leaked */
++	uci_cleanup(ctx);
++
++	if (!p->has_delta)
++		goto done;
++
++	pctx = (struct uci_parse_context *) uci_malloc(ctx, sizeof(struct uci_parse_context));
++	ctx->pctx = pctx;
++	pctx->file = stream;
++
++	while (!feof(ctx->pctx->file)) {
++		uci_getln(ctx, 0);
++		if (!pctx->buf[0])
++				continue;
++		//initial default structure for store changed data
++		if (chk_chaged == 0){
++			//initChangedPackage();
++			*(void **)(&initChangedPackageUse) = dlsym(handle, "initChangedPackage");
++			if ((error = dlerror()) != NULL)  {
++				sprintf(cmd,"echo dlsym fail1 -- %s >> /tmp/uciDlopenFailLog",error);
++				system(cmd);
++				fprintf (stderr, "%s\n", error);				 
++				goto done; 
++			} 
++
++			initChangedPackageUse();
++			chk_chaged = 1 ;
++		}
++
++		//uci2tr98_collect(pctx->buf);
++		*(void **)(&uci2tr98Collect) = dlsym(handle, "uci2tr98_collect");
++		if ((error = dlerror()) != NULL)  {  
++			sprintf(cmd,"echo dlsym fail2 -- %s >> /tmp/uciDlopenFailLog",error);
++			system(cmd);
++			fprintf (stderr, "%s\n", error);		  
++			goto done; 
++		}
++		uci2tr98Collect(pctx->buf);
++#if 0
++	sprintf(cmd,"echo LOG: config:%s section:%s option:%s value:%s >> /tmp/uci_changedlog",p->e.name ,Newptr.section, Newptr.option, Newptr.value);
++	system(cmd);
++#endif
++	}
++	UCI_TRAP_RESTORE(ctx);
++	if (chk_chaged == 1){
++		//uci2tr98_set();
++		*(void **)(&uci2tr98Set) = dlsym(handle, "uci2tr98_set");
++		if ((error = dlerror()) != NULL)  {  
++			sprintf(cmd,"echo dlsym fail3 -- %s >> /tmp/uciDlopenFailLog",error);
++			system(cmd);
++			fprintf (stderr, "%s\n", error);	  
++			goto done; 
++		}
++		uci2tr98Set();
++		//uci2tr98_free();
++	}
++
++	goto done;
++
++done:
++	ctx->err = 0;
++	if (stream)
++		uci_close_stream(stream);
++	uci_cleanup(ctx);
++	dlclose(handle);
++	return;
++}
+ 
+ /* 
+  * This function returns the filename by returning the string
+@@ -853,6 +960,82 @@
+ 	return package;
+ }
+ 
++/* for auto-invoke backend when accessing UCI from anywhere other than LuCI, ZyXEL, John, 2012/08/05 */
++int ucitrack_get_configs(char *configName, char *configs)
++{
++	char line[128];
++	char *word = NULL, *config = NULL, *list = NULL;
++	int ret;
++	FILE *fp = NULL;
++	char *delim = " \t\n'";
++
++	if((fp = fopen(UCITRACK, "r")) == NULL){
++		DPRINTF("fail to open config file %s\n", UCITRACK);
++		return UCITRACK_PARSE_ERROR;
++	}
++
++	while (!feof(fp)){
++		memset(line, 0, sizeof(line));
++		fgets(line, sizeof(line), fp);
++		
++		word = strtok(line, delim);
++		if(word == NULL || word[0] != 'c'){
++			continue;
++		}
++		config = strtok(NULL, delim);
++
++		if (config && !strcmp(configName, config))
++		{
++			/* get config section name */
++			sprintf(configs, "%s%s ", configs, configName);
++			
++			/* get list */
++			while(!feof(fp)){
++				memset(line, 0, sizeof(line));
++				fgets(line, sizeof(line), fp);
++
++				word = strtok(line, delim);
++				if(word){
++					switch(word[0]) {
++						case 0:
++						case '#':
++						case 'c':
++							fclose(fp);
++							return UCITRACK_CONFIG_SECTION_END;
++						case 'o':
++							continue;
++						case 'l':
++
++							/* bypass affect */
++							if((list = strtok(NULL, delim)) == NULL){
++								fclose(fp);
++								return UCITRACK_PARSE_ERROR;
++							}
++
++							/* get list */
++							if((list = strtok(NULL, delim)) == NULL){
++								fclose(fp);
++								return UCITRACK_PARSE_ERROR;
++							}
++							
++							if(list && (ret = ucitrack_get_configs(list, configs)) == UCITRACK_PARSE_ERROR){
++								fclose(fp);
++								return ret;
++							}
++							break;
++						default:
++							break;
++					}
++				}
++			}
++			break;
++		}
++	}
++
++	fclose(fp);
++	return UCITRACK_PARSE_SUCCESS;
++}
++
+ __private UCI_BACKEND(uci_file_backend, "file",
+ 	.load = uci_file_load,
+ 	.commit = uci_file_commit,
+--- a/libuci.c	2012-12-28 01:34:28.000000000 +0800
++++ b/libuci.c	2013-07-16 14:58:50.878245000 +0800
+@@ -24,6 +24,7 @@
+ #include <stdio.h>
+ #include <dlfcn.h>
+ #include <glob.h>
++#include <unistd.h>
+ #include "uci.h"
+ 
+ static const char *uci_errstr[] = {
+@@ -386,3 +387,110 @@
+ 
+ 	return 0;
+ }
++
++/* for auto-invoke backend when accessing UCI from anywhere other than LuCI, ZyXEL, John, 2012/08/05 */
++int uci_config_loadback(struct uci_context *ctx, char *name){
++
++	char path[64];
++	FILE *f = NULL;
++
++	/* flush history file */
++	sprintf(path, "%s/%s", UCI_SAVEDIR, name);
++	f = uci_open_stream(ctx, path, SEEK_SET, true, false);
++	rewind(f);
++	if (ftruncate(fileno(f), 0) < 0) {
++		DPRINTF("fail to reset history file\n");
++	}
++	uci_close_stream(f);
++
++	/* reload package to ctx*/
++	if(name){
++		uci_load(ctx, name, NULL);
++	}
++
++	return 0;
++}
++int uci_apply(struct uci_context **ctx)
++{
++	struct uci_context *tmp_ctx = *ctx;
++	struct uci_context *new_ctx = NULL;
++	struct uci_element *e;
++	struct uci_package *p;
++	int ret = 0;
++
++	/* invoke backend */
++	uci_foreach_element(&tmp_ctx->root, e){
++		if(e->name){
++			p = uci_to_package(e);
++			if((ret = uci_invoke_backend(p)) != 0){
++				printf("fail to apply backend: %s ret=%d\n", p->e.name, ret);
++				break;
++			}
++		}
++	}
++
++	/* if there is error in this transaction apply */
++	if(ret){
++
++		/* prepare new context */
++		if((new_ctx = uci_alloc_context()) == NULL){
++			printf("fail to allocate context\n");
++			return ret;
++		}
++		/* flush history config and reload configured package */
++		uci_foreach_element(&tmp_ctx->root, e){
++			if(e->name){
++				uci_config_loadback(new_ctx, e->name);
++			}
++		}
++
++		/* free old context */
++		uci_free_context(tmp_ctx);
++		*ctx = new_ctx;
++		tmp_ctx = *ctx;
++
++		/* loadback old configuration by invoking each backend */
++		uci_foreach_element(&tmp_ctx->root, e){
++			if(e->name){
++				p = uci_to_package(e);
++				printf("start loadback configuration...\n");
++				if(uci_invoke_backend(p) != 0){
++					printf("loadback backend error\n");
++					break;
++				}
++			}
++		}
++	}
++	return ret;
++}
++int uci_invoke_backend(struct uci_package *package)
++{
++	struct uci_element *e = &package->e;
++	char cmd[256];
++	char configs[128];
++	int ret = 0;
++
++	memset(configs, 0, sizeof(configs));
++	printf("invoke backend: %s\n", e->name);
++
++	if(ucitrack_get_configs(e->name, configs) == UCITRACK_PARSE_ERROR){
++		DPRINTF("fail to get backends from ucitrack\n");
++		return -1;
++	}
++
++	DPRINTF("%s %d: configs[%s]\n", __FUNCTION__, __LINE__, configs);
++
++	/* leverage LuCI reload script to invoke backend */
++	sprintf(cmd, "/sbin/luci-reload %s", configs);
++
++	system(cmd);
++
++    if((ret>>8) != 0){
++        DPRINTF("fail to apply config %s, ret=%d\n", e->name, ret>>8);
++    }
++
++	DPRINTF("backend return %d\n", ret>>8);
++	return ret>>8;
++}
++
++
+--- a/list.c	2012-12-28 01:34:28.000000000 +0800
++++ b/list.c	2013-07-16 15:01:13.836896000 +0800
+@@ -432,10 +432,13 @@
+ 
+ complete:
+ 	ptr->flags |= UCI_LOOKUP_COMPLETE;
++	return 0;
+ abort:
++	ptr->flags |= UCI_LOOKUP_ERR_OPT;
+ 	return 0;
+ 
+ notfound:
++	ptr->flags |= UCI_LOOKUP_ERR_PACK;
+ 	UCI_THROW(ctx, UCI_ERR_NOTFOUND);
+ 	return 0;
+ }
+--- a/uci.h	2012-12-28 01:34:28.000000000 +0800
++++ b/uci.h	2013-07-16 15:02:52.085869000 +0800
+@@ -40,6 +40,14 @@
+ #define UCI_DIRMODE 0700
+ #define UCI_FILEMODE 0600
+ 
++/* for auto-invoke backend when accessing UCI from anywhere other than LuCI, ZyXEL, John, 2012/08/05 */
++#define UCITRACK "/etc/config/ucitrack"
++#define UCITRACK_SECTION_NAME_PREFIX "cfg"
++
++#define UCITRACK_CONFIG_SECTION_END 1
++#define UCITRACK_PARSE_ERROR -1
++#define UCITRACK_PARSE_SUCCESS 0
++
+ enum
+ {
+ 	UCI_OK = 0,
+@@ -301,6 +309,8 @@
+  */
+ extern bool uci_validate_text(const char *str);
+ 
++/* Get changed data at commit time for trigger ZCFG command */
++void uci_changed_get_zy(struct uci_context *ctx, struct uci_package *p);
+ 
+ /**
+  * uci_add_hook: add a uci hook
+@@ -337,6 +347,13 @@
+  */
+ int uci_load_plugins(struct uci_context *ctx, const char *pattern);
+ 
++/* for auto-invoke backend when accessing UCI from anywhere other than LuCI, John, 2012/08/05 */
++extern int uci_config_loadback(struct uci_context *ctx, char *name);
++extern int uci_invoke_backend(struct uci_package *package);
++extern int uci_apply(struct uci_context **ctx);
++
++int ucitrack_get_configs(char *configName, char *configs);
++
+ /**
+  * uci_parse_ptr: parse a uci string into a uci_ptr
+  * @ctx: uci context
+@@ -515,6 +532,9 @@
+ 		UCI_LOOKUP_DONE =     (1 << 0),
+ 		UCI_LOOKUP_COMPLETE = (1 << 1),
+ 		UCI_LOOKUP_EXTENDED = (1 << 2),
++		UCI_LOOKUP_ERR_PACK = (1 << 3),
++		UCI_LOOKUP_ERR_OPT  = (1 << 4),
++
+ 	} flags;
+ 
+ 	struct uci_package *p;
+--- a/cli.c	2012-12-28 01:34:28.000000000 +0800
++++ b/cli.c	2013-07-23 11:25:38.042149000 +0800
+@@ -52,6 +52,7 @@
+ 	CMD_ADD,
+ 	CMD_IMPORT,
+ 	CMD_HELP,
++	CMD_COMMIT_ZCMD,
+ };
+ 
+ struct uci_type_list {
+@@ -65,6 +66,7 @@
+ static const char *cur_section_ref = NULL;
+ 
+ static int uci_cmd(int argc, char **argv);
++extern int UCIFROMZCMD;
+ 
+ static void
+ uci_reset_typelist(void)
+@@ -283,6 +285,13 @@
+ 			ret = 1;
+ 		}
+ 		break;
++	case CMD_COMMIT_ZCMD:
++		UCIFROMZCMD = 1;
++		if (flags & CLI_FLAG_NOCOMMIT)
++			return 0;
++		if (uci_commit(ctx, &ptr.p, false) != UCI_OK)
++			cli_perror();
++		break;	
+ 	case CMD_EXPORT:
+ 		uci_export(ctx, stdout, ptr.p, true);
+ 		break;
+@@ -576,6 +585,8 @@
+ 		cmd = CMD_EXPORT;
+ 	else if (!strcasecmp(argv[0], "commit"))
+ 		cmd = CMD_COMMIT;
++	else if (!strcasecmp(argv[0], "commitZcmd"))
++		cmd = CMD_COMMIT_ZCMD;
+ 	else if (!strcasecmp(argv[0], "get"))
+ 		cmd = CMD_GET;
+ 	else if (!strcasecmp(argv[0], "set"))
+@@ -616,6 +627,7 @@
+ 		case CMD_SHOW:
+ 		case CMD_EXPORT:
+ 		case CMD_COMMIT:
++		case CMD_COMMIT_ZCMD:
+ 		case CMD_CHANGES:
+ 			return uci_do_package_cmd(cmd, argc, argv);
+ 		case CMD_IMPORT:

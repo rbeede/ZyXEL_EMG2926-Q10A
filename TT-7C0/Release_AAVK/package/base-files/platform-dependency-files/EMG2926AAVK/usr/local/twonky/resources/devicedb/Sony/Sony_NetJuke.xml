@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony NetJuke</DisplayName>
+		<HttpRecognition>
+			<HttpText>SONY_NetJuke</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

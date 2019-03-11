@@ -1,0 +1,27 @@
+<Client>
+	<DeviceId>
+		<!-- This entry for WMC 12 on Win7 if its renderer is activated -->
+		<DisplayName>Windows Media Connect</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Windows Media Player Sharing</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC3</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-win7.xml</DescriptionFile>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<!-- WMP does not event all affected container IDs for playlist changes -->
+		<FlushForContainerIds>F,11,10,13</FlushForContainerIds>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+		<Quirk>UNLIMITED</Quirk>
+		<Quirk>FILTER_BAD_CHARS</Quirk>
+		<Quirk>BROWSE_METADATA_ON_EMPTY_RESULT</Quirk>
+	</DeviceQuirks>
+</Client>

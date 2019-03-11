@@ -1,0 +1,12 @@
+<Client>
+    <DeviceId>
+        <DisplayName>Airplay Device</DisplayName>
+        <DeviceDescriptionRecognition>
+            <DescriptionText>&lt;modelDescription&gt;Airplay&lt;/modelDescription&gt;</DescriptionText>
+        </DeviceDescriptionRecognition>
+        <MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+    </DeviceId>
+    <DeviceQuirks>
+        <Quirk>USEDIRECTURL</Quirk>
+    </DeviceQuirks>
+</Client>

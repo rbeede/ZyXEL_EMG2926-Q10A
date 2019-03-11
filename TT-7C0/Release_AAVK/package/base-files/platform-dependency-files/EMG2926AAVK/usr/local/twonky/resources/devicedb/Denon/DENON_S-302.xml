@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DENON S-302</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>S-302</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

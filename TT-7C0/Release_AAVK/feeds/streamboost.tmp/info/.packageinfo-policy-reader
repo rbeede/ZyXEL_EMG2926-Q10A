@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/policy-reader/Makefile
+Package: policy-reader
+Submenu: Flow Detect
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Policy-reader
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Policy-reader reads policy.redis into redis.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_policy-reader
+	config policy-reader_USE_CUSTOM_VERSION
+		depends on PACKAGE_policy-reader
+		bool "Use custom package version"
+		default n
+	config policy-reader_CUSTOM_VERSION
+		depends on policy-reader_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_policy-reader
+	config policy-reader_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_policy-reader
+		bool "Use custom source directory"
+		default n
+	config policy-reader_CUSTOM_SOURCE_DIR
+		depends on policy-reader_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

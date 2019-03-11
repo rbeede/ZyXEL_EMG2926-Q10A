@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Loewe Network Mediaplayer</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Loewe Network Mediaplayer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>LIVEWITHLENGTH</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>SUPPRESS_VIDEO_THUMBNAIL</Quirk>
+	</DeviceQuirks>
+</Client>

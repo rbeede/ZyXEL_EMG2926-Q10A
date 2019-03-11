@@ -1,0 +1,13 @@
+<Client>
+	<DeviceId>
+		<DisplayName>BridgeCo Generic Client</DisplayName>
+		<HttpRecognition>
+			<HttpText>KnOS/3.2 bridgeCo-DMP/3.0 DLNADOC/1.50 INTEL_NMPR/2.0</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>AUTO</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

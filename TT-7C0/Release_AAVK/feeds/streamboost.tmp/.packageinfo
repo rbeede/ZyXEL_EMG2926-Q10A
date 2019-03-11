@@ -1,0 +1,2124 @@
+Source-Makefile: feeds/streamboost/jquery-flot/Makefile
+Package: jquery-flot
+Submenu: JavaScript
+Version: 0.8.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Flot is a pure JavaScript plotting library for jQuery
+Maintainer: 
+Source: flot-0.8.0.zip
+Type: ipkg
+Description:   Flot is a pure JavaScript plotting library for jQuery, with a focus
+  on simple usage, attractive looks and interactive features.
+http://www.flotcharts.org/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-flot
+	config jquery-flot_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-flot
+		bool "Use custom package version"
+		default n
+	config jquery-flot_CUSTOM_VERSION
+		depends on jquery-flot_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.8.0)"
+		default "0.8.0"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-flot
+	config jquery-flot_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-flot
+		bool "Use custom source directory"
+		default n
+	config jquery-flot_CUSTOM_SOURCE_DIR
+		depends on jquery-flot_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/ozker/Makefile
+Package: ozker
+Submenu: Web UI
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +libcurl +fcgi +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: 
+Build-Variant: fcgi
+Build-Depends: jansson argp-standalone
+Section: opt
+Category: Bigfoot
+Title: FastCGI Gateway for the Web UI
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: ozker-.tar.gz
+Type: ipkg
+Description: ozKer is the descendant of Oz and Aker (guardian to the Egyptian
+underworld and remover of death causes). Or, you could call it The Web
+UI Gateway Which Validates User Input.
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+       select PACKAGE_app-flow-scripts if !PACKAGE_app-flow-scripts-noload
+@@
+
+Package: ozker-nofcgi
+Submenu: Web UI
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +libcurl +fcgi +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: ozker
+Build-Variant: nofcgi
+Build-Depends: jansson argp-standalone
+Section: opt
+Category: Bigfoot
+Title: FastCGI Gateway for the Web UI
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: ozker-.tar.gz
+Type: ipkg
+Description: ozKer is the descendant of Oz and Aker (guardian to the Egyptian
+underworld and remover of death causes). Or, you could call it The Web
+UI Gateway Which Validates User Input.
+
+This is the variant that works without fcgi
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+       select PACKAGE_app-flow-scripts if !PACKAGE_app-flow-scripts-noload
+@@
+
+
+Source-Makefile: feeds/streamboost/hiredis/Makefile
+Package: hiredis
+Submenu: database
+Version: 0.11.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: libs
+Category: Libraries
+Title: hiredis
+Maintainer: Mo Chen <moc@qualcomm.com>
+Source: v0.11.0.tar.gz
+Type: ipkg
+Description: hiredis
+https://github.com/redis/hiredis
+Mo Chen <moc@qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/streamboost-misc/Makefile
+Package: streamboost-misc
+Submenu: Utilities
+Version: 1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +logrotate
+Menu-Depends: 
+Provides: 
+Section: base
+Category: Bigfoot
+Title: Bigfoot Misc Files needed for streamboost
+Maintainer: Matthew McClintock <mmcclint@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Bigfoot Misc Files needed for streamboost
+Matthew McClintock <mmcclint@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/overlord/Makefile
+Package: overlord
+Submenu: Bandwidth Control
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +jansson
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Overlord
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: overlord-.tar.gz
+Type: ipkg
+Description: Overlord manages bandwidth allocation by computing the current policy profile for each flow.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_overlord
+	config overlord_USE_CUSTOM_VERSION
+		depends on PACKAGE_overlord
+		bool "Use custom package version"
+		default n
+	config overlord_CUSTOM_VERSION
+		depends on overlord_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_overlord
+	config overlord_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_overlord
+		bool "Use custom source directory"
+		default n
+	config overlord_CUSTOM_SOURCE_DIR
+		depends on overlord_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-ui/Makefile
+Package: jquery-ui
+Submenu: JavaScript
+Version: 1.8.21-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery User Interface
+Maintainer: 
+Source: jquery-ui-1.8.21-gde5bb86.tar.gz
+Type: ipkg
+Description:   jQuery UI is a curated set of user interface interactions,
+  effects, widgets, and themes built on top of the jQuery JavaScript
+  Library. Whether you're building highly interactive web applications
+  or you just need to add a date picker to a form control, jQuery UI is
+  the perfect choice.
+http://jqueryui.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-ui
+	config jquery-ui_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-ui
+		bool "Use custom package version"
+		default n
+	config jquery-ui_CUSTOM_VERSION
+		depends on jquery-ui_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.8.21)"
+		default "1.8.21"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-ui
+	config jquery-ui_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-ui
+		bool "Use custom source directory"
+		default n
+	config jquery-ui_CUSTOM_SOURCE_DIR
+		depends on jquery-ui_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/cape/Makefile
+Package: cape
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Class Arbiter/Policy Engine
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: cape-.tar.gz
+Type: ipkg
+Description: CAPE chooses a policy for a given flow, given classification tags.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_cape
+	config cape_USE_CUSTOM_VERSION
+		depends on PACKAGE_cape
+		bool "Use custom package version"
+		default n
+	config cape_CUSTOM_VERSION
+		depends on cape_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_cape
+	config cape_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_cape
+		bool "Use custom source directory"
+		default n
+	config cape_CUSTOM_SOURCE_DIR
+		depends on cape_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/nodedetectd/Makefile
+Package: nodedetectd
+Submenu: Node Management
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Nodedetectd
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: nodedetectd-.tar.gz
+Type: ipkg
+Description: Nodedetectd computes node types using characteristics sensed by other daemons.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_nodedetectd
+	config nodedetectd_USE_CUSTOM_VERSION
+		depends on PACKAGE_nodedetectd
+		bool "Use custom package version"
+		default n
+	config nodedetectd_CUSTOM_VERSION
+		depends on nodedetectd_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_nodedetectd
+	config nodedetectd_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_nodedetectd
+		bool "Use custom source directory"
+		default n
+	config nodedetectd_CUSTOM_SOURCE_DIR
+		depends on nodedetectd_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/checkpcap/Makefile
+Package: checkpcap
+Submenu: Utilities
+Version: 1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: checkpcap script
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: A script to decide whether a pcap should be uploaded.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-flot-gant/Makefile
+Package: jquery-flot-gant
+Submenu: JavaScript
+Version: 0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery-flot
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery Flot Gant Chart Plugin
+Maintainer: 
+Source: jquery-flot-gant-0.1-g90ec5b8.tar.gz
+Type: ipkg
+Description:   Gant Chart plugin for jQuery flot
+http://jqueryui.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-flot-gant
+	config jquery-flot-gant_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-flot-gant
+		bool "Use custom package version"
+		default n
+	config jquery-flot-gant_CUSTOM_VERSION
+		depends on jquery-flot-gant_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.1)"
+		default "0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-flot-gant
+	config jquery-flot-gant_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-flot-gant
+		bool "Use custom source directory"
+		default n
+	config jquery-flot-gant_CUSTOM_SOURCE_DIR
+		depends on jquery-flot-gant_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/tresbar/Makefile
+Package: tresbar
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +d3js
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: 3d bar charts for d3.js
+Maintainer: 
+Source: tresbar-.tar.gz
+Type: ipkg
+Description: 3D bar chart d3 reusable component
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_tresbar
+	config tresbar_USE_CUSTOM_VERSION
+		depends on PACKAGE_tresbar
+		bool "Use custom package version"
+		default n
+	config tresbar_CUSTOM_VERSION
+		depends on tresbar_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_tresbar
+	config tresbar_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_tresbar
+		bool "Use custom source directory"
+		default n
+	config tresbar_CUSTOM_SOURCE_DIR
+		depends on tresbar_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-jscrollpane/Makefile
+Package: jquery-jscrollpane
+Submenu: JavaScript
+Version: 2.0.0beta10-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery plugin to skin scroll bars with CSS
+Maintainer: 
+Source: 2.0.0beta10.tar.gz
+Type: ipkg
+Description:   jScrollPane is a cross-browser jQuery plugin by Kelvin Luck which
+  converts a browser's default scrollbars (on elements with a relevant
+  overflow property) into an HTML structure which can be easily skinned
+  with CSS.
+http://jscrollpane.kelvinluck.com
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-jscrollpane
+	config jquery-jscrollpane_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-jscrollpane
+		bool "Use custom package version"
+		default n
+	config jquery-jscrollpane_CUSTOM_VERSION
+		depends on jquery-jscrollpane_USE_CUSTOM_VERSION
+		string " version as string (default version: 2.0.0beta10)"
+		default "2.0.0beta10"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-jscrollpane
+	config jquery-jscrollpane_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-jscrollpane
+		bool "Use custom source directory"
+		default n
+	config jquery-jscrollpane_CUSTOM_SOURCE_DIR
+		depends on jquery-jscrollpane_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/relay_client/Makefile
+Package: relay_client
+Submenu: Bandwidth Control
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +libpthread +libcurl +argp-standalone
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Daemon that relays local web calls for remote login.
+Maintainer: Jason Loveman <jloveman@qca.qualcomm.com>
+Source: relay_client-.tar.gz
+Type: ipkg
+Description: relay_client relays the local http server through an https server relay
+for remote login
+Jason Loveman <jloveman@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_relay_client
+	config relay_client_USE_CUSTOM_VERSION
+		depends on PACKAGE_relay_client
+		bool "Use custom package version"
+		default n
+	config relay_client_CUSTOM_VERSION
+		depends on relay_client_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_relay_client
+	config relay_client_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_relay_client
+		bool "Use custom source directory"
+		default n
+	config relay_client_CUSTOM_SOURCE_DIR
+		depends on relay_client_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/sea/Makefile
+Package: sea
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2-core +libuuid +jansson
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Stats and Events Aggregator for StreamBoost
+Maintainer: Nic Costa <ncosta@qca.qualcomm.com>
+Source: sea-.tar.gz
+Type: ipkg
+Description: SEA receives statistics and events from other StreamBoost utilities on various pubsub channels and maintains this data in a stats db area within a redis instance.
+Nic Costa <ncosta@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sea
+	config sea_USE_CUSTOM_VERSION
+		depends on PACKAGE_sea
+		bool "Use custom package version"
+		default n
+	config sea_CUSTOM_VERSION
+		depends on sea_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sea
+	config sea_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sea
+		bool "Use custom source directory"
+		default n
+	config sea_CUSTOM_SOURCE_DIR
+		depends on sea_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/p0f-db/Makefile
+Package: p0f-db
+Submenu: Flow Detect
+Version: 20140626230340-g423dcb5-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: p0f fingerprint database.
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: p0f-db-20140626230340-g423dcb5-generic.tar.gz
+Type: ipkg-prebuilt
+Description: Database of fingerprints for p0f.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_p0f-db
+	config p0f-db_USE_CUSTOM_VERSION
+		depends on PACKAGE_p0f-db
+		bool "Use custom package version"
+		default n
+	config p0f-db_CUSTOM_VERSION
+		depends on p0f-db_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140626230340-g423dcb5-generic)"
+		default "20140626230340-g423dcb5-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_p0f-db
+	config p0f-db_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_p0f-db
+		bool "Use custom source directory"
+		default n
+	config p0f-db_CUSTOM_SOURCE_DIR
+		depends on p0f-db_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/qdiscman/Makefile
+Package: qdiscman
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2-core +libnl-bf +libpthread +tc +iptables-mod-conntrack-extra +iptables-mod-ipopt +kmod-sched +kmod-sched-connmark +kmod-ipt-ipopt +iptables-mod-mark2prio
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: StreamBoost to Netlink interface
+Maintainer: Nic Costa <ncosta@qca.qualcomm.com>
+Source: qdiscman-.tar.gz
+Type: ipkg
+Kernel-Config: CONFIG_BRIDGE_IGMP_SNOOPING=y CONFIG_NETFILTER=y CONFIG_NETFILTER_ADVANCED=y CONFIG_NETFILTER_NETLINK=m CONFIG_NETFILTER_XTABLES=m CONFIG_NETFILTER_XT_CONNMARK=m CONFIG_NETFILTER_XT_MARK=m CONFIG_NETFILTER_XT_MATCH_COMMENT=m CONFIG_NETFILTER_XT_MATCH_CONNMARK=m CONFIG_NETFILTER_XT_MATCH_MARK=m CONFIG_NETFILTER_XT_MATCH_MULTIPORT=m CONFIG_NETFILTER_XT_TARGET_CLASSIFY=m CONFIG_NETFILTER_XT_TARGET_CONNMARK=m CONFIG_NETFILTER_XT_TARGET_MARK=m CONFIG_NET_SCH_CODEL=m CONFIG_NET_SCH_FQ_CODEL=m CONFIG_NET_SCH_HFSC=m CONFIG_NET_SCH_PRIO=m CONFIG_NET_SCH_SFQ=m CONFIG_NF_CONNTRACK=m CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y CONFIG_NF_CONNTRACK_EVENTS=y CONFIG_NF_CONNTRACK_FTP=m CONFIG_NF_CONNTRACK_H323=m CONFIG_NF_CONNTRACK_IRC=m CONFIG_NF_CONNTRACK_MARK=y CONFIG_NF_CONNTRACK_PPTP=m CONFIG_NF_CONNTRACK_SIP=m CONFIG_NF_CT_NETLINK=m CONFIG_NF_CT_PROTO_GRE=m
+Description: Qdiscman receives flow policy information from the oversub pubsub channel and implements the policy into the appropriate network qdisc structures.
+Nic Costa <ncosta@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_qdiscman
+	config qdiscman_USE_CUSTOM_VERSION
+		depends on PACKAGE_qdiscman
+		bool "Use custom package version"
+		default n
+	config qdiscman_CUSTOM_VERSION
+		depends on qdiscman_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_qdiscman
+	config qdiscman_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_qdiscman
+		bool "Use custom source directory"
+		default n
+	config qdiscman_CUSTOM_SOURCE_DIR
+		depends on qdiscman_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/dumpevents/Makefile
+Package: dumpevents
+Submenu: Flow Detect
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli @BUSYBOX_CONFIG_AWK
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: dumpevents
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: A utility to dump events from the event log.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_dumpevents
+	config dumpevents_USE_CUSTOM_VERSION
+		depends on PACKAGE_dumpevents
+		bool "Use custom package version"
+		default n
+	config dumpevents_CUSTOM_VERSION
+		depends on dumpevents_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_dumpevents
+	config dumpevents_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_dumpevents
+		bool "Use custom source directory"
+		default n
+	config dumpevents_CUSTOM_SOURCE_DIR
+		depends on dumpevents_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/sbsaved/Makefile
+Package: sbsaved
+Submenu: Utils
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Streamboost persistence daemon
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: sbsaved-.tar.gz
+Type: ipkg
+Description: sbsaved stores redis keys to a file, triggered by pubsub channels, and defined as a keyset and key patterns.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sbsaved
+	config sbsaved_USE_CUSTOM_VERSION
+		depends on PACKAGE_sbsaved
+		bool "Use custom package version"
+		default n
+	config sbsaved_CUSTOM_VERSION
+		depends on sbsaved_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sbsaved
+	config sbsaved_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sbsaved
+		bool "Use custom source directory"
+		default n
+	config sbsaved_CUSTOM_SOURCE_DIR
+		depends on sbsaved_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/nexus-example-sensor/Makefile
+Package: kmod-nexus-example-sensor
+Submenu: Flow Detect
+Version: <LINUX_VERSION>-1
+Depends: +kmod-nexus
+Menu-Depends: 
+Provides: 
+Section: kernel
+Category: Bigfoot
+Title: Example sensor StreamBoost Nexus
+Maintainer: 
+Source: nexus-example-sensor-.tar.gz
+Type: ipkg
+Description: Example sensor StreamBoost Nexus
+
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-swapsies/Makefile
+Package: jquery-swapsies
+Submenu: JavaScript
+Version: 20100709-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Swap and Re-Order Divs Smoothly Using jQuery
+Maintainer: 
+Source: jquery-swapsies.js
+Type: ipkg
+Description:   The requirement was to be able to swap two divs smoothly. Not just
+  swap the contents of the divs in question, that was too easy, but to
+  physically move the divs. One div to where the second div was positioned
+  and vice versa, making the animation visible to the user to emphasise
+  the movement.
+http://biostall.com/swap-and-re-order-divs-smoothly-using-jquery-swapsie-plugin
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-swapsies
+	config jquery-swapsies_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-swapsies
+		bool "Use custom package version"
+		default n
+	config jquery-swapsies_CUSTOM_VERSION
+		depends on jquery-swapsies_USE_CUSTOM_VERSION
+		string " version as string (default version: 20100709)"
+		default "20100709"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-swapsies
+	config jquery-swapsies_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-swapsies
+		bool "Use custom source directory"
+		default n
+	config jquery-swapsies_CUSTOM_SOURCE_DIR
+		depends on jquery-swapsies_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/nexus/Makefile
+Package: kmod-nexus
+Submenu: Flow Detect
+Version: <LINUX_VERSION>-1
+Depends: 
+Menu-Depends: 
+Provides: 
+Section: kernel
+Category: Bigfoot
+Title: StreamBoost Nexus
+Maintainer: 
+Source: nexus-.tar.gz
+Type: ipkg
+Kernel-Config: CONFIG_NETFILTER=y CONFIG_NETFILTER_NETLINK=y CONFIG_NF_CONNTRACK_EVENTS=y CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y
+Description: StreamBoost Nexus
+
+@@
+
+
+Source-Makefile: feeds/streamboost/aperture/Makefile
+Package: aperture
+Submenu: Utilities
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +curl +libxml2
+Menu-Depends: 
+Provides: 
+Build-Depends: jansson argp-standalone curl libxml2
+Section: opt
+Category: Bigfoot
+Title: Automatic Bandwidth Monitor
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: aperture-.tar.gz
+Type: ipkg
+Description: Aperture continuously monitors the available upload and download rate and
+adjusts the TBF of the root interfaces accordingly.
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+       select PACKAGE_app-flow-scripts if !PACKAGE_app-flow-scripts-noload
+@@
+
+
+Source-Makefile: feeds/streamboost/flowman/Makefile
+Package: flowman
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Streamboost Flow Manager
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: flowman-.tar.gz
+Type: ipkg
+Description: Flowman is Da Man in charge of flow creation, deletion and association with connections.
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flowman
+	config flowman_USE_CUSTOM_VERSION
+		depends on PACKAGE_flowman
+		bool "Use custom package version"
+		default n
+	config flowman_CUSTOM_VERSION
+		depends on flowman_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flowman
+	config flowman_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flowman
+		bool "Use custom source directory"
+		default n
+	config flowman_CUSTOM_SOURCE_DIR
+		depends on flowman_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery/Makefile
+Package: jquery
+Submenu: JavaScript
+Version: 1.7.2-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Fast, small, and feature-rich JavaScript library
+Maintainer: 
+Source: jquery-1.7.2.min.js
+Type: ipkg
+Description:   jQuery is a fast, small, and feature-rich JavaScript library. It makes
+  things like HTML document traversal and manipulation, event handling,
+  animation, and Ajax much simpler with an easy-to-use API that works
+  across a multitude of browsers. With a combination of versatility and
+  extensibility, jQuery has changed the way that millions of people write
+  JavaScript.
+http://jquery.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery
+	config jquery_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery
+		bool "Use custom package version"
+		default n
+	config jquery_CUSTOM_VERSION
+		depends on jquery_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.7.2)"
+		default "1.7.2"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery
+	config jquery_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery
+		bool "Use custom source directory"
+		default n
+	config jquery_CUSTOM_SOURCE_DIR
+		depends on jquery_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-sparkline/Makefile
+Package: jquery-sparkline
+Submenu: JavaScript
+Version: 1.4.3-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery plugin to generate small inline charts
+Maintainer: 
+Source: jquery.sparkline.min.js
+Type: ipkg
+Description:   This jQuery plugin generates sparklines (small inline charts) directly
+  in the browser using data supplied either inline in the HTML, or
+  via javascript.
+http://omnipotent.net/jquery.sparkline
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-sparkline
+	config jquery-sparkline_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-sparkline
+		bool "Use custom package version"
+		default n
+	config jquery-sparkline_CUSTOM_VERSION
+		depends on jquery-sparkline_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.4.3)"
+		default "1.4.3"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-sparkline
+	config jquery-sparkline_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-sparkline
+		bool "Use custom source directory"
+		default n
+	config jquery-sparkline_CUSTOM_SOURCE_DIR
+		depends on jquery-sparkline_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/policy-reader/Makefile
+Package: policy-reader
+Submenu: Flow Detect
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Policy-reader
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Policy-reader reads policy.redis into redis.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_policy-reader
+	config policy-reader_USE_CUSTOM_VERSION
+		depends on PACKAGE_policy-reader
+		bool "Use custom package version"
+		default n
+	config policy-reader_CUSTOM_VERSION
+		depends on policy-reader_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_policy-reader
+	config policy-reader_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_policy-reader
+		bool "Use custom source directory"
+		default n
+	config policy-reader_CUSTOM_SOURCE_DIR
+		depends on policy-reader_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/sbmacouid/Makefile
+Package: sbmacouid
+Submenu: Utilities
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2 +libevent2-core +libcurl +zlib +macoui-db
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Node management daemon
+Maintainer: 
+Source: sbmacouid-.tar.gz
+Type: ipkg
+Description:   Streamboost 2.0 node management daemon
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sbmacouid
+	config sbmacouid_USE_CUSTOM_VERSION
+		depends on PACKAGE_sbmacouid
+		bool "Use custom package version"
+		default n
+	config sbmacouid_CUSTOM_VERSION
+		depends on sbmacouid_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sbmacouid
+	config sbmacouid_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sbmacouid
+		bool "Use custom source directory"
+		default n
+	config sbmacouid_CUSTOM_SOURCE_DIR
+		depends on sbmacouid_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/app-flow-scripts/Makefile
+Package: app-flow-scripts
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +drflocs +checkpcap +p0f
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Bigfoot Networks App Detect Scripts
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: app-flow-scripts-.tar.gz
+Type: ipkg
+Description: Bigfoot Networks App Detect Scripts
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_app-flow-scripts
+	config app-flow-scripts_USE_CUSTOM_VERSION
+		depends on PACKAGE_app-flow-scripts
+		bool "Use custom package version"
+		default n
+	config app-flow-scripts_CUSTOM_VERSION
+		depends on app-flow-scripts_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_app-flow-scripts
+	config app-flow-scripts_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_app-flow-scripts
+		bool "Use custom source directory"
+		default n
+	config app-flow-scripts_CUSTOM_SOURCE_DIR
+		depends on app-flow-scripts_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+Package: app-flow-scripts-noload
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +drflocs +checkpcap +p0f
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Bigfoot Networks App Detect Scripts
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: app-flow-scripts-.tar.gz
+Type: ipkg
+Description: Bigfoot Networks App Detect Scripts
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/drflocs/Makefile
+Package: drflocs
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpcap +librt +libevent2-core +hiredis +libnl-bf
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone libyaml
+Section: opt
+Category: Bigfoot
+Title: Bigfoot Networks Runtime Flow Classification System
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: drflocs-.tar.gz
+Type: ipkg
+Description: DRFloCS implements Layer 4-based packet inspection sauce to accelerate your life!!!
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_drflocs
+	config drflocs_USE_CUSTOM_VERSION
+		depends on PACKAGE_drflocs
+		bool "Use custom package version"
+		default n
+	config drflocs_CUSTOM_VERSION
+		depends on drflocs_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_drflocs
+	config drflocs_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_drflocs
+		bool "Use custom source directory"
+		default n
+	config drflocs_CUSTOM_SOURCE_DIR
+		depends on drflocs_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/angular-ozker/Makefile
+Package: angular-ozker
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery +angular +angular-mocks +angular-route +angular-translate +urijs
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Angular ozker model components
+Maintainer: 
+Source: angular-ozker-.tar.gz
+Type: ipkg
+Description:   Angular ozker model components
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_angular-ozker
+	config angular-ozker_USE_CUSTOM_VERSION
+		depends on PACKAGE_angular-ozker
+		bool "Use custom package version"
+		default n
+	config angular-ozker_CUSTOM_VERSION
+		depends on angular-ozker_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_angular-ozker
+	config angular-ozker_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_angular-ozker
+		bool "Use custom source directory"
+		default n
+	config angular-ozker_CUSTOM_SOURCE_DIR
+		depends on angular-ozker_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/sbnamed/Makefile
+Package: sbnamed
+Submenu: Node Management
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +leash
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: sbnamed
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: sbnamed-.tar.gz
+Type: ipkg
+Description:  sbnamed updates node names based on dhcp leases.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sbnamed
+	config sbnamed_USE_CUSTOM_VERSION
+		depends on PACKAGE_sbnamed
+		bool "Use custom package version"
+		default n
+	config sbnamed_CUSTOM_VERSION
+		depends on sbnamed_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sbnamed
+	config sbnamed_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sbnamed
+		bool "Use custom source directory"
+		default n
+	config sbnamed_CUSTOM_SOURCE_DIR
+		depends on sbnamed_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/leash/Makefile
+Package: leash
+Submenu: Utilities
+Version: 1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Filter to read node data from DHCP, ARP table and WiFi table
+Maintainer: Cristian Prundeanu <c.p@qca.qualcomm.com>
+Source: 
+Type: ipkg-prebuilt
+Description:  This package contains an a daemon that will watch the DHCP leases file, along
+ with the ARP table and the WiFi client list.
+ When it sees a change, it will filter and compound the data into a single file,
+ to prepare for inclusion into Redis.
+Cristian Prundeanu <c.p@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-contextmenu/Makefile
+Package: jquery-contextmenu
+Submenu: JavaScript
+Version: 1.01-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery context menu
+Maintainer: 
+Source: jquery-contextmenu-1.01-gecb2ce1.tar.gz
+Type: ipkg
+Description: 	A jquery context menu plugin
+http://abeautifulsite.net/2008/09/jquery-context-menu-plugin/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-contextmenu
+	config jquery-contextmenu_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-contextmenu
+		bool "Use custom package version"
+		default n
+	config jquery-contextmenu_CUSTOM_VERSION
+		depends on jquery-contextmenu_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.01)"
+		default "1.01"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-contextmenu
+	config jquery-contextmenu_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-contextmenu
+		bool "Use custom source directory"
+		default n
+	config jquery-contextmenu_CUSTOM_SOURCE_DIR
+		depends on jquery-contextmenu_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/libnl-bf/Makefile
+Package: libnl-bf
+Version: g7d47666eb3c414feb8901970d35b96461214c2bf-3
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpthread
+Menu-Depends: 
+Provides: libnl
+Build-Depends: libtool libintl libiconv
+Section: Bigfoot
+Category: Bandwidth Control
+Title: NetLink socket library with BF modifications
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: libnl-bf-g7d47666eb3c414feb8901970d35b96461214c2bf.tar.gz
+Type: ipkg
+Description:  This package contains a library for applications dealing with netlink sockets.
+ The standard libnl has been modified to suit Bigfoot purposes.
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_libnl-bf
+	config libnl-bf_USE_CUSTOM_VERSION
+		depends on PACKAGE_libnl-bf
+		bool "Use custom package version"
+		default n
+	config libnl-bf_CUSTOM_VERSION
+		depends on libnl-bf_USE_CUSTOM_VERSION
+		string " version as string (default version: g7d47666eb3c414feb8901970d35b96461214c2bf)"
+		default "g7d47666eb3c414feb8901970d35b96461214c2bf"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_libnl-bf
+	config libnl-bf_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_libnl-bf
+		bool "Use custom source directory"
+		default n
+	config libnl-bf_CUSTOM_SOURCE_DIR
+		depends on libnl-bf_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/spaceman/Makefile
+Package: spaceman
+Submenu: Flow Detect
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +ngrep +redis-cli @BUSYBOX_CONFIG_AWK
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Spaceman
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Dr. Spaceman classifies generic flows.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_spaceman
+	config spaceman_USE_CUSTOM_VERSION
+		depends on PACKAGE_spaceman
+		bool "Use custom package version"
+		default n
+	config spaceman_CUSTOM_VERSION
+		depends on spaceman_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_spaceman
+	config spaceman_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_spaceman
+		bool "Use custom source directory"
+		default n
+	config spaceman_CUSTOM_SOURCE_DIR
+		depends on spaceman_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/p0f/Makefile
+Package: p0f
+Version: 3.06b-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpcap +p0f-db
+Menu-Depends: 
+Provides: 
+Build-Depends: libpcap
+Section: net
+Category: Network
+Title: p0f: passive fingerprinter
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: p0f-3.06b.tgz
+Type: ipkg
+Description: 	p0f is a tool that utilizes an array of sophisticated, purely
+	passive traffic fingerprinting mechanisms to identify the
+	players behind any incidental TCP/IP communications (often
+	as little as a single normal SYN) without interfering in
+	any way.
+http://lcamtuf.coredump.cx/p0f.shtml
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/smoketest/Makefile
+Package: smoketest
+Submenu: Utilities
+Version: 1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Smoke test for the Bigfoot Network Killer Router
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: A smoke test for the krouter
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/celes/Makefile
+Package: celes
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libnetfilter-conntrack +libevent2
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Connection Event Logger Service
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: celes-.tar.gz
+Type: ipkg
+Description: SEA receives statistics and events from conntrack and maintains this data in an event db in Redis.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_celes
+	config celes_USE_CUSTOM_VERSION
+		depends on PACKAGE_celes
+		bool "Use custom package version"
+		default n
+	config celes_CUSTOM_VERSION
+		depends on celes_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_celes
+	config celes_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_celes
+		bool "Use custom source directory"
+		default n
+	config celes_CUSTOM_SOURCE_DIR
+		depends on celes_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/background-size-polyfill/Makefile
+Package: background-size-polyfill
+Submenu: JavaScript
+Version: 20121123-gef5fa68-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Add support for background-size to IE8.
+Maintainer: 
+Source: backgroundsize.min.htc
+Type: ipkg
+Description:   An IE behavior adding support for background-size: cover; and
+  background-size: contain; to IE8.
+https://github.com/louisremi/background-size-polyfill
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_background-size-polyfill
+	config background-size-polyfill_USE_CUSTOM_VERSION
+		depends on PACKAGE_background-size-polyfill
+		bool "Use custom package version"
+		default n
+	config background-size-polyfill_CUSTOM_VERSION
+		depends on background-size-polyfill_USE_CUSTOM_VERSION
+		string " version as string (default version: 20121123-gef5fa68)"
+		default "20121123-gef5fa68"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_background-size-polyfill
+	config background-size-polyfill_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_background-size-polyfill
+		bool "Use custom source directory"
+		default n
+	config background-size-polyfill_CUSTOM_SOURCE_DIR
+		depends on background-size-polyfill_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/sbnoded/Makefile
+Package: sbnoded
+Submenu: Utilities
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2 +libevent2-core
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Node management daemon
+Maintainer: 
+Source: sbnoded-.tar.gz
+Type: ipkg
+Description:   Streamboost 2.0 node management daemon
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sbnoded
+	config sbnoded_USE_CUSTOM_VERSION
+		depends on PACKAGE_sbnoded
+		bool "Use custom package version"
+		default n
+	config sbnoded_CUSTOM_VERSION
+		depends on sbnoded_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sbnoded
+	config sbnoded_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sbnoded
+		bool "Use custom source directory"
+		default n
+	config sbnoded_CUSTOM_SOURCE_DIR
+		depends on sbnoded_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/jigglyp0f/Makefile
+Package: jigglyp0f
+Submenu: Node Management
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +p0f +libevent2 +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: p0f to Redis interface
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: jigglyp0f-.tar.gz
+Type: ipkg
+Description: An interface to translate p0f stdout to Redis pubsub.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jigglyp0f
+	config jigglyp0f_USE_CUSTOM_VERSION
+		depends on PACKAGE_jigglyp0f
+		bool "Use custom package version"
+		default n
+	config jigglyp0f_CUSTOM_VERSION
+		depends on jigglyp0f_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jigglyp0f
+	config jigglyp0f_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jigglyp0f
+		bool "Use custom source directory"
+		default n
+	config jigglyp0f_CUSTOM_SOURCE_DIR
+		depends on jigglyp0f_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/libsquirrel/Makefile
+Package: libsquirrel
+Submenu: Utilities
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libopenssl
+Menu-Depends: 
+Provides: 
+Section: Bigfoot
+Category: Bigfoot
+Title: Configuration file decryption library.
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: libsquirrel-.tar.gz
+Type: ipkg
+Description:  This package contains a library for decrypting Streamboost daemon configuration files.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_libsquirrel
+	config libsquirrel_USE_CUSTOM_VERSION
+		depends on PACKAGE_libsquirrel
+		bool "Use custom package version"
+		default n
+	config libsquirrel_CUSTOM_VERSION
+		depends on libsquirrel_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_libsquirrel
+	config libsquirrel_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_libsquirrel
+		bool "Use custom source directory"
+		default n
+	config libsquirrel_CUSTOM_SOURCE_DIR
+		depends on libsquirrel_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/flowcap/Makefile
+Package: flowcap
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpcap
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Monitor and handle packet captures from drflocs
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: flowcap-.tar.gz
+Type: ipkg
+Description: Drflocs can save off packet captures.  flowcap manages those saved packet captures.
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flowcap
+	config flowcap_USE_CUSTOM_VERSION
+		depends on PACKAGE_flowcap
+		bool "Use custom package version"
+		default n
+	config flowcap_CUSTOM_VERSION
+		depends on flowcap_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flowcap
+	config flowcap_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flowcap
+		bool "Use custom source directory"
+		default n
+	config flowcap_CUSTOM_SOURCE_DIR
+		depends on flowcap_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/settings-loader/Makefile
+Package: settings-loader
+Submenu: Utilities
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Settings Loader
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Settings loader (wait for it) loads settings into Redis.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_settings-loader
+	config settings-loader_USE_CUSTOM_VERSION
+		depends on PACKAGE_settings-loader
+		bool "Use custom package version"
+		default n
+	config settings-loader_CUSTOM_VERSION
+		depends on settings-loader_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_settings-loader
+	config settings-loader_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_settings-loader
+		bool "Use custom source directory"
+		default n
+	config settings-loader_CUSTOM_SOURCE_DIR
+		depends on settings-loader_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/libsbdaemon/Makefile
+Package: libsbdaemon
+Submenu: Utilities
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Variant: prod
+Section: Bigfoot
+Category: Bigfoot
+Title: Daemonizing Library
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: libsbdaemon-.tar.gz
+Type: ipkg-prebuilt
+Description:  This package contains a library for decrypting Streamboost daemon configuration files.  Logging level is compiled to INFO.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_libsbdaemon
+	config libsbdaemon_USE_CUSTOM_VERSION
+		depends on PACKAGE_libsbdaemon
+		bool "Use custom package version"
+		default n
+	config libsbdaemon_CUSTOM_VERSION
+		depends on libsbdaemon_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_libsbdaemon
+	config libsbdaemon_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_libsbdaemon
+		bool "Use custom source directory"
+		default n
+	config libsbdaemon_CUSTOM_SOURCE_DIR
+		depends on libsbdaemon_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+Package: libsbdaemon-rtll
+Submenu: Utilities
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Variant: rtll
+Section: Bigfoot
+Category: Bigfoot
+Title: Daemonizing Library
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: libsbdaemon-.tar.gz
+Type: ipkg-prebuilt
+Description:  This package contains a library for decrypting Streamboost daemon configuration files.  Logging level is configurable at run-time.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost/d3js/Makefile
+Package: d3js
+Submenu: JavaScript
+Version: 3.1.6-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: JavaScript library for manipulating documents based on data
+Maintainer: 
+Source: v3.1.6.tar.gz
+Type: ipkg
+Description:   D3.js is a JavaScript library for manipulating documents based on
+  data. D3 helps you bring data to life using HTML, SVG and CSS. D3’s
+  emphasis on web standards gives you the full capabilities of modern
+  browsers without tying yourself to a proprietary framework, combining
+  powerful visualization components and a data-driven approach to DOM
+  manipulation
+http://d3js.org/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_d3js
+	config d3js_USE_CUSTOM_VERSION
+		depends on PACKAGE_d3js
+		bool "Use custom package version"
+		default n
+	config d3js_CUSTOM_VERSION
+		depends on d3js_USE_CUSTOM_VERSION
+		string " version as string (default version: 3.1.6)"
+		default "3.1.6"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_d3js
+	config d3js_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_d3js
+		bool "Use custom source directory"
+		default n
+	config d3js_CUSTOM_SOURCE_DIR
+		depends on d3js_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/flux/Makefile
+Package: flux
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery +jquery-ui +jquery-contextmenu +jquery-jscrollpane +jquery-swapsies +jquery-flot +jquery-flot-axislabels +jquery-flot-gant +jquery-sparkline +raphael +tresbar +angular +angular-mocks +angular-route +angular-translate +urijs +angular-ozker +angular-loadcontent
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Killer Router Web UI Toolkit
+Maintainer: 
+Source: flux-.tar.gz
+Type: ipkg
+Description:   Killer Router Web UI Toolkit
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flux
+	config flux_USE_CUSTOM_VERSION
+		depends on PACKAGE_flux
+		bool "Use custom package version"
+		default n
+	config flux_CUSTOM_VERSION
+		depends on flux_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flux
+	config flux_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flux
+		bool "Use custom source directory"
+		default n
+	config flux_CUSTOM_SOURCE_DIR
+		depends on flux_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/callhomeclient/Makefile
+Package: callhomeclient
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +curl +openssl-util +customer-keys
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Client for the callhome server
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: callhomeclient-.tar.gz
+Type: ipkg
+Description: Client for the callhome server
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_callhomeclient
+	config callhomeclient_USE_CUSTOM_VERSION
+		depends on PACKAGE_callhomeclient
+		bool "Use custom package version"
+		default n
+	config callhomeclient_CUSTOM_VERSION
+		depends on callhomeclient_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_callhomeclient
+	config callhomeclient_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_callhomeclient
+		bool "Use custom source directory"
+		default n
+	config callhomeclient_CUSTOM_SOURCE_DIR
+		depends on callhomeclient_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/jquery-flot-axislabels/Makefile
+Package: jquery-flot-axislabels
+Submenu: JavaScript
+Version: 0.1-ga0d11e5-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery-flot
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery Flot Axis Labels Plugin
+Maintainer: 
+Source: jquery-flot-axislabels-0.1-ga0d11e5.tar.gz
+Type: ipkg
+Description:   Axis labels plugin for jQuery flot
+http://jqueryui.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-flot-axislabels
+	config jquery-flot-axislabels_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-flot-axislabels
+		bool "Use custom package version"
+		default n
+	config jquery-flot-axislabels_CUSTOM_VERSION
+		depends on jquery-flot-axislabels_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.1-ga0d11e5)"
+		default "0.1-ga0d11e5"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-flot-axislabels
+	config jquery-flot-axislabels_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-flot-axislabels
+		bool "Use custom source directory"
+		default n
+	config jquery-flot-axislabels_CUSTOM_SOURCE_DIR
+		depends on jquery-flot-axislabels_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/angular-loadcontent/Makefile
+Package: angular-loadcontent
+Submenu: JavaScript
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery +angular +angular-mocks +angular-route +angular-translate +urijs
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Angular media loader
+Maintainer: 
+Source: angular-loadcontent-.tar.gz
+Type: ipkg
+Description:   Angular media loader
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_angular-loadcontent
+	config angular-loadcontent_USE_CUSTOM_VERSION
+		depends on PACKAGE_angular-loadcontent
+		bool "Use custom package version"
+		default n
+	config angular-loadcontent_CUSTOM_VERSION
+		depends on angular-loadcontent_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_angular-loadcontent
+	config angular-loadcontent_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_angular-loadcontent
+		bool "Use custom source directory"
+		default n
+	config angular-loadcontent_CUSTOM_SOURCE_DIR
+		depends on angular-loadcontent_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/flowmark/Makefile
+Package: flowmark
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2-core +libnetfilter-conntrack +libpthread
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: StreamBoost to Conntrack interface
+Maintainer: Nic Costa <ncosta@qca.qualcomm.com>
+Source: flowmark-.tar.gz
+Type: ipkg
+Description: Flowmark receives a 5-tuple and a flow ID and marks the appropriate conntrack entry with the flow ID.
+Nic Costa <ncosta@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flowmark
+	config flowmark_USE_CUSTOM_VERSION
+		depends on PACKAGE_flowmark
+		bool "Use custom package version"
+		default n
+	config flowmark_CUSTOM_VERSION
+		depends on flowmark_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flowmark
+	config flowmark_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flowmark
+		bool "Use custom source directory"
+		default n
+	config flowmark_CUSTOM_SOURCE_DIR
+		depends on flowmark_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/raphael/Makefile
+Package: raphael
+Submenu: JavaScript
+Version: 2.1.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: JavaScript library that should simplify your work with vector graphics on the web
+Maintainer: 
+Source: v2.1.0.tar.gz
+Type: ipkg
+Description:   Raphaël is a small JavaScript library that should simplify your
+  work with vector graphics on the web. If you want to create your own
+  specific chart or image crop and rotate widget, for example, you can
+  achieve it simply and easily with this library.
+http://raphaeljs.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_raphael
+	config raphael_USE_CUSTOM_VERSION
+		depends on PACKAGE_raphael
+		bool "Use custom package version"
+		default n
+	config raphael_CUSTOM_VERSION
+		depends on raphael_USE_CUSTOM_VERSION
+		string " version as string (default version: 2.1.0)"
+		default "2.1.0"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_raphael
+	config raphael_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_raphael
+		bool "Use custom source directory"
+		default n
+	config raphael_CUSTOM_SOURCE_DIR
+		depends on raphael_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost/macoui-db/Makefile
+Package: macoui-db
+Submenu: Flow Detect
+Version: 20140508110915-ga84e172-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: macoui database
+Maintainer: Mo Chen <moc@qca.qualcomm.com
+Source: macoui-db-20140508110915-ga84e172-generic.tar.gz
+Type: ipkg-prebuilt
+Description: Mac OUI mappings.
+Mo Chen <moc@qca.qualcomm.com
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_macoui-db
+	config macoui-db_USE_CUSTOM_VERSION
+		depends on PACKAGE_macoui-db
+		bool "Use custom package version"
+		default n
+	config macoui-db_CUSTOM_VERSION
+		depends on macoui-db_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140508110915-ga84e172-generic)"
+		default "20140508110915-ga84e172-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_macoui-db
+	config macoui-db_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_macoui-db
+		bool "Use custom source directory"
+		default n
+	config macoui-db_CUSTOM_SOURCE_DIR
+		depends on macoui-db_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

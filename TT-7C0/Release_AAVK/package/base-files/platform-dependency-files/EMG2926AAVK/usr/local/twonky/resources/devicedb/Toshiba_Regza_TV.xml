@@ -1,0 +1,41 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Toshiba Regza TV</DisplayName>
+		<BrowseRecognition>
+			<BrowseRequestMatch>&lt;BrowseFlag&gt;BrowseDirectChildren&lt;/BrowseFlag&gt;&lt;ObjectID&gt;0&lt;/ObjectID&gt;&lt;Filter&gt;upnp:class,dc:date,res,res@size&lt;/Filter&gt;&lt;RequestedCount&gt;120&lt;/RequestedCount&gt;</BrowseRequestMatch>
+			<BrowseHttpHeaders>UPnP/1.0 DLNADOC/1.50 Intel_SDK_for_UPnP_devices/1.2</BrowseHttpHeaders>
+		</BrowseRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Toshiba LCDTV</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG4096x4096</Target>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEG1024x768</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+		<SuppressTimeseek>MPEG_TS_JP_T</SuppressTimeseek>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>DATETIME</Quirk>
+		<Quirk>ACCEPT_SAME_SEQ</Quirk>
+	</DeviceQuirks>
+</Client>

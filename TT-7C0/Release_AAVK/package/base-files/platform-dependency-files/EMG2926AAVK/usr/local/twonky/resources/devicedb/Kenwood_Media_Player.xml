@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Kenwood Media Player</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Kenwood</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

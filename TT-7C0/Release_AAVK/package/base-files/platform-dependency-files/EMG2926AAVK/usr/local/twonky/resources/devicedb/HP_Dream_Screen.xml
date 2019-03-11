@@ -1,0 +1,24 @@
+<Client>
+	<DeviceId>
+		<DisplayName>HP Dream Screen</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>HP DreamScreen</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+			<Target>JPEG640x480</Target>
+		</Scaling>
+		<AudioTranscoding>
+			<Target>MP3</Target>
+		</AudioTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<PretendServer>WMC</PretendServer>
+			<DescriptionFile>devicedescription-xbox.xml</DescriptionFile>
+		</DLNA>
+	</Adaptations>
+</Client>

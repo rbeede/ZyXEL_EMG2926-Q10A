@@ -1,0 +1,29 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Twonky Cyclone</DisplayName>
+		<HttpRecognition>
+			<HttpText>TwonkyMedia-NMC DLNADOC/1.50 Cyclone</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG512x512</Target>
+			<Target>JPEG384x384</Target>
+			<Target>JPEG512x384</Target>
+			<Target>JPEG384x512</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG512x384</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOPROXYURL</Quirk>
+	</DeviceQuirks>
+</Client>

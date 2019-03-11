@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Linn Bubble DS Control Point</DisplayName>
+		<HttpRecognition>
+			<HttpText>BubbleDS UPnP/1.1 </HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEGORG</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+</Client>

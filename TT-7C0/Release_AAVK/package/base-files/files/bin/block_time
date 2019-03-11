@@ -1,0 +1,21 @@
+#!/bin/sh
+
+time_count=595 #block for ten mins==600
+
+if [ -e /tmp/login_blocktime ]; then
+	block_time=$(cat /tmp/login_blocktime)
+	if [ "$block_time" != "0" ]; then
+		echo 'block' > /tmp/login_state
+		exit
+	fi
+fi
+
+while [ "$time_count" != "0" ] 
+do	
+	time_count=`expr $time_count - 1`
+	echo $time_count > /tmp/login_blocktime
+	sleep 1
+done
+
+echo 'non-block' > /tmp/login_state
+

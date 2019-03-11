@@ -1,0 +1,388 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+
+<%
+   local luaSRules = {}
+   
+   uci:foreach( "parental", "parental_rule", function( section )
+      if not ( nil == section.name ) then
+         local tmp = section
+         
+         tmp.id = section[ '.name' ]
+         table.insert( luaSRules, tmp )
+      end
+   end )
+   
+%>
+
+<script language="JavaScript" type="text/javascript">
+var D_NUM = 32;
+var jsEditNo = "";
+function JSSRoute( id, name, keyword, enabled, dest, mask, gw )
+{
+   this.id = id;
+   this.name = name;
+   this.keyword = keyword
+   this.enabled = ( enabled == "" || enabled == "0" ) ? false : true;
+   this.dest = dest;
+   this.mask = mask;
+   this.gw = gw;
+}
+
+
+var jsSRoutes = [
+   <%
+      for name, info in pairs(luaSRules) do
+         %> new JSSRoute( "<%= info.id %>", "<%= info.name %>", "<%= info.keyword %>", "<%= info.src_type %>",  "<%= info.enable %>", "<%= info.start_hour %>", "<%= info.start_min %>", "<%= info.stop_hour %>", "<%= info.stop_min %>", "<%= info.src_mac %>", "<%= info.keyword %>", "<%= info.service_count %>", "<%= info.weekdays %>" ), <%
+      end
+   %>
+];
+
+function editSR( entryNo )
+{
+	var submit_url = '<%=luci.dispatcher.build_url("expert", "configuration", "security", "ParentalControl", "ParentalControl_Edit")%>';
+	var loc = submit_url + '?edit=' + entryNo;
+	var code = 'location="' + loc + '"';
+    eval(code);
+}
+
+function repaintEdit()
+{
+   if ( jsEditNo != 'New' )
+   {
+      document.getElementsByName( "SREditRadio" )[0].checked = jsSRoutes[ jsEditNo ].enabled;
+      document.getElementsByName( "SREditName" )[0].value = jsSRoutes[ jsEditNo ].name;
+	  document.getElementsByName( "SREditKeyword" )[0].value = jsSRoutes[ jsEditNo ].keyword;
+      document.getElementsByName( "SREditDest" )[0].value = jsSRoutes[ jsEditNo ].dest;
+      document.getElementsByName( "SREditMask" )[0].value = jsSRoutes[ jsEditNo ].mask;
+      document.getElementsByName( "SREditGW" )[0].value = jsSRoutes[ jsEditNo ].gw;
+      document.getElementsByName( "SREditID" )[0].value = jsSRoutes[ jsEditNo ].id;
+		
+      showFullPath(' <%:Security%> > <%:parental_control%> ');
+   }
+   else
+   {
+      document.getElementsByName( "SREditRadio" )[0].checked = false;
+      document.getElementsByName( "SREditName" )[0].value = "";
+	  document.getElementsByName( "SREditKeyword" )[0].value = "";
+      document.getElementsByName( "SREditDest" )[0].value = "0.0.0.0";
+      document.getElementsByName( "SREditMask" )[0].value = "0.0.0.0";
+      document.getElementsByName( "SREditGW" )[0].value = "0.0.0.0";
+      document.getElementsByName( "SREditID" )[0].value = 'New';
+      
+      showFullPath(' <%:Security%> > <%:parental_control%> ');
+   }
+}
+
+function backToList()
+{
+   document.getElementById( "edit" ).style.display="none";
+   document.getElementById( "tabs" ).style.display="block";
+   document.getElementById( "list" ).style.display="block";
+   document.getElementsByName( "SRSubmitType" )[0].value = "table";
+   
+   showFullPath(' <%:Security%> > <%:parental_control%>');
+}
+
+function deleteSR( entryNo, element )
+{
+/*
+   //<![CDATA[
+   if ( confirm('Are you sure you want to do that? ') )
+   {
+      var table = document.getElementById( "list_table" );
+      
+      document.getElementsByName( "SRDeleteIDs" )[0].value += ( jsSRoutes[ entryNo - 1 ].id + "," );
+      table.deleteRow( element.parentNode.parentNode.parentNode.sectionRowIndex );
+      
+      for( var i = 2; i < table.rows.length; i++ )
+      {
+         table.rows[i].cells[0].innerHTML = i - 1;
+      }
+   }
+   //]]>
+*/
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","security","ParentalControl")%>';
+	var loc = submit_url + '?delete=' + entryNo;
+	var code = 'location="' + loc + '"';
+    eval(code);
+}
+
+function repaintTable()
+{
+   windows.location.reload();
+}
+
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value )
+}
+
+function submitEdit()
+{
+   if ( /^\w{1,}$/.test( document.getElementsByName( "SREditName" )[0].value ) )
+   {
+      if ( checkIPFormat( document.getElementsByName( "SREditDest" )[0].value ) )
+      { 
+         if ( checkIPFormat( document.getElementsByName( "SREditGW" )[0].value ) )
+         {
+            if ( /^255\.255\.255\.(255|254|252|248|240|224|192|128|0)|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|(254|252|248|240|224|192|128)\.0\.0\.0$/.test( document.getElementsByName( "SREditMask" )[0].value ) )
+            {
+               showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+               return true;
+            }
+            else
+            {
+               alert("<%:Route_Error_3%>");
+               return false;
+            }			
+         }
+         else
+         {
+            alert("<%:Route_Error_2%>");
+            return false;
+         }
+      }
+      else
+      { 
+         alert("<%:IP_Error_3%>");
+         return false; 
+      }	 
+   }
+   else
+   {
+      alert( "<%:Route_Error_1%>" );
+	  return false;
+   }
+}
+
+function sumbitTable()
+{
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+   return true;
+}
+
+function checkValue(str){
+   var flag=0;
+	for(i=0;i < document.SRForm.cfKeyWord_DomainList.options.length;i++){
+		if(document.SRForm.cfKeyWord_DomainList.options[i].text == str){
+		   flag=1;
+		   break;	   
+		}		  
+	}
+	if(flag == 1)
+	   	return 1;
+	else
+    	return 0;
+}
+function cfKeyWord_AddKeyword_click(){	
+	var D_str=document.SRForm.cfKeyWord_Domain.value;
+	if(D_str!=""){	
+		var list_num=document.SRForm.cfKeyWord_DomainList.length;
+		if(list_num < D_NUM){ 
+		    if(checkValue(D_str)==0){
+				document.SRForm.cfKeyWord_DomainList.options[list_num]=new Option(D_str, D_str);
+			}
+			else
+			{	    
+				alert("<%:CF_Error_1%>"); 
+				document.SRForm.cfKeyWord_Domain.value="";
+			}
+		}
+		else
+		   alert("<%:CF_Error_2%>");
+	} 
+}
+function cfKeyWord_ClearList_click(){
+	document.SRForm.cfKeyWord_DomainList.options.length=0;		    
+}
+function cfKeyWord_DeleteKeyword_click(){
+    
+	//for IE & firefox
+	if(document.SRForm.cfKeyWord_DomainList.selectedIndex >= 0){
+		document.SRForm.cfKeyWord_DomainList.remove(document.SRForm.cfKeyWord_DomainList.selectedIndex);
+		cfKeyWord_DeleteKeyword_click();
+	}
+} 
+
+</script>
+</head>
+<body  >
+<div id="tabs">
+   <ul>
+      <li class="hightline"><a title="<%:parental_control%>"><span><%:parental_control%></span></a></li>
+   </ul>
+   <br class="clearfloat" />
+</div>
+<form method="post" name="SRForm" action="<%=controller%>/expert/configuration/security/ParentalControl">
+   <div id="table">
+      <ul id="list">
+         <li class="table_top"></li>
+         <li class="table_content">
+		 <div class="w_text">
+            <ul>
+			  <li class="title">
+              <%:General%>
+              </li>
+              <li class="left_table" >
+              <%:parental_control%> :						
+              </li>
+              <% local Parental_enable = uci:get("parental","general","enable") %>
+              <li class="right_table">
+                <input name="parental_state" type="radio" value="1" <%if Parental_enable == "1" then%> checked = "CHECKED" <%end%> />
+                <%:enable%>
+                <input name="parental_state" type="radio" value="0" <%if Parental_enable == "0" then%> checked = "CHECKED" <%end%> />
+                <%:disable%>  (<%:parental_setting_info%>)
+              </li>
+            </ul>
+          </div>
+            <div class="data">
+               <div class="w_text">
+                  <ul>    
+                     <input name="Add_new_PCP" value="<%:add_new_rule%>" type="button" onclick="editSR('<%=#luaSRules%>')" />
+                  </ul>
+               </div>
+               <ul>
+                  <div class="tableframe">
+                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                        <tr>
+                           <td>
+                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                 <tr>
+                                    <td>
+                                       <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                          <tr>
+                                             <td>
+                                                <table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+                                                   <tr>
+                                                      <td height="26" colspan="9">
+                                                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                            <tr>
+                                                               <td height="26" class="table_title">
+                                                                  <%:parental_control_rule%><span class="cTitle"></span>
+                                                               </td>
+                                                            </tr>
+                                                         </table>
+                                                      </td>
+                                                   </tr>
+                                                   <tr class="top_font" align="center">
+                                                      <td width="35">#</td>
+                                                      <td width="40"><%:Status%></td>
+                                                      <td ><%:rule_name%></td>
+                                                      <td ><%:home_network_user%> (<%:mac%>) </td>
+                                                      <td ><%:internet_access_sche%> </td>													  
+                                                      <td width="90"><%:network_service%> </td>
+													   <td width="90"><%:website_block%> </td>
+                                                      <td width="90"><%:Modify%></td>
+                                                   </tr>
+                                                   <% 
+                                                      for i = 1, #luaSRules do
+                                                      %>
+                                                         <tr class="table_font" align="center">
+                                                            <td valign="top"><%= i %></td>
+                                                            <td>
+                                                            <%
+															
+                                                            if not ( nil == luaSRules[i].enable ) and not ( "0" == luaSRules[i].enable ) and (  "1" == Parental_enable ) then
+                                                               %><img src="<%=media%>/admin/images/i_active_on.gif" width="18" height="18"  title="<%:On%>"/><%
+                                                            else
+                                                               %><img src="<%=media%>/admin/images/i_active_off.gif" width="18" height="18"  title="<%:Off%>"/><%
+                                                            end
+                                                            %>
+                                                            </td>
+                                                            <td><%= luaSRules[i].name%></td>
+															<%
+																local user_name=luci.sys.exec("cat /tmp/dhcp.leases |grep "..luaSRules[i].src_mac.." | awk -F ' ' '{print $4}'|sed 's/\"//g' | sed 's/://g'")
+																if ( luaSRules[i].src_type == "single" or luaSRules[i].src_type == "custom") then
+															%>
+															<td><%= user_name %>(<%= luaSRules[i].src_mac %>)</td>
+															<%  else %>
+															<td>All</td>
+															<%end%>
+                                                            <td><%= luaSRules[i].weekdays %>  <%= luaSRules[i].start_hour %>:<%= luaSRules[i].start_min%>-<%= luaSRules[i].stop_hour %>:<%= luaSRules[i].stop_min %></td>
+															<%																												
+															if ( "0" == luaSRules[i].service_count ) then 
+																%><td> <%:None%> </td><%
+															else
+																%><td> <%:configured%> </td><%
+															end
+															%>
+															<%
+															if ( nil == luaSRules[i].keyword ) then 
+																%><td> <%:None%> </td><%
+															else
+																%><td> <%:configured%> </td><%
+															end
+															%>
+                                                            
+															
+                                                            <td>
+                                                               <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" ><img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editSR(<%= i - 1 %>)"/></a>
+                                                                  &nbsp;&nbsp;
+                                                               <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="deleteSR(<%= i %>, this)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+                                                               <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+                                                            </td>
+                                                         </tr>
+                                                      <%
+                                                      end
+                                                   %>
+                                                </table>
+                                             </td>
+                                          </tr>
+                                       </table>
+                                    </td>
+                                 </tr>
+                              </table>
+                           </td>
+                        </tr>
+                     </table>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+	   	<li class="table_button"> 
+			<div class="button" align="center">
+				<input name="sysSubmit" value="<%:apply%>" type="submit" />
+				&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+				<input name="Cancel" value="<%:cancel%>" type="reset" /> 
+			</div> 
+		</li> 	
+      </ul>
+   </div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Security%> > <%:parental_control%>');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>

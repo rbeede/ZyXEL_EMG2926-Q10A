@@ -1,0 +1,36 @@
+Source-Makefile: feeds/packages/sound/pulseaudio/Makefile
+Package: pulseaudio
+Version: 0.9.23-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libspeexdsp +libgdbm +libsndfile +libsamplerate +libltdl +libpthread +librt +alsa-lib @!UCLIBC_VERSION_0_9_30_1 @!UCLIBC_VERSION_0_9_30_2 @!UCLIBC_VERSION_0_9_30_3 +BUILD_NLS:libiconv-full +BUILD_NLS:libintl-full
+Menu-Depends: 
+Provides: 
+Build-Depends: intltool/host libtool libintl libiconv !BUILD_NLS:libiconv !BUILD_NLS:libintl
+Section: sound
+Category: Sound
+Title: Network sound server
+Maintainer: 
+Source: pulseaudio-0.9.23.tar.gz
+Type: ipkg
+Description: Network sound server
+http://www.pulseaudio.org
+
+@@
+
+Package: pa-tools
+Version: 0.9.23-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libgdbm +libsndfile +pulseaudio
+Menu-Depends: 
+Provides: 
+Build-Depends: intltool/host libtool libintl libiconv !BUILD_NLS:libiconv !BUILD_NLS:libintl
+Section: sound
+Category: Sound
+Title: Tools for Pulseaudio
+Maintainer: 
+Source: pulseaudio-0.9.23.tar.gz
+Type: ipkg
+Description: Tools for Pulseaudio
+http://www.pulseaudio.org
+
+@@
+
+

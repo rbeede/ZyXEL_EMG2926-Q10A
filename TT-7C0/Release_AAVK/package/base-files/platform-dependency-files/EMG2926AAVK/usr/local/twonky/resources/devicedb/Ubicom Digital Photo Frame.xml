@@ -1,0 +1,16 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Ubicom Digital Photo Frame</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Ubicom Digital Photo Frame</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<ScreenResolution>800x480</ScreenResolution>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>BROKEN_GETMEDIAINFO</Quirk>
+		<Quirk>BROKEN_GETPOSITIONINFO</Quirk>
+	</DeviceQuirks>
+</Client>

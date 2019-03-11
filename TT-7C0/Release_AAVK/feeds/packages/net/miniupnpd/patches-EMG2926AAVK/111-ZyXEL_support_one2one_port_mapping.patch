@@ -1,0 +1,18 @@
+Index: miniupnpd-1.6.20110730/netfilter/tiny_nf_nat.h
+===================================================================
+--- miniupnpd-1.6.20110730.orig/netfilter/tiny_nf_nat.h	2011-07-30 21:14:36.000000000 +0800
++++ miniupnpd-1.6.20110730/netfilter/tiny_nf_nat.h	2017-12-14 18:07:58.171472651 +0800
+@@ -25,6 +25,13 @@
+ 	unsigned int flags;
+ 	__be32 min_ip, max_ip;
+ 	union nf_conntrack_man_proto min, max;
++#if 1 /* Support one-to-one port mapping. */
++	/* mappingFlag is 1, if it needs to do one-to-one port mapping. */
++	unsigned int mappingFlag;
++
++	/* Record external port information. */
++	union nf_conntrack_man_proto mappingMin, mappingMax;
++#endif
+ };
+ 
+ struct nf_nat_multi_range_compat {

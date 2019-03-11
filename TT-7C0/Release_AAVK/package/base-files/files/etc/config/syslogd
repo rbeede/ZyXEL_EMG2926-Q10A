@@ -1,0 +1,4 @@
+config syslogd setting
+	option logSysMaintenance	0
+	option logSysErrs		0
+	option logAccessCtrl		0

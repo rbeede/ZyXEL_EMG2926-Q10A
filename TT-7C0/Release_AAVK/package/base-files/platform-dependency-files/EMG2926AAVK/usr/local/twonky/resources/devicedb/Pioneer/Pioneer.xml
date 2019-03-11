@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Pioneer</DisplayName>
+		<DeviceDescriptionRecognition BoolOp="OR">
+			<DescriptionText>PIONEER CORPORATION</DescriptionText>
+			<DescriptionText>Pioneer Corporation</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>	
+</Client>

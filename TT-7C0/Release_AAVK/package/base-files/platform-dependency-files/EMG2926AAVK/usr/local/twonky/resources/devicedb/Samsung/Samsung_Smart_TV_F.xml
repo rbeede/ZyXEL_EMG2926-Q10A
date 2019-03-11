@@ -1,0 +1,72 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Samsung Smart TV (F Series)</DisplayName>
+		<DeviceDescriptionRecognition>
+            		<!-- F series from 2013 -->
+			<DescriptionText>Samsung TV DMR</DescriptionText>
+			<DescriptionText>&lt;controlURL&gt;/smp_</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<PretendServer>SAMSUNGFEATLIST</PretendServer>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/x-matroska</In>
+				<Out>video/x-mkv</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeSuppress>audio/x-wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wave</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<Capabilities> 
+		<Scaling> 
+			<Target>JPEG1920x1080</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEG160x160</Target>
+			<Target>JPEGORG</Target> 
+		</Scaling> 
+                <SupportedMediaProfiles>
+                        <Profile>AASCALE#JPEG640x480</Profile>
+                </SupportedMediaProfiles>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>NEEDS_THUMBNAIL_CI_FLAG</Quirk>
+		<Quirk>KEEP_RES_4_THUMBNAIL</Quirk>
+		<Quirk>REDUCED_METADATA</Quirk>
+		<Quirk>FORCE_DURATION</Quirk>
+		<Quirk>NEEDS_OP01_ON_TRANSCODED_FILES</Quirk>
+		<Quirk>SUPPRESS_SEEK_ON_GROWING_FILES</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+		<!-- Device sometimes no longer accepts http connections
+		     upon receiving SetNextAVTransportURI invocations. 
+		     For music content it was observed that device enters paused
+		     state when entering next track and can only be stopped in
+		     that state. -->
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<!-- Device sometimes sends multiple events simultaneously and
+		     screws up then the sequence of events. When refusing this,
+		     then upon resubscription device blocks http connections
+		     for some time. -->
+		<Quirk>ACCEPT_ANY_SEQ</Quirk>
+		<!-- Device sends a LastChange event for new metadata which always contains a
+		     STOPPED event although it is transitioning. When polling the state at that
+		     time the device may run into a timeout. -->
+		<Quirk>IGNORE_STOP_AFTER_PLAY</Quirk>
+		<!-- Fails to render photos now and then without a stop. -->
+		<Quirk>NEEDS_STOP_4_PHOTO</Quirk>
+		<!-- Hangs when skipping between tracks. -->
+		<Quirk>needs_stop_4_av</Quirk>
+	</DeviceQuirks>
+</Client>

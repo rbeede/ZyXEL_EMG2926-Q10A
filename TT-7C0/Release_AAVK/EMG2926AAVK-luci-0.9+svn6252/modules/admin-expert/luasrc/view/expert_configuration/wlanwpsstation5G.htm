@@ -1,0 +1,191 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Expires" content="-1">
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<meta http-equiv="Pragma" content="no-cache">
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<style>
+.on {display:on}
+.off {display:none}
+td {white-space: nowrap;}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery-1.2.6.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery.blockUI.js" ></script>
+<script language="JavaScript">
+function WPS_add()
+{
+		showWebMessage( 1 , "<%:Message%>" , "<%:msg_wps%>" );
+		
+		$.blockUI({ message: '<div><%:wps_processing%></div>',
+			css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: .9,
+            color: '#fff'
+        }				
+		});
+		window.parent.window.frames['pannel'].block();
+		window.parent.window.frames['topFrame'].block();
+		return true;
+}
+function CheckPINcode(s)
+{
+	var str1;
+	var str2;
+	if(s.match(/^\d{4}$/)){
+   			return true;
+   	}
+	
+	if(s.match("-")||s.match(/\s/)){
+		str1=s.substr(0,4)
+		str2=s.substr(5,4)
+		if(str1.match(/^\d{4}$/) && str2.match(/^\d{4}$/)){
+			return true;
+		}
+	}
+
+	if(s.match(/^\d{8}$/)){
+   			return true;
+   	}else{
+   			return false;
+   	}		
+}		
+	
+function WPS_PIN_add()
+{
+	showWebMessage( 1 , "<%:Message%>" , "<%:msg_wps%>" );
+	if(!(CheckPINcode(document.wpsstation_form.wps_pincode.value)))
+	{
+		alert("<%:wps_pin_eight%>");
+		document.forms[0].wps_pincode.focus();
+		document.forms[0].wps_pincode.select();
+		document.wpsstation_form.PinWords_invalid.value = 1;
+		return false;
+	}
+	return true;
+}	
+
+</script>
+</head>
+<body  >
+<form method="post" name="wpsstation_form" action="<%=controller%>/expert/configuration/network/wlan/wlanwpsstation5G">
+<% local sys_op_mode = uci:get("system","main","system_mode")%>
+<div id="tabs" style="word-break:break-all;(">
+  <ul>
+<% if sys_op_mode ~= "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan5G" title="<%:General%>"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_multissid5G" title="<%:more_ap%>"><span><%:more_ap%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanmacfilter5G" title="<%:mac_filter%>"><span><%:mac_filter%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanadvanced5G" title="<%:wireless_advance%>"><span><%:wireless_advance%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanqos5G" title="<%:wireless_qos%>"><span><%:wireless_qos%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwps5G" title="<%:wps%>"><span><%:wps%></span></a></li>
+    <li class="hightline"><a title="<%:wps_station%>"><span><%:wps_station%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanscheduling5G" title="<%:scheduling%>"><span><%:scheduling%></span></a></li>
+<% end %>
+<% if sys_op_mode ~= "1" and sys_op_mode ~= "2" then%>
+<% if sys_op_mode == "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp5G" title="<%:General%>"><span><%:General%></span></a></li>
+<% else %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp5G" title="<%:universal_repeater%>"><span><%:universal_repeater%></span></a></li>
+<% end %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp_ur_site_survey5G" title="<%:site_survey%>"><span><%:site_survey%></span></a></li>
+<% end %>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="w_text">
+            <ul>
+              <li class="all_table"><%:wps_push_btn%>
+                <input name="wps_button" value="<%:push_btn%>" type="submit" onclick="WPS_add()" <%=WPS_Enabled%> />
+              </li>
+            </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="all_table"><%:wps_pin%> :<span class="right_table">
+                  <input name="wps_pincode" size="12" maxlength="12" value="" type="text" <%if WPS_Enabled =="disabled" then%>readonly=true<%end%> />
+                <input name="wps_pin" value="<%:wps_pin_start%>" type="submit" onclick="WPS_PIN_add()" <%=WPS_Enabled%> />
+                  &nbsp;</span></li>
+              </ul>
+            </div>
+            <div class="spaceair"></div>
+            <div class="w_text">
+              <ul>
+                <li class="all_table"><span class="i_note"><%:note%>:</span></li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="all_table"><span class="i_note_a">1. <%:wps_note2%></span></li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="all_table"><span class="i_note_a">2. <%:wps_note3%></span></li>
+              </ul>
+            </div>
+          </ul>
+          <ul>
+            <div class="spaceair"></div>
+          </ul>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+<input type="hidden" name="PinWords_invalid" value="0">
+</body>
+<script language="JavaScript">
+showFullPath(' <%:Network%> > <%:Wireless_LAN_5_G%> > <%:wps_station%>');
+window.parent.window.frames['pannel'].unblock();
+window.parent.window.frames['topFrame'].unblock();
+showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+<% if pin_valid == 0 then %>
+	alert("<%:wps_pin_err%>");
+<% elseif pin_valid == 2 then %>
+	alert("<%:wps_overlap%>");
+<% elseif pin_valid == 3 then %>
+	alert("<%:wps_time_out%>");	 
+<% elseif pin_valid == 4 then %>
+	alert("<%:wps_success%>");
+<%end%>
+</script>
+</html>

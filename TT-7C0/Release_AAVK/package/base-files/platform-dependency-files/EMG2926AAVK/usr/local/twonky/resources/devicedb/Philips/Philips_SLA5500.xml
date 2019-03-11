@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips SLA5500</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>SLA5500</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>LIVEWITHLENGTH</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

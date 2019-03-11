@@ -1,0 +1,1078 @@
+diff -ruN c/extensions/ebt_ftos.c d/extensions/ebt_ftos.c
+--- c/extensions/ebt_ftos.c	1970-01-01 08:00:00.000000000 +0800
++++ d/extensions/ebt_ftos.c	2014-09-23 20:08:40.370456140 +0800
+@@ -0,0 +1,165 @@
++/* 
++ * Description: EBTables time extension module for userspace.
++ *  Authors:  Song Wang <songw@broadcom.com>, ported from FTOS patch netfilter/iptables
++ *           The following is the original disclaimer.
++ *
++ * Shared library add-on to iptables for FTOS
++ *
++ * (C) 2000 by Matthew G. Marsh <mgm@paktronix.com>
++ *
++ * This program is distributed under the terms of GNU GPL v2, 1991
++ *
++ * libipt_FTOS.c borrowed heavily from libipt_TOS.c  11/09/2000
++ *
++ */
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++
++#include "../include/ebtables_u.h"
++#include <linux/netfilter_bridge/ebt_ftos.h>
++
++static int ftos_supplied;
++
++
++static struct option opts[] =
++{
++	{ "ftos-target" , required_argument, 0, FTOS_TARGET },
++	{ "set-ftos"    , required_argument, 0, FTOS_SETFTOS },
++        { "set-dscp"    , required_argument, 0, FTOS_SETDSCP },
++	{ 0 }
++};
++
++static void print_help()
++{
++	printf(
++	"ftos target options:\n"
++	" --set-ftos value     : Set TOS [0~255] byte in IP packet header \n"
++	"			 This value can be in decimal (ex: 32)\n"
++	"			 in hex (ex: 0x20)\n"
++        " --set-dscp value     : Set DSCP [0~63] field value in IP packet header \n"
++        "                        This value can be in decimal (ex: 32)\n"
++        "                        in hex (ex: 0x20)\n"
++	" --ftos-target target : ACCEPT, DROP, RETURN or CONTINUE\n");
++}
++
++static void init(struct ebt_entry_target *target)
++{
++	struct ebt_ftos_info *ftosinfo =
++	   (struct ebt_ftos_info *)target->data;
++
++	ftosinfo->target = EBT_CONTINUE;
++	ftosinfo->ftos = 0;
++	ftos_supplied = 0;
++}
++
++
++static int
++parse(int c, char **argv, int argc,
++   const struct ebt_u_entry *entry, unsigned int *flags,
++   struct ebt_entry_target **target)
++{
++	struct ebt_ftos_info *ftosinfo =
++	   (struct ebt_ftos_info *)(*target)->data;
++	char *end;
++	uint8_t i = 0;
++
++	switch (c) {
++	case FTOS_TARGET:
++		ebt_check_option2(flags, FTOS_TARGET);
++		if (FILL_TARGET(optarg, ftosinfo->target))
++			ebt_print_error2("Illegal --ftos-target target");
++		break;
++	case FTOS_SETFTOS:
++		ebt_check_option2(flags, FTOS_SETFTOS);
++		//ftosinfo->ftos = (u_int8_t)strtoul(optarg, &end, 0);
++		i = (u_int8_t)strtol(optarg, &end, 16);
++		ftosinfo->ftos_set = FTOS_SETFTOS;
++		if (*end != '\0' || end == optarg || i < 0 || i > 255 )
++			ebt_print_error2("Bad FTOS value '%s'", optarg);
++                ftosinfo->ftos = i;
++		ftos_supplied = 1;
++                break;
++        case FTOS_SETDSCP:
++                ebt_check_option2(flags, FTOS_SETDSCP);
++                //ftosinfo->ftos = (u_int8_t)strtoul(optarg, &end, 0);
++                i = (u_int8_t)strtol(optarg, &end, 16);
++                ftosinfo->ftos_set = FTOS_SETDSCP;
++                if (*end != '\0' || end == optarg ||i < 0 || i > 63)
++                        ebt_print_error2("Bad DSCP value '%s'", optarg);
++                ftosinfo->ftos = i;
++                ftos_supplied = 1;
++                break;
++
++	default:
++		return 0;
++	}
++	return 1;
++}
++
++static void
++final_check(const struct ebt_u_entry *entry,
++   const struct ebt_entry_target *target, const char *name,
++   unsigned int hookmask, unsigned int time)
++{
++	struct ebt_ftos_info *ftosinfo = (struct ebt_ftos_info *)target->data;
++
++	if (time == 0 && ftos_supplied == 0)
++		ebt_print_error2("No ftos value supplied");
++	if (BASE_CHAIN && ftosinfo->target == EBT_RETURN)
++		ebt_print_error2("--ftos-target RETURN not allowed on base chain");
++}
++
++
++/* Prints out the targinfo. */
++static void 
++print(const struct ebt_u_entry *entry,
++   const struct ebt_entry_target *target)
++{
++	const struct ebt_ftos_info *ftosinfo = (const struct ebt_ftos_info*)target->data;
++
++	if(ftosinfo->ftos_set == FTOS_SETFTOS)
++		printf("DSCP set 0x%lx", ftosinfo->ftos);
++        else if(ftosinfo->ftos_set == FTOS_SETDSCP)
++                printf("TOS set 0x%lx", ftosinfo->ftos);
++
++	if (ftosinfo->target == EBT_ACCEPT)
++		return;
++	printf(" --ftos-target %s", TARGET_NAME(ftosinfo->target));
++}
++
++static int 
++compare(const struct ebt_entry_target *t1,
++  	 const struct ebt_entry_target *t2)
++{
++	struct ebt_ftos_info *ftosinfo1 =
++	   (struct ebt_ftos_info *)t1->data;
++	struct ebt_ftos_info *ftosinfo2 =
++	   (struct ebt_ftos_info *)t2->data;
++
++	return ftosinfo1->target == ftosinfo2->target &&
++	   ftosinfo1->ftos == ftosinfo2->ftos &&
++	   ftosinfo1->ftos_set == ftosinfo2->ftos_set;
++}
++
++
++static
++struct  ebt_u_target ftos_target = 
++{
++	.name		= "ftos",
++	.size		= sizeof(struct ebt_ftos_info),
++	.help	= print_help,
++	.init		= init,
++	.parse		= parse,
++	.final_check	= final_check,
++	.print		= print,
++	.compare	= compare,
++	.extra_ops	= opts,
++};
++
++void _init(void)
++{
++	ebt_register_target(&ftos_target);
++}
++
+diff -ruN c/extensions/ebt_ip.c d/extensions/ebt_ip.c
+--- c/extensions/ebt_ip.c	2011-12-16 04:02:47.000000000 +0800
++++ d/extensions/ebt_ip.c	2014-09-23 20:12:38.409925299 +0800
+@@ -20,10 +20,17 @@
+ 
+ #define IP_SOURCE '1'
+ #define IP_DEST   '2'
+-#define IP_myTOS  '3' /* include/bits/in.h seems to already define IP_TOS */
++#define IP_TOS  '3' /* include/bits/in.h seems to already define IP_TOS */
+ #define IP_PROTO  '4'
+ #define IP_SPORT  '5'
+ #define IP_DPORT  '6'
++#define IP_LENGTH '7'
++#define IP_TCP_FLAGS '8'
++#define IP_DHCP_OPT60 '9'
++#define IP_DHCP_OPT61 'A'
++#define IP_DHCP_OPT77 'B'
++#define IP_DHCP_OPT125 'C'
++#define IP_DSCP 'D' 
+ 
+ static struct option opts[] =
+ {
+@@ -31,17 +38,130 @@
+ 	{ "ip-src"              , required_argument, 0, IP_SOURCE },
+ 	{ "ip-destination"      , required_argument, 0, IP_DEST   },
+ 	{ "ip-dst"              , required_argument, 0, IP_DEST   },
+-	{ "ip-tos"              , required_argument, 0, IP_myTOS  },
++	{ "ip-tos"              , required_argument, 0, IP_TOS  },
+ 	{ "ip-protocol"         , required_argument, 0, IP_PROTO  },
+ 	{ "ip-proto"            , required_argument, 0, IP_PROTO  },
+ 	{ "ip-source-port"      , required_argument, 0, IP_SPORT  },
+ 	{ "ip-sport"            , required_argument, 0, IP_SPORT  },
+ 	{ "ip-destination-port" , required_argument, 0, IP_DPORT  },
+ 	{ "ip-dport"            , required_argument, 0, IP_DPORT  },
++	{ "ip-length"            , required_argument, 0, IP_LENGTH  },
++	{ "ip-len"            , required_argument, 0, IP_LENGTH  },
++	{ "ip-tcp-flags"            , required_argument, 0, IP_TCP_FLAGS  },
++	{ "ip-dscp"             , required_argument, 0, IP_DSCP },
++	{ "ip-dhcp-opt60", required_argument, 0, IP_DHCP_OPT60 },
++	{ "ip-dhcp-opt61", required_argument, 0, IP_DHCP_OPT61 },
++	{ "ip-dhcp-opt77", required_argument, 0, IP_DHCP_OPT77 },
++	{ "ip-dhcp-opt125", required_argument, 0, IP_DHCP_OPT125 },
+ 	{ 0 }
+ };
+ 
++/* put the ip string into 4 bytes */
++static int undot_ip(char *ip, unsigned char *ip2)
++{
++	char *p, *q, *end;
++	long int onebyte;
++	int i;
++	char buf[20];
++
++	strncpy(buf, ip, sizeof(buf) - 1);
++
++	p = buf;
++	for (i = 0; i < 3; i++) {
++		if ((q = strchr(p, '.')) == NULL)
++			return -1;
++		*q = '\0';
++		onebyte = strtol(p, &end, 10);
++		if (*end != '\0' || onebyte > 255 || onebyte < 0)
++			return -1;
++		ip2[i] = (unsigned char)onebyte;
++		p = q + 1;
++	}
++
++	onebyte = strtol(p, &end, 10);
++	if (*end != '\0' || onebyte > 255 || onebyte < 0)
++		return -1;
++	ip2[3] = (unsigned char)onebyte;
++
++	return 0;
++}
++
+ /* put the mask into 4 bytes */
++static int ip_mask(char *mask, unsigned char *mask2)
++{
++	char *end;
++	long int bits;
++	uint32_t mask22;
++
++	if (undot_ip(mask, mask2)) {
++		/* not the /a.b.c.e format, maybe the /x format */
++		bits = strtol(mask, &end, 10);
++		if (*end != '\0' || bits > 32 || bits < 0)
++			return -1;
++		if (bits != 0) {
++			mask22 = htonl(0xFFFFFFFF << (32 - bits));
++			memcpy(mask2, &mask22, 4);
++		} else {
++			mask22 = 0xFFFFFFFF;
++			memcpy(mask2, &mask22, 4);
++		}
++	}
++	return 0;
++}
++
++/* set the ip mask and ip address */
++void parse_ip_address(char *address, uint32_t *addr, uint32_t *msk)
++{
++	char *p;
++
++	/* first the mask */
++	if ((p = strrchr(address, '/')) != NULL) {
++		*p = '\0';
++		if (ip_mask(p + 1, (unsigned char *)msk))
++			ebt_print_error("Problem with the IP mask");
++	}
++	else
++		*msk = 0xFFFFFFFF;
++
++	if (undot_ip(address, (unsigned char *)addr))
++		ebt_print_error("Problem with the IP address");
++	*addr = *addr & *msk;
++}
++
++/* transform the ip mask into a string ready for output */
++char *mask_to_dotted(uint32_t mask)
++{
++	int i;
++	static char buf[20];
++	uint32_t maskaddr, bits;
++
++	maskaddr = ntohl(mask);
++
++	/* don't print /32 */
++	if (mask == 0xFFFFFFFFL) {
++		*buf = '\0';
++		return buf;
++	}
++
++	i = 32;
++	bits = 0xFFFFFFFEL; /* case 0xFFFFFFFF has just been dealt with */
++	while (--i >= 0 && maskaddr != bits)
++		bits <<= 1;
++
++	if (i > 0)
++		sprintf(buf, "/%d", i);
++	else if (!i)
++		*buf = '\0';
++	else
++		/* mask was not a decent combination of 1's and 0's */
++		sprintf(buf, "/%d.%d.%d.%d", ((unsigned char *)&mask)[0],
++		   ((unsigned char *)&mask)[1], ((unsigned char *)&mask)[2],
++		   ((unsigned char *)&mask)[3]);
++
++	return buf;
++}
++
++
+ /* transform a protocol and service name into a port number */
+ static uint16_t parse_port(const char *protocol, const char *name)
+ {
+@@ -96,6 +216,337 @@
+ 		printf("%d:%d ", ports[0], ports[1]);
+ }
+ 
++/*  */
++static uint16_t parse_length(const char *name)
++{
++	char *end;
++	int length;
++
++	length = strtol(name, &end, 10);
++
++	if (*end != '\0'){
++		ebt_print_error("Problem with specified length '%s'", name);
++		return 0; /* never reached */
++	}else if (length >= 0 || length <= 0xFFFF) {
++		return length;
++	}	
++}
++
++static void
++parse_length_range( const char *lengthstring, uint16_t *length)
++{
++	char *buffer;
++	char *cp;
++	
++	buffer = strdup(lengthstring);
++	if ((cp = strchr(buffer, ':')) == NULL)
++		length[0] = length[1] = parse_length(buffer);
++	else {
++		*cp = '\0';
++		cp++;
++		length[0] = buffer[0] ? parse_length( buffer) : 0;
++		length[1] = cp[0] ? parse_length( cp) : 0xFFFF;
++		
++		if (length[0] > length[1])
++			ebt_print_error("Invalid lengthrange (min > max)");
++	}
++	free(buffer);
++}
++
++static void print_length_range(uint16_t *length)
++{
++	if (length[0] == length[1])
++		printf("%d ", length[0]);
++	else
++		printf("%d:%d ", length[0], length[1]);
++}
++
++struct tcp_flag_names {
++	const char *name;
++	unsigned int flag;
++};
++
++static struct tcp_flag_names tcp_flag_table[]
++= { { "FIN", 0x01 },
++    { "SYN", 0x02 },
++    { "RST", 0x04 },
++    { "PSH", 0x08 },
++    { "ACK", 0x10 },
++    { "URG", 0x20 },
++    { "ALL", 0x3F },
++    { "NONE", 0 },
++};
++
++static unsigned int
++parse_tcp_flag(const char *flags)
++{
++	unsigned int ret = 0;
++	char *ptr;
++	char *buffer;
++
++	buffer = strdup(flags);
++
++	for (ptr = strtok(buffer, ","); ptr; ptr = strtok(NULL, ",")) {
++		unsigned int i;
++		for (i = 0;
++		     i < sizeof(tcp_flag_table)/sizeof(struct tcp_flag_names);
++		     i++) {
++			if (strcasecmp(tcp_flag_table[i].name, ptr) == 0) {
++				ret |= tcp_flag_table[i].flag;
++				break;
++			}
++		}
++		if (i == sizeof(tcp_flag_table)/sizeof(struct tcp_flag_names))
++			ebt_print_error("Unknown TCP flag `%s'", ptr);
++		}
++
++	free(buffer);
++	return ret;
++}
++
++static void
++parse_tcp_flags(struct ebt_ip_info *ipinfo,
++		const char *mask,
++		const char *cmp)
++{
++	ipinfo->tcp_flg_mask = parse_tcp_flag(mask);
++	ipinfo->tcp_flg_cmp = parse_tcp_flag(cmp);
++}
++
++
++/* If return non-zero, the string with non-hexadecimal*/
++
++static int
++dhcp_isxdigit(char *cfgstr){
++	int i =0;
++	printf("\n=========\n");
++	for(i=0; i<strlen(cfgstr); i++){
++		printf("%c",*(cfgstr+i));
++		if(!isxdigit(*(cfgstr+i))){
++			return -1;
++		}
++	}
++	return 0;
++}
++
++static void
++parse_dhcp_opt60(struct cfgopt *cfg60, char *classidentifier, char *NextArg){
++
++	if(NextArg!=NULL && *NextArg != '-')
++		ebt_print_error("For DHCP Option 60 the class identifer string"
++					" must be speified by \"<Vendor Class Identifer>\"");
++
++	cfg60->len = strlen(classidentifier);
++	
++	memset(cfg60->cfgdata, 0, sizeof(cfg60->cfgdata));
++	strcpy(cfg60->cfgdata, classidentifier);	
++}
++
++static void
++parse_dhcp_opt61(struct cfgopt *cfg61, char *type, char *clientid, char *NextArg){
++
++	int i = 0, data_len = 0;
++	char data[8];
++
++	if(NextArg!=NULL && *NextArg != '-')
++		ebt_print_error("For DHCP Option 61, you must specify <Type> <Client ID>. ");
++
++	if(strlen(clientid)%2)
++			ebt_print_error("For DHCP Option 61, you must specify client id with even digits. ");
++
++	if(dhcp_isxdigit(type) || dhcp_isxdigit(clientid))
++		ebt_print_error("For DHCP Option 61, you must specify value with hexadecimal. ");
++	
++	memset(cfg61->cfgdata, 0, sizeof(cfg61->cfgdata));
++	memset(data, 0, sizeof(data));
++
++	data_len = strlen(clientid)/2;
++	
++	cfg61->len = data_len + 1; /* Length is type + clientid */
++	cfg61->cfgdata[0] = strtol(type, NULL, 16);
++	
++	for( i=0; i<data_len; i++){
++		strncpy(data, clientid+(i*2), 2);
++		data[2] = '\0';
++		cfg61->cfgdata[i+1] = strtol(data, NULL, 16);
++	}
++	
++}
++
++
++static void
++parse_dhcp_opt77(struct cfgopt *cfg77, char *UserClassData, char *NextArg)
++{
++	int i=0, data_len=0;
++	char cfg[255],data[8];
++	
++	if(NextArg!=NULL && *NextArg != '-')
++		ebt_print_error("For DHCP Option 77, you must specify <User Class Data>");
++
++	if(strlen(UserClassData)%2)
++		ebt_print_error("For DHCP Option 77, you must specify user class data with even digits");
++
++	if(dhcp_isxdigit(UserClassData))
++		ebt_print_error("For DHCP Option 77, you must specify value with hexadecimal. ");
++
++	memset(cfg77->cfgdata, 0, sizeof(cfg77->cfgdata));
++	memset(cfg, 0, sizeof(cfg));
++	memset(data, 0, sizeof(data));
++
++	strcpy(cfg,UserClassData);
++
++	data_len = strlen(cfg)/2;/* length of user class data */
++
++	cfg77->len = data_len;
++
++	for( i=0; i<data_len; i++){
++		strncpy(data, cfg+(i*2), 2);
++		data[2] = '\0';
++		cfg77->cfgdata[i] = strtol(data, NULL, 16);
++	}
++	
++
++}
++
++
++static void
++parse_dhcp_opt125(struct cfgopt *cfg125, char *EnterpriseNum, char *VendorClassData, char *NextArg)
++{
++	int i=0, data_len=0;
++	char cfg[255],data[8];
++	
++	if(NextArg!=NULL && *NextArg != '-')
++		ebt_print_error("For DHCP Option 125, you must specify <Enterprise Number> <Vendor Class Data>");
++
++	if(strlen(EnterpriseNum)!=8)
++		ebt_print_error("For DHCP Option 125, Enterprise Number is 8 hexaecimal digits");
++
++	if(strlen(VendorClassData)%2)
++		ebt_print_error("For DHCP Option 125, you must specify vendor class data with even digits");
++
++	if(dhcp_isxdigit(EnterpriseNum) || dhcp_isxdigit(VendorClassData))
++		ebt_print_error("For DHCP Option 125, you must specify value with hexadecimal. ");
++
++	memset(cfg125->cfgdata, 0, sizeof(cfg125->cfgdata));
++	memset(cfg, 0, sizeof(cfg));
++	memset(data, 0, sizeof(data));
++	
++	sprintf(cfg, "%s%02x%s", EnterpriseNum, strlen(VendorClassData)/2,VendorClassData);
++
++	data_len = strlen(cfg)/2; /* Length is enterprise number + data length + vendor class data */
++
++	cfg125->len = data_len;
++
++	for( i=0; i<data_len; i++){
++		strncpy(data, cfg+(i*2), 2);
++		data[2] = '\0';
++		cfg125->cfgdata[i] = strtol(data, NULL, 16);		
++	}
++}
++
++static void
++print_tcpf(u_int8_t flags)
++{
++	int have_flag = 0;
++
++	while (flags) {
++		unsigned int i;
++
++		for (i = 0; (flags & tcp_flag_table[i].flag) == 0; i++);
++
++		if (have_flag)
++			printf(",");
++		printf("%s", tcp_flag_table[i].name);
++		have_flag = 1;
++
++		flags &= ~tcp_flag_table[i].flag;
++	}
++
++	if (!have_flag)
++		printf("NONE");
++}
++
++static void
++print_tcp_flags(u_int8_t mask, u_int8_t cmp)
++{
++	if (mask ) {
++		print_tcpf(mask);
++		printf(" ");
++		print_tcpf(cmp);
++		printf(" ");
++	}
++}
++
++static void print_dhcp_opt60(struct ebt_ip_info *info)
++{
++	if(info->invflags & EBT_IP_DHCP_OPT60)
++		printf("! ");
++	
++	printf("\"%s\"", info->cfg60.cfgdata);
++	printf(" ");
++}
++
++
++static void print_dhcp_opt61(struct ebt_ip_info *info
++)
++{
++	int i=0;
++	uint8_t hv=0, bv=0;
++
++	if(info->invflags & EBT_IP_DHCP_OPT61)
++		printf("! ");
++	
++	for(i=0; i<info->cfg61.len; i++){
++		hv = (*((info->cfg61.cfgdata)+i) >> 4) & 0x0f;
++		bv = (*((info->cfg61.cfgdata)+i)) & 0x0f;
++		printf("%1X",hv);
++		printf("%1X",bv);
++
++		if(i==0)
++			printf(" ");
++	}
++	printf(" ");
++}
++
++static void print_dhcp_opt77(struct ebt_ip_info *info)
++{
++	int i=0;
++	uint8_t hv=0, bv=0;
++
++	if(info->invflags & EBT_IP_DHCP_OPT77)
++		printf("! ");
++	
++	for(i=0; i<info->cfg77.len; i++){
++		hv = (*((info->cfg77.cfgdata)+i) >> 4) & 0x0f;
++		bv = (*((info->cfg77.cfgdata)+i)) & 0x0f;
++		printf("%1X",hv);
++		printf("%1X",bv);
++	}
++	printf(" ");
++}
++
++static void print_dhcp_opt125(struct ebt_ip_info *info)
++{
++	int i=0;
++	uint8_t hv=0, bv=0;
++
++	if(info->invflags & EBT_IP_DHCP_OPT125)
++		printf("! ");
++	
++	for(i=0; i<info->cfg125.len; i++){
++		hv = (*((info->cfg125.cfgdata)+i) >> 4) & 0x0f;
++		bv = (*((info->cfg125.cfgdata)+i)) & 0x0f;
++		printf("%1X",hv);
++		printf("%1X",bv);
++
++		if(i==3){
++			printf(" ");
++			i++; /* skip length parameter*/
++		}
++	}
++	printf(" ");
++}
++
+ static void print_help()
+ {
+ 	printf(
+@@ -103,9 +554,17 @@
+ "--ip-src    [!] address[/mask]: ip source specification\n"
+ "--ip-dst    [!] address[/mask]: ip destination specification\n"
+ "--ip-tos    [!] tos           : ip tos specification\n"
++"--ip-dscp   [!] dscp          : ip dscp specification\n"
+ "--ip-proto  [!] protocol      : ip protocol specification\n"
+ "--ip-sport  [!] port[:port]   : tcp/udp source port or port range\n"
+-"--ip-dport  [!] port[:port]   : tcp/udp destination port or port range\n");
++"--ip-dport  [!] port[:port]   : tcp/udp destination port or port range\n"
++"--ip-len       [!] length[:length] : ip length or legth range\n"
++"--ip-tcp-flags [!] mask comp	   : when TCP flags & mask == comp\n"
++"				     (Flags: SYN ACK FIN RST URG PSH ALL NONE)\n"
++"--ip-dhcp-opt60  [!] <Class Id> : Match option 60 packet with class id (String)\n"
++"--ip-dhcp-opt61  [!] <Type> <Client Id> : Match option 61 packet with type and client id (Hexadecimal)\n"
++"--ip-dhcp-opt77  [!] <User Class Data>  : Match option 77 packet with user class data (Hexadecimal)\n"
++"--ip-dhcp-opt125 [!] <Enterprise Number> <Vendor Class Data> : Match option 125 packet with enterprise number and vendor class data (Hexadecimal)\n");
+ }
+ 
+ static void init(struct ebt_entry_match *match)
+@@ -122,10 +581,18 @@
+ #define OPT_PROTO  0x08
+ #define OPT_SPORT  0x10
+ #define OPT_DPORT  0x20
+-static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
++#define OPT_LENGTH 0X40
++#define OPT_TCP_FLAGS 0X80
++#define OPT_DHCP_OPT60 0X100
++#define OPT_DHCP_OPT61 0X200
++#define OPT_DHCP_OPT77 0X400
++#define OPT_DHCP_OPT125 0X800
++#define OPT_DSCP   0x1000
++ int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
+    unsigned int *flags, struct ebt_entry_match **match)
+ {
+ 	struct ebt_ip_info *ipinfo = (struct ebt_ip_info *)(*match)->data;
++	struct cfgopt *cfgptr = NULL;
+ 	char *end;
+ 	long int i;
+ 
+@@ -170,7 +637,7 @@
+ 			parse_port_range(NULL, optarg, ipinfo->dport);
+ 		break;
+ 
+-	case IP_myTOS:
++	case IP_TOS:
+ 		ebt_check_option2(flags, OPT_TOS);
+ 		if (ebt_check_inverse2(optarg))
+ 			ipinfo->invflags |= EBT_IP_TOS;
+@@ -181,6 +648,21 @@
+ 		ipinfo->bitmask |= EBT_IP_TOS;
+ 		break;
+ 
++	case IP_DSCP:   /* brcm */
++		ebt_check_option2(flags, OPT_DSCP);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_DSCP;
++
++		//i = strtol(argv[optind - 1], &end, 16);
++		i = strtol(optarg, &end, 16);
++		i = i << DSCP_SHIFT;
++		//if (i < 0 || i > 255 || (i & 0x3) || *end != '\0')
++                if (i < 0 || i > 63 || *end != '\0')
++			ebt_print_error("Problem with specified IP dscp");
++		ipinfo->dscp = i;
++		ipinfo->bitmask |= EBT_IP_DSCP;
++		break;
++
+ 	case IP_PROTO:
+ 		ebt_check_option2(flags, OPT_PROTO);
+ 		if (ebt_check_inverse2(optarg))
+@@ -198,6 +680,71 @@
+ 		}
+ 		ipinfo->bitmask |= EBT_IP_PROTO;
+ 		break;
++       case IP_LENGTH:
++		ebt_check_option2(flags, OPT_LENGTH);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_LENGTH;
++		if (optind > argc)
++			ebt_print_error("Missing IP length argument");
++		parse_length_range(argv[optind - 1], ipinfo->length);
++		ipinfo->bitmask |= EBT_IP_LENGTH;
++		break;
++	case IP_TCP_FLAGS:
++		ebt_check_option2(flags, OPT_TCP_FLAGS);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_TCP_FLAGS;
++		if (optind > argc)
++			ebt_print_error("Missing TCP flags argument");
++		parse_tcp_flags(ipinfo, argv[optind - 1], argv[optind]);
++		optind++;/* Because it has two argument */
++		ipinfo->bitmask |= EBT_IP_TCP_FLAGS;
++		break;
++	case IP_DHCP_OPT60:
++		ebt_check_option2(flags, OPT_DHCP_OPT60);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_DHCP_OPT60;
++		if (optind > argc)
++			ebt_print_error("Missing DHCP Option 60 argument");
++		cfgptr = &(ipinfo->cfg60);
++		parse_dhcp_opt60(cfgptr, argv[optind - 1], argv[optind]);
++		ipinfo->bitmask |= EBT_IP_DHCP_OPT60;
++		memset(ipinfo->SrcMacArray, 0, sizeof(ipinfo->SrcMacArray));
++		break;
++	case IP_DHCP_OPT61:
++		ebt_check_option2(flags, OPT_DHCP_OPT61);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_DHCP_OPT61;
++		if (optind > argc)
++			ebt_print_error("Missing DHCP Option 61 argument");
++		optind +=1;
++		cfgptr = &(ipinfo->cfg61);
++		parse_dhcp_opt61(cfgptr, argv[optind - 2], argv[optind - 1], argv[optind]);
++		ipinfo->bitmask |= EBT_IP_DHCP_OPT61;
++		memset(ipinfo->SrcMacArray, 0, sizeof(ipinfo->SrcMacArray));
++		break;
++	case IP_DHCP_OPT77:
++		ebt_check_option2(flags, OPT_DHCP_OPT77);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_DHCP_OPT77;
++		if (optind > argc)
++			ebt_print_error("Missing DHCP Option 77 argument");
++		cfgptr = &(ipinfo->cfg77);
++		parse_dhcp_opt77(cfgptr, argv[optind - 1], argv[optind]);
++		ipinfo->bitmask |= EBT_IP_DHCP_OPT77;
++		memset(ipinfo->SrcMacArray, 0, sizeof(ipinfo->SrcMacArray));		
++		break;
++	case IP_DHCP_OPT125:
++		ebt_check_option2(flags, OPT_DHCP_OPT125);
++		if (ebt_check_inverse2(optarg))
++			ipinfo->invflags |= EBT_IP_DHCP_OPT125;
++		if (optind > argc)
++			ebt_print_error("Missing DHCP Option 125 argument");
++		optind +=1;
++		cfgptr = &(ipinfo->cfg125);
++		parse_dhcp_opt125(cfgptr, argv[optind - 2], argv[optind - 1], argv[optind]);
++		ipinfo->bitmask |= EBT_IP_DHCP_OPT125;
++		memset(ipinfo->SrcMacArray, 0, sizeof(ipinfo->SrcMacArray));		
++		break;	
+ 	default:
+ 		return 0;
+ 	}
+@@ -223,6 +770,11 @@
+ 		ebt_print_error("For port filtering the IP protocol must be "
+ 				"either 6 (tcp), 17 (udp), 33 (dccp) or "
+ 				"132 (sctp)");
++        if (ipinfo->bitmask & EBT_IP_TCP_FLAGS &&
++		(!(ipinfo->bitmask & EBT_IP_PROTO) || 
++		ipinfo->invflags & EBT_IP_PROTO ||
++		ipinfo->protocol!=IPPROTO_TCP ))
++		ebt_print_error("For TCP flags filtering the IP protocol must be 6 (tcp)");
+ }
+ 
+ static void print(const struct ebt_u_entry *entry,
+@@ -280,6 +832,46 @@
+ 			printf("! ");
+ 		print_port_range(ipinfo->dport);
+ 	}
++
++	if (ipinfo->bitmask & EBT_IP_DSCP) {
++		printf("--ip-dscp ");
++		if (ipinfo->invflags & EBT_IP_DSCP)
++			printf("! ");
++		printf("0x%02X ", ipinfo->dscp);
++	}
++
++	if (ipinfo->bitmask & EBT_IP_LENGTH) {
++		printf("--ip-len ");
++		if (ipinfo->invflags & EBT_IP_LENGTH) {
++			printf("! ");
++		}
++		print_length_range(ipinfo->length);
++	}
++
++	if (ipinfo->bitmask & EBT_IP_TCP_FLAGS) {
++		printf("--ip-tcp-flags ");
++		if (ipinfo->invflags & EBT_IP_TCP_FLAGS) {
++			printf("! ");
++		}
++		print_tcp_flags(ipinfo->tcp_flg_mask, ipinfo->tcp_flg_cmp);
++	}
++
++	if(ipinfo->bitmask & EBT_IP_DHCP_OPT60){
++		printf("--ip-dhcp-opt60 ");
++		print_dhcp_opt60(ipinfo);
++	}
++	if(ipinfo->bitmask & EBT_IP_DHCP_OPT61){
++		printf("--ip-dhcp-opt61 ");
++		print_dhcp_opt61(ipinfo);
++	}
++	if(ipinfo->bitmask & EBT_IP_DHCP_OPT77){
++		printf("--ip-dhcp-opt77 ");
++		print_dhcp_opt77(ipinfo);	
++	}
++	if(ipinfo->bitmask & EBT_IP_DHCP_OPT125){
++		printf("--ip-dhcp-opt125 ");
++		print_dhcp_opt125(ipinfo);
++	}
+ }
+ 
+ static int compare(const struct ebt_entry_match *m1,
+@@ -322,6 +914,20 @@
+ 		   ipinfo1->dport[1] != ipinfo2->dport[1])
+ 			return 0;
+ 	}
++	if (ipinfo1->bitmask & EBT_IP_DSCP) {
++		if (ipinfo1->dscp != ipinfo2->dscp)
++			return 0;
++	}
++        if (ipinfo1->bitmask & EBT_IP_LENGTH) {
++		if (ipinfo1->length[0] != ipinfo2->length[0] ||
++		   ipinfo1->length[1] != ipinfo2->length[1])
++			return 0;
++	}
++	if (ipinfo1->bitmask & EBT_IP_TCP_FLAGS) {
++		if (ipinfo1->tcp_flg_cmp!= ipinfo2->tcp_flg_cmp ||
++		   ipinfo1->tcp_flg_mask!= ipinfo2->tcp_flg_mask)
++			return 0;
++	}
+ 	return 1;
+ }
+ 
+@@ -342,3 +948,4 @@
+ {
+ 	ebt_register_match(&ip_match);
+ }
++
+diff -ruN c/extensions/ebt_mark.c d/extensions/ebt_mark.c
+--- c/extensions/ebt_mark.c	2011-12-16 04:02:47.000000000 +0800
++++ d/extensions/ebt_mark.c	2014-09-24 01:43:53.705948848 +0800
+@@ -20,6 +20,7 @@
+ #define MARK_ORMARK  '3'
+ #define MARK_ANDMARK '4'
+ #define MARK_XORMARK '5'
++#define MARK_SETVTAG '6'
+ static struct option opts[] =
+ {
+ 	{ "mark-target" , required_argument, 0, MARK_TARGET },
+@@ -30,6 +31,7 @@
+ 	{ "mark-or"     , required_argument, 0, MARK_ORMARK  },
+ 	{ "mark-and"    , required_argument, 0, MARK_ANDMARK },
+ 	{ "mark-xor"    , required_argument, 0, MARK_XORMARK },
++	{ "vtag-set"    , required_argument, 0, MARK_SETVTAG },
+ 	{ 0 }
+ };
+ 
+@@ -41,6 +43,7 @@
+ 	" --mark-or  value     : Or nfmark with value (nfmark |= value)\n"
+ 	" --mark-and value     : And nfmark with value (nfmark &= value)\n"
+ 	" --mark-xor value     : Xor nfmark with value (nfmark ^= value)\n"
++	" --vtag-set value     : Set vtag value\n"
+ 	" --mark-target target : ACCEPT, DROP, RETURN or CONTINUE\n");
+ }
+ 
+@@ -59,6 +62,7 @@
+ #define OPT_MARK_ORMARK   0x04
+ #define OPT_MARK_ANDMARK  0x08
+ #define OPT_MARK_XORMARK  0x10
++#define OPT_MARK_SETVTAG  0x20
+ static int parse(int c, char **argv, int argc,
+    const struct ebt_u_entry *entry, unsigned int *flags,
+    struct ebt_entry_target **target)
+@@ -100,6 +104,10 @@
+ 			ebt_print_error2("--mark-xor cannot be used together with specific --mark option");
+ 		markinfo->target = (markinfo->target & EBT_VERDICT_BITS) | MARK_XOR_VALUE;
+                 break;
++        case MARK_SETVTAG:
++                ebt_check_option2(flags, OPT_MARK_SETVTAG);
++                markinfo->target = (markinfo->target & EBT_VERDICT_BITS) | VTAG_SET_VALUE;
++                break;
+ 	 default:
+ 		return 0;
+ 	}
+@@ -107,6 +115,7 @@
+ 	markinfo->mark = strtoul(optarg, &end, 0);
+ 	if (*end != '\0' || end == optarg)
+ 		ebt_print_error2("Bad MARK value '%s'", optarg);
++
+ 	mark_supplied = 1;
+ 	return 1;
+ }
+@@ -140,6 +149,8 @@
+ 		printf("--mark-xor");
+ 	else if (tmp == MARK_AND_VALUE)
+ 		printf("--mark-and");
++	else if (tmp == VTAG_SET_VALUE)
++		printf("--vtag-set");
+ 	else
+ 		ebt_print_error("oops, unknown mark action, try a later version of ebtables");
+ 	printf(" 0x%lx", markinfo->mark);
+diff -ruN c/extensions/Makefile d/extensions/Makefile
+--- c/extensions/Makefile	2011-12-16 04:02:47.000000000 +0800
++++ d/extensions/Makefile	2014-09-23 20:08:11.182080179 +0800
+@@ -1,7 +1,7 @@
+ #! /usr/bin/make
+ 
+ EXT_FUNC+=802_3 nat arp arpreply ip ip6 standard log redirect vlan mark_m mark \
+-          pkttype stp among limit ulog nflog
++          pkttype stp among limit ulog nflog  ftos
+ EXT_TABLES+=filter nat broute
+ EXT_OBJS+=$(foreach T,$(EXT_FUNC), extensions/ebt_$(T).o)
+ EXT_OBJS+=$(foreach T,$(EXT_TABLES), extensions/ebtable_$(T).o)
+diff -ruN c/include/linux/netfilter_bridge/ebt_ftos.h d/include/linux/netfilter_bridge/ebt_ftos.h
+--- c/include/linux/netfilter_bridge/ebt_ftos.h	1970-01-01 08:00:00.000000000 +0800
++++ d/include/linux/netfilter_bridge/ebt_ftos.h	2014-09-23 20:21:13.425982962 +0800
+@@ -0,0 +1,20 @@
++#ifndef __LINUX_BRIDGE_EBT_FTOS_H
++#define __LINUX_BRIDGE_EBT_FTOS_H
++
++struct ebt_ftos_info
++{
++	//int           ftos_set;
++	uint8_t ftos_set;
++	//unsigned char ftos;
++	uint8_t ftos;
++	// EBT_ACCEPT, EBT_DROP or EBT_CONTINUE or EBT_RETURN
++	int target;
++};
++//#define EBT_FTOS_TARGET "ftos"
++
++#define FTOS_TARGET	0x1
++#define FTOS_SETFTOS    0x2
++#define FTOS_SETDSCP    0x4
++
++#endif
++
+diff -ruN c/include/linux/netfilter_bridge/ebt_ip.h d/include/linux/netfilter_bridge/ebt_ip.h
+--- c/include/linux/netfilter_bridge/ebt_ip.h	2011-12-16 04:02:48.000000000 +0800
++++ d/include/linux/netfilter_bridge/ebt_ip.h	2014-09-23 20:20:40.845877004 +0800
+@@ -23,9 +23,46 @@
+ #define EBT_IP_PROTO 0x08
+ #define EBT_IP_SPORT 0x10
+ #define EBT_IP_DPORT 0x20
++#define EBT_IP_LENGTH 0X40
++#define EBT_IP_TCP_FLAGS 0X80
++#define EBT_IP_DHCP_OPT60 0x100
++#define EBT_IP_DHCP_OPT61 0x200
++#define EBT_IP_DHCP_OPT77 0x400
++#define EBT_IP_DHCP_OPT125 0x800
++#define EBT_IP_DSCP 0x1000
+ #define EBT_IP_MASK (EBT_IP_SOURCE | EBT_IP_DEST | EBT_IP_TOS | EBT_IP_PROTO |\
+- EBT_IP_SPORT | EBT_IP_DPORT )
++ EBT_IP_SPORT | EBT_IP_DPORT | EBT_IP_LENGTH | EBT_IP_TCP_FLAGS | EBT_IP_DHCP_OPT60|\
++ EBT_IP_DHCP_OPT61 | EBT_IP_DHCP_OPT77 | EBT_IP_DHCP_OPT125 | EBT_IP_DSCP )
+ #define EBT_IP_MATCH "ip"
++/*Defined for DHCP Option*/
++
++#define OPTION_MAC_ENTRY 64
++#define DSCP_SHIFT 2
++
++/*Defined for DHCP Option*/
++struct cfgopt{
++	uint8_t len;
++	char cfgdata[254];
++};
++struct dhcpMessage {
++	uint8_t op;
++	uint8_t htype;
++	uint8_t hlen;
++	uint8_t hops;
++	uint32_t xid;
++	uint16_t secs;
++	uint16_t flags;
++	uint32_t ciaddr;
++	uint32_t yiaddr;
++	uint32_t siaddr;
++	uint32_t giaddr;
++	uint8_t chaddr[16];
++	uint8_t sname[64];
++	uint8_t file[128];
++	uint32_t cookie;
++	uint8_t options[308]; /* 312 - cookie */
++};
++
+ 
+ /* the same values are used for the invflags */
+ struct ebt_ip_info {
+@@ -33,12 +70,22 @@
+ 	__be32 daddr;
+ 	__be32 smsk;
+ 	__be32 dmsk;
+-	__u8  tos;
+-	__u8  protocol;
+-	__u8  bitmask;
+-	__u8  invflags;
+-	__u16 sport[2];
+-	__u16 dport[2];
++	uint8_t  tos;
++	uint8_t  dscp; 
++	uint8_t  protocol;
++	uint16_t  bitmask;
++	uint16_t  invflags;
++	uint8_t  tcp_flg_mask;
++	uint8_t  tcp_flg_cmp;
++	uint16_t sport[2];
++	uint16_t dport[2];
++	uint16_t length[2];
++	struct cfgopt cfg60; //option 60
++   	struct cfgopt cfg61; //option 61
++	struct cfgopt cfg77; //option 77
++	struct cfgopt cfg125; //option 125
++	char SrcMacArray[OPTION_MAC_ENTRY][ETH_ALEN];
+ };
+ 
+ #endif
++
+diff -ruN c/include/linux/netfilter_bridge/ebt_mark_t.h d/include/linux/netfilter_bridge/ebt_mark_t.h
+--- c/include/linux/netfilter_bridge/ebt_mark_t.h	2011-12-16 04:02:48.000000000 +0800
++++ d/include/linux/netfilter_bridge/ebt_mark_t.h	2014-09-23 20:22:02.301940824 +0800
+@@ -12,6 +12,7 @@
+ #define MARK_OR_VALUE  (0xffffffe0)
+ #define MARK_AND_VALUE (0xffffffd0)
+ #define MARK_XOR_VALUE (0xffffffc0)
++#define VTAG_SET_VALUE (0xffffffb0)
+ 
+ struct ebt_mark_t_info {
+ 	unsigned long mark;

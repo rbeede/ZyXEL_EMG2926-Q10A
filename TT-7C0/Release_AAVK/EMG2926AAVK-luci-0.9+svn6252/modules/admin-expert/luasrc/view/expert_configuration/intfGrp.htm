@@ -1,0 +1,1167 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+ 
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body  >
+<%
+   local luaIG = {}
+   
+   uci:foreach( "intfGrp", "interface", function( section )
+       if not ( nil == section.ifname ) then
+         local tmp = section
+         tmp.id = section[ '.name' ]
+         table.insert( luaIG, tmp ) 
+       end
+   end )
+
+
+   local luaVLAN = {}
+   
+   uci:foreach( "network", "interface", function( section )
+       if not ( nil == section.ifname or "loopback" == section[ '.name' ] ) then
+         local tmp = section
+         
+         tmp.id = section[ '.name' ]
+         if ( nil == string.find(tmp.id,"wan")) then
+           table.insert( luaVLAN, tmp )
+         end
+      end
+   end )
+   
+   local luaWAN = {}
+   
+   uci:foreach( "network", "interface", function( section )
+       if not ( nil == section.ifname or "loopback" == section[ '.name' ] ) then
+         local tmp = section
+         
+         tmp.id = section[ '.name' ]
+         if ( nil == string.find(tmp.id,"lan")) then
+           table.insert( luaWAN, tmp )
+         end
+      end
+   end )
+   
+   
+%>
+
+<script type="text/javascript">
+
+
+var portName_U = [
+'LAN1',
+'LAN2',
+'LAN3',
+'LAN4',
+];
+
+
+function getUNameByLName(name) {
+   var index = 0;
+   var uName   = '';
+
+   if (name.indexOf('ath0') != -1) {
+      return "SSID1";
+   }
+   else if (name.indexOf('ath1') != -1) {
+      return "SSID2";
+   }
+   else if (name.indexOf('ath2') != -1) {
+      return "SSID3";
+   }
+   else if (name.indexOf('ath3') != -1) {
+      return "SSID4";
+   }
+
+   return name;
+}
+
+
+function btnRemove() {
+
+  var selectedArray = new Array();
+  var selObj = document.getElementById('lstAvailable_id');
+  var choObj = document.getElementById('lstChoice_id');
+  var i;
+  var count = 0;
+  for (i=0; choObj.options.length>i; i++) {
+     if (choObj.options[i].selected) {
+        selObj.add(new Option(document.getElementById('lstChoice_id').options[i].text,document.getElementById('lstChoice_id').options[i].value, null));
+        selectedArray[count] = document.getElementById('lstChoice_id').options[i].value;
+        count++;
+    }
+  }
+
+  // Delete selected from Available list
+  var j;
+  var del_index;
+  for (j=0; count>j; j++) {
+      //the index will be changed when removing any higher index data
+      for (k=0; choObj.options.length>k; k++){
+        if ( selectedArray[j] == document.getElementById('lstChoice_id').options[k].value){
+          del_index = document.getElementById('lstChoice_id').options[k].index;
+          choObj.remove(del_index);
+        }
+      }
+  }
+}
+
+function btnAdd() {
+
+
+//alert(document.getElementsByName( "lstAvailable" )[0].options[1].selected);
+//alert(document.getElementsByName( "lstAvailable" )[0].options[1].value);
+
+  var selectedArray = new Array();
+  var selObj = document.getElementById('lstAvailable_id');
+  var choObj = document.getElementById('lstChoice_id');
+  var i;
+  var count = 0;
+  for (i=0; selObj.options.length>i; i++) {
+     if (selObj.options[i].selected) {
+        choObj.add(new Option(document.getElementById('lstAvailable_id').options[i].text,document.getElementById('lstAvailable_id').options[i].value, null));
+        selectedArray[count] = document.getElementById('lstAvailable_id').options[i].value;
+        count++;
+    }
+  }
+
+  // Delete Available from selected list
+  var j;
+  var del_index;
+  for (j=0; count>j; j++) {
+      //the index will be changed when removing any higher index data
+      for (k=0; selObj.options.length>k; k++){
+        if ( selectedArray[j] == document.getElementById('lstAvailable_id').options[k].value){
+          del_index = document.getElementById('lstAvailable_id').options[k].index;
+          selObj.remove(del_index);
+        }
+      }
+  }
+}
+
+function vlanBtnRemove() {
+
+  var selectedArray = new Array();
+  var selObj = document.getElementById('vlan_select_id');
+  var choObj = document.getElementById('vlanChoice_id');
+  var i;
+  var count = 0;
+  for (i=0; choObj.options.length>i; i++) {
+     if (choObj.options[i].selected) {
+        
+        selObj.add(new Option(document.getElementById('vlanChoice_id').options[i].text,document.getElementById('vlanChoice_id').options[i].value, null));
+        selectedArray[count] = i;
+        count++;
+    }
+  }
+
+  // Delete selected from Available list
+  var j;
+  for (j=0; count>j; j++) {   
+      //array[j]-j is because the index will be changed when removing any higher index data 
+      choObj.remove(selectedArray[j]-j);
+  }
+
+}
+
+function vlanBtnAdd() {
+
+  var selObj = document.getElementById('vlan_select_id');
+  var choObj = document.getElementById('vlanChoice_id');
+
+  if ( 1 > choObj.options.length ) {
+    choObj.add(new Option(document.getElementById('vlan_select_id').options[selObj.selectedIndex].text,document.getElementById('vlan_select_id').options[selObj.selectedIndex].value, null));
+    selObj.remove(selObj.selectedIndex);
+  }
+  else {
+    alert("Only 1 vlan can be grouped!");
+  }
+}
+
+
+function JSIG( id, ifname, lanport, wlan, vlan, wanint, op60vidlist)
+{
+   this.id = id;
+   this.ifname = ifname;
+   this.lanport = lanport;
+   this.wlan = wlan;
+   this.vlan = vlan;
+   this.wanint = wanint;
+	 this.op60vidlist = op60vidlist;
+}
+
+var jsEditNo = "";
+var jsSRoutes = [
+   <%
+      for name, info in pairs(luaIG) do
+         %> new JSIG( "<%= info.id %>", "<%= info.ifname %>", "<%= info.lanport %>", "<%= info.wlan %>", "<%= info.vlan %>", "<%= info.wanint %>", "<%= info.op60vidlist %>"), <%
+      end
+   %>
+];
+
+function editIG( entryNo )
+{
+   
+   document.getElementById( "tabs" ).style.display="none";
+   document.getElementById( "list" ).style.display="none";
+   document.getElementById( "edit" ).style.display="block";
+
+   document.getElementsByName( "IGSubmitType" )[0].value = "edit";
+   jsEditNo = entryNo;
+   repaintEdit();
+}
+
+function repaintEdit()
+{
+   if ( jsEditNo != 'New')
+   {
+      //document.getElementsByName( "group_name" )[0].value = jsSRoutes[ jsEditNo ].ifname;
+      //document.getElementsByName( "priority_mark" )[0].value = jsSRoutes[ jsEditNo ].priority;
+      //document.getElementsByName( "vlan_id" )[0].value = jsSRoutes[ jsEditNo ].vid;
+      document.getElementsByName( "IGEditID" )[0].value = jsSRoutes[ jsEditNo ].id;
+
+      showFullPath(' <%:Network%> > Interface Group > Add New Group');
+   }
+   else
+   {
+      document.getElementsByName( "group_name" )[0].value = "";
+      //document.getElementsByName( "priority_mark" )[0].value = "0";
+      //document.getElementsByName( "vlan_id" )[0].value = "";
+      document.getElementsByName( "IGEditID" )[0].value = 'New';
+      
+      showFullPath(' <%:Network%> > Interface Group > Add New Group');
+   }
+}
+
+function backToList()
+{
+   document.getElementById( "edit" ).style.display="none";
+   document.getElementById( "tabs" ).style.display="block";
+   document.getElementById( "list" ).style.display="block";
+   document.getElementsByName( "IGSubmitType" )[0].value = "table";
+   
+   showFullPath(' <%:Network%> > Interface Group');
+}
+
+function deleteIG( entryNo, element )
+{
+/*
+   //<![CDATA[
+   if ( confirm('Are you sure you want to do that? ') )
+   {
+      var table = document.getElementById( "list_table" );
+      
+      document.getElementsByName( "VLANDeleteIDs" )[0].value += ( jsSRoutes[ entryNo - 1 ].id + "," );
+      table.deleteRow( element.parentNode.parentNode.parentNode.sectionRowIndex );
+      
+      for( var i = 2; table.rows.length > i; i++ )
+      {
+         table.rows[i].cells[0].innerHTML = i - 1;
+      }
+   }
+   //]]>
+*/
+
+    showWebMessage( 1 , "<%:Message%>" , "<%:msg_config%>" );  
+
+    if (entryNo == 0) 
+    {
+      alert("Can't delete the default Group!");
+    }
+	else
+	{
+      entryNo = jsSRoutes[ entryNo ].id;
+
+	  var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","network","interface_grouping")%>';
+	  var loc = submit_url + '?delete=' + entryNo;
+	  var code = 'location="' + loc + '"';
+      eval(code);
+    }
+}
+
+function repaintTable()
+{
+   windows.location.reload();
+}
+
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value )
+}
+
+function IsAnumber( value )
+{
+  if ( parseInt(value) > 1 )
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+function submitEdit()
+{
+  var availableObj = document.getElementById('lstAvailable_id');
+  var portObj      = document.getElementById('lstChoice_id');
+  var vlanObj      = document.getElementById('vlanChoice_id');
+
+  showWebMessage( 1 , "<%:Message%>" , "<%:msg_config%>" );
+
+  if ( document.getElementsByName( "apply_status" )[0].value == 1 )
+  {
+    return false;
+  }
+  else
+  {
+    document.getElementsByName( "apply_status" )[0].value = 1 ;
+  }
+
+   if ( document.getElementsByName( "group_name" )[0].value  )
+   {
+      if ( portObj.options.length > 0 )
+      { 
+        if ( document.getElementsByName( "wan_select" )[0].value )
+        {
+               // To collect the port index of portName_U, NOT port Number 
+               var i;              
+               for(i=0;availableObj.options.length>i;i++){
+                  // To check it is ethernet ports or wireless lan
+                  if ( 5 > availableObj.options[i].value ){
+                     // Ethaernet ports
+                     if ( document.getElementsByName( "Grouped_available" )[0].value ){
+                       document.getElementsByName( "Grouped_available" )[0].value += ","+availableObj.options[i].value;
+                     }
+                     else{                       
+                       document.getElementsByName( "Grouped_available" )[0].value = availableObj.options[i].value;
+                     }
+                  }
+                  else{
+                     // wireless lan interface
+                     if ( document.getElementsByName( "Grouped_available_wlan" )[0].value ){                      
+                       document.getElementsByName( "Grouped_available_wlan" )[0].value += ","+availableObj.options[i].value;
+                     }
+                     else{
+                       document.getElementsByName( "Grouped_available_wlan" )[0].value = availableObj.options[i].value;
+                     }
+                  }
+               }
+
+               //alert("the available list is:"+document.getElementsByName( "Grouped_available" )[0].value);
+
+               // To collect the port index of portName_U, NOT port Number 
+               var j;              
+               for(j=0;portObj.options.length>j;j++){
+                  if ( 5 > portObj.options[j].value ){
+                     if ( document.getElementsByName( "Grouped_ports" )[0].value ){
+                       document.getElementsByName( "Grouped_ports" )[0].value += ","+portObj.options[j].value;                       
+                     }
+                     else{
+                       document.getElementsByName( "Grouped_ports" )[0].value = portObj.options[j].value;                       
+                     }
+                  }
+                  else{
+                     if ( document.getElementsByName( "Grouped_wlan" )[0].value ){
+                       document.getElementsByName( "Grouped_wlan" )[0].value += ","+portObj.options[j].value;
+                     }
+                     else{
+                       document.getElementsByName( "Grouped_wlan" )[0].value = portObj.options[j].value;
+                     }
+                  }
+               }      
+
+              // document.getElementsByName( "Grouped_vlan" )[0].value = vlanObj.options[0].value;
+
+               //alert("the port list is:"+document.getElementsByName( "Grouped_ports" )[0].value);
+               //alert("the vlan is:"+document.getElementsByName( "Grouped_vlan" )[0].value);
+               //alert("the wan is:"+document.getElementsByName( "wan_select" )[0].value);
+
+                  if ( document.getElementsByName( "wan_select" )[0].value  ){
+                      showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+                      return true;
+                  }
+                  else{
+                        alert("Please create new wan interface!");
+           				 document.getElementsByName( "apply_status" )[0].value = 0 ;
+                        return false;
+                  }
+          }
+          else
+          {
+             alert("You MUST create a grouped WAN!");
+       		document.getElementsByName( "apply_status" )[0].value = 0 ;
+             return false;
+          }
+      }
+      else
+      { 
+
+        if ( document.getElementsByName( "wan_select" )[0].value )
+        {
+               // To collect the port index of portName_U, NOT port Number 
+               var i;              
+               for(i=0;availableObj.options.length>i;i++){
+                  // To check it is ethernet ports or wireless lan
+                  if ( 5 > availableObj.options[i].value ){
+                     // Ethaernet ports
+                     if ( document.getElementsByName( "Grouped_available" )[0].value ){
+                       document.getElementsByName( "Grouped_available" )[0].value += ","+availableObj.options[i].value;
+                     }
+                     else{                       
+                       document.getElementsByName( "Grouped_available" )[0].value = availableObj.options[i].value;
+                     }
+                  }
+                  else{
+                     // wireless lan interface
+                     if ( document.getElementsByName( "Grouped_available_wlan" )[0].value ){                      
+                       document.getElementsByName( "Grouped_available_wlan" )[0].value += ","+availableObj.options[i].value;
+                     }
+                     else{
+                       document.getElementsByName( "Grouped_available_wlan" )[0].value = availableObj.options[i].value;
+                     }
+                  }
+               }
+
+               //alert("the available list is:"+document.getElementsByName( "Grouped_available" )[0].value);
+
+               // To collect the port index of portName_U, NOT port Number 
+               var j;              
+               for(j=0;portObj.options.length>j;j++){
+                  if ( 5 > portObj.options[j].value ){
+                     if ( document.getElementsByName( "Grouped_ports" )[0].value ){
+                       document.getElementsByName( "Grouped_ports" )[0].value += ","+portObj.options[j].value;                       
+                     }
+                     else{
+                       document.getElementsByName( "Grouped_ports" )[0].value = portObj.options[j].value;                       
+                     }
+                  }
+                  else{
+                     if ( document.getElementsByName( "Grouped_wlan" )[0].value ){
+                       document.getElementsByName( "Grouped_wlan" )[0].value += ","+portObj.options[j].value;
+                     }
+                     else{
+                       document.getElementsByName( "Grouped_wlan" )[0].value = portObj.options[j].value;
+                     }
+                  }
+               }      
+
+              // document.getElementsByName( "Grouped_vlan" )[0].value = vlanObj.options[0].value;
+
+               //alert("the port list is:"+document.getElementsByName( "Grouped_ports" )[0].value);
+               //alert("the vlan is:"+document.getElementsByName( "Grouped_vlan" )[0].value);
+               //alert("the wan is:"+document.getElementsByName( "wan_select" )[0].value);
+
+                  if ( document.getElementsByName( "wan_select" )[0].value  ){
+                      showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+                      return true;
+                  }
+                  else{
+                        alert("Please create new wan interface!");
+         			   document.getElementsByName( "apply_status" )[0].value = 0 ;
+                        return false;
+                  }
+          }
+          else
+          {
+             alert("You MUST create a grouped WAN!");
+       		document.getElementsByName( "apply_status" )[0].value = 0 ;
+             return false;
+          }
+
+         //alert("The Grouped Lan is Empty!");
+         //return false; 
+      }	 
+   }
+   else
+   {
+      alert( "Group Name Empty!" );
+      document.getElementsByName( "apply_status" )[0].value = 0 ;
+	  return false;
+   }
+
+}
+
+function submitTable()
+{
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+   return true;
+}
+
+var criteriaTableStr = '';
+
+function addDHCPOPRules()
+{		
+		document.getElementById( "edit" ).style.display="none";
+   		document.getElementById( "tabs" ).style.display="none";
+   		document.getElementById( "list" ).style.display="none";
+   		document.getElementById( "DHCPOPRuleEdit" ).style.display="block";
+}
+
+function delDHCPOPRules()
+{
+		 var num = document.getElementById("list_table_DHCPOP").rows.length;
+		 var OP60VIDstr = document.getElementById("OP60VID").value;
+		 var OP60VIDtempStr = OP60VIDstr.split(',');	
+		 
+		 if(num >0)
+		  	document.getElementById("list_table_DHCPOP").deleteRow(-1);
+		  
+		 var replacestr = ','+ OP60VIDtempStr.slice(-1)
+		 //alert(replacestr);
+		 if(OP60VIDstr != '')
+		 {
+		 		OP60VIDstr = OP60VIDstr.toString().replace(replacestr ,"");
+				OP60VIDstr = OP60VIDstr.toString().replace(OP60VIDtempStr ,"");
+		 		//document.SRForm.OP60VIDcount.value = parseInt(document.SRForm.OP60VIDcount.value)-1;
+		 }	
+		 //alert(OP60VIDstr); 
+		 criteriaTableStr = OP60VIDstr;
+		 document.getElementById("OP60VID").value = OP60VIDstr;
+}	
+
+function DHCP_OPTION_select()
+{
+	 // if (document.getElementById('DHCPOP60Enable').checked == true)
+		//{
+		  // document.getElementById('vendor_id').disabled = false;
+		//}
+}	
+
+function verifySubmitData()
+{
+	 var vendorID = document.getElementById('vendor_id').value;	
+	 
+	 if(document.getElementById('DHCPOP60Enable').checked == true)
+	 {
+			if(vendorID == "")
+			{
+				alert('The DHCP option 60 is selected, but the input value is invalid.');
+				
+				//document.getElementById('DHCPOP60Enable').checked = false;
+				//document.getElementById('vendor_id').disabled = true;
+				return 1;
+			}	 	
+	 		
+	 		if(document.getElementById('OP60VID').value == '')
+	 			  document.getElementById('OP60VID').value = vendorID;
+	 		else
+	 		    document.getElementById('OP60VID').value += ',' + vendorID;	  
+	 			  
+			if (criteriaTableStr == '')
+					criteriaTableStr = vendorID;
+			else
+					criteriaTableStr += ',' + vendorID;
+					
+			//alert(criteriaTableStr);
+			
+			/*
+			var tempStr = criteriaTableStr.split(',');	
+			alert(tempStr.length);
+			*/
+		}	
+		/*
+		var filtercriteria = criteriaTableStr;
+		var info = filtercriteria.split(',');
+		*/
+		var num = document.getElementById( "list_table_DHCPOP" ).rows.length;
+
+		
+		var Tr = document.getElementById( "list_table_DHCPOP" ).insertRow(num);
+		Tr.setAttribute('class','table_font');
+		Tr.setAttribute('align','center');
+		Tr.setAttribute("style","width: 100%");
+		Td = Tr.insertCell(Tr.cells.length);
+		Td.setAttribute('valign','top');
+		Td.setAttribute("style","width: 10%");
+		Td.innerHTML=num +1;
+		Td.setAttribute('align','center');
+		
+		Td = Tr.insertCell(Tr.cells.length);
+		Td.innerHTML=vendorID;
+		
+		//document.getElementById('DHCPOP60Enable').checked = false;
+		document.getElementById('vendor_id').value = "";
+		//document.getElementById('vendor_id').disabled = true;
+		
+		document.getElementById( "edit" ).style.display="block";
+   	document.getElementById( "tabs" ).style.display="none";
+   	document.getElementById( "list" ).style.display="none";
+   	document.getElementById( "DHCPOPRuleEdit" ).style.display="none";
+}	
+
+function cancel()
+{
+		//document.getElementById('DHCPOP60Enable').checked = false;
+		document.getElementById('vendor_id').value = "";
+		//document.getElementById('vendor_id').disabled = true;
+		
+		document.getElementById( "edit" ).style.display="block";
+   	document.getElementById( "tabs" ).style.display="none";
+   	document.getElementById( "list" ).style.display="none";
+   	document.getElementById( "DHCPOPRuleEdit" ).style.display="none";
+}	
+
+</script>
+
+<div id="tabs">
+   <ul>
+      <!-- <li class="hightline"><a title="<%:Static_Route%>"><span><%:Static_Route%></span></a></li> -->
+      <li class="hightline"><a title="Interface Group"><span>Interface Group</span></a></li>
+      <!--<li class="hightline"><a title="WAN To lAN"><span>WAN to LAN</span></a></li>-->
+   </ul>
+   <br class="clearfloat" />
+</div>
+
+<form name="SRForm">
+   <div id="table">
+      <ul id="list">
+         <li class="table_top"></li>
+         <li class="table_content">
+            <div class="data">
+               <div class="w_text">
+                  <ul>    
+                     <!-- <input value="<%:Add_Static_Route%>" type="button" onclick="editIG('New')" /> -->
+                     <input value="Add" type="button" onclick="editIG('New')" />
+                  </ul>
+               </div>
+               <ul>
+                  <div class="tableframe">
+                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                        <tr>
+                           <td>
+                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                 <tr>
+                                    <td>
+                                       <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                          <tr>
+                                             <td>
+                                                <table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+                                                   <tr>
+                                                      <td height="26" colspan="5">
+                                                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                            <tr>
+                                                               <td height="26" class="table_title">
+                                                                  <!--<%:Static_Route_Rules%><span class="cTitle"></span> -->
+                                                                  Interface Grouping Rules<span class="cTitle"></span>
+                                                               </td>
+                                                            </tr>
+                                                         </table>
+                                                      </td>
+                                                   </tr>
+                                                   <tr class="top_font" align="center">
+                                                      <td width="120">Name</td>
+                                                      <td width="120">WAN Interface </td>
+                                                      <td >LAN Interface</td>
+                                                      <td width="260">Criteria</td>
+                                                      <td width="100">Delete</td>
+                                                   </tr>
+                                                   <% 
+                                                      for i = 1, #luaIG do
+                                                      %>
+                                                         <tr class="table_font" align="center">
+                                                            
+                                                            <%local wanname = uci:get("network",string.lower(luaIG[i].wanint),"name")%>
+															<td><%=wanname%></td>
+															<td><%= luaIG[i].wanint%></td>
+                                                            <td>
+                                                                  <%local port_string = luaIG[i].lanport
+
+                                                                    if port_string then
+                                                                      port_string=string.gsub(port_string,"3","LAN4")
+                                                                      port_string=string.gsub(port_string,"2","LAN3")
+                                                                      port_string=string.gsub(port_string,"1","LAN2")
+                                                                      port_string=string.gsub(port_string,"0","LAN1")
+                                                                    end%>
+
+                                                                  <%local ssid_string = luaIG[i].wlan
+																    local ssid_string2 = ""
+																	
+                                                                    if ssid_string then
+                                                                    
+                                                                      local SSID0 = uci:get("wireless", "ath0","ssid")
+
+	   	                                                              if not SSID0 then
+			                                                            local m_24g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+			                                                            SSID0="ZyXEL" .. m_24g
+		                                                              end
+                                                                    
+                                                                      local SSID1 = uci:get("wireless", "ath1","ssid")
+                                                                      local SSID2 = uci:get("wireless", "ath2","ssid")
+                                                                      local SSID3 = uci:get("wireless", "ath3","ssid")
+
+																	  if (string.find(ssid_string,"20")) then
+																			ssid_string2=ssid_string2 .. SSID0 .. ", "
+																	  end
+																	  if (string.find(ssid_string,"21")) then
+																			ssid_string2=ssid_string2 .. SSID1 .. ", "
+																	  end
+																	  if (string.find(ssid_string,"22")) then
+																			ssid_string2=ssid_string2 .. SSID2 .. ", "
+																	  end
+																	  if (string.find(ssid_string,"23")) then
+																			ssid_string2=ssid_string2 .. SSID3 .. ", "
+																	  end
+
+
+                                                                      local SSID10 = uci:get("wireless", "ath10","ssid")
+
+	   	                                                              if not SSID10 then
+										    local mac_5g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+			                                                            SSID10="ZyXEL" .. mac_5g.."_5G"
+		                                                              end
+                                                                    
+                                                                      local SSID11 = uci:get("wireless", "ath11","ssid")
+                                                                      local SSID12 = uci:get("wireless", "ath12","ssid")
+                                                                      local SSID13 = uci:get("wireless", "ath13","ssid")
+																	  
+																	  if (string.find(ssid_string,"10")) then
+																			ssid_string2=ssid_string2 .. SSID10 .. ", "
+																	  end
+																	  if (string.find(ssid_string,"11")) then
+																			ssid_string2=ssid_string2 .. SSID11 .. ", "
+																	  end
+																	  if (string.find(ssid_string,"12")) then
+																			ssid_string2=ssid_string2 .. SSID12 .. ", "
+																	  end
+																	  if (string.find(ssid_string,"13")) then
+																			ssid_string2=ssid_string2 .. SSID13 .. ", "
+																	  end                                                                                                                           
+                                                                    end
+																	%>
+
+
+                                                                <% if port_string then 
+                                                                     if ssid_string2 then%>
+                                                                       <%=port_string%><br/>
+                                                                       <%=ssid_string2%>
+                                                                     <%else%>
+                                                                       <%=port_string%>
+                                                                     <%end%>
+                                                                   <%else%>
+                                                                     <%=ssid_string2%>
+                                                                   <%end%>
+                                                            </td>
+                                                            <!--<td><%= luaIG[i].vlan_name %></td>-->
+                                                            <td>
+                                                            <%
+                                                            	local op60VIDlist = luaIG[i].op60vidlist
+                                                            	local op60VIDstr = ""
+                                                            	if (i>1) then
+	                                                            	if not(op60VIDlist == nil) then
+	                                                            		op60VIDstr = "OP60:" .. op60VIDlist
+	                                                            	end
+	                                                            end	
+                                                            %>
+                                                            <%=op60VIDstr%>
+                                                            </td>
+                                                            <td>
+                                                             <%if (i > 1) then %>
+                                                               <!--<a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" ><img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editIG(<%= i - 1 %>)"/></a>
+                                                                  &nbsp;&nbsp;-->
+                                                               <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="deleteIG(<%= i-1 %>, this)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+                                                               <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+                                                             <%end%>
+                                                            </td>
+                                                         </tr>
+                                                      <%
+                                                      end
+                                                   %>
+                                                </table>
+                                             </td>
+                                          </tr>
+                                       </table>
+                                    </td>
+                                 </tr>
+                              </table>
+                           </td>
+                        </tr>
+                     </table>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+      </ul>
+
+      <input type="hidden" name="IGSubmitType" value="table"/>
+      <input type="hidden" name="IGEditID" />
+      <input type="hidden" name="VLANDeleteIDs" />
+
+      <input type="hidden" name="Grouped_vlan" id="Grouped_vlan" />
+      <input type="hidden" name="Grouped_ports" id="Grouped_ports" />
+      <input type="hidden" name="Grouped_wlan"  id="Grouped_wlan" />
+      <input type="hidden" name="Grouped_available" id="Grouped_available"  />
+      <input type="hidden" name="Grouped_available_wlan" id="Grouped_available_wlan"  />
+      <input name="OP60VIDcount" id="OP60VIDcount" value="0" type="hidden" />
+      <input name="OP60VID" id="OP60VID" value="" type="hidden" />
+      <input name="apply_status" id="apply_status" value="0" type="hidden" />
+      
+      <ul id="edit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+
+                  <div class="w_text">
+                     <ul>
+                                 
+	                    <li class="title" id="GeneralWirelessSetup">Interface Group</li>
+	                    
+                     </ul>
+                  </div>
+
+
+
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">Group Name:</li>
+                        <li class="right_table">                          
+                           <input name="group_name" size="9" maxlength="9" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+
+
+
+                 <div class="w_text">
+                    <ul>
+                       <li class="left_table">WAN Interface used in the group:</li>
+                       <li class="right_table">
+                          <select name="wan_select" size="1" onchange="doModeChange(this.selectedIndex);">
+
+			<%for i = 1, #luaWAN do
+				if  "1" == luaWAN[i].enable  then
+					if not ("" == luaWAN[i].name ) then
+						if 1 == i  then
+							grouped = uci:get("network", "wan","grouped")
+						else
+							grouped = uci:get("network", "wan"..i-1,"grouped")
+						end
+						if not ( "1" == grouped ) then %>
+							<option value="<%=luaWAN[i].id%>" ><%=luaWAN[i].name%></option>
+						<%end%>
+					<%end%> 
+				<%end%>
+			<%end%>
+                          </select>
+                      </li>
+                  </ul>
+                </div>
+
+
+                <div class="space"></div>
+
+
+                <div class="w_text">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                    <tr align='center'>
+                       <td width="250"><b>Grouped LAN Interfaces</b></td>
+                       <td width="100"></td>
+                       <td width="250"><b>Available LAN Interfaces</b></td>
+                    </tr>
+
+                    <tr>
+                     <td colspan="3">&nbsp;</td>
+                    </tr>
+
+
+                    <tr>
+                     <td align="center">
+                        <select multiple="lstChoice" id="lstChoice_id" size="10" style="width: 220px"></select>
+                     </td>
+
+                     <td align="center">
+                        <table border="0" cellpadding="0" cellspacing="5">
+                           <tr>
+                              <td>
+                                 <input type='button' style="background:url(<%=media%>/admin/images/i_left_bn.gif) no-repeat; width:32px; height:27px;border:none; display:block; cursor:pointer;" onclick='btnAdd()'>
+                                 </input>
+                              </td>
+                           </tr>
+                           <tr>
+                              <td>
+                                 <input type='button' style="background:url(<%=media%>/admin/images/i_right_bn.gif) no-repeat; width:32px; height:27px;border:none; display:block; cursor:pointer;" onclick='btnRemove()'>   
+                                 </input>
+                              </td>
+                           </tr>
+                        </table>
+                     </td>
+                     
+                     <td align="center">
+                        <select multiple="lstAvailable" id="lstAvailable_id" size="10" style="width: 220px">
+                         <!--For show the available ports on GUI-->
+                           <%for i = 1, #luaIG do
+                              if luaIG[i].id == "Default" then%>
+                                  <!--Ethernet Lan ports -->
+                                  <%if not ( nil == string.find(luaIG[i].lanport,"0")) then
+                                      local lan0="  \<option value=\"0\"\>LAN1\<\/option\>"%>
+                              <%=lan0%>
+                                  <%end%>
+                                  <%if not ( nil == string.find(luaIG[i].lanport,"1")) then
+                              local lan1="  \<option value=\"1\"\>LAN2\<\/option\>"%>
+                                      <%=lan1%>
+                                  <%end
+                                  if not ( nil == string.find(luaIG[i].lanport,"2")) then
+                                      local lan2="  \<option value=\"2\"\>LAN3\<\/option\>"%>
+                             <%=lan2%>
+                                  <%end
+                           if not ( nil == string.find(luaIG[i].lanport,"3")) then
+                             local lan3="  \<option value=\"3\"\>LAN4\<\/option\>"%>
+                                     <%=lan3%>
+                                  <%end%>
+
+
+                                  <!-- Multiple SSID Support-->
+                                  <%local ssid0 = uci:get("wireless", "ath0","ssid")
+	   	                            if not ssid0 then
+			                           local mac_24g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+			                        ssid0="ZyXEL" .. mac_24g
+		                            end
+                                  %>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"20")) then
+                                      local ath0="  \<option value=\"20\"\>"..ssid0.."\<\/option\>"%>
+                              <%=ath0%>
+                                  <%end%>
+                                  <%local ssid1 = uci:get("wireless", "ath1","ssid")%>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"21")) then
+                              local ath1="  \<option value=\"21\"\>"..ssid1.."\<\/option\>"%>
+                                      <%=ath1%>
+                                  <%end%>
+                                  <%local ssid2 = uci:get("wireless", "ath2","ssid")%>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"22")) then
+                                      local ath2="  \<option value=\"22\"\>"..ssid2.."\<\/option\>"%>
+                              <%=ath2%>
+                                  <%end%>
+                                  <%local ssid3 = uci:get("wireless", "ath3","ssid")%>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"23")) then
+                              local ath3="  \<option value=\"23\"\>"..ssid3.."\<\/option\>"%>
+                                      <%=ath3%>
+                                  <%end%>
+
+
+
+                                  <%local ssid10 = uci:get("wireless", "ath10","ssid")
+	   	                            if not ssid10 then
+			                           local mac_5g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+			                        ssid10="ZyXEL" .. mac_5g .. "_5G"
+		                            end
+                                  %>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"10")) then
+                                      local ath10="  \<option value=\"10\"\>"..ssid10.."\<\/option\>"%>
+                              <%=ath10%>
+                                  <%end%>
+                                  <%local ssid11 = uci:get("wireless", "ath11","ssid")%>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"11")) then
+                              local ath11="  \<option value=\"11\"\>"..ssid11.."\<\/option\>"%>
+                                      <%=ath11%>
+                                  <%end%>
+                                  <%local ssid12 = uci:get("wireless", "ath12","ssid")%>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"12")) then
+                                      local ath12="  \<option value=\"12\"\>"..ssid12.."\<\/option\>"%>
+                              <%=ath12%>
+                                  <%end%>
+                                  <%local ssid13 = uci:get("wireless", "ath13","ssid")%>
+                                  <%if not ( nil == string.find(luaIG[i].wlan,"13")) then
+                              local ath13="  \<option value=\"13\"\>"..ssid13.."\<\/option\>"%>
+                                      <%=ath13%>
+                                  <%end%>
+
+
+                             <%end%>
+                          <%end%><!-- For loop end -->
+                        </select>
+                    </td>
+                  </tr>
+               </table>
+            </div>
+            
+            <div class="space"></div>
+            
+            <div class="w_text"><b>Automatically add clients with the following DHCP Vendor IDs</b></div>
+            <div class="w_text">
+            	<ul>
+            		<input name="addDHCPVendorID" value="<%:Add%>" onclick="addDHCPOPRules()" type="button" />
+            		<input name="delDHCPVendorID" value="Delete" onclick="delDHCPOPRules()" type="button" />
+            		
+            	</ul>
+            </div>
+						<div class="tableframe" style="display:block">
+						 <table id="DHCPVendorIDTable" width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+							<tr>
+							   <td>
+								  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+									 <tr>
+										<td>
+											<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+											 <tr>
+												<td>
+													<table id="list_table_DHCPOP2" width="100%" cellpadding="0" cellspacing="0" >
+													   <tr>
+														  <td height="26" colspan="9">
+															 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																<tr>
+																   <td height="26" class="table_title">
+																	  DHCP Option Rules<span class="cTitle"></span>
+																   </td>
+																</tr>
+															 </table>
+														  </td>
+													   </tr>
+													   
+													   <tr class="top_font" align="center">
+														  <td width="10%">#</td>
+														  <td >Filter Criteria</td>				
+													   </tr></table>
+													<table id="list_table_DHCPOP" width="100%" cellpadding="0" cellspacing="0" >
+												
+													</table>
+												</td>
+									 		</tr>
+								 		 </table>	 
+										</td>
+									 </tr>
+								  </table>
+							   </td>
+							</tr>
+						 </table>
+					  </div>
+                <div class="space"></div>
+								
+<!--
+            <div class="fieldset">
+               <table border="0" cellpadding="0" cellspacing="0">
+                  <tr align='center'>
+                     <td width="150"><b>Grouped VLAN</b></td>
+                     <td width="100"></td>
+                     <td width="150"><b>VLAN ID</b></td>
+                  </tr>
+                  <tr>
+                     <td colspan="3">&nbsp;</td>
+                  </tr>
+                  <tr>
+                     <td align="center">
+                        <select multiple="vlanChoice" id="vlanChoice_id" size="10" style="width: 115px"></select>
+                     </td>
+                     <td align="center">
+                        <table border="0" cellpadding="0" cellspacing="5">
+                           <tr>
+                              <td>
+                                 <input type='button' style="background:url(<%=media%>/admin/images/i_left_bn.gif) no-repeat; width:32px; height:27px;border:none; display:block; cursor:pointer;" onclick='vlanBtnAdd()'>
+                                 </input>
+                              </td>
+                           </tr>
+                           <tr>
+                              <td>
+                                 <input type='button' style="background:url(<%=media%>/admin/images/i_right_bn.gif) no-repeat; width:32px; height:27px;border:none; display:block; cursor:pointer;" onclick='vlanBtnRemove()'>   
+                                 </input>
+                              </td>
+                           </tr>
+                        </table>
+                     </td>
+                     <td align="center">
+                        <input name="vlan_select" id="vlan_select_id" size="7" maxlength="4" value="" type="text" />
+                        from this to MARK <select name="vlan_select" id="vlan_select_id" size="1" onchange="doModeChange(this.selectedIndex);">
+                           <%for i = 1, #luaVLAN do
+                                if (("0" ~= luaVLAN[i].status) and ("vlan20" ~= luaVLAN[i].ifname))  then%>
+                                     <%for j = 1, #luaIG do
+                                       if luaVLAN[i].ifname == luaIG[j].vlan_name then
+                                          break
+                                       elseif j == #luaIG then%>
+                                          <option value="<%=luaVLAN[i].id%>" ><%=luaVLAN[i].ifname%></option>
+                                        <%end%>
+                                     <%end%>
+                                <%end%>
+                           <%end%>
+                        </select>MARK end
+                     </td>
+                  </tr>
+               </table>
+            </div>-->
+
+       <div class="w_text"><span class="i_note"><%:Note%>:</span></div>
+       <div class="w_text"><b>You may need to enable multiple SSID before grouping interface.</b></div>
+       
+                  <div class="spaceair"></div>
+               </ul>       
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="Back" value="<%:Back%>" type="submit" id="back" onclick="backToList()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="apply" value="<%:Apply%>" type="submit" onclick="return submitEdit()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="button" onclick="repaintEdit()"/>
+            </div>
+         </li>
+      </ul>
+      
+      <ul id="DHCPOPRuleEdit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="w_text">
+                     <ul>
+                        <div class="title">Criteria</div>
+
+				                <div class="w_text">
+				                  <ul>
+				                  	<li class="all_table">
+									<input name="DHCPOP60Enable" id="DHCPOP60Enable" onclick="DHCP_OPTION_select()" type="radio" value="0" checked="true" />
+									<font id="WolOverWAN">DHCP Option 60</font></li>
+				                    <li class="left_table">Vendor ID : </li>
+				            	    <li class="right_table"><input name="vendor_id" id="vendor_id" size="32" maxlength="24" value=""  type="text" /></li>       
+				                  </ul>            
+				                </div>
+                     </ul>
+                  </div>
+                  
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="DHCPOPRuleApply" value="<%:Apply%>" type="button" onclick="return verifySubmitData()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="reset" onclick="cancel()"/>
+            </div>
+         </li>
+      </ul>
+      
+   </div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Network%> > Interface Group');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>
+

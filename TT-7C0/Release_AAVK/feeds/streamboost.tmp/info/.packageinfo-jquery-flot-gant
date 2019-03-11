@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/jquery-flot-gant/Makefile
+Package: jquery-flot-gant
+Submenu: JavaScript
+Version: 0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery-flot
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery Flot Gant Chart Plugin
+Maintainer: 
+Source: jquery-flot-gant-0.1-g90ec5b8.tar.gz
+Type: ipkg
+Description:   Gant Chart plugin for jQuery flot
+http://jqueryui.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-flot-gant
+	config jquery-flot-gant_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-flot-gant
+		bool "Use custom package version"
+		default n
+	config jquery-flot-gant_CUSTOM_VERSION
+		depends on jquery-flot-gant_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.1)"
+		default "0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-flot-gant
+	config jquery-flot-gant_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-flot-gant
+		bool "Use custom source directory"
+		default n
+	config jquery-flot-gant_CUSTOM_SOURCE_DIR
+		depends on jquery-flot-gant_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

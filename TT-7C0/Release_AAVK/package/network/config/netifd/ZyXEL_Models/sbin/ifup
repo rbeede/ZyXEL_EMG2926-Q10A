@@ -1,0 +1,114 @@
+#!/bin/sh
+
+ifup_all=
+setup_wifi=
+
+if_call() {
+	local interface="$1"
+	for mode in $modes; do
+	
+		if [ "$interface" == "network.interface.lan" ] && [ "$mode" == "down" ] && [ -n "$ifup_all" ] ;then
+			continue
+		fi
+		
+		ubus call $interface $mode
+	done
+}
+
+## WenHsien-EMG2926-2014.0211-2014.0313
+## IPv6 Only ot 6rd(when IPv4 Only) need to open sys ipv6, 
+##  which affect the ICMPv6 RS (Router Solicitation) sending or not.
+#basicif=$(uci get dhcp6c.basic.interface)
+basicif="wan"
+IsIpv6=$(uci get network.$basicif.ipv6)
+IsIpv6LinkLocal=$(uci get network.general.linkLocalOnly)
+ifname=$(uci get network.$basicif.ifname)
+brlan="br-lan"
+ck6rdEnable=$(uci get network.general.wan6rd_enable)
+ck6to4Enable=$(uci get network.general.wan6to4_enable)
+ck6in4Enable=$(uci get network.general.wan6in4_enable)
+if [ -z "$IsIpv6" -o "$IsIpv6" == "0" ];then
+	if [  "$ck6rdEnable" == "1" -o "$ck6to4Enable" == "1" -o "$IsIpv6LinkLocal" == "1" -o "$ck6in4Enable" == "1" ];then
+		echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+		echo 2 > /proc/sys/net/ipv6/conf/all/forwarding
+	else
+		echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+		echo 1 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+		echo 1 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+		echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+	fi
+else
+	echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+	echo 0 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+	echo 0 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+	echo 0 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+	echo 2 > /proc/sys/net/ipv6/conf/all/forwarding
+fi
+
+case "$0" in
+	*ifdown) modes=down;;
+	*ifup)
+		modes="down up"
+		setup_wifi=1
+	;;
+	*) echo "Invalid command: $0";;
+esac
+
+while :; do
+	case "$1" in
+		-a)
+			ifup_all=1
+			shift
+		;;
+		-w)
+			setup_wifi=
+			shift
+		;;
+		*)
+			break
+		;;
+	esac
+done
+
+[ "$modes" = "down up" ] && ubus call network reload
+if [ -n "$ifup_all" ]; then
+	for interface in `ubus -S list 'network.interface.*'`; do
+		if_call "$interface"
+	done
+	[ -n "$setup_wifi" ] && /sbin/wifi up
+	exit
+else
+	ubus -S list "network.interface.$1" > /dev/null || {
+		echo "Interface $1 not found"
+		exit
+	}
+	if_call "network.interface.$1"
+fi
+
+
+. /etc/functions.sh
+
+local wan_interface="$1"  
+
+#if [ "$modes" = "down up" ]; then
+# WehHsien: here should be ifup case, but I always only get ifdown cases in 2926 when tests.
+	if [ "${wan_interface:0:3}" = "wan" ]; then
+        uci del network.$wan_interface.mflag 
+        rm /tmp/mflag
+
+        wanv6Eable=$(uci get network.$wan_interface.ipv6)
+        if [ "$wanv6Eable" == "1" ];then
+            uci set network.$wan_interface.send_rs=1  # send RS trigger RA
+            uci commit network 
+			#  uci set dhcp6c.basic.interface=$wan_interface
+			#   uci set dhcp6c.basic.intfGrp_write_prefix="1"
+			#   uci set dhcp6c.basic.default_static_prefix="0" 
+			#   uci commit dhcp6c
+			#   /etc/init.d/dhcp6c restart             
+			/etc/init.d/RA_status restart                         # wait for RA
+	    fi 
+	fi
+#fi

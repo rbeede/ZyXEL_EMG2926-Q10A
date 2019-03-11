@@ -1,0 +1,209 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+require("luci.i18n").loadc("default")
+
+
+port1sp = uci:get("port_status","port1","speed")
+port1du = uci:get("port_status","port1","duplex")
+port2sp = uci:get("port_status","port2","speed")
+port2du = uci:get("port_status","port2","duplex")
+port3sp = uci:get("port_status","port3","speed")
+port3du = uci:get("port_status","port3","duplex")
+port4sp = uci:get("port_status","port4","speed")
+port4du = uci:get("port_status","port4","duplex")
+port5sp = uci:get("port_status","port5","speed")
+port5du = uci:get("port_status","port5","duplex")
+
+%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+
+<script language="JavaScript" type="text/javascript">
+function checkValue()
+{
+
+		if (document.portCfg.port5speed.value == "1000" && document.portCfg.port5duplex.value == "HALF") {
+            alert("The WAN PORT setting is invalid!");
+			return false;
+		}
+
+		if (document.portCfg.port1speed.value == "1000" && document.portCfg.port1duplex.value == "HALF") {
+            alert("The PORT1 setting is invalid!");
+			return false;
+		}
+		if (document.portCfg.port2speed.value == "1000" && document.portCfg.port2duplex.value == "HALF") {
+            alert("The PORT2 setting is invalid!");
+			return false;
+		}
+
+		if (document.portCfg.port3speed.value == "1000" && document.portCfg.port3duplex.value == "HALF") {
+            alert("The PORT3 setting is invalid!");
+			return false;
+		}
+		if (document.portCfg.port4speed.value == "1000" && document.portCfg.port4duplex.value == "HALF") {
+            alert("The PORT4 setting is invalid!");
+			return false;
+		}
+
+	return true;
+}
+
+
+</script>
+</head>
+<body  >
+<form method="post" name="portCfg" action="<%=controller%>/expert/configuration/management/port_config" >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="Port Configuration"><span><%:port_config%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+        <div class="data">
+          <ul><div class="w_text">
+            <ul>
+              <li class="left_table"><%:WAN%> :</li>
+              <li class="right_table"><%:Speed%>:
+                <select name="port5speed" size="1">
+                  <option value="auto" <%if port5sp=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="1000" <%if port5sp=="1000" then%>selected<%end%>>1000 </option>
+                  <option value="100" <%if port5sp=="100" then%>selected<%end%>>100 </option>
+                  <option value="10" <%if port5sp=="10" then%>selected<%end%>>10 </option>
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Duplex%>:
+                <select name="port5duplex" size="1">
+                  <option value="AUTO" <%if port5du=="AUTO" or port5du=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="FULL" <%if port5du=="FULL" or port5du=="full" then%>selected<%end%>><%:Full%> </option>
+                  <option value="HALF" <%if port5du=="HALF" or port5du=="half" then%>selected<%end%>><%:Half%> </option>
+                </select>
+              </li>
+            </ul>
+            </div>
+
+            <div class="w_text">
+            <ul>
+              <li class="left_table"><%:iface_lan1%> :</li>
+              <li class="right_table"><%:Speed%>:
+                <select name="port1speed" size="1">
+                  <option value="auto" <%if port1sp=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="1000" <%if port1sp=="1000" then%>selected<%end%>>1000 </option>
+                  <option value="100" <%if port1sp=="100" then%>selected<%end%>>100 </option>
+                  <option value="10" <%if port1sp=="10" then%>selected<%end%>>10 </option>
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Duplex%>:
+                <select name="port1duplex" size="1">
+                  <option value="AUTO" <%if port1du=="AUTO" or port1du=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="FULL" <%if port1du=="FULL" or port1du=="full" then%>selected<%end%>><%:Full%> </option>
+                  <option value="HALF" <%if port1du=="HALF" or port1du=="half" then%>selected<%end%>><%:Half%> </option>
+                </select>
+              </li>
+            </ul>
+            </div>
+
+            <div class="w_text">
+            <ul>
+              <li class="left_table"><%:iface_lan2%> :</li>
+              <li class="right_table"><%:Speed%>:
+                <select name="port2speed" size="1">
+                  <option value="auto" <%if port2sp=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="1000" <%if port2sp=="1000" then%>selected<%end%>>1000 </option>
+                  <option value="100" <%if port2sp=="100" then%>selected<%end%>>100 </option>
+                  <option value="10" <%if port2sp=="10" then%>selected<%end%>>10 </option>
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Duplex%>:
+                <select name="port2duplex" size="1">
+                <option value="AUTO" <%if port2du=="AUTO" or port1du=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="FULL" <%if port2du=="FULL" or port2du=="full" then%>selected<%end%>><%:Full%> </option>
+                  <option value="HALF" <%if port2du=="HALF" or port2du=="half" then%>selected<%end%>><%:Half%> </option>
+                </select>
+              </li>
+            </ul>
+            </div>
+
+
+            <div class="w_text">
+            <ul>
+              <li class="left_table"><%:iface_lan3%> :</li>
+              <li class="right_table"><%:Speed%>:
+                <select name="port3speed" size="1">
+                  <option value="auto" <%if port3sp=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="1000" <%if port3sp=="1000" then%>selected<%end%>>1000 </option>
+                  <option value="100" <%if port3sp=="100" then%>selected<%end%>>100 </option>
+                  <option value="10" <%if port3sp=="10" then%>selected<%end%>>10 </option>
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Duplex%>:
+                <select name="port3duplex" size="1">
+                  <option value="AUTO" <%if port3du=="AUTO" or port1du=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="FULL" <%if port3du=="FULL" or port3du=="full" then%>selected<%end%>><%:Full%> </option>
+                  <option value="HALF" <%if port3du=="HALF" or port3du=="half" then%>selected<%end%>><%:Half%> </option>
+                </select>
+              </li>
+            </ul>
+            </div>
+
+            <div class="w_text">
+            <ul>
+              <li class="left_table"><%:iface_lan4%> :</li>
+              <li class="right_table"><%:Speed%>:
+                <select name="port4speed" size="1">
+                  <option value="auto" <%if port4sp=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="1000" <%if port4sp=="1000" then%>selected<%end%>>1000 </option>
+                  <option value="100" <%if port4sp=="100" then%>selected<%end%>>100 </option>
+                  <option value="10" <%if port4sp=="10" then%>selected<%end%>>10 </option>
+                </select>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Duplex%>:
+                <select name="port4duplex" size="1">
+                  <option value="AUTO" <%if port4du=="AUTO" or port1du=="auto" then%>selected<%end%>><%:auto%> </option>
+                  <option value="FULL" <%if port4du=="FULL" or port4du=="full" then%>selected<%end%>><%:Full%> </option>
+                  <option value="HALF" <%if port4du=="HALF" or port4du=="half" then%>selected<%end%>><%:Half%> </option>
+                </select>
+              </li>
+            </ul>
+            </div>
+
+    <div class="spaceair"></div>	
+          </ul>
+      </div>
+    </li>
+     <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="<%:Apply%>" type="submit" onclick="return checkValue()"/>
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:cancel%>" type="reset" />
+        </center>
+      </div></li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">    
+
+showFullPath('Network > Port Configuration ');
+
+</script>
+</html>

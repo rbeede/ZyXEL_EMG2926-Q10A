@@ -1,0 +1,14 @@
+<Server>
+	<DeviceId>
+		<DisplayName>Synology Media Server</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Synology DLNA/UPnP Media Server</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Server>

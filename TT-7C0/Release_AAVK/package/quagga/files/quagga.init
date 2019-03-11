@@ -1,0 +1,34 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=60
+start() {
+	iptables -N rip_rule
+	iptables -F rip_rule
+	disabled=$(uci get quagga.general.disabled)
+	[ "$disabled" == "0" ] && {
+		/bin/rip_conf
+		/usr/sbin/quagga.init start
+		
+		## creat a input rule for rip
+		iptables -A rip_rule -p udp -i eth0 --dport 520 -j ACCEPT
+	}
+}
+
+restart() {
+	stop
+	iptables -F rip_rule
+	disabled=$(uci get quagga.general.disabled)
+	[ "$disabled" == "0" ] && {
+		/bin/rip_conf
+		/usr/sbin/quagga.init start
+		
+		## creat a input rule for rip
+		iptables -A rip_rule -p udp -i eth0 --dport 520 -j ACCEPT
+	}
+}
+
+stop() {
+	/usr/sbin/quagga.init stop
+}
+

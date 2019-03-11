@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Chorus DS Control Point</DisplayName>
+		<HttpRecognition>
+			<HttpText>ChorusDS UPnP/1.1</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEGORG</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+</Client>

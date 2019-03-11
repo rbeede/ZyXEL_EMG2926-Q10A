@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>TA music player</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>elektroakustik</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

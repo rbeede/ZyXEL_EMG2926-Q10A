@@ -1,0 +1,22 @@
+--- linux-3.3.8/net/ipv6/ndisc.c	2014-11-24 13:35:49.198394000 +0800
++++ linux-3.3.8/net/ipv6/ndisc.c	2014-11-24 13:36:25.189486917 +0800
+@@ -1119,7 +1119,7 @@
+ 	 * If forwarding is enabled, RA are not accepted unless the special
+ 	 * hybrid mode (accept_ra=2) is enabled.
+ 	 */
+-	if (in6_dev->cnf.forwarding && in6_dev->cnf.accept_ra < 2)
++	if (in6_dev->cnf.forwarding < 2 && in6_dev->cnf.accept_ra < 2)
+ 		return 0;
+ 
+ 	return in6_dev->cnf.accept_ra;
+--- linux-3.3.8/net/ipv6/addrconf.c	2014-11-24 13:35:53.700967000 +0800
++++ linux-3.3.8/net/ipv6/addrconf.c	2014-11-24 13:36:26.184357080 +0800
+@@ -3034,7 +3034,7 @@
+ 	   router advertisements, start sending router solicitations.
+ 	 */
+ 
+-	if (((ifp->idev->cnf.accept_ra == 1 && !ifp->idev->cnf.forwarding) ||
++	if (((ifp->idev->cnf.accept_ra == 1 && (ifp->idev->cnf.forwarding == 0 || ifp->idev->cnf.forwarding == 2)) ||
+ 	     ifp->idev->cnf.accept_ra == 2) &&
+ 	    ifp->idev->cnf.rtr_solicits > 0 &&
+ 	    (dev->flags&IFF_LOOPBACK) == 0 &&

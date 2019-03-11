@@ -1,0 +1,202 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+local lanDev, wlanDev 
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/brick.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+function CheckValue()
+{
+  if(document.PASSWD_APP.new_password.value=="")
+  {
+       alert("Your <New Password> is empty!");
+       return false;
+  } 
+  else if(document.PASSWD_APP.new_password2.value=="")
+  {
+       alert("Your <Retype to Confirm> is empty!");
+       return false;
+  }
+  else if(document.PASSWD_APP.new_password.value!=document.PASSWD_APP.new_password2.value)
+  {
+       alert("Your <New Password> is not equal to <Retype to Confirm>!");
+       document.PASSWD_APP.new_password.value = "";
+       document.PASSWD_APP.new_password2.value = "";
+       return false;
+  }
+  else 
+       return true; 
+}
+function check_password()
+{
+
+<% 
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+
+<% if privilege == "1" then %>	
+	
+	<%local old_pwd = uci:get("account","supervisor","password")
+	if old_pwd ~= "supervisor" then
+    %>
+
+		var loc,code;
+	    loc = '<%=luci.dispatcher.build_url("easy","eaZy123","genie4")%>';		 
+	    code = 'location="' + loc + '"';
+        eval(code);		 	
+	
+	<%
+		end
+	%>
+	
+<% else %>
+
+	<%local old_pwd = uci:get("account","admin","password")
+	if old_pwd ~= "1234" then
+    %>
+
+		var loc,code;
+	    loc = '<%=luci.dispatcher.build_url("easy","eaZy123","genie4")%>';		 
+	    code = 'location="' + loc + '"';
+        eval(code);		 	
+	
+	<%
+		end
+	%>
+
+<% end %>	
+	
+}
+</script>
+</head>
+<body onload="check_password()">
+<% 
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+<form method="post" name="PASSWD_APP" action="<%=controller%>/easy/eaZy123/genie4" onSubmit="return CheckValue();">
+<div id="wrapper">
+<div class="top_image"></div>
+<div id="close"><a href="#"onclick="MM_showHideLayers('popup','','show','popup3_table','','show')" title="Exit"></a></div>
+<div class="unit_eazy"></div>
+<div class="unit_title" id="g2-2easy123">eaZy 123</div>
+<div class="genie_logo"></div>
+<div class="genie_color"></div>
+<div class="set"><ul><li class="g_ed"><%:connect_to_internet%><div class="set_now"><ul><li>1<span></span></li></ul></div></li> 
+<li class="g_arrow"></li><li class="g_ing"><%:router_password%><div class="set_now2"><ul> <li>2</li> </ul></div></li> 
+<li class="g_arrow"></li><li class="g_default"><%:net_map_wireless_security%><div class="set_no3"><ul><li>3</li></ul></div></li></ul></div>
+<div class="g_word">
+  <div style="font-size:16px; font-weight:bold; color:#6398ca"><%:eaZy123_3_note_1%></div>
+<% if privilege == "1" then %>  
+  <a id="g3msg"><%:eaZy123_3_note_3%></a>
+<% else %>
+  <a id="g3msg"><%:eaZy123_3_note_2%></a>
+<% end %>  
+</div>
+  <div class="input_bn2">
+    <ul>
+      <li>
+        <table width="100%" border="0" align="center">
+          <tr>
+            <td colspan="2"><ul>
+                <li >
+                  <table width="98%" border="0" align="center" cellpadding="0" cellspacing="2">
+                    
+                    <tr>
+                      <td colspan="2" class="b_txt">&nbsp;</td>
+                    </tr>
+    <% if privilege == "1" then %>					
+                    <tr>
+                      <td class="b_txt"><%:new_password%> :</td>
+                      <td>
+					  <input name="new_password" size="30" maxlength="127" value="supervisor" type="password" />
+					  </td>
+                    </tr>
+                    <tr>
+                      <td class="b_txt"><%:confirm_password%> :</td>
+                      <td>
+					  <input name="new_password2" size="30" maxlength="127" value="supervisor" type="password" />
+					  </td>
+                    </tr>
+	<% else %>
+                    <tr>
+                      <td class="b_txt"><%:new_password%> :</td>
+                      <td>
+					  <input name="new_password" size="30" maxlength="127" value="1234" type="password" />
+					  </td>
+                    </tr>
+                    <tr>
+                      <td class="b_txt"><%:confirm_password%> :</td>
+                      <td>
+					  <input name="new_password2" size="30" maxlength="127" value="1234" type="password" />
+					  </td>
+                    </tr>					
+    <% end %>					
+                  </table>
+                </li>
+            </ul></td>
+          </tr>
+        </table>
+      </li>
+    </ul>
+  </div>
+  <div class="gbutton2">
+     <div align="right">
+       <input name="button" type="button" onclick="MM_goToURL('parent','<%=controller%>/easy/logout');return document.MM_returnValue" value="<%:eaZy123_exit%>" />
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input type="button" onclick="MM_goToURL('parent','<%=controller%>/easy/eaZy123/genie2-1');return document.MM_returnValue" value="<%:eaZy123_back%>" />
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <input name="genie3_apply" type="submit" value="<%:eaZy123_next%>" />
+    </div>
+  </div>
+<div class="index_bg" id="index_bg"></div>
+<div class="in_line" id="topline" ></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_left.gif);width:9px;height:501px;z-index: 1;top: 0px;"></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_right.gif);width:9px;height:501px;right:-2px;z-index: 1;top: 0px;"></div>
+<div class="copyright" id="copyright"><%:copy_right%></div>
+</div>
+</form>
+</body>
+</html>

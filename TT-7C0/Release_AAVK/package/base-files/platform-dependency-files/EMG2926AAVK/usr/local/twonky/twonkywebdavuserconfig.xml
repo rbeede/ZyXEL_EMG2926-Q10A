@@ -1,0 +1,8 @@
+<webdav-user-config>
+  <accounts>
+    <account>
+      <name>admin</name>
+      <pwd>admin</pwd>
+    </account>
+  </accounts>
+</webdav-user-config>

@@ -1,0 +1,30 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Buffalo PC-P4LAN</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>PC-P4LAN</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>IGNORESORT</Quirk>
+	</DeviceQuirks>
+</Client>

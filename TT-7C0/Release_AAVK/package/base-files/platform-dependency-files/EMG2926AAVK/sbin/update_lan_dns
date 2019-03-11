@@ -1,0 +1,282 @@
+#!/bin/sh
+#!/bin/sh /etc/rc.common
+
+. /etc/functions.sh
+include /lib/config
+
+print_log()
+{
+	echo "========= print log ==========>  $1 " 1> /dev/null
+	#echo "========= print log ==========>  $1 "
+}
+
+
+#get some info from config file
+op_lanDns=$(uci_get dhcp lan lan_dns)
+lan_IP=$(uci_get network lan ipaddr)
+
+#get separate three lan dns resource 
+op1=$(echo $op_lanDns | awk -F"," '{print $1}')
+op2=$(echo $op_lanDns | awk -F"," '{print $2}')
+op3=$(echo $op_lanDns | awk -F"," '{print $3}')
+
+print_log "1  op_lanDns=$op_lanDns  lan_IP=$lan_IP  op1=$op1  op2=$op2  op3=$op3  "
+
+#get wan dns info by parsing /tmp/resolving.conf.auto
+w_dns1=""
+w_dns2=""
+w_dns3=""
+
+#distinguish the getting address is ipv4 or ipv6.
+isipv6(){
+	local tst=$(echo $1 |grep ":")
+	[ -n "$tst" ] && printf "1" || printf "0"
+}
+
+Check_LAN_DNS() 
+{
+		local wanint
+		config_get wanint $1 wanint
+		
+		if [ "$wanint" == "wan" ]; then
+			file_dns="/tmp/wan_dns_z"
+		elif [ "$wanint" == "wan1" ]; then
+			file_dns="/tmp/wan1_dns_z"
+		elif [ "$wanint" == "wan2" ]; then
+			file_dns="/tmp/wan2_dns_z"
+		elif [ "$wanint" == "wan3" ]; then
+			file_dns="/tmp/wan3_dns_z"
+		elif [ "$wanint" == "wan4" ]; then
+			file_dns="/tmp/wan4_dns_z"			
+		fi
+			
+		count=1
+		while read line
+		do
+			print_log "2  line=$line "
+
+			#echo "$line"
+			if [ "$line" != "" ]; then
+				if [ "$count" == "1" ]; then
+					w_dns1_tmp=$(echo $line | awk -F" " '{print $1}')
+					local res=$(isipv6 $w_dns1_tmp)
+					if [ "$res" != "1" ]; then
+						w_dns1="$w_dns1_tmp"
+					fi
+				fi
+				
+				if [ "$count" == "2" ]; then
+					w_dns2_tmp=$(echo $line | awk -F" " '{print $1}')
+					local res=$(isipv6 $w_dns2_tmp)
+					if [ "$res" != "1" ]; then
+						w_dns2="$w_dns2_tmp"
+					fi
+				fi
+				
+				if [ "$count" == "3" ]; then
+					w_dns3_tmp=$(echo $line | awk -F" " '{print $1}')
+					local res=$(isipv6 $w_dns3_tmp)
+					if [ "$res" != "1" ]; then
+						w_dns3="$w_dns3_tmp"
+					fi
+				fi
+				
+				count=$(($count+1))
+			fi
+			print_log "3  w_dns1=$w_dns1  w_dns2=$w_dns2  w_dns3=$w_dns3   count=$count  "
+		done < $file_dns
+
+		
+		
+		#decide three lan dns info
+		option6=""
+		for op in $op1 $op2 $op3
+		do
+			if [ "$op" == "FromISP" ]; then
+				if [ "$w_dns1" != "" ]; then
+					if [ "$option6" == "" ]; then
+						option6=$w_dns1
+					else
+						option6="$option6,$w_dns1"	
+					fi
+					w_dns1=""
+				elif [ "$w_dns2" != "" ]; then
+					option6="$option6,$w_dns2"
+					w_dns2=""
+				elif [ "$w_dns3" != "" ]; then
+					option6="$option6,$w_dns3"
+					w_dns3=""
+				else
+					echo "no more available dns servers !"
+				fi
+			elif [ "$op" == "None" ]; then 
+				echo "dns_type$i is none, don't do anything"
+			elif [ "$op" == "dnsRelay" ]; then
+
+				if [ "$1" == "Default" ]; then
+					if [ "$lan_IP" != "" ]; then
+						if [ "$option6" == "" ]; then
+							option6=$lan_IP
+						else
+							option6="$option6,$lan_IP"	
+						fi
+					fi
+				elif [ "$1" == "Group4" ]; then
+					if [ "$option6" == "" ]; then
+						option6="192.168.4.1"
+					else
+						option6="$option6,192.168.4.1"	
+					fi
+				elif [ "$1" == "Group5" ]; then
+					if [ "$option6" == "" ]; then
+						option6="192.168.5.1"
+					else
+						option6="$option6,192.168.5.1"	
+					fi
+				elif [ "$1" == "Group6" ]; then
+					if [ "$option6" == "" ]; then
+						option6="192.168.6.1"
+					else
+						option6="$option6,192.168.6.1"	
+					fi
+				elif [ "$1" == "Group7" ]; then
+					if [ "$option6" == "" ]; then
+						option6="192.168.7.1"
+					else
+						option6="$option6,192.168.7.1"	
+					fi		
+				fi
+
+			else
+				if [ "$op" != "" ]; then
+					if [ "$option6" == "" ]; then
+						option6=$op
+					else
+						option6="$option6,$op"	
+					fi
+				fi
+			fi
+			print_log "4  op=$op  option6=$option6 "
+		done
+		
+		if [ "$1" == "Default" ]; then
+			LAN_G0=$option6
+		elif [ "$1" == "Group4" ]; then
+			LAN_G1=$option6
+		elif [ "$1" == "Group5" ]; then
+			LAN_G2=$option6
+		elif [ "$1" == "Group6" ]; then
+			LAN_G3=$option6
+		elif [ "$1" == "Group7" ]; then
+			LAN_G4=$option6		
+		fi
+}
+
+
+lan_domainName=$(uci_get system main domain_name)
+##option 125 support
+#OUI=$(be_ctltr98 DeviceInfo get ManufacturerOUI)
+#serialNumber=$(be_ctltr98 DeviceInfo get SerialNumber)
+#productClass=$(be_ctltr98 DeviceInfo get ProductClass)
+local static=$(uci get tr069.main.static)
+if [ "$static" == "1" ]; then
+	OUI=$(uci get tr069.main.static_oui)
+else
+	OUI=$(fw_printenv ethaddr | awk -F"=" '{print $2}' |sed 's/"//g' | sed 's/://g'|cut -c 0-6) 
+fi
+
+serialNumber=$(fw_printenv |grep serialnum|awk -F"=" '{print $2}')
+productClass=$(uci get system.main.product_name)
+
+LAN_G1="192.168.4.1"
+LAN_G2="192.168.5.1"
+LAN_G3="192.168.6.1"
+LAN_G4="192.168.7.1"
+
+config_load intfGrp
+config_foreach Check_LAN_DNS interface
+
+## config dnsmasq.conf
+echo "# filter what we send upstream" > /tmp/dnsmasq.conf
+echo "# domain-needed" >> /tmp/dnsmasq.conf
+echo "# bogus-priv" >> /tmp/dnsmasq.conf
+echo "# filterwin2k" >> /tmp/dnsmasq.conf
+echo "localise-queries" >> /tmp/dnsmasq.conf
+echo "" >> /tmp/dnsmasq.conf
+echo "# allow /etc/hosts and dhcp lookups via *.lan" >> /tmp/dnsmasq.conf
+echo "local=/lan/" >> /tmp/dnsmasq.conf
+[ -n "$lan_domainName" ] && echo "domain=$lan_domainName" >> /tmp/dnsmasq.conf
+echo "expand-hosts" >> /tmp/dnsmasq.conf
+echo "resolv-file=/tmp/resolv.conf.auto" >> /tmp/dnsmasq.conf
+echo "#strict-order" >> /tmp/dnsmasq.conf
+echo "" >> /tmp/dnsmasq.conf
+echo "dhcp-authoritative" >> /tmp/dnsmasq.conf
+echo "dhcp-leasefile=/tmp/dhcp.leases" >> /tmp/dnsmasq.conf
+echo "" >> /tmp/dnsmasq.conf
+echo "# use /etc/ethers for static hosts; same format as --dhcp-host" >> /tmp/dnsmasq.conf
+echo "# <hwaddr> <ipaddr>" >> /tmp/dnsmasq.conf
+echo "read-ethers" >> /tmp/dnsmasq.conf
+echo "" >> /tmp/dnsmasq.conf
+echo "# This will tell DHCP clients to not ask for proxy information" >> /tmp/dnsmasq.conf
+echo "# Some clients, like Windows 7, will constantly ask if not told NO" >> /tmp/dnsmasq.conf
+echo "dhcp-option=252,\"\\n\"" >> /tmp/dnsmasq.conf
+echo "" >> /tmp/dnsmasq.conf
+echo "# other useful options:" >> /tmp/dnsmasq.conf
+echo "# default route(s): dhcp-option=3,192.168.1.1,192.168.1.2" >> /tmp/dnsmasq.conf
+echo "#    dns server(s): dhcp-option=6,192.168.1.1,192.168.1.2" >> /tmp/dnsmasq.conf
+echo "#    dns server(s): dhcp-option=6,192.168.1.1,192.168.1.2" >> /tmp/dnsmasq.conf
+
+
+wan_name=$(uci_get intfGrp Default wanint)
+wan_type=$(uci_get network $wan_name proto)
+if [ "$wan_type" != "bridge" ] ;then
+	echo "dhcp-option=lan,6,$LAN_G0" >> /tmp/dnsmasq.conf
+fi
+
+
+LAN_G02=$(echo $LAN_G0 | sed s/$lan_IP/192.168.2.1/g )
+LAN_G03=$(echo $LAN_G0 | sed s/$lan_IP/192.168.3.1/g )
+
+echo "dhcp-option=vlanth2,6,$LAN_G02" >> /tmp/dnsmasq.conf
+echo "dhcp-option=vlanth3,6,$LAN_G03" >> /tmp/dnsmasq.conf
+
+
+if [ "$(uci_get intfGrp Group4 vlanid)" == "4" ] ;then
+	wan_name=$(uci_get intfGrp Group4 wanint)
+	wan_type=$(uci_get network $wan_name proto)
+	if [ "$wan_type" != "bridge" ] ;then
+		echo "dhcp-option=vlanth4,6,$LAN_G1" >> /tmp/dnsmasq.conf
+	fi
+fi
+
+
+if [ "$(uci_get intfGrp Group5 vlanid)" == "5" ] ;then
+	wan_name=$(uci_get intfGrp Group5 wanint)
+	wan_type=$(uci_get network $wan_name proto)
+	if [ "$wan_type" != "bridge" ] ;then
+		echo "dhcp-option=vlanth5,6,$LAN_G2" >> /tmp/dnsmasq.conf
+	fi
+fi
+
+
+if [ "$(uci_get intfGrp Group6 vlanid)" == "6" ] ;then
+	wan_name=$(uci_get intfGrp Group6 wanint)
+	wan_type=$(uci_get network $wan_name proto)
+	if [ "$wan_type" != "bridge" ] ;then
+		echo "dhcp-option=vlanth6,6,$LAN_G3" >> /tmp/dnsmasq.conf
+	fi
+fi
+
+if [ "$(uci_get intfGrp Group7 vlanid)" == "7" ] ;then
+	wan_name=$(uci_get intfGrp Group7 wanint)
+	wan_type=$(uci_get network $wan_name proto)
+	if [ "$wan_type" != "bridge" ] ;then
+		echo "dhcp-option=vlanth7,6,$LAN_G4" >> /tmp/dnsmasq.conf
+	fi
+fi
+
+echo "" >> /tmp/dnsmasq.conf
+echo "# dhcp option 125 support -- TR069" >> /tmp/dnsmasq.conf
+echo "dhcp-option-force=cpewan-id,vi-encap:3561,4,\"$OUI\"" >> /tmp/dnsmasq.conf
+echo "dhcp-option-force=cpewan-id,vi-encap:3561,5,\"$serialNumber\"" >> /tmp/dnsmasq.conf
+echo "dhcp-option-force=cpewan-id,vi-encap:3561,6,\"$productClass\"" >> /tmp/dnsmasq.conf

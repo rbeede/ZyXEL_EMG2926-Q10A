@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Loewe Multiroom Receiver</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>MULTIROOM RECEIVER</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

@@ -1,0 +1,369 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+
+##check mode,if AP/UR,exit	
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+defaultwan=$(uci get network.general.defaultWan)
+wan_proto=$(uci get network.$defaultwan.proto)
+
+if [ "$wan_proto" == "pppoe" ] || [ "$wan_proto" == "pptp" ];then
+	wan_interface="$proto"-"$defaultwan"
+else
+	wan_interface=$(uci get network.$defaultwan.ifname)
+fi
+
+LAN="br+"
+
+#echo "$wan_interface" > /tmp/WAN_interface
+
+
+
+usage() {
+	echo $0 "<command>"
+	exit 0
+}
+
+print_log()
+{
+	echo "========= print log ==========>  $1 " 1> /dev/null
+	#echo "========= print log ==========>  $1 " 
+}
+
+reload_webFilter(){
+	
+	#local keyword=$1	
+
+	insmod x_tables  2>&- >&-
+	insmod ip_tables  2>&- >&-
+	insmod ip6_tables  2>&- >&-
+	insmod iptable_filter  2>&- >&-
+	insmod ipt_REJECT  2>&- >&-
+	insmod xt_tcpudp  2>&- >&-
+	insmod xt_string  2>&- >&-
+	insmod xt_webstr  2>&- >&-
+	iptables -N web_filter
+	iptables -N access_schedule
+
+	config_get filter_trustip trust_ip ipaddr
+	
+	config_get filter_activeX restrict_web activeX
+	config_get filter_java restrict_web java
+	config_get filter_cookies restrict_web cookies
+	config_get filter_web_proxy restrict_web web_proxy
+	
+	config_get keywords keyword keywords
+	config_get filter_enable keyword enable
+	
+	config_get rule_num general count
+	config_get parental_enable general enable
+		
+	##filter trust_ip
+	[ $filter_trustip != "0.0.0.0" ] && (iptables -A web_filter -p tcp -m tcp -s $filter_trustip -j ACCEPT)	
+	[ $filter_trustip != "0.0.0.0" ] && ( print_log "1 iptables -A web_filter -p tcp -m tcp -d $filter_trustip -j ACCEPT" )
+	
+	##filter restrict_web
+	[ $filter_activeX = 1 ] && filter_activeX=2
+	[ $filter_java = 1 ] && filter_java=1
+	[ $filter_cookies = 1 ] && filter_cookies=4
+	[ $filter_web_proxy = 1 ] && filter_web_proxy=8
+	
+	filter_sum=$(( $filter_activeX+$filter_java+$filter_cookies+$filter_web_proxy ))
+	
+	
+	##need to check fast-forward dependency
+	
+	if [[ $filter_sum -gt 0 ]];then
+		iptables -A web_filter -p tcp -m tcp --dport 80 -m webstr --content $filter_sum -j REJECT --reject-with tcp-reset
+		iptables -A web_filter -p tcp -m tcp --dport 3128 -m webstr --content $filter_sum -j REJECT --reject-with tcp-reset
+		iptables -A web_filter -p tcp -m tcp --dport 8080 -m webstr --content $filter_sum -j REJECT --reject-with tcp-reset
+
+		print_log "2 iptables -A web_filter -p tcp -m tcp --dport 80 -m webstr --content $filter_sum -j REJECT --reject-with tcp-reset "
+		print_log "3 iptables -A web_filter -p tcp -m tcp --dport 3128 -m webstr --content $filter_sum -j REJECT --reject-with tcp-reset "
+		print_log "4 iptables -A web_filter -p tcp -m tcp --dport 8080 -m webstr --content $filter_sum -j REJECT --reject-with tcp-reset "
+	fi	
+	
+	##Content filter keyword
+	if [ $filter_enable = "1" ]; then 
+	
+		rules=`echo $keywords | awk '{FS=";"} {print NF}'`
+		i=1
+		while [ "$i" -le "$rules" ]
+		do
+			keyword=`echo $keywords | awk '{FS=";"} {print $'$i'}'`			
+			##iptables -A web_filter -p tcp -m tcp -m webstr --host $keyword -j REJECT --reject-with tcp-reset
+			iptables -A web_filter -p tcp -m tcp -m webstr --url $keyword -j REJECT --reject-with tcp-reset
+			print_log "5 iptables -A web_filter -p tcp -m tcp -m webstr --url $keyword -j REJECT --reject-with tcp-reset  "
+			i=$(( $i + 1 ))
+		done
+		
+	fi
+	DST=$(ck_daylight_saving)
+	DST_rule=0
+	##Parental Control
+	if [ $parental_enable = "1" ]; then
+		i=1
+		while [ "$i" -le "$rule_num" ]
+		do
+			config_get rule_enable rule$i enable
+			if [ $rule_enable = "1" ]; then 
+				config_get start_hour rule$i start_hour
+				config_get start_min rule$i start_min
+				config_get stop_hour rule$i stop_hour
+				config_get stop_min rule$i stop_min
+				config_get weekdays rule$i weekdays
+				config_get filter_keyword rule$i keyword
+				config_get src_type rule$i src_type
+				config_get src_mac rule$i src_mac
+				config_get service_count rule$i service_count
+				config_get service_act rule"$i" service_act
+				DST_weekdays=""
+				DST_rule=0
+				## one more rule for DST
+				[ "$start_hour" == "00" ] && [ "$DST" == "1" ] && DST_rule=1
+				##filter time
+					if [ $start_hour != $stop_hour ] || [ $start_min != $stop_min ]; then
+						if [ "$stop_hour" = "24" ]; then
+							[ "$DST" == "1" ] && {
+								stop_hour=24
+							} || {
+								stop_hour=00
+							}
+						fi
+						[ "$DST" == "1" ] && {
+							[ "$DST_rule" == "1" ] && {
+								access_time="-m time --weekdays $weekdays --timestart 00:00 --timestop "`expr $stop_hour - 1 `":"$stop_min""
+								[ -n "$(echo $weekdays | grep Tue)" ] && DST_weekdays="Mon,"
+								[ -n "$(echo $weekdays | grep Wed)" ] && DST_weekdays="$DST_weekdays"Tue,
+								[ -n "$(echo $weekdays | grep Thu)" ] && DST_weekdays="$DST_weekdays"Wed,
+								[ -n "$(echo $weekdays | grep Fri)" ] && DST_weekdays="$DST_weekdays"Thu,
+								[ -n "$(echo $weekdays | grep Sat)" ] && DST_weekdays="$DST_weekdays"Fri,
+								[ -n "$(echo $weekdays | grep Sun)" ] && DST_weekdays="$DST_weekdays"Sat,
+								[ -n "$(echo $weekdays | grep Mon)" ] && DST_weekdays="$DST_weekdays"Sun,
+								DST_access_time="-m time --weekdays $DST_weekdays --timestart 23:"$start_min" --timestop 00:00"
+							} || {
+								access_time="-m time --weekdays $weekdays --timestart "`expr $start_hour - 1`":"$start_min" --timestop "`expr $stop_hour - 1 `":"$stop_min""
+							}
+						} || {
+							access_time="-m time --weekdays $weekdays --timestart "$start_hour":"$start_min" --timestop "$stop_hour":"$stop_min""
+						}
+						#iptables -I access_schedule -m time --weekdays $weekdays --timestart "$start_hour":"$start_min" --timestop "$stop_hour":"$stop_min" -j network_service
+					fi
+					#iptables -A access_schedule -o $wan_interface -j REJECT
+					#iptables -A access_schedule -o $wan_interface -m mac --mac $src_mac  -j REJECT
+
+					#print_log "6 iptables -A access_schedule -o $wan_interface -j REJECT "
+					#print_log "7 iptables -A access_schedule -o $wan_interface -m mac --mac $src_mac  -j REJECT  "
+				
+				
+				##Network service
+					k=1
+					TCP_port=""
+					UDP_port=""
+					service_allow_tcp_port=""
+					service_block_tcp_port=""
+					service_allow_udp_port=""
+					service_block_udp_port=""
+					service_allow_icmp_port=""
+					service_block_icmp_port=""
+					while [ "$k" -le "$service_count" ]
+					do
+						config_get proto rule"$i"_service"$k" proto
+						port=$(uci_get parental rule"$i"_service"$k" port | sed 's/-/:/g')
+						if [ $proto = "TCP/UDP" ]; then
+							TCP_port=$TCP_port,$port
+							UDP_port=$UDP_port,$port
+						fi
+						if [ $proto = "UDP" ]; then
+							UDP_port=$UDP_port,$port
+						fi
+						if [ $proto = "TCP" ]; then
+							TCP_port=$TCP_port,$port
+						fi
+						if [ $k = "$service_count" ]; then
+							TCP_port=$(echo $TCP_port |cut -c 2-)
+							UDP_port=$(echo $UDP_port |cut -c 2-)
+							if [ $service_act = "allow" ]; then
+								service_block_icmp_port=" -p icmp ! -o $LAN "
+								if [ $TCP_port != "" ]; then
+									service_allow_tcp_port="-p tcp ! -o $LAN -m multiport --dport $TCP_port"
+									service_block_tcp_port="-p tcp ! -o $LAN -m multiport ! --dport $TCP_port"
+									#iptables -A network_service -p tcp -m multiport --dport $TCP_port -j REJECT
+									#print_log "8 iptables -A network_service -p tcp -m multiport --dport $TCP_port -j REJECT  "
+								fi
+								if [ $UDP_port != "" ]; then
+									service_allow_udp_port="-p udp ! -o $LAN -m multiport --dport $UDP_port"
+									service_block_udp_port="-p udp ! -o $LAN -m multiport ! --dport $UDP_port"
+									#iptables -A network_service -p udp -m multiport --dport $UDP_port -j REJECT
+									#print_log " 9 iptables -A network_service -p udp -m multiport --dport $UDP_port -j REJECT "
+								fi
+							else
+								service_allow_icmp_port=" -p icmp ! -o $LAN"
+								if [ $TCP_port != "" ]; then
+									service_allow_tcp_port="-p tcp ! -o $LAN -m multiport ! --dport $TCP_port"
+									service_block_tcp_port="-p tcp ! -o $LAN -m multiport --dport $TCP_port"
+									#iptables -A network_service -p tcp -o $wan_interface -m multiport ! --dport $TCP_port -j REJECT
+									#print_log "10 iptables -A network_service -p tcp -o $wan_interface -m multiport ! --dport $TCP_port -j REJECT  "
+								else
+									service_allow_tcp_port="-p tcp ! -o $LAN"
+									#iptables -A network_service -p tcp -o $wan_interface -j REJECT
+									#print_log "11 iptables -A network_service -p tcp -o $wan_interface -j REJECT  "
+								fi
+								if [ $UDP_port != "" ]; then
+									service_allow_udp_port="-p udp ! -o $LAN -m multiport ! --dport $UDP_port"
+									service_block_udp_port="-p udp ! -o $LAN -m multiport --dport $UDP_port"
+									#iptables -A network_service -p udp -o $wan_interface -m multiport ! --dport $UDP_port -j REJECT
+									#print_log "12 iptables -A network_service -p udp -o $wan_interface -m multiport ! --dport $UDP_port -j REJECT  "
+								else
+									service_allow_udp_port="-p udp ! -o $LAN "
+									#iptables -A network_service -p udp -o $wan_interface -j REJECT
+									#print_log "13 iptables -A network_service -p udp -o $wan_interface -j REJECT  "
+								fi
+							fi							
+						fi
+						k=$(( $k + 1 ))
+					done
+				
+				if [ $src_type = "all" ]; then	
+					[ "$service_block_icmp_port" != "" ] && iptables -A access_schedule $access_time $service_block_icmp_port -j REJECT
+					[ "$service_block_udp_port" != "" ] && iptables -A access_schedule $access_time $service_block_udp_port -j REJECT
+					[ "$service_block_tcp_port" != "" ] && iptables -A access_schedule $access_time $service_block_tcp_port -j REJECT
+					[ "$service_allow_icmp_port" != "" ] && iptables -A access_schedule $access_time $service_allow_icmp_port -j RETURN
+					[ "$service_allow_udp_port" != "" ] && iptables -A access_schedule $access_time $service_allow_udp_port -j RETURN
+					[ "$service_allow_tcp_port" != "" ] && iptables -A access_schedule $access_time $service_allow_tcp_port -j RETURN
+					[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && iptables -A access_schedule $access_time -j RETURN
+
+					[ "$service_block_icmp_port" != "" ] && print_log "14 iptables -A access_schedule $access_time $service_block_icmp_port -j REJECT"
+					[ "$service_block_udp_port" != "" ] && print_log "14-1 iptables -A access_schedule $access_time $service_block_udp_port -j REJECT"
+					[ "$service_block_tcp_port" != "" ] && print_log "14-2 iptables -A access_schedule $access_time $service_block_tcp_port -j REJECT"
+					[ "$service_allow_icmp_port" != "" ] && print_log "14-3 iptables -A access_schedule $access_time $service_allow_icmp_port -j RETURN"
+					[ "$service_allow_udp_port" != "" ] && print_log "14-4 iptables -A access_schedule $access_time $service_allow_udp_port -j RETURN"
+					[ "$service_allow_tcp_port" != "" ] && print_log "14-5 iptables -A access_schedule $access_time $service_allow_tcp_port -j RETURN"
+					[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && print_log "14-6 iptables -A access_schedule $access_time -j RETURN"
+
+					[ "$DST_rule" == "1" ] && {
+						[ "$service_block_icmp_port" != "" ] && iptables -A access_schedule $DST_access_time $service_block_icmp_port -j REJECT
+						[ "$service_block_udp_port" != "" ] && iptables -A access_schedule $DST_access_time $service_block_udp_port -j REJECT
+						[ "$service_block_tcp_port" != "" ] && iptables -A access_schedule $DST_access_time $service_block_tcp_port -j REJECT
+						[ "$service_allow_icmp_port" != "" ] && iptables -A access_schedule $DST_access_time $service_allow_icmp_port -j RETURN
+						[ "$service_allow_udp_port" != "" ] && iptables -A access_schedule $DST_access_time $service_allow_udp_port -j RETURN
+						[ "$service_allow_tcp_port" != "" ] && iptables -A access_schedule $DST_access_time $service_allow_tcp_port -j RETURN
+						[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && iptables -A access_schedule $DST_access_time -j RETURN
+
+						[ "$service_block_icmp_port" != "" ] && print_log "15 iptables -A access_schedule $DST_access_time $service_block_icmp_port -j REJECT"
+						[ "$service_block_udp_port" != "" ] && print_log "15-1 iptables -A access_schedule $DST_access_time $service_block_udp_port -j REJECT"
+						[ "$service_block_tcp_port" != "" ] && print_log "15-2 iptables -A access_schedule $DST_access_time $service_block_tcp_port -j REJECT"
+						[ "$service_allow_icmp_port" != "" ] && print_log "15-3 iptables -A access_schedule $DST_access_time $service_allow_icmp_port -j RETURN"
+						[ "$service_allow_udp_port" != "" ] && print_log "15-4iptables -A access_schedule $DST_access_time $service_allow_udp_port -j RETURN"
+						[ "$service_allow_tcp_port" != "" ] && print_log "15-5 iptables -A access_schedule $DST_access_time $service_allow_tcp_port -j RETURN"
+						[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && print_log "15-6 iptables -A access_schedule $DST_access_time -j RETURN"
+
+					}
+					
+					#iptables -A access_schedule -o $wan_interface -j REJECT
+					#print_log "15-7 iptables -A access_schedule -o $wan_interface -j REJECT"
+				else
+					[ "$service_allow_icmp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_allow_icmp_port -j RETURN
+					[ "$service_allow_udp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_allow_udp_port -j RETURN
+					[ "$service_allow_tcp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_allow_tcp_port -j RETURN
+					[ "$service_block_icmp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_block_icmp_port -j REJECT
+					[ "$service_block_udp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_block_udp_port -j REJECT
+					[ "$service_block_tcp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_block_tcp_port -j REJECT
+					[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $access_time -j RETURN
+
+					[ "$service_allow_icmp_port" != "" ] && print_log "16 iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_allow_icmp_port -j RETURN"
+					[ "$service_allow_udp_port" != "" ] && print_log "16-2 iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_allow_udp_port -j RETURN"
+					[ "$service_allow_tcp_port" != "" ] && print_log "16-3 iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_allow_tcp_port -j RETURN"
+					[ "$service_block_icmp_port" != "" ] && print_log "16-4 iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_block_icmp_port -j REJECT"
+					[ "$service_block_udp_port" != "" ] && print_log "16-5 iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_block_udp_port -j REJECT"
+					[ "$service_block_tcp_port" != "" ] && print_log "16-6 iptables -I access_schedule -m mac --mac-source $src_mac $access_time $service_block_tcp_port -j REJECT"
+					[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && print_log "16-7 iptables -I access_schedule -m mac --mac-source $src_mac $access_time -j RETURN"
+
+					[ "$DST_rule" == "1" ] && {
+						[ "$service_allow_icmp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_allow_icmp_port -j RETURN
+						[ "$service_allow_udp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_allow_udp_port -j RETURN
+						[ "$service_allow_tcp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_allow_tcp_port -j RETURN
+						[ "$service_block_icmp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_block_icmp_port -j REJECT
+						[ "$service_block_udp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_block_udp_port -j REJECT
+						[ "$service_block_tcp_port" != "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_block_tcp_port -j REJECT
+						[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time -j RETURN
+
+						[ "$service_allow_icmp_port" != "" ] && print_log "17 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_allow_icmp_port -j RETURN"
+						[ "$service_allow_udp_port" != "" ] && print_log "17-2 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_allow_udp_port -j RETURN"
+						[ "$service_allow_tcp_port" != "" ] && print_log "17-3 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_allow_tcp_port -j RETURN"
+						[ "$service_block_icmp_port" != "" ] && print_log "17-4 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_block_icmp_port -j REJECT"
+						[ "$service_block_udp_port" != "" ] && print_log "17-5 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_block_udp_port -j REJECT"
+						[ "$service_block_tcp_port" != "" ] && print_log "17-6 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time $service_block_tcp_port -j REJECT"
+						[ "$service_allow_tcp_port" == "" ] && [ "$service_allow_udp_port" == "" ] && [ "$service_block_tcp_port" == "" ] && [ "$service_block_udp_port" == "" ] && print_log "17-7 iptables -I access_schedule -m mac --mac-source $src_mac $DST_access_time -j RETURN"
+
+					}
+					#iptables -A access_schedule -m mac --mac $src_mac -o $wan_interface -j REJECT
+					#print_log "18 iptables -A access_schedule -m mac --mac $src_mac -o $wan_interface -j REJECT"
+				fi
+				
+				##filter keyword
+				rules=`echo $filter_keyword | awk '{FS=";"} {print NF}'`
+				j=1
+				while [ "$j" -le "$rules" ]
+				do
+					keyword=`echo $filter_keyword | awk '{FS=";"} {print $'$j'}'`	
+					if [ $src_type = "all" ]; then
+						iptables -A web_filter $access_time -p tcp -m tcp -m webstr --url $keyword -j REJECT --reject-with tcp-reset
+						print_log "19 iptables -A web_filter $access_time -p tcp -m tcp -m webstr --url $keyword -j REJECT --reject-with tcp-reset"
+					else				
+						iptables -I web_filter $access_time -p tcp -m tcp -m webstr -m mac --mac-source $src_mac --url $keyword -j REJECT --reject-with tcp-reset						
+						print_log "20 iptables -I web_filter $access_time -p tcp -m tcp -m webstr -m mac --mac-source $src_mac --url $keyword -j REJECT --reject-with tcp-reset"
+					fi
+					j=$(( $j + 1 ))
+				done
+			fi
+			i=$(( $i + 1 ))
+		done
+		
+		
+		## Set to block the rest of access time
+		idx=1
+		checkusr=""
+		while [ "$idx" -le "$rule_num" ]
+		do
+			config_get src_type rule$idx src_type
+			config_get src_enable rule$idx enable
+			config_get src_mac rule$idx src_mac
+			[ "$src_enable" = "1" ] && {
+				[ $src_type = "all" ] && [ "$(echo $checkusr | grep all)" = "" ] && iptables -A access_schedule ! -o $LAN -j REJECT && checkusr="$checkusr,$src_type" && print_log "21 iptables -A access_schedule ! -o $LAN -j REJECT " 
+				
+				[ $src_type != "all" ] && [ -n "$(echo $checkusr | grep $src_mac)"] && iptables -A access_schedule -m mac --mac-source $src_mac ! -o $LAN -j REJECT && checkusr="$checkusr,$src_mac" && print_log "22 iptables -A access_schedule -m mac --mac-source $src_mac ! -o $LAN -j REJECT "
+			}
+			idx=$(( $idx + 1 ))
+		done
+		
+	fi
+	return 0 
+}
+
+cmd=$1
+shift
+case "$cmd" in
+	--help|help) usage ;;
+	start|stop|reload|restart|init)
+
+		iptables -F web_filter
+		iptables -F access_schedule
+		iptables -D FORWARD -j web_filter
+		iptables -D FORWARD -j access_schedule
+		iptables -X web_filter
+		iptables -X access_schedule
+		
+		config_load parental
+		#config_foreach reload_webFilter parental_keyword
+		reload_webFilter
+		## iptables app reorder
+		/lib/firewall/iptables_app_order
+		
+		exit $?
+	;;
+esac
+
+exit $?

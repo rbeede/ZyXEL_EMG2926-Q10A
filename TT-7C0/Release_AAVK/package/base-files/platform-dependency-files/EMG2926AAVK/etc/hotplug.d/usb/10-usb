@@ -1,0 +1,209 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+path=/proc/bus/usb/devices
+if [ ! -f "$path" ]; then
+	exit 1
+fi
+
+path=/sys/bus/usb/devices
+
+dev_usb1=$( ls $path | grep -v "2-1:" | grep -i "2-1")
+dev_usb2=$( ls $path | grep -v "1-1:" | grep -i "1-1")
+
+if [ -f /tmp/usb1 ]; then
+	usb1=$(cat /tmp/usb1)
+else
+	usb1=0
+fi
+
+if [ -f /tmp/usb2 ]; then
+	usb2=$(cat /tmp/usb2)
+else
+	usb2=0
+fi
+
+chk_init=$(cat /tmp/initial_process)
+
+
+case "$ACTION" in
+        add)
+			if [ "$usb1" -eq 0 ] && [ "$dev_usb1" != "" ]; then
+				echo 1 > /tmp/usb1	
+				
+				#Check 3G
+				echo 1 > /tmp/insert_3g_dongle
+				PID2=$(ps | grep -v grep | grep '3g.sh') 
+				if [ "$PID2" == "" ];then
+					/sbin/3g.sh &
+				fi
+				
+				#Check printer
+				chk_printer=$(cat /proc/bus/usb/devices | grep 'usblp')
+				if [ "$chk_printer" != "" ] ; then
+					led_ctrl USB0 on
+				fi
+			fi
+
+			if [ "$usb2" -eq 0 ] && [ "$dev_usb2" != "" ]; then
+				echo 1 > /tmp/usb2
+				
+				#Check 3G
+				echo 1 > /tmp/insert_3g_dongle
+				PID2=$(ps | grep -v grep | grep '3g.sh') 
+				if [ "$PID2" == "" ];then
+					/sbin/3g.sh &
+				fi
+				
+				#Check printer
+				chk_printer=$(cat /proc/bus/usb/devices | grep 'usblp')
+				if [ "$chk_printer" != "" ] ; then
+					led_ctrl USB1 on
+				fi
+			fi
+					
+			[ "$chk_init" == "1" ] && {	
+				if [ "$usb2" -eq 0 ] && [ "$usb1" -eq 0 ] && [ "$(cat /tmp/usb2)" -eq 0 ] && [ "$(cat /tmp/usb1)" -eq 1 ]; then
+				echo 1 > /tmp/mount_state1
+				fi
+								 
+				if [ "$usb2" -eq 0 ] && [ "$usb1" -eq 0 ] && [ "$(cat /tmp/usb2)" -eq 1 ] && [ "$(cat /tmp/usb1)" -eq 0 ]; then
+				echo 1 > /tmp/mount_state2
+				fi
+
+				if [ "$usb2" -eq 0 ] && [ "$usb1" -eq 1 ] && [ "$(cat /tmp/usb2)" -eq 1 ] && [ "$(cat /tmp/usb1)" -eq 1 ]; then
+				echo 1 > /tmp/mount_state2
+				fi
+								 
+				if [ "$usb2" -eq 1 ] && [ "$usb1" -eq 0 ] && [ "$(cat /tmp/usb2)" -eq 1 ] && [ "$(cat /tmp/usb1)" -eq 1 ]; then
+				echo 1 > /tmp/mount_state1
+				fi
+			}			
+	
+        ;;
+        remove)
+
+			dlna_db=$(cat /tmp/twonky/TwonkyServer/twonkyserver.ini|grep dbdir)
+			dlna_enabled=$(uci_get dlna main enabled)
+			samba_enable=$(uci_get system general enable)
+			ftp_enable=$(uci_get proftpd global enable)
+			isusb1=$(echo $dlna_db|grep usb1)
+			isusb2=$(echo $dlna_db|grep usb2)	    
+
+            if [ "$usb1" -eq 1 ] && [ "$dev_usb1" == "" ]; then
+
+				mountDir1=$(ls /tmp/storage/usb1/)				
+				##check 3G
+				PID1=$(ps | grep -v grep | grep 'pppd call 3g' | awk '{print $1}') ##awk PID for pppd call 3g
+				if [ "$PID1" != "" ];then
+					kill $PID1				
+				fi							
+				rm /tmp/3g*	
+
+				##check SAMBA
+				if [ "$samba_enable" -eq "1" ];then
+					/etc/init.d/samba stop
+				fi
+				##check FTP
+				if [ "$ftp_enable" -eq "1" ];then
+					/etc/init.d/proftpd stop
+				fi				
+				##check DLNA
+				if [ "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -n "$isusb1" ];then
+					[ -n "$isusb1" ] && /etc/init.d/dlna stop	
+					sleep 1
+				fi
+				
+				for device in $mountDir1 
+				do	
+					fuser -k /tmp/storage/usb1/$device
+					umount -f /tmp/storage/usb1/$device						
+					[ $? = 0 ] || {
+						fuser -k /tmp/storage/usb1/$device
+						umount -f /tmp/storage/usb1/$device
+					}
+					
+					if [ $( du /tmp/storage/usb1/$device/ | awk '{print $1}') -eq 0 ]; then
+						rm -fr /tmp/storage/usb1/$device
+					fi
+					
+				done					
+				rm -fr /tmp/storage/usb1
+				led_ctrl USB0 off			
+				echo 0 > /tmp/usb1				
+
+				if [  "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -n "$isusb1"  ];then
+					 /etc/init.d/dlna restart								
+				fi
+
+				if [ "$samba_enable" -eq "1" ];then
+					/etc/init.d/samba start			
+				fi
+
+				if [ "$ftp_enable" -eq "1" ];then
+					/etc/init.d/proftpd start			
+				fi				
+				
+            fi
+
+            if [ "$usb2" -eq 1 ] && [ "$dev_usb2" == "" ]; then
+				
+				mountDir2=$(ls /tmp/storage/usb2/)				
+				
+				##check 3G
+				PID2=$(ps | grep -v grep | grep 'pppd call 3g' | awk '{print $1}') ##awk PID for pppd call 3g
+				if [ "$PID2" != "" ];then
+					kill $PID2				
+				fi							
+				rm /tmp/3g*	
+
+				##check SAMBA
+				if [ "$samba_enable" -eq "1" ];then
+					/etc/init.d/samba stop
+				fi
+				##check FTP
+				if [ "$ftp_enable" -eq "1" ];then
+					/etc/init.d/proftpd stop
+				fi				
+				##check DLNA
+				if [ "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -n "$isusb2" ];then					
+					[ -n "$isusb2" ] && /etc/init.d/dlna stop	
+					sleep 1
+				fi				
+				
+				for device in $mountDir2
+				do										
+					fuser -k /tmp/storage/usb2/$device
+					umount -f /tmp/storage/usb2/$device						
+					[ $? = 0 ] || {
+						fuser -k /tmp/storage/usb2/$device
+						umount -f /tmp/storage/usb2/$device
+					}
+					
+					if [ $( du /tmp/storage/usb2/$device/ | awk '{print $1}') -eq 0 ]; then
+						rm -fr /tmp/storage/usb2/$device
+					fi
+					
+				done				
+				rm -fr /tmp/storage/usb2
+				led_ctrl USB1 off							
+				echo 0 > /tmp/usb2				
+				
+				if [  "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -n "$isusb2"  ];then
+					 /etc/init.d/dlna restart								
+				fi
+				
+				if [ "$samba_enable" -eq "1" ];then
+					/etc/init.d/samba start			
+				fi				
+
+				if [ "$ftp_enable" -eq "1" ];then
+					/etc/init.d/proftpd start			
+				fi									
+								
+            fi
+				
+        ;;
+esac
+

@@ -1,0 +1,88 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+
+START=99
+
+boot(){
+	wlan_btn=$(cat /tmp/wlan_on | sed 's/"//g' )
+        wifi_disable=$(uci get wireless.wifi0.disabled)
+        wifi5G_disable=$(uci get wireless.wifi1.disabled)
+        wifi_ath3_disable=$(uci get wireless.ath3.disabled)
+        wifi5G_ath13_disable=$(uci get wireless.ath13.disabled)
+        wifi_guest_enable=$(uci get wireless.ath3.enable_guest_wlan)
+        wifi5G_guest_enable=$(uci get wireless.ath13.enable_guest_wlan)
+        LAN_DHCP=$(uci get dhcp.lan.enabled)
+        
+        ## 2.4G guest wlan
+	if [ "$LAN_DHCP" == "1" ]; then
+		[ "$wlan_btn" == "1" ] && {
+			if [ "$wifi_guest_enable" == "1" ] && [ "$wifi_disable" == "0" ] && [ "$wifi_ath3_disable" == "0" ] ; then
+				local ipaddr=$(uci_get wireless ath3 guest_ip)
+				local args="-C /tmp/dnsmasq.conf -z -a $ipaddr"
+				local start="10"
+				local end="32"
+				local ipmask=$(uci_get wireless ath3 guest_ip_mask)
+				local leasetime="720m"
+				eval "$(ipcalc.sh $ipaddr $ipmask $start $end)"
+				append args "-K -F $START,$END,$NETMASK,$leasetime"
+				dnsmasq $args
+			fi
+		}
+
+		## 5G guest wlan
+		[ "$wlan_btn" == "1" ] && {
+			if [ "$wifi5G_guest_enable" == "1" ] && [ "$wifi5G_disable" == "0" ] && [ "$wifi5G_ath13_disable" == "0" ] ; then
+				local ipaddr_5G=$(uci_get wireless ath13 guest_ip)
+				local args_5G="-C /tmp/dnsmasq.conf -z -a $ipaddr_5G"
+				local start_5G="10"
+				local end_5G="32"
+				local ipmask_5G=$(uci_get wireless ath13 guest_ip_mask)
+				local leasetime_5G="720m"
+				eval "$(ipcalc.sh $ipaddr_5G $ipmask_5G $start_5G $end_5G)"
+				append args_5G "-K -F $START,$END,$NETMASK,$leasetime"
+				dnsmasq $args_5G
+			fi
+		}
+	fi
+	
+	## record initial process
+	echo 0 > /tmp/initial_process
+
+	##VT customization
+	sysctl -w net.netfilter.nf_conntrack_udp_timeout=180
+	
+	##If proto is as static in Router mode, it will add gateway address
+	config_load network
+	config_get wan_proto wan proto
+
+	[ "$wan_proto" == "static" ] && {
+
+		config_get gateway wan gateway
+		config_get ifname wan ifname
+
+		[ -z "$gateway" ] || {
+
+			#route add default gateway $gateway device $ifname
+			/sbin/time_daemon start
+
+		}
+
+	}
+
+	#switch_port lan reset
+	
+	## if streamboost disable, add nat sessions
+#	local streamboostenable=$(uci_get appflow tccontroller enable_streamboost)
+#	if [ "$streamboostenable" == "0" ]; then
+#		sysctl -w net.nf_conntrack_max=65536
+#	fi
+
+        # test for lan fail issue.
+        #ping -c 6 192.168.0.33 >> /tmp/testPing &
+        #sleep 10
+        #ckPing=$(cat /tmp/testPing|grep seq)
+        #[ -n "$ckPing" ] && reboot
+	
+	## Remove bootflag
+	rm /tmp/bootflag
+}

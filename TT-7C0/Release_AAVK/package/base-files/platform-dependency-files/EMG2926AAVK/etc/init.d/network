@@ -1,0 +1,331 @@
+#!/bin/sh /etc/rc.common
+
+START=20
+STOP=90
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+boot() {
+	local chk_apmode=$(uci get system.main.system_mode)
+
+	/bin/vlan_default setup_wan_config
+
+	if [ "$chk_apmode" == "2" ];then
+		ifdown wan
+		sleep 1
+	fi
+
+	config_load network
+	#stop
+	[ -e /proc/sys/kernel/core_pattern ] && {
+		ulimit -c unlimited
+		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
+	}
+
+	#if [ "$chk_apmode" == "1" ];then
+	#	service_start /sbin/netifd
+	#else
+		service_start /sbin/netifd
+		sleep 3
+
+		/sbin/configure_qos wan_cos_setup
+
+		/bin/vlan_default setup_switch_default
+	#	setup_switch() { return 0; }
+	#	include /lib/network
+	#	setup_switch
+	#fi
+
+
+	## WenHsien-EMG2926-Q10A-2014.0211-2014.0313
+	## IPv6 Only ot 6rd(when IPv4 Only) need to open sys ipv6, 
+	##  which affect the ICMPv6 RS (Router Solicitation) sending or not.
+	#basicif=$(uci get dhcp6c.basic.interface)
+	basicif="wan"
+	IsIpv6=$(uci get network.$basicif.ipv6)
+	IsIpv6LinkLocal=$(uci get network.general.linkLocalOnly)
+	ifname=$(uci get network.$basicif.ifname)
+	brlan="br-lan"
+	ck6rdEnable=$(uci get network.general.wan6rd_enable)
+	ck6to4Enable=$(uci get network.general.wan6to4_enable)
+	ck6in4Enable=$(uci get network.general.wan6in4_enable)
+	if [ -z "$IsIpv6" -o "$IsIpv6" == "0" ];then
+	if [  "$ck6rdEnable" == "1" -o "$ck6to4Enable" == "1" -o "$IsIpv6LinkLocal" == "1" -o "$ck6in4Enable" == "1" ];then
+			echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+			echo 0 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+			echo 0 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+			echo 0 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+			echo 2 > /proc/sys/net/ipv6/conf/all/forwarding
+		else
+			echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+			echo 1 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+			echo 1 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+			echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+		fi
+	else
+		echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+                echo 0 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6
+		echo 2 > /proc/sys/net/ipv6/conf/all/forwarding                                                                    
+	fi
+
+	sleep 1
+
+	## WenHsien-EMG2926-Q10A-2014.0211
+	## IPv6 only: about sending ICMPv6 RS (Router Solicitation) or not.
+	if [ -z "$IsIpv6" -o "$IsIpv6" == "0" ];then
+		if [  "$ck6rdEnable" == "1" -o "$ck6to4Enable" == "1" -o "$IsIpv6LinkLocal" == "1" -o "$ck6in4Enable" == "1" ];then ## WenHsien-EMG2926-2014.0313: IPv4 Only + 6rd need to open sys ipv6.
+			echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+			echo 0 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+			echo 0 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+			echo 2 > /proc/sys/net/ipv6/conf/all/forwarding
+		else
+			echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+			echo 1 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+			echo 1 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+			echo 1 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6                                                                   
+		fi
+	else
+		echo 0 > /proc/sys/net/ipv6/conf/default/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/$ifname/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/$brlan/disable_ipv6
+		echo 0 > /proc/sys/net/ipv6/conf/eth1/disable_ipv6              		
+		echo 2 > /proc/sys/net/ipv6/conf/all/forwarding 
+	fi
+	
+	config_get config_section general config_section
+	#if [ "$config_section" == "wan" ]; then
+	#	act_mac_clone
+	#elif [ "$config_section" == "advance" ]; then
+	if [ "$config_section" == "advance" ]; then
+		SystemModeStatus=$(uci_get system main system_mode)
+		
+		[ "$SystemModeStatus" == "1" ] && {
+			ipChnageEnable=$(uci_get network general auto_ip_change)
+		}
+
+		["$ipChnageEnable" == "1" ] && {
+		/sbin/start_auto_ip_change
+		} 
+	#elif [ "$config_section" == "ipalias" ]; then
+	#	config_foreach ip_alias alias
+	fi	
+
+	## Delete mflag in UCI to resolve that RA_status.bin may not trigger dhcp6c.sh after boot.  WenHsien.2014.0815.
+	wanif=$(uci get dhcp6c.basic.interface)
+	local wanifname="wan"
+	[ -n "$wanif" ] && wanifname="$wanif"
+	uci del network."$wanifname".mflag
+	uci commit network
+
+	## WenHsien: dhcp6c and RA_status may initial fail if IPv4 address do not exist.2014.0730.
+	## WenHsien: if dhcp6c restart here, it would send DS packets before receive RAon WAN.2015.0422.
+	#/etc/init.d/dhcp6c restart
+	/etc/init.d/RA_status restart
+
+
+	if [ "$chk_apmode" == "1" ];then
+		# init switch and create interface for each LAN port
+		##/bin/vlan_default setup_switch
+		##/bin/vlan_default setup_lan_inf
+		# set wan mac address if users defined wan mac
+		#/bin/vlan_default setup_wan_inf
+		/bin/IGMP_snooping
+	fi
+	
+	if [ "$chk_apmode" == "2"]; then
+
+		proto=$(uci get network.lan.proto)
+
+		if [ "$proto" == "static" ]; then
+
+			d_gw=$(uci get network.lan.isp_gw)
+
+			[ "$d_gw" == "" ] && d_gw="0.0.0.0"
+
+			route add default gw $d_gw dev br-lan
+				
+		fi
+	fi
+
+	/bin/ip_alias
+	return
+	
+}
+
+
+start() {
+    ## WenHsien-EMG2926-Q10A-2014.0107: for DHCPv6 Default Router (DR) setting.
+    ##    SAVE current  DR when: network.sh start() First-Line.
+    ##    LOAD previous DR when: RA_dhcp6c.sh start() Last-Line, and 
+    ##                           route.sh boot() Last-Line.
+    ##    related UCI CONF     : network.wan.dhcpv6gw
+    #dhcpv6gw=$(ip -6 route |grep default |awk '{print $3}')
+    #wanface=$(uci get dhcp6c.basic.interface)
+    ##  IPv6 only  and  DHCPv6 only
+    #IsIpv6=$(uci get network.$wanface.ipv6)
+    #v6_proto=$(uci get network.$wanface.v6_proto)
+    #if [ "$IsIpv6" == "1" -a "$v6_proto" == "dhcp" ];then
+    #    uci set network.$wanface.dhcpv6gw=$dhcpv6gw
+    #    uci commit network
+    #fi
+
+	# kill watch /bin/streamboost_monitor daemon
+	#streamboost_monitor_pid=$(ps | grep "/bin/streamboost_monitor" | grep "grep" -v | awk '{print $1}')			
+	#if [ "$streamboost_monitor_pid" != "" ]; then
+	#	kill $streamboost_monitor_pid
+	#fi
+	
+	/bin/vlan_default setup_wan_config
+	
+	local chk_apmode=$(uci get system.main.system_mode)
+
+	ifdown wan
+	sleep 1
+
+	config_load network
+	stop
+
+	[ -e /proc/sys/kernel/core_pattern ] && {
+		ulimit -c unlimited
+		echo '/tmp/%e.%p.%s.%t.core' > /proc/sys/kernel/core_pattern
+	}
+
+	#if [ "$chk_apmode" == "1" ];then
+	#	service_start /sbin/netifd
+	#else
+	#	service_start /sbin/netifd
+	#	setup_switch() { return 0; }
+	#	include /lib/network
+	#	setup_switch
+	#	sleep 1
+	#fi
+
+	service_start /sbin/netifd
+	sleep 3
+
+	/sbin/configure_qos wan_cos_setup
+
+	ig_check=$(uci get intfGrp.general.group_count)
+	if [ "$ig_check" == "1" ] || [ "$chk_apmode" != "1" ]; then
+		/bin/vlan_default setup_switch_default
+	else
+		/bin/vlan_default setup_switch
+		/bin/vlan_default setup_lan_inf
+	fi
+
+		
+	config_get config_section general config_section
+	#if [ "$config_section" == "wan" ]; then
+	#	act_mac_clone
+	#elif [ "$config_section" == "advance" ]; then
+        if [ "$config_section" == "advance" ]; then
+
+		SystemModeStatus=$(uci_get system main system_mode)
+		
+		[ "$SystemModeStatus" == "1" ] && {
+			ipChnageEnable=$(uci_get network general auto_ip_change)
+		}
+
+		["$ipChnageEnable" == "1" ] && {
+		/sbin/start_auto_ip_change
+		} 
+
+	#elif [ "$config_section" == "ipalias" ]; then
+	#	config_foreach ip_alias alias
+	fi	
+
+	##Add For 6rd
+	local ck6rd=$(uci get network.general."$config_section"6rd_enable)
+	if [ -n "$ck6rd" ]; then
+	    	[ "$ck6rd" == "1" ] && ifup "$config_section"6rd || ifdown "$config_section"6rd
+	fi
+
+	##Add For 6to4
+	local ck6to4=$(uci get network.general."$config_section"6to4_enable)
+	if [ -n "$ck6to4" ]; then
+	    	[ "$ck6to4" == "1" ] && ifup "$config_section"6to4 || ifdown "$config_section"6to4
+	fi
+
+	##Add For 6in4
+	local ck6in4=$(uci get network.general."$config_section"6in4_enable)
+	if [ -n "$ck6in4" ]; then
+	    	[ "$ck6in4" == "1" ] && ifup "$config_section"6in4 || ifdown "$config_section"6in4
+	fi
+
+	##Check IP-Tunneling Enable & IPV4 only
+	local basicif=$(uci get dhcp6c.basic.interface)
+	local IsIpv6=$(uci get network.$basicif.ipv6)
+	[ "$ck6rd" != "1" -a "$ck6to4" != "1" -a "$ck6in4" != "1" ] && {
+		if [ -z "$IsIpv6" -o "$IsIpv6" == "0" ];then			
+			killall dhcp6s
+			/etc/init.d/radvd stop
+			/etc/init.d/RA_status stop
+		fi
+	}
+	
+	wlan_btn=$(cat /tmp/wlan_on | sed 's/"//g' )
+	if [ "$wlan_btn" == "1" ]; then	
+		/sbin/wifi down
+		sleep 2
+		/sbin/wifi up
+	else
+		sleep 5
+	fi
+
+
+	if [ "$chk_apmode" == "1" ];then
+	    /etc/init.d/intfGrp restart
+	    /bin/IGMP_snooping
+	fi
+
+	if [ "$chk_apmode" == "2"]; then
+	
+		proto=$(uci get network.lan.proto)
+
+		if [ "$proto" == "static" ]; then
+
+			d_gw=$(uci get network.lan.isp_gw)
+
+			[ "$d_gw" == "" ] && d_gw="0.0.0.0"
+
+			route add default gw $d_gw dev br-lan
+				
+		fi
+	fi
+	
+	/bin/ip_alias
+	#/bin/vlan_default setup_wan_inf
+
+	return
+	
+}
+
+restart() {
+	exit
+	ifdown -a
+	sleep 1
+	start
+	/sbin/chk_sfe
+}
+
+shutdown() {
+	ifdown -a
+	stop
+}
+
+stop() {
+	ifdown -a
+	service_stop /sbin/netifd
+}
+
+reload() {
+	ubus call network reload	
+	start	
+	/sbin/chk_sfe
+##	/sbin/wifi down
+##	/sbin/wifi up
+}
+

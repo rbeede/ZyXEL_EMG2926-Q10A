@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/dumpevents/Makefile
+Package: dumpevents
+Submenu: Flow Detect
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli @BUSYBOX_CONFIG_AWK
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: dumpevents
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: A utility to dump events from the event log.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_dumpevents
+	config dumpevents_USE_CUSTOM_VERSION
+		depends on PACKAGE_dumpevents
+		bool "Use custom package version"
+		default n
+	config dumpevents_CUSTOM_VERSION
+		depends on dumpevents_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_dumpevents
+	config dumpevents_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_dumpevents
+		bool "Use custom source directory"
+		default n
+	config dumpevents_CUSTOM_SOURCE_DIR
+		depends on dumpevents_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Linn DS Music Player</DisplayName>
+		<MappingUpdatePolicy>FIXPC2</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>NOEMBEDDEDALBUMART</Quirk>
+	</DeviceQuirks>
+</Client>

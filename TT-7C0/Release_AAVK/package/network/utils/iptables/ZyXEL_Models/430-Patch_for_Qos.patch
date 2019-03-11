@@ -1,0 +1,807 @@
+Index: iptables-1.4.10/extensions/libxt_ether.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ iptables-1.4.10/extensions/libxt_ether.c	2014-11-04 11:00:52.108409275 +0800
+@@ -0,0 +1,204 @@
++#include <stdio.h>
++#include <netdb.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++#include <xtables.h>
++//nclude <linux/if_packet.h>
++#include <linux/netfilter/x_tables.h>
++#include <linux/netfilter/xt_ether.h>
++
++#define ETHER_VERSION "0.1"
++
++static void ether_help(void)
++{
++        printf(
++"ether match options\n"
++"[!] --vid  value               Match vlan-id\n"
++"[!] --vpri value	        Match 8021q\n"
++"\n"
++"                               These two options are mutually exclusive !\n");
++}
++
++
++static const struct option ether_opts[] = {
++        { "vpri", 1, NULL, 'P' },
++        { "vid", 1, NULL, 'Q' },
++        { .name = NULL }
++};
++
++
++static void
++parse_8021q(const char *s, struct xt_ether_info *info)
++{
++        unsigned int vid;
++
++        if (!xtables_strtoui(s, NULL, &vid, 0, UINT16_MAX))
++                xtables_error(PARAMETER_PROBLEM,
++                           "Invalid 8021q `%s'\n", s);
++
++        if (vid > XT_8021Q_MAX)
++                xtables_error(PARAMETER_PROBLEM,
++                           "8021q `%d` out of range\n", vid);
++
++        info->vid = vid;
++}
++
++
++
++static void
++parse_8021p(const char *s, struct xt_ether_info *info)
++{
++        unsigned int pri;
++
++        if (!xtables_strtoui(s, NULL, &pri, 0, UINT8_MAX))
++                xtables_error(PARAMETER_PROBLEM,
++                           "Invalid 8021p `%s'\n", s);
++ 
++        if (pri > XT_8021P_MAX)
++                xtables_error(PARAMETER_PROBLEM,
++                           "8021p `%d` out of range\n", pri);
++
++        info->pcp = pri;
++}
++
++
++
++
++static int
++ether_parse(int c, char **argv, int invert, unsigned int *flags,
++           const void *entry, struct xt_entry_match **match)
++{
++        struct xt_ether_info *info
++                = (struct xt_ether_info *)(*match)->data;
++
++        switch (c) {
++        case 'P':
++                if (*flags & XT_8021P_MATCH)
++                        xtables_error(PARAMETER_PROBLEM,
++                                   "ether match: Only use --vpri ONCE!");
++
++                xtables_check_inverse(optarg, &invert, &optind, 0, argv);
++                parse_8021p(optarg, info);
++
++                if (invert)
++			info->invflags |= XT_8021P_INV_FLAG;
++
++                info->mode |= XT_8021P_MATCH;
++
++                *flags |= XT_8021P_INV_FLAG;
++
++                break;
++
++        case 'Q':
++                if (*flags & XT_8021Q_MATCH)
++                        xtables_error(PARAMETER_PROBLEM,
++                                        "ether match: Only use --vid ONCE!");
++                xtables_check_inverse(optarg, &invert, &optind, 0, argv);
++                parse_8021q(optarg, info);
++                if (invert)
++                        info->invflags |= XT_8021Q_INV_FLAG;
++
++                info->mode |= XT_8021Q_MATCH;
++
++                *flags |= XT_8021Q_INV_FLAG;
++                break;
++
++        default:
++                return 0;
++        }
++
++        return 1;
++}
++
++
++
++static void ether_check(unsigned int flags)
++{
++        if (!flags)
++                xtables_error(PARAMETER_PROBLEM,
++                           "You must specify `--vid' or '--vpri' ");
++
++}
++
++
++
++static void ether_print(const void *ip, const struct xt_entry_match *match, int numeric)
++{
++        const struct xt_ether_info *info =
++                (const struct xt_ether_info *)match->data;
++
++        if ( info->mode & XT_8021Q_MATCH)
++        {
++                printf("VID ");
++
++                if (info->invflags & XT_8021Q_INV_FLAG)
++                        printf("! ");
++
++	        printf("0x%02x ",  info->vid);
++	}
++
++        if ( info->mode & XT_8021P_MATCH)
++        {
++
++                printf("PCP ");
++
++                if (info->invflags & XT_8021P_INV_FLAG)
++                        printf("! ");
++
++                printf(" 0x%02x ",  info->pcp);
++        }
++}
++
++
++
++static void ether_save(const void *ip, const struct xt_entry_match *match)
++{
++        const struct xt_ether_info *info =
++                (const struct xt_ether_info *)match->data;
++
++
++        if ( info->mode & XT_8021Q_MATCH)
++        {
++                printf("VID ");
++
++                if (info->invflags & XT_8021Q_INV_FLAG)
++                        printf("! ");
++
++                printf("0x%02x ",  info->vid);
++        }
++
++        if ( info->mode & XT_8021P_MATCH)
++        {
++
++                printf("PCP ");
++
++                if (info->invflags & XT_8021P_INV_FLAG)
++                        printf("! ");
++
++                printf(" 0x%02x ",  info->pcp);
++        }
++
++
++
++}
++
++static struct xtables_match ether_match = {
++        .family         = NFPROTO_UNSPEC,
++        .name           = "ether",
++        .version        = XTABLES_VERSION,
++        .size           = XT_ALIGN(sizeof(struct xt_ether_info)),
++        .userspacesize  = XT_ALIGN(sizeof(struct xt_ether_info)),
++        .help           = ether_help,
++        .parse          = ether_parse,
++        .final_check    = ether_check,
++        .print          = ether_print,
++        .save           = ether_save,
++        .extra_opts     = ether_opts,
++};
++
++void _init(void)
++{
++        xtables_register_match(&ether_match);
++}
++
+Index: iptables-1.4.10/extensions/libxt_mac.c
+===================================================================
+--- iptables-1.4.10.orig/extensions/libxt_mac.c	2010-10-29 22:37:22.000000000 +0800
++++ iptables-1.4.10/extensions/libxt_mac.c	2014-11-04 11:00:07.800169848 +0800
+@@ -17,22 +17,41 @@
+ {
+ 	printf(
+ "mac match options:\n"
+-"[!] --mac-source XX:XX:XX:XX:XX:XX\n"
+-"				Match source MAC address\n");
++"[!] --mac-source XX:XX:XX:XX:XX:XX/[XX:XX:XX:XX:XX:XX] \n"
++"				Match source MAC address and subnet mask\n"
++"[!] --mac-destination XX:XX:XX:XX:XX:XX/[XX:XX:XX:XX:XX:XX]\n"
++"                               Match destination MAC address and subnet mask\n"
++);
++
++
+ }
+ 
+ static const struct option mac_opts[] = {
+-	{.name = "mac-source", .has_arg = true, .val = '1'},
++	{.name = "mac-source", .has_arg = true, .val = 's'},
++	{.name = "mac-destination", .has_arg = true, .val = 'd'},	
+ 	XT_GETOPT_TABLEEND,
+ };
+ 
+ static void
+-parse_mac(const char *mac, struct xt_mac_info *info)
++parse_src_mac_and_mask(const char *mac, struct xt_mac_info *info)
+ {
+ 	unsigned int i = 0;
++        char *p;
+ 
+-	if (strlen(mac) != ETH_ALEN*3-1)
+-		xtables_error(PARAMETER_PROBLEM, "Bad mac address \"%s\"", mac);
++        if ( (p = strrchr(mac, '/')) != NULL)
++        {
++                if (strlen(mac) != ETH_ALEN*3*2-1)
++                        xtables_error(PARAMETER_PROBLEM, "Bad mac address/mask \"%s\"", mac);
++        }
++        else
++        {
++                if (strlen(mac) != ETH_ALEN*3-1)
++                        xtables_error(PARAMETER_PROBLEM, "Bad mac address \"%s\"", mac);
++
++                for (i = 0; i < ETH_ALEN; i++) {
++                                info->srcmask[i] = 0xFF;
++                }
++        }
+ 
+ 	for (i = 0; i < ETH_ALEN; i++) {
+ 		long number;
+@@ -42,14 +61,108 @@
+ 
+ 		if (end == mac + i*3 + 2
+ 		    && number >= 0
+-		    && number <= 255)
++		    && number <= 255){
+ 			info->srcaddr[i] = number;
++			}
+ 		else
+ 			xtables_error(PARAMETER_PROBLEM,
+ 				   "Bad mac address `%s'", mac);
+ 	}
++
++
++        if ( p != NULL)
++        {
++
++                for (i = 0; i < ETH_ALEN; i++) {
++                        long number;
++                        char *end;
++        
++                        number = strtol(mac + (i+ETH_ALEN)*3, &end, 16);
++
++                        if (end == mac + (i+ETH_ALEN)*3 + 2
++                            && number >= 0
++                            && number <= 255){
++                                info->srcmask[i] = number;
++                        }
++                        else
++                                xtables_error(PARAMETER_PROBLEM,
++                                           "Bad mask `%s'", mac);
++                }
++
++
++
++        }
++
++
++
++
++
+ }
+ 
++
++static void
++parse_dst_mac_and_mask(const char *mac, struct xt_mac_info *info)
++{
++        unsigned int i = 0;
++        char *p;
++
++	if ( (p = strrchr(mac, '/')) != NULL) 
++	{
++                if (strlen(mac) != ETH_ALEN*3*2-1)
++                        xtables_error(PARAMETER_PROBLEM, "Bad mac address/mask \"%s\"", mac);
++	}
++	else
++	{
++	        if (strlen(mac) != ETH_ALEN*3-1)
++        	        xtables_error(PARAMETER_PROBLEM, "Bad mac address \"%s\"", mac);
++
++	        for (i = 0; i < ETH_ALEN; i++) {
++        	                info->dstmask[i] = 0xFF;
++	        }
++	}
++
++
++        for (i = 0; i < ETH_ALEN; i++) {
++                long number;
++                char *end;
++
++                number = strtol(mac + i*3, &end, 16);
++
++                if (end == mac + i*3 + 2
++                    && number >= 0
++                    && number <= 255){
++                        info->dstaddr[i] = number;
++		}	
++                else
++                        xtables_error(PARAMETER_PROBLEM,
++                                   "Bad mac address `%s'", mac);
++        }
++
++        if ( p != NULL)
++	{
++
++	        for (i = 0; i < ETH_ALEN; i++) {
++        	        long number;
++	                char *end;
++
++        	        number = strtol(mac + (i+ETH_ALEN)*3, &end, 16);
++
++	                if (end == mac + (i+ETH_ALEN)*3 + 2
++        	            && number >= 0
++                	    && number <= 255){
++	                        info->dstmask[i] = number;
++	                }
++        	        else
++                	        xtables_error(PARAMETER_PROBLEM,
++                        	           "Bad mask `%s'", mac);
++	        }
++
++	}
++
++}
++
++
++
+ static int
+ mac_parse(int c, char **argv, int invert, unsigned int *flags,
+           const void *entry, struct xt_entry_match **match)
+@@ -57,12 +170,32 @@
+ 	struct xt_mac_info *macinfo = (struct xt_mac_info *)(*match)->data;
+ 
+ 	switch (c) {
+-	case '1':
++	case 's':
++                if (*flags & XT_SRC_MAC)
++                                xtables_error(PARAMETER_PROBLEM,"mac match: Only use --mac-source ONCE!");
+ 		xtables_check_inverse(optarg, &invert, &optind, 0, argv);
+-		parse_mac(optarg, macinfo);
+-		if (invert)
+-			macinfo->invert = 1;
+-		*flags = 1;
++		parse_src_mac_and_mask(optarg, macinfo);
++
++                if (invert)
++                        macinfo->invflags |= XT_SRC_MAC_INV_FLAG;
++
++                macinfo->bitmask |= XT_SRC_MAC;
++
++                *flags |= XT_SRC_MAC;
++                break;
++
++        case 'd':
++                if (*flags & XT_DST_MAC)
++                                xtables_error(PARAMETER_PROBLEM,"mac match: Only use --mac-destination ONCE!");
++                xtables_check_inverse(optarg, &invert, &optind, 0, argv);
++                parse_dst_mac_and_mask(optarg, macinfo);
++
++                if (invert)
++                        macinfo->invflags |= XT_DST_MAC_INV_FLAG;
++
++                macinfo->bitmask |= XT_DST_MAC;
++
++                *flags |= XT_DST_MAC;
+ 		break;
+ 
+ 	default:
+@@ -86,30 +219,72 @@
+ {
+ 	if (!flags)
+ 		xtables_error(PARAMETER_PROBLEM,
+-			   "You must specify `--mac-source'");
++			   "You must specify `--mac-source' or '--mac-destination' ");
+ }
+ 
+ static void
+ mac_print(const void *ip, const struct xt_entry_match *match, int numeric)
+ {
+ 	const struct xt_mac_info *info = (void *)match->data;
+-	printf("MAC ");
++	//printf("MAC ");
++
++	if (info->bitmask & XT_SRC_MAC)
++	{
++		printf("Src MAC ");
+ 
+-	if (info->invert)
+-		printf("! ");
++		if (info->invflags & XT_SRC_MAC_INV_FLAG)
++			printf("! ");
+ 	
+-	print_mac(info->srcaddr);
++		print_mac(info->srcaddr);
++                printf("/");
++                print_mac(info->srcmask);
++
++	}
++
++        if (info->bitmask & XT_DST_MAC)
++        {
++		printf("Dst MAC ");
++
++                if (info->invflags & XT_DST_MAC_INV_FLAG)
++                        printf("! ");
++
++                print_mac(info->dstaddr);
++                printf("/");
++                print_mac(info->dstmask);
++
++        }
++
+ }
+ 
+ static void mac_save(const void *ip, const struct xt_entry_match *match)
+ {
+ 	const struct xt_mac_info *info = (void *)match->data;
+ 
+-	if (info->invert)
+-		printf("! ");
++        if (info->bitmask & XT_SRC_MAC)
++        {
++                if (info->invflags & XT_SRC_MAC_INV_FLAG)
++                        printf("! ");
++
++                print_mac(info->srcaddr);
++                printf("/");
++                print_mac(info->srcmask);
++
++        }
++
++
++        if (info->bitmask & XT_DST_MAC)
++        {
++                if (info->invflags & XT_SRC_MAC_INV_FLAG)
++                        printf("! ");
++
++                print_mac(info->dstaddr);
++                printf("/");
++                print_mac(info->dstmask);
++
++        }
++
++
+ 
+-	printf("--mac-source ");
+-	print_mac(info->srcaddr);
+ }
+ 
+ static struct xtables_match mac_match = {
+Index: iptables-1.4.10/extensions/libxt_MARK.c
+===================================================================
+--- iptables-1.4.10.orig/extensions/libxt_MARK.c	2010-10-29 22:37:22.000000000 +0800
++++ iptables-1.4.10/extensions/libxt_MARK.c	2014-11-04 11:00:07.800169848 +0800
+@@ -9,23 +9,30 @@
+ #include <linux/netfilter/x_tables.h>
+ #include <linux/netfilter/xt_MARK.h>
+ 
++#define MARK_SETMARK '1'
++#define MARK_ANDMARK '2'
++#define MARK_ORMARK  '3'
++#define MARK_SETVTAG '4'
++
+ /* Version 0 */
+ struct xt_mark_target_info {
+ 	unsigned long mark;
+ };
+ 
+ /* Version 1 */
++/*
+ enum {
+ 	XT_MARK_SET=0,
+ 	XT_MARK_AND,
+ 	XT_MARK_OR,
++	XT_VTAG_SET,	
+ };
+ 
+ struct xt_mark_target_info_v1 {
+ 	unsigned long mark;
+ 	u_int8_t mode;
+ };
+-
++*/
+ enum {
+ 	F_MARK = 1 << 0,
+ };
+@@ -36,13 +43,15 @@
+ "MARK target options:\n"
+ "  --set-mark value                   Set nfmark value\n"
+ "  --and-mark value                   Binary AND the nfmark with value\n"
+-"  --or-mark  value                   Binary OR  the nfmark with value\n");
++"  --or-mark  value                   Binary OR  the nfmark with value\n"
++"  --vtag-set  value                  Set vlan tag value\n");
+ }
+ 
+ static const struct option MARK_opts[] = {
+-	{.name = "set-mark", .has_arg = true, .val = '1'},
+-	{.name = "and-mark", .has_arg = true, .val = '2'},
+-	{.name = "or-mark",  .has_arg = true, .val = '3'},
++	{.name = "set-mark", .has_arg = true, .val = MARK_SETMARK },
++	{.name = "and-mark", .has_arg = true, .val = MARK_ANDMARK },
++	{.name = "or-mark",  .has_arg = true, .val = MARK_ORMARK },
++	{.name = "vtag-set",  .has_arg = true, .val = MARK_SETVTAG },
+ 	XT_GETOPT_TABLEEND,
+ };
+ 
+@@ -52,6 +61,7 @@
+ 	{.name = "and-mark",  .has_arg = true, .val = '&'},
+ 	{.name = "or-mark",   .has_arg = true, .val = '|'},
+ 	{.name = "xor-mark",  .has_arg = true, .val = '^'},
++        {.name = "vtag-set",  .has_arg = true, .val = 'S'},	
+ 	XT_GETOPT_TABLEEND,
+ };
+ 
+@@ -64,6 +74,7 @@
+ "  --and-mark bits           Binary AND the nfmark with bits\n"
+ "  --or-mark bits            Binary OR the nfmark with bits\n"
+ "  --xor-mask bits           Binary XOR the nfmark with bits\n"
++"  --vtag-set value          Set vlan tag value\n"
+ "\n");
+ }
+ 
+@@ -76,9 +87,10 @@
+ 	struct xt_mark_target_info *markinfo
+ 		= (struct xt_mark_target_info *)(*target)->data;
+ 	unsigned int mark = 0;
+-
++	printf(" *******  MARK_parse_v0 \n " );
++	
+ 	switch (c) {
+-	case '1':
++	case MARK_SETMARK:
+ 		if (!xtables_strtoui(optarg, NULL, &mark, 0, UINT32_MAX))
+ 			xtables_error(PARAMETER_PROBLEM, "Bad MARK value \"%s\"", optarg);
+ 		markinfo->mark = mark;
+@@ -87,12 +99,15 @@
+ 			           "MARK target: Can't specify --set-mark twice");
+ 		*flags = 1;
+ 		break;
+-	case '2':
++	case MARK_ANDMARK:
+ 		xtables_error(PARAMETER_PROBLEM,
+ 			   "MARK target: kernel too old for --and-mark");
+-	case '3':
++	case MARK_ORMARK:
+ 		xtables_error(PARAMETER_PROBLEM,
+ 			   "MARK target: kernel too old for --or-mark");
++	case MARK_SETVTAG:
++		xtables_error(PARAMETER_PROBLEM,
++			   "MARK target: kernel too old for --vtag-set");
+ 	default:
+ 		return 0;
+ 	}
+@@ -117,15 +132,17 @@
+ 	unsigned int mark = 0;
+ 
+ 	switch (c) {
+-	case '1':
++	case XT_MARK_SET:
+ 	        markinfo->mode = XT_MARK_SET;
+ 		break;
+-	case '2':
++	case XT_MARK_AND:
+ 	        markinfo->mode = XT_MARK_AND;
+ 		break;
+-	case '3':
++	case XT_MARK_OR:
+ 	        markinfo->mode = XT_MARK_OR;
+ 		break;
++	case XT_VTAG_SET:
++	        markinfo->mode = XT_VTAG_SET;		
+ 	default:
+ 		return 0;
+ 	}
+@@ -162,9 +179,15 @@
+ 			xtables_param_act(XTF_BAD_VALUE, "MARK", "--set-xmark/--set-mark", optarg);
+ 		info->mark = value;
+ 		info->mask = mask;
++		info->mode = XT_XMARK_SET;
+ 
+ 		if (c == '=')
++		{
++			info->mode = XT_MARK_SET;
+ 			info->mask = value | mask;
++		}
++
++
+ 		break;
+ 
+ 	case '&': /* --and-mark */
+@@ -174,6 +197,7 @@
+ 			xtables_param_act(XTF_BAD_VALUE, "MARK", "--and-mark", optarg);
+ 		info->mark = 0;
+ 		info->mask = ~mask;
++		info->mode = XT_MARK_AND;
+ 		break;
+ 
+ 	case '|': /* --or-mark */
+@@ -183,6 +207,7 @@
+ 			xtables_param_act(XTF_BAD_VALUE, "MARK", "--or-mark", optarg);
+ 		info->mark = value;
+ 		info->mask = value;
++		info->mode = XT_MARK_OR;
+ 		break;
+ 
+ 	case '^': /* --xor-mark */
+@@ -192,8 +217,19 @@
+ 			xtables_param_act(XTF_BAD_VALUE, "MARK", "--xor-mark", optarg);
+ 		info->mark = value;
+ 		info->mask = 0;
++		info->mode = XT_MARK_XOR;
+ 		break;
+ 
++        case 'S': /* --vtag-set */
++                xtables_param_act(XTF_ONE_ACTION, "MARK", *flags & F_MARK);
++                xtables_param_act(XTF_NO_INVERT, "MARK", "--vtag-set", invert);
++                if (!xtables_strtoui(optarg, NULL, &value, 0, UINT32_MAX))
++                        xtables_param_act(XTF_BAD_VALUE, "MARK", "--vtag-set", optarg);
++                info->mark = value;
++                info->mask = 0;
++                info->mode = XT_VTAG_SET;
++
++                break;		
+ 	default:
+ 		return false;
+ 	}
+@@ -238,7 +274,7 @@
+ {
+ 	const struct xt_mark_target_info_v1 *markinfo =
+ 		(const struct xt_mark_target_info_v1 *)target->data;
+-
++	
+ 	switch (markinfo->mode) {
+ 	case XT_MARK_SET:
+ 		printf("MARK set ");
+@@ -249,6 +285,9 @@
+ 	case XT_MARK_OR: 
+ 		printf("MARK or ");
+ 		break;
++	case XT_VTAG_SET:
++		printf("SET vtag ");
++		break;		
+ 	}
+ 	print_mark(markinfo->mark);
+ }
+@@ -257,7 +296,7 @@
+                           int numeric)
+ {
+ 	const struct xt_mark_tginfo2 *info = (const void *)target->data;
+-
++/*
+ 	if (info->mark == 0)
+ 		printf("MARK and 0x%x ", (unsigned int)(u_int32_t)~info->mask);
+ 	else if (info->mark == info->mask)
+@@ -268,6 +307,21 @@
+ 		printf("MARK set 0x%x ", info->mark);
+ 	else
+ 		printf("MARK xset 0x%x/0x%x ", info->mark, info->mask);
++*/
++
++        if (info->mode & XT_MARK_AND)
++                printf("MARK and 0x%x ", (unsigned int)(u_int32_t)~info->mask);
++        else if (info->mode & XT_MARK_OR)
++                printf("MARK or 0x%x ", info->mark);
++        else if (info->mode & XT_MARK_XOR)
++                printf("MARK xor 0x%x ", info->mark);
++        else if (info->mode & XT_MARK_SET)
++                printf("MARK set 0x%x ", info->mark);
++        else if (info->mode & XT_VTAG_SET)
++                printf("VTAG set 0x%x ", info->mark);
++        else
++                printf("MARK xset 0x%x/0x%x ", info->mark, info->mask);
++	
+ }
+ 
+ static void MARK_save_v1(const void *ip, const struct xt_entry_target *target)
+@@ -285,6 +339,9 @@
+ 	case XT_MARK_OR: 
+ 		printf("--or-mark ");
+ 		break;
++	case XT_VTAG_SET:
++		printf("--vtag-set ");
++		break;		
+ 	}
+ 	print_mark(markinfo->mark);
+ }
+Index: iptables-1.4.10/include/linux/netfilter/xt_ether.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ iptables-1.4.10/include/linux/netfilter/xt_ether.h	2014-11-04 11:01:58.735545204 +0800
+@@ -0,0 +1,25 @@
++#ifndef _XT_ETHER_H
++#define _XT_ETHER_H
++
++//#include <linux/types.h>
++
++#define XT_8021Q_MAX 4096
++#define XT_8021P_MAX 8
++
++
++#define XT_8021P_MATCH 0X01
++#define XT_8021Q_MATCH 0X02
++
++#define XT_8021P_INV_FLAG 0X01
++#define XT_8021Q_INV_FLAG 0X02
++
++/* match info */
++struct xt_ether_info {
++        __u16 vid;
++        __u8 pcp;
++        __u8 invflags;
++        __u8 mode;
++};
++
++#endif /* _XT_ETHER_H */
++
+Index: iptables-1.4.10/include/linux/netfilter/xt_mac.h
+===================================================================
+--- iptables-1.4.10.orig/include/linux/netfilter/xt_mac.h	2010-10-29 22:37:22.000000000 +0800
++++ iptables-1.4.10/include/linux/netfilter/xt_mac.h	2014-11-04 11:00:07.800169848 +0800
+@@ -1,8 +1,18 @@
+ #ifndef _XT_MAC_H
+ #define _XT_MAC_H
+ 
++#define XT_SRC_MAC 0x01
++#define XT_DST_MAC 0x02
++
++#define XT_SRC_MAC_INV_FLAG 0x01
++#define XT_DST_MAC_INV_FLAG 0x02
++
+ struct xt_mac_info {
+     unsigned char srcaddr[ETH_ALEN];
+-    int invert;
++    unsigned char dstaddr[ETH_ALEN];
++    unsigned char srcmask[ETH_ALEN];
++    unsigned char dstmask[ETH_ALEN];
++    __u8 bitmask;
++    __u8 invflags;
+ };
+ #endif /*_XT_MAC_H*/
+Index: iptables-1.4.10/include/linux/netfilter/xt_mark.h
+===================================================================
+--- iptables-1.4.10.orig/include/linux/netfilter/xt_mark.h	2010-10-29 22:37:22.000000000 +0800
++++ iptables-1.4.10/include/linux/netfilter/xt_mark.h	2014-11-04 11:00:07.800169848 +0800
+@@ -3,8 +3,21 @@
+ 
+ #include <linux/types.h>
+ 
++#define XT_MARK_SET 0X01
++#define XT_XMARK_SET 0X02
++#define XT_MARK_AND 0X04
++#define XT_MARK_OR 0X08
++#define XT_MARK_XOR 0X10
++#define XT_VTAG_SET 0X20
++
++struct xt_mark_target_info_v1 {
++        unsigned long mark;
++        u_int8_t mode;
++};
++
+ struct xt_mark_tginfo2 {
+ 	__u32 mark, mask;
++	__u8 mode; 
+ };
+ 
+ struct xt_mark_mtinfo1 {

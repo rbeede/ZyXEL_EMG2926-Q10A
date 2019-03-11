@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips Streamium WAS7500</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WAS7500</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>PHILIPSSEARCH</Quirk>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

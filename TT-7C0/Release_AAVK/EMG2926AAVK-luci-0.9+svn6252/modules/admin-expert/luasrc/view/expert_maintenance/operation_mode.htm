@@ -1,0 +1,263 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"> 
+
+function initValue()
+{
+	
+	nv_OP_Mode = "<%=uci:get("system","main","system_mode") %>";
+
+	if (nv_OP_Mode == 1)
+		document.OP_MODE_APP.OPMode[0].checked = true;
+	else if (nv_OP_Mode == 2)
+		document.OP_MODE_APP.OPMode[1].checked = true;
+	else if (nv_OP_Mode == 3)
+		document.OP_MODE_APP.OPMode[2].checked = true;
+	else if (nv_OP_Mode == 4)
+		document.OP_MODE_APP.OPMode[3].checked = true;
+	else if (nv_OP_Mode == 5)
+		document.OP_MODE_APP.OPMode[4].checked = true;
+
+}
+
+
+lanip_router = "<%=uci:get("network","general","backup_lan_ip") %>";
+lanip_ap = "<%=uci:get("network","general","backup_aplan_ip") %>";
+
+function changmod_msg_Router()
+{
+alert(("- Ports are LAN 4 Ethernet LAN ports, WLAN, WAN")+"\n"+("- LAN DHCP server is configurable")+"\n"+("- LAN IP is ")+lanip_router+"\n"+("- WAN IP is configurable"));      
+}
+function changmod_msg_WISP()
+{
+alert(("- Ports are LAN 5 Ethernet LAN ports, WLAN as WAN")+"\n"+("- LAN DHCP server is configurable")+"\n"+("- LAN IP is ")+lanip_router+"\n"+("- WAN IP is configurable"));      
+}
+function changmod_msg_WISP_UR()
+{
+alert(("- Ports are LAN 5 Ethernet LAN ports, WLAN as WAN")+"\n"+("- LAN DHCP server is configurable")+"\n"+("- LAN IP is ")+lanip_router+"\n"+("- WAN IP is configurable"));      
+}
+function changmod_msg_AP()
+{
+alert(("- Ports are LAN 5 Ethernet LAN ports,WLAN")+"\n"+("- LAN DHCP server is disabled & unconfigurable")+"\n"+("- LAN IP is ")+lanip_ap+"\n"+("- WAN IP is unreachable"));      
+}
+
+function redirect(nv_OP_Mode)
+{
+
+	if (nv_OP_Mode == 2 || nv_OP_Mode == 3) {
+		top.location.href="http://"+lanip_ap;
+	}	
+	else if (nv_OP_Mode == 1) {
+		top.location.href="http://"+lanip_router;
+	}
+	else{
+		top.location.href="/";
+	}
+}
+
+function CountDown()
+{
+	nv_OP_Mode = "<%=uci:get("system","main","system_mode") %>"
+	
+	<% if rebootsystem == 1 then 
+	      luci.sys.exec("reboot") 
+     	end
+	%>
+	CountDownSecond = document.theForm.timer.value;
+	if ( CountDownSecond !=0 ) {
+		document.theForm.timer.value = CountDownSecond - 1;
+		setTimeout('CountDown()',1000);
+	}
+	else {
+		redirect(nv_OP_Mode);
+	}
+}
+</script>
+</head>
+<body onLoad="initValue()">
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a  title="<%:main_language%>"><span><%:sys_op_mode%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+
+<% local Product_Name = uci:get("system","main","product_name") %>
+<% if rebootsystem == 1 then %>
+<form name="theForm">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:restarting%></div>
+          <div class="w_text"><%:bak_remind1%>
+            <input name="timer"  size="3" type="text" value=150 style="border:0;background:transparent" readonly=true />
+            <%:seconds%>.
+          </div>
+          <div class="spaceair"></div> 
+        </ul> 
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<script language="JavaScript">
+	CountDown();
+</script>
+<% else %>
+    <form method=post name="OP_MODE_APP" action="<%=controller%>/expert/maintenance/operation_mode" >
+    <div id="table">
+      <ul>
+        <li class="table_content">
+            <div class="data">
+              <ul>
+                 <li class="title">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                   <tr><td id="OPModeTitle" nowrap><%:Config_Mode%></td>
+                   </tr>
+                  </table>
+                 </li>
+<%	--chek username
+	local uname = luci.dispatcher.context.authuser
+	local libuci = require("luci.model.uci").cursor()
+	local privilege
+	if uname ~= nil then
+		privilege = libuci:get("account",uname,"privilege")
+	end
+	if not privilege then
+		privilege = "1"
+	end
+-%>
+<li class="w_text">
+<table width="90%" border="0" align=center cellspacing="0">
+<tr>
+<td nowrap><input type="radio" name="OPMode" value="1" <%if privilege ~= "1" then%> disabled <%end%> onClick="changmod_msg_Router()"/><font id ="OPModeRouter"><%:Router_Mode%></font></td>
+</tr>
+</table>
+</li>
+
+<li class="w_text">
+<table width="90%" border="0" align=center cellspacing="0">
+<tr>
+<td nowrap><input type="radio" name="OPMode" value="2" <%if privilege ~= "1" then%> disabled <%end%> onClick="changmod_msg_AP()"/><font id ="OPModeAP"><%:AP_Mode%></font></td>
+</tr>
+</table>
+</li>
+<!--
+<li class="w_text">
+<table width="90%" border="0" align=center cellspacing="0">
+<tr>
+<td nowrap><input type="radio" name="OPMode" value="3" <%if privilege ~= "1" then%> disabled <%end%> onClick="changmod_msg_AP()"/><font id ="OPModeUR"><%:UR_Mode%></font></td>
+</tr>
+</table>
+</li>
+
+<li class="w_text">
+<table width="90%" border="0" align=center cellspacing="0">
+<tr>
+<td nowrap><input type="radio" name="OPMode" value="4" <%if privilege ~= "1" then%> disabled <%end%> onClick="changmod_msg_WISP()"/><font id ="OPModeWISP"><%:WISP_Mode%></font></td>
+</tr>
+</table>
+</li>
+
+<li class="w_text">
+<table width="90%" border="0" align=center cellspacing="0">
+<tr>
+<td nowrap><input type="radio" name="OPMode" value="5" <%if privilege ~= "1" then%> disabled <%end%> onClick="changmod_msg_WISP_UR()"/><font id ="OPModeWISPUR"><%:WISP_UR_Mode%></font></td>
+</tr>
+</table>
+</li>
+-->
+<li class="w_text">
+<table width="90%" border="0" align=center cellspacing="0">
+<tr>
+<td>&nbsp;</td>
+</tr>
+</table>
+</li>
+
+<li class="w_text">
+<table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+<tr>
+<td><span class="i_note" id="OPModeNote1_0"><%:maintenance_Note_1%></span></td>
+</tr>
+</table>
+</li>
+<li class="w_text">
+<table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+<tr>
+<td class="i_note_a" id="OPModeNote1_1"><%:Router_note%></td>
+</tr>
+<tr>
+<td class="i_note_a" id="OPModeNote1_2"><%:AP_note%></td>
+</tr>
+<!--
+<tr>
+<td class="i_note_a" id="OPModeNote1_4"><%:UR_note%></td>
+</tr>
+<tr>
+<td class="i_note_a" id="OPModeNote1_3"><%:WISP_note%></td>
+</tr>
+<tr>
+<td class="i_note_a" id="OPModeNote1_5"><%:WISP_UR_note%></td>
+</tr>
+-->
+</table>
+</li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+<li></li>
+              </ul>
+            </div>
+        <center>
+        <li class="table_button">        
+        <input name="apply" value="<%:apply%>" type="submit" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <input name="Cancel" value="<%:cancel%>" type="reset" />       
+        </li>
+        </center>
+</form>
+<% end %>        
+</body>
+<script language="JavaScript"> showFullPath(' <%:maintenance%> > Sys OP Mode');</script>
+</script> 
+</html>

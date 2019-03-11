@@ -1,0 +1,242 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"> 
+
+var g_ssid;
+var g_networktype;
+var g_channel;
+var g_auth;
+var g_encry;
+var g_bssid;
+var g_nt;
+
+function selectedSSIDChange(ssid, bssid, signal, channel, encry, auth, nt)
+{
+	g_ssid = ssid;
+	g_signal = signal;
+	g_channel = channel;
+	g_auth = auth;
+	g_encry = encry;
+	g_bssid = bssid;
+	g_nt = nt;
+
+	document.sta_site_survey.addProfileButton.disabled=false;
+}
+
+function open_profile_page()
+{
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","network","wlan", "wlan_apcli_wisp_ur_site_survey")%>';
+	var loc = submit_url + '?survey_apply=Apply';
+	
+	with ( document.forms[0] ){
+		loc += '&site_ssid=' + encodeURIComponent(g_ssid);
+		loc += '&site_signal=' + g_signal;
+		loc += '&site_channel=' + g_channel;
+		loc += '&site_auth=' + g_auth;
+		loc += '&site_encry=' + g_encry;
+		loc += '&site_bssid=' + g_bssid;
+		loc += '&site_nt=' + g_nt;
+		
+		var code = 'location="' + loc + '"';
+    	eval(code);
+	}
+	
+	//recordProfileSsid();
+	//parent.onChangeHeadMenu(21, 1, _('CONFIGURATION')+' > '+_('Network')+' > '+_('Wireless LAN')+' > '+_('General'));
+	//self.location.href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp";
+}
+
+
+function recordProfileSsid()
+{
+	parent.site_survey_ssid = g_ssid;
+	
+	if(g_networktype == 1 )
+	{
+		if (g_auth.indexOf("WPA2PSK") >= 0)
+			parent.site_survey_security_infra_mode = "WPA2PSK";
+		else if (g_auth.indexOf("WPAPSK") >= 0)
+			parent.site_survey_security_infra_mode = "WPAPSK";
+		else 		
+			parent.site_survey_security_infra_mode = "OPEN";
+			
+	}
+	else
+	{
+		if ( g_auth.indexOf("WPA-NONE") >= 0 || g_auth.indexOf("WPA2-NONE") >= 0)
+			parent.site_survey_security_adhoc_mode = 5;
+		else
+			parent.site_survey_security_adhoc_mode = 0;
+	}
+
+	//encry
+	if (g_encry.indexOf("TKIP") >= 0)
+		parent.site_survey_cipher = "TKIP";
+	else if (g_encry.indexOf("AES") >= 0)
+		parent.site_survey_cipher = "AES";
+	else if (g_encry.indexOf("WEP") >= 0)
+		parent.site_survey_cipher = "WEP";
+	else	
+		parent.site_survey_cipher = "NONE";
+
+	parent.site_survey_network_type = g_networktype;
+
+	parent.site_survey_channel = g_channel;
+
+	parent.site_survey_bssid = g_bssid;
+	
+	parent.site_survey_setting = 1;
+}
+
+</script>
+</head>
+<body >
+<form method="post" name="sta_site_survey" action="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp_ur_site_survey">
+<% local sys_op_mode = uci:get("system","main","system_mode")%>
+<div id="tabs" style="word-break:break-all;(">
+  <ul>
+<% if sys_op_mode ~= "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan5G" title="<%:General%>"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_multissid5G" title="<%:more_ap%>"><span><%:more_ap%></span></a></li> 
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanmacfilter5G" title="<%:mac_filter%>"><span><%:mac_filter%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanadvanced5G" title="<%:wireless_advance%>"><span><%:wireless_advance%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanqos5G" title="<%:wireless_qos%>"><span><%:wireless_qos%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwps5G" title="<%:wps%>"><span><%:wps%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwpsstation5G" title="<%:wps_station%>"><span><%:wps_station%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanscheduling5G" title="<%:scheduling%>"><span><%:scheduling%></span></a></li>
+<% end %>
+<% if sys_op_mode ~= "1" and sys_op_mode ~= "2" then%>
+<% if sys_op_mode == "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp5G" title="<%:General%>"><span><%:General%></span></a></li>
+<% else %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp5G" title="<%:universal_repeater%>"><span><%:universal_repeater%></span></a></li>
+<% end %>
+    <li class="hightline"><a title="<%:site_survey%>"><span><%:site_survey%></span></a></li>
+<% end %>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<%
+	luci.sys.exec(" iwpriv ra0 set SiteSurvey=1 ")
+	luci.sys.exec(" sleep 4 ")
+	luci.sys.exec(" iwpriv ra0 get_site_survey > /tmp/site_survey.dat ")
+%>
+<!-- Tab -->
+<div id="table">
+ <ul>
+  <li class="table_top"></li>
+  <li class="table_content">
+   <div class="data">
+   <ul>
+    <div class="title" id="scanTitle"><span class="cTitle"> Wireless Lan Site Survey </span></div>
+    <div class="tableframe">
+	 <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0" class="table_frame">
+	 <tr>
+      <td>
+	  <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0">
+      <tr>
+      <td>
+		<table id="WLanSuvTable" width="100%" cellpadding="0" cellspacing="0" >
+		  <tr>
+			<td height="26" colspan="8">
+			  <table width="100%" border="0" cellspacing="0" cellpadding="0">
+				<tr>
+				 <td height="26" class="table_title">Site Survey</td>
+				</tr>
+			</table>
+			</td>
+		  </tr>
+
+		  <tr class="top_font" align="left">
+		    <td>#</td>
+			<td>SSID</td>
+			<td>BSSID</td>
+			<td>Signal Strength</td>
+			<td>Channel</td>
+			<td>Security</td>
+		 </tr>
+		<% local old_ssid = uci:get("wireless_client","general","ApCliSsid")%>
+		<% local old_bssid = uci:get("wireless_client","general","ApCliBssid")%>
+		<% luci.sys.wlan_survey(function(rt) %>
+		 <tr class="table_font" align="left">
+			<td width="5%">		
+			<input type=radio name=selectedSSID <%if old_ssid == rt.ssid and old_bssid == rt.bssid then%> checked = "CHECKED" <%end%>  onClick="selectedSSIDChange('<%=rt.ssid%>','<%=rt.bssid%>','<%=rt.signal%>','<%=rt.channel%>','<%=rt.encryption%>','<%=rt.auth%>','<%=rt.nt%>')">
+			</td>
+			<td width="35%">
+			<%=rt.ssid%>
+			</td>
+			<td width="22%">
+			<%=rt.bssid%>
+			</td>
+			<td width="10%">	
+			<%=rt.signal%> %
+			</td>
+			<td width="7%">
+			<%=rt.channel%>
+			</td>
+			<td width="21%">
+			<%=rt.auth%>
+			</td>
+		 </tr>
+		<% end) %>
+		</table>
+		</td>
+        </tr>
+        </table>
+       </td>
+      </tr>
+	 </table>
+	</div>
+	<div class="spaceair"></div>
+	<div class="spaceair"></div>
+	<li></li>
+	<li></li>
+	</ul>
+   </div>
+   </li>
+	<center>
+	<li class="table_button">
+	<input type=button value="Rescan" id="scanRescan" onClick="showWebMessage(1, '<%:Message%>', '<%:msg_config%>'); location.href=location.href">&nbsp;
+	<input type=button name="addProfileButton" value="Add Profile" id="scanAddProfile" disabled onClick="open_profile_page()">
+	</li>
+	</center>
+  </ul>
+</div>
+</form>
+</body>
+<script>
+showFullPath(' <%:Network%> > <%:sta_site_survey%>');
+showWebMessage( 0, "<%:Message%>", "<%:Ready%>");
+</script>
+</html>
+

@@ -1,0 +1,181 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+START=50
+
+. /etc/functions.sh
+include /lib/config/
+
+BIN=lighttpd
+DEFAULT=/etc/default/$BIN
+LOG_D=/var/log/$BIN
+RUN_D=/var/run
+PID_F=$RUN_D/$BIN.pid
+UPLOAD_TMP_D=/tmp/$BIN
+UPLOAD_TMP_LOCAL_D=/tmp/${BIN}.local
+
+
+
+ck_http() {
+	config_load firewall
+#check firewall config for upgrade firmware without "reset to default"	
+	ckHttpFlag=$(uci get firewall.remote_WWW_WAN)
+	[ -z "$ckHttpFlag" ] && {
+
+		interface_status=$(uci get firewall.remote_www.interface)
+		client_status=$(uci get firewall.remote_www.client_check)
+
+		uci set firewall.remote_WWW_LAN=firewall
+		uci set firewall.remote_WWW_WAN=firewall
+
+		if [ "$interface_status" == "1" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_WWW_LAN.client_check=0
+			uci set firewall.remote_WWW_WAN.client_check=0
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "1" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_www.client_addr)
+			uci set firewall.remote_WWW_LAN.client_check=2
+			uci set firewall.remote_WWW_WAN.client_check=2
+			uci set firewall.remote_WWW_LAN.client_count=1
+			uci set firewall.remote_WWW_LAN.client_addr1=$ip_status
+			uci set firewall.remote_WWW_WAN.client_count=1
+			uci set firewall.remote_WWW_WAN.client_addr1=$ip_status
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_WWW_LAN.client_check=0
+			uci set firewall.remote_WWW_WAN.client_check=1
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_www.client_addr)
+			uci set firewall.remote_WWW_LAN.client_check=2
+			uci set firewall.remote_WWW_WAN.client_check=1
+			uci set firewall.remote_WWW_LAN.client_count=1
+			uci set firewall.remote_WWW_LAN.client_addr1=$ip_status
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_WWW_LAN.client_check=1
+			uci set firewall.remote_WWW_WAN.client_check=0
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_www.client_addr)
+			uci set firewall.remote_WWW_LAN.client_check=1
+			uci set firewall.remote_WWW_WAN.client_check=2
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=1
+			uci set firewall.remote_WWW_WAN.client_addr1=$ip_status
+		fi
+		
+		uci set firewall.remote_www.interface=2
+		uci set firewall.remote_www.client_check=0
+		delete=$(uci get firewall.remote_www.client_addr)
+		if [ -z "$delete" ]; then
+			uci commit firewall
+		else
+			uci del firewall.remote_www.client_addr
+			uci commit firewall
+		fi
+	}
+#end	
+}
+
+ck_https() {
+	config_load firewall
+#check firewall config for upgrade firmware without "reset to default"	
+	ckHttpsFlag=$(uci get firewall.remote_https_WAN)
+	[ -z "$ckHttpsFlag" ] && {
+
+		interface_status=$(uci get firewall.remote_https.interface)
+		client_status=$(uci get firewall.remote_https.client_check)
+
+		uci set firewall.remote_https_WAN=firewall
+		uci set firewall.remote_https_LAN=firewall
+
+		if [ "$interface_status" == "1" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_https_LAN.client_check=0
+			uci set firewall.remote_https_WAN.client_check=0
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "1" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_https.client_addr)
+			uci set firewall.remote_https_LAN.client_check=2
+			uci set firewall.remote_https_WAN.client_check=2
+			uci set firewall.remote_https_LAN.client_count=1
+			uci set firewall.remote_https_LAN.client_addr1=$ip_status
+			uci set firewall.remote_https_WAN.client_count=1
+			uci set firewall.remote_https_WAN.client_addr1=$ip_status
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_https_LAN.client_check=0
+			uci set firewall.remote_https_WAN.client_check=1
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_https.client_addr)
+			uci set firewall.remote_https_LAN.client_check=2
+			uci set firewall.remote_https_WAN.client_check=1
+			uci set firewall.remote_https_LAN.client_count=1
+			uci set firewall.remote_https_LAN.client_addr1=$ip_status
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_https_LAN.client_check=1
+			uci set firewall.remote_https_WAN.client_check=0
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_https.client_addr)
+			uci set firewall.remote_https_LAN.client_check=1
+			uci set firewall.remote_https_WAN.client_check=2
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=1
+			uci set firewall.remote_https_WAN.client_addr1=$ip_status
+		fi
+		
+		uci set firewall.remote_https.interface=2
+		uci set firewall.remote_https.client_check=0
+		delete=$(uci get firewall.remote_https.client_addr)
+		if [ -z "$delete" ]; then
+			uci commit firewall
+		else
+			uci del firewall.remote_https.client_addr
+			uci commit firewall
+		fi
+	}
+#end	
+}
+
+boot()  {
+	echo 1 > /tmp/restart_lighttpd
+	ck_https
+	ck_https
+	start
+}
+
+start() {
+	/usr/sbin/lighttpd-port init
+	check_sw=$(cat /tmp/restart_lighttpd)
+	
+	if [ "$check_sw" != "1" ]; then 
+		echo 1 > /tmp/restart_lighttpd
+		exit 0
+	fi
+
+	[ -f $DEFAULT ] && . $DEFAULT
+	mkdir -p $LOG_D
+	mkdir -p $RUN_D
+	mkdir -p $UPLOAD_TMP_LOCAL_D
+	rm -f $UPLOAD_TMP_D
+	ln -s $UPLOAD_TMP_LOCAL_D $UPLOAD_TMP_D
+
+	$BIN $OPTIONS
+}
+
+stop() {
+	check_sw=$(cat /tmp/restart_lighttpd)
+	
+	if [ "$check_sw" == "1" ]; then
+		killall lighttpd
+	fi
+	
+	/usr/sbin/lighttpd-port off
+}
+

@@ -1,0 +1,101 @@
+#!/bin/sh
+
+help()
+{
+	echo "LED control script v1.0"
+	echo;echo "Usage: led_ctrl <LED name> <on|off>"
+	echo "       led_ctrl <LED name> blink <delay_on> <delay_off>";echo
+	echo "       delay_on : Turn on LED 'delay_on' milliseconds"
+	echo "       delay_off: Turn off LED 'delay_off' milliseconds"
+	echo -n "       LED name : "
+	ls $LED_CTRL_PATH
+}
+
+isdigit()
+{
+	[ $# -eq 1 ] || return 1
+	case $1 in
+		*[!0-9]*|"") 
+			return 1
+			;;
+		*)
+			return 0
+	esac
+}
+
+if [ -f /var/platform.definition ]; then
+	. /var/platform.definition
+fi
+if [ -z $LED_CTRL_PATH ]; then
+	LED_CTRL_PATH=/sys/class/leds
+fi
+
+if [ $# -lt 2 ]; then
+	help
+	exit 1
+fi
+
+if [ ! -f $LED_CTRL_PATH/$1/brightness ] || \
+   [ ! -f $LED_CTRL_PATH/$1/trigger ]; then
+	echo "No control interface for LED '$1'!"
+	exit 2
+fi
+
+case $2 in
+	on)
+		echo none > $LED_CTRL_PATH/$1/trigger
+		echo 255 > $LED_CTRL_PATH/$1/brightness
+		if [ "$1" == "WiFi_2G" ];then
+			##In HTP Mode , wifi led can't be trigger by wifi interface. 
+			local HTP_ENABLE=$(cat /proc/cmdline | grep HTP)
+			[ -n "$HTP_ENABLE" ] && exit 0
+
+			echo netdev > $LED_CTRL_PATH/$1/trigger
+			echo link rx > $LED_CTRL_PATH/$1/mode
+			echo 50 > $LED_CTRL_PATH/$1/interval
+			echo ath0 > $LED_CTRL_PATH/$1/device_name
+		fi
+		if [ "$1" == "WiFi_5G" ];then
+                        ##In HTP Mode , wifi led can't be trigger by wifi interface. 
+                        local HTP_ENABLE=$(cat /proc/cmdline | grep HTP)
+                        [ -n "$HTP_ENABLE" ] && exit 0
+
+                        echo netdev > $LED_CTRL_PATH/$1/trigger
+                        echo link tx > $LED_CTRL_PATH/$1/mode
+                        echo 50 > $LED_CTRL_PATH/$1/interval
+                        echo ath10 > $LED_CTRL_PATH/$1/device_name
+                fi
+		;;
+	off)
+		echo 0 > $LED_CTRL_PATH/$1/brightness
+		;;
+	blink)
+		if [ $# -lt 4 ]; then
+			echo "Wrong arguments!";echo
+			help
+			exit 3
+		fi
+		if isdigit $3 && isdigit $4; then
+			echo 255 > $LED_CTRL_PATH/$1/brightness
+			echo timer > $LED_CTRL_PATH/$1/trigger
+			if [ ! -f $LED_CTRL_PATH/$1/delay_off ] || \
+			[ ! -f $LED_CTRL_PATH/$1/delay_on ]; then
+				echo "No control interface for LED '$1'!"
+				exit 2
+			fi
+			echo $3 > $LED_CTRL_PATH/$1/delay_on
+			echo $4 > $LED_CTRL_PATH/$1/delay_off
+		else
+			echo "Wrong arguments!";echo
+			help
+                        exit 3
+		fi
+		;;
+	*)
+		echo "Unknown argument '$2'!";echo
+		help
+		exit 4
+esac
+exit 0
+
+

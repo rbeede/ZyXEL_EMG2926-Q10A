@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Pioneer DMP</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>PIONEER CORPORATION</DescriptionText>
+			<DescriptionText>Digital Media Client</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>	
+</Client>

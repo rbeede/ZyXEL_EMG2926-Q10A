@@ -1,0 +1,24 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony Blu-Ray Player</DisplayName>
+		<HttpRecognition>
+			<HttpText>Blu-ray Disc Player</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Blu-ray Disc Player</DescriptionText>
+			<DescriptionText>Sony Corporation</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>POLL_AVT_STATE</Quirk>
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<Quirk>SUPPRESS_STATE_EVENTS</Quirk>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+	</DeviceQuirks>
+</Client>

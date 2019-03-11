@@ -1,0 +1,99 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+#DEBUG=echo
+
+usage() {
+        echo $0 "<command>"
+        exit 0
+}
+
+Macfilter(){
+	local filter_reset
+	local filter
+	local iface
+
+	for num in 0 1 2 3
+	do
+		iface="ath"
+		iface=$iface$num
+		filter="general"
+		filter=$filter$num
+
+		filter_reset=$(uci_get wireless_macfilter $filter reset)
+
+		$DEBUG iwpriv $iface maccmd 3
+		local access_policy=0
+	        local maclist
+	        config_load wireless_macfilter
+	        config_get status $filter mac_state
+	        config_get action $filter filter_action
+
+	        if [ "$status" == "0" ]; then
+	                access_policy=0
+	        else
+	               	if [ "$action" == "1" ]; then
+	               	        access_policy=1
+	               	else
+	                       	access_policy=2
+	               	fi
+
+	        fi
+
+		for index in $(seq 1 32)
+		do
+			config_get macaddr $filter MacAddr$index
+			#echo macaddr=$macaddr
+			if [ "$macaddr" != "00:00:00:00:00:00" ]; then
+				$DEBUG iwpriv $iface addmac $macaddr
+			fi
+		done
+		
+		$DEBUG iwpriv $iface maccmd $access_policy
+
+                ### Kick Current Deny User (Deny mode) ###
+
+                #get_maccmd state
+                get_maccmd=$(iwpriv $iface get_maccmd)
+                get_maccmd=$(echo $get_maccmd | cut -c 17)
+
+                 for index in $(seq 1 32)
+                 do
+                        config_get macaddr $filter MacAddr$index
+
+                        if [ "$get_maccmd" == "2" ]; then
+                              $DEBUG iwpriv $iface kickmac $macaddr
+                        fi
+                 done
+
+		### Kick current Deny User (Allow mode) ###
+                rm /tmp/log_macfilter
+                wlanconfig $iface list|awk '{print $1}'|grep -v ADDR > /tmp/log_macfilter
+                cat /tmp/log_macfilter | while read line
+                do
+                        #line=$(echo $line | cut -c 26-42)
+                        #echo $line
+                        if [ "$get_maccmd" == "1" ]; then
+                                for index in $(seq 1 32)
+                                do
+                                        config_get macaddr $filter MacAddr$index
+                                        if [ "$macaddr" != $line ] && [ "$macaddr" != "00:00:00:00:00:00" ]; then
+                                                #echo "kick curretn not allow user:$line"
+                                                $DEBUG iwpriv $iface kickmac $line
+                                        fi
+                                done
+                        fi
+                done
+	
+	done
+        return 0
+}
+
+cmd=$1
+case "$cmd" in
+        --help|help) usage ;;
+        start|stop|reload|restart|init)
+                Macfilter
+
+        ;;
+esac

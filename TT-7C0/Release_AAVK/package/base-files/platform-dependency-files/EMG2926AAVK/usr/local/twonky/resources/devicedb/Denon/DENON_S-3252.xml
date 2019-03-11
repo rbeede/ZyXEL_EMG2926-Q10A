@@ -1,0 +1,16 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DENON S-32/52</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>S-32/52</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<ExtraProtocolInfo>http-get:*:audio/x-flac:*,http-get:*:audio/x-wav:*,http-get:*:audio/wav:*,http-get:*:audio/wave:*</ExtraProtocolInfo>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

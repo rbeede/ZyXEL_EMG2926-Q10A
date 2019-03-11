@@ -1,0 +1,359 @@
+<%
+require "luci.sys"
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<style>
+.on {display:on}
+.off {display:none}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<script language="JavaScript" type="text/javascript">
+function show_div(show,id) 
+{
+	if(show)
+		document.getElementById(id).className  = "on" ;
+	else
+		document.getElementById(id).className  = "off" ;
+}	
+
+function doModeConfig()
+{
+	var connect_type;
+
+	connect_type = document.DataForm.connectionType.value;
+
+	if ( connect_type == "PPPoEv6" || connect_type == "IPoEv6" ) {
+		show_div(true, "div_v4v6");
+		show_div(true, "div_dhcp_option");
+		show_div(false, "div_freenet6");
+	}
+	else if ( connect_type == "Tunnelv6" ) {
+                show_div(false, "div_v4v6");
+                show_div(false, "div_dhcp_option");
+                show_div(true, "div_freenet6");
+	}
+	else {
+		show_div(false, "div_v4v6");
+		show_div(false, "div_dhcp_option");
+		show_div(false, "div_freenet6");
+	} 
+}
+
+function doTunnelBrokerConfig() 
+{
+	var tunnel_server;
+
+	tunnel_server = document.DataForm.tunnel_broker.value;
+
+	if ( tunnel_server == "amsterdam.freenet6.net" || tunnel_server == "montreal.freenet6.net" ) {
+              show_div(true, "tb_general");
+		show_div(true, "tb_freenet6");
+		show_div(false, "tb_cht");
+              show_div(false, "tb_ascc");
+              show_div(false, "tb_apol");
+	}
+	else if ( tunnel_server == "tb.ipv6.hinet.net" ) {
+                show_div(true, "tb_general");
+                show_div(true, "tb_cht");
+                show_div(false, "tb_freenet6");
+                show_div(false, "tb_ascc");
+                show_div(false, "tb_apol");
+	}
+       else if ( tunnel_server == "tb2.ipv6.ascc.net" ) {
+                show_div(true, "tb_general");
+                show_div(false, "tb_cht");
+                show_div(false, "tb_freenet6");
+                 show_div(true, "tb_ascc");
+                show_div(false, "tb_apol");
+	}
+       else if ( tunnel_server == "tb2.ipv6.apol.com.tw" ) {
+                show_div(true, "tb_general");
+                show_div(false, "tb_cht");
+                show_div(false, "tb_freenet6");
+                show_div(false, "tb_ascc");
+                show_div(true, "tb_apol");
+	}
+	else {		
+	} 
+}  
+
+function doDNSConfig(para)
+{
+	if(para.value == "disable" )
+		show_div(true, "div_static_dns");
+	else
+		show_div(false, "div_static_dns");
+}
+
+function doAddrConfig(para)
+{
+	if(para.value == "static" ) {
+		show_div(true, "div_static_addr");
+		document.DataForm.auto_dns[0].disabled = true;
+		document.DataForm.auto_dns[1].checked = true;
+		show_div(true, "div_static_dns");
+		show_div(false, "div_dhcp_option");
+	}
+	else {
+		document.DataForm.auto_dns[0].disabled = false;
+		
+		show_div(false, "div_static_addr");
+		show_div(true, "div_dhcp_option");
+		
+		if ( document.DataForm.auto_dns[1].checked == true )
+			show_div(true, "div_static_dns");
+	}
+}
+
+function initAll()
+{
+	show_div(false, "div_static_dns");
+	show_div(false, "div_static_addr");
+	doModeConfig();
+       doTunnelBrokerConfig();
+	doAddrConfig(document.DataForm.auto_address)
+	showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+}
+
+function submit_apply()
+{
+        showWebMessage( 1 , '<%:Message%>' ,'<%:msg_config%>' );
+	return true;
+}
+</script>
+<body onload="initAll()">
+<form onSubmit="return submit_apply();" method="post" name="DataForm" action="<%=controller%>/expert/configuration/network/wan/ipv6">
+<div id="tabs"><ul>
+  <li><a href="<%=controller%>/expert/configuration/network/wan" title="<%:Broadband%>"><span><%:Broadband%></span></a></li>
+  <li class="hightline"><a title="IPv6"><span>IPv6</span></a></li>
+  <li><a href="<%=controller%>/expert/configuration/network/wan/advanced" title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+</ul><br class="clearfloat" /></div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:ISP_Parameters_for_Internet_Access%></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Connection_Type%> :</li>
+                <li class="right_table">
+                  <%
+                  local type = uci:get("network6","wan","type")
+                  %>
+                  <select name="connectionType" size="1" onChange="doModeConfig();">
+                    <option value="None" id="None" <%if type == "none" then%>selected="selected"<%end%>>None</option>
+                    <!--
+                    <option value="PPPoEv6" id="PPPoEv6">PPPoE</option>
+                    <option value="IPoEv6" id="IPoEv6">IPoE</option>
+                    -->
+                    <option value="Tunnelv6" id="Tunnelv6" <%if type == "tunnel" then%>selected="selected"<%end%>>Tunnel</option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            <span id="div_v4v6" class="off">          	
+              <div class="space"></div>
+              <div class="title">IPv6 Address</div>
+              <div class="w_text">
+              	<ul>
+                  <li>
+                    <input name="auto_address" id="radio" type="radio" value="auto" checked="checked" onclick="doAddrConfig(this)"/>               
+                    Obtain IPv6 Address Automatically
+                  </li>
+                  <span id="div_dhcp_option" class="off">
+                    <li> 
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" name="ia_na" value="checkbox" />               
+                    Enable Non-temporary Addresses
+                    </li>
+                    <li> 
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input type="checkbox" name="ia_pd" value="checkbox" />               
+                    Enable Prefix Delegation
+                    </li>
+                  </span>
+                    <li>
+                      <input name="auto_address" id="radio2" type="radio" value="static" onclick="doAddrConfig(this)"/>
+                      Static IPv6 Address
+                    </li>
+                  <span id="div_static_addr" class="off">
+                    <li class="left_table">
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IPv6 Address
+                    </li>
+                    <li class="right_table">
+                      <input name="ipv6_address" id="ipv6_address" maxlength="32" size="32" value="" type="text"/>
+                    </li>
+                    <li class="left_table">
+                     	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Prefix length
+                    </li>
+                    <li class="right_table">
+                    	<input name="prefix_length" id="prefix_length" maxlength="32" size="10" value="64" type="text"/>
+                    </li>
+                    <li class="left_table">
+                    	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;IPv6 Default Gateway
+                    </li>
+                    <li class="right_table">
+                  	  <input name="ipv6_gateway" id="ipv6_gateway" maxlength="32" size="32" value="" type="text"/>
+                    </li>
+                  </span>
+                </ul>
+              </div>
+              <div class="space"></div>
+              <div class="title">IPv6 DNS server</div>
+              <div class="w_text">
+                <ul>
+                  <li>
+                    <input name="auto_dns" id="radio" type="radio" value="enable" checked="checked" onclick="doDNSConfig(this)"/>               
+                    Obtain IPv6 DNS info Automatically
+                  </li>
+                  <li>
+                  	<input name="auto_dns" id="radio2" type="radio" value="disable" onclick="doDNSConfig(this)"/>
+                  	Use the following Static DNS IPv6 Address
+                  </li>
+                  <span id="div_static_dns" class="off">
+                    <li class="left_table">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; IPv6 DNS Server:</li>
+                    <li class="right_table">
+                  	  <input name="ipv6_dns" id="ipv6_dns" maxlength="32" size="32" value="" type="text"/>
+                    </li>
+                  </span>     	
+                </ul>
+              </div>
+            </span>
+            <span id="div_freenet6" class="off">                
+            <span id="tb_general" class="off">
+<!--
+              <div class="w_text">
+                <ul>
+                  <li class="left_table">&nbsp;&nbsp;&nbsp;Tunnel Broker :</li>
+                  <li class="right_table">
+                                          <%
+                  local tunnel = uci:get("network6","wan","TBroker")
+                  %>
+                    <select size="1" name="tunnel_broker" onchange="doTunnelBrokerConfig();">
+                      <option value="freenet6" id="freenet6" <%if tunnel == "freenet6" then%>selected="selected"<%end%>>Freenet6 </option>
+                      <option value="cht" id="cht" <%if tunnel == "cht" then%>selected="selected"<%end%>>CHT </option>
+                       <option value="ascc" id="ascc" <%if tunnel == "ascc" then%>selected="selected"<%end%>>ASCC </option>
+                      <option value="apol" id="apol" <%if tunnel == "apol" then%>selected="selected"<%end%>>APOL </option>
+                    </select>
+                  </li>
+                </ul>
+              </div>
+-->
+              <%
+              local username = uci:get("gw6c","basic","userid")
+              local password = uci:get("gw6c","basic","passwd") 
+              %>
+              <div class="w_text">
+                <ul>
+                  <li class="left_table">&nbsp;&nbsp;&nbsp;User Name:</li>
+                  <li class="right_table">
+                    <input name="gogo6_user_name" id="gogo6_user_name" maxlength="32" size="32" value="<%=username%>" type="text"/>
+                  </li>
+                  <li class="left_table">&nbsp;&nbsp;&nbsp;Password:</li>
+                  <li class="right_table">
+                    <input name="gogo6_pwd" id="gogo6_pwd" maxlength="32" size="32" value="<%=password%>" type="password"/>
+                  </li>
+                <ul>
+              </div>
+              <div class="w_text">
+                <ul>
+                  <li class="left_table">
+                  &nbsp;&nbsp;&nbsp;Tunnel Mode :
+                  </li>
+                  <%
+                  local mode = uci:get("gw6c","advanced","if_tunnel_mode")
+                  %>
+                  <li class="right_table">
+                    <select name="tunnel_mode" size="1">
+                      <option value="v6anyv4" <%if mode == "v6anyv4" then%>selected="selected"<%end%>>IPv6-in-IPv4 Tunnel</option>
+                      <option value="v6v4" <%if mode == "v6v4" then%>selected="selected"<%end%>>IPv6-in-IPv4 Tunnel(Native)</option>
+                      <option value="v6udpv4" <%if mode == "v6udpv4" then%>selected="selected"<%end%>>IPv6-in-IPv4 Tunnel(NAT Traversal)</option>
+                    </select>
+                  </li>
+                </ul>
+              </div>
+              <div class="w_text">
+                <ul>
+                  <li class="left_table">
+                  &nbsp;&nbsp;&nbsp;Preferred GoGo6 Server :
+                  </li>
+                  <%
+                  local server6 = uci:get("gw6c","basic","server")
+                  %> 
+                  <li class="right_table">
+                   <!-- <select name="gogo6_server" size="1">  -->
+                    <select size="1" name="tunnel_broker" onchange="doTunnelBrokerConfig();">
+                      <option value="amsterdam.freenet6.net" <%if server6 == "amsterdam.freenet6.net" then%>selected="selected"<%end%>>amsterdam.freenet6.net</option>
+                      <option value="montreal.freenet6.net" <%if server6 == "montreal.freenet6.net" then%>selected="selected"<%end%>>montreal.freenet6.net </option>
+                       <option value="tb2.ipv6.ascc.net" <%if server6 == "tb2.ipv6.ascc.net" then%>selected="selected"<%end%>>tb2.ipv6.ascc.net </option>                                       
+                      <option value="tb.ipv6.hinet.net" <%if server6 == "tb.ipv6.hinet.net" then%>selected="selected"<%end%>>tb.ipv6.hinet.net </option>  
+                      <option value="tb2.ipv6.apol.com.tw" <%if server6 == "tb2.ipv6.apol.com.tw" then%>selected="selected"<%end%>>tb2.ipv6.apol.com.tw </option> 
+                    </select> 
+                  </li>
+                </ul>
+              </div>
+
+       <span id="tb_freenet6" class="off">
+              <div class="spaceair"></div>
+              <div class="w_text"><span class="i_note">Note:</span> </div>
+              <div class="w_text"><span class="i_note_a">
+                                 If you don't have a freenet6 account, you can go <a href="http://gogonet.gogo6.com/page/freenet6-registration"  target="_blank">here</a> to register for Freenet6 account.      
+                </span></div>
+       </span>
+       <span id="tb_cht" class="off">
+              <div class="spaceair"></div>
+              <div class="w_text"><span class="i_note">Note:</span> </div>
+                <div class="w_text"><span class="i_note_a">
+                                 You can use HiNet ADSL Username/Password to connect the tunnel broker of CHT.     
+                 </span></div>
+       </span>     
+           <span id="tb_ascc" class="off">
+                        <div class="spaceair"></div>
+                        <div class="w_text"><span class="i_note">Note:</span> </div>
+                       <div class="w_text"><span class="i_note_a">
+                                 If you don't have a ASCC account, you can go <a href="http://tb2.ipv6.ascc.net"  target="_blank">here</a> to register for ASCC account.    
+                </span></div>
+        </span>      
+           <span id="tb_apol" class="off">
+               <div class="spaceair"></div>
+               <div class="w_text"><span class="i_note">Note:</span> </div>
+               <div class="w_text"><span class="i_note_a">
+                                 If you don't have a APOL account, you can go <a href="http://tb2.ipv6.apol.com.tw:8080"  target="_blank">here</a>  to register for APOL account.       
+                </span></div>
+       </span>             
+       </span>  <!-- general --> 
+       </span>  <!-- tunnel -->
+                        <div class="spaceair"></div>
+          </ul>
+        </div> 
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="apply" value="<%:Apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">showFullPath(' <%:Network%> > <%:Broadband%> > IPv6');</script>
+</html>

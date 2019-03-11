@@ -1,0 +1,54 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+LAN="br+"
+
+icmp_ping=$(uci_get firewall6 general pingEnabled)
+firewall_enable=$(uci_get firewall6 general filterEnabled)
+firewall_rule_count=$(uci_get firewall6 general rules_count)
+
+## reload icmp ping
+ip6tables -D INPUT -p ipv6-icmp -j input_icmp
+ip6tables -D FORWARD -p ipv6-icmp -j forwarding_icmp
+
+### insert ping filter on FORWARD chain (firewall need to be prior to icmp ping filter)
+ip6tables -I FORWARD -p ipv6-icmp -j forwarding_icmp
+
+## reload firewall chain (firewall need to be prior to icmp ping filter)
+ip6tables -D INPUT -j input_rule 2>/dev/null
+ip6tables -D FORWARD -j forwarding_rule_filter 2>/dev/null
+
+if [ "$firewall_enable" == "1" ]; then
+	ip6tables -A INPUT -j input_rule
+	ip6tables -I FORWARD -j forwarding_rule_filter
+fi
+
+### insert ping filter on INPUT chain (firewall need to be prior to icmp ping filter)
+ip6tables -A INPUT -p ipv6-icmp -j input_icmp
+
+## reload SPI
+ip6tables -D FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+ip6tables -D INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+ip6tables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+ip6tables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+## lan and local traffic must be accept by default, if there is exception rule, the default action will be ACCEPT
+ip6tables -D INPUT -j lan_local_default
+ip6tables -D FORWARD -i $LAN -j ACCEPT
+ip6tables -D INPUT -j ACCEPT
+ip6tables -D FORWARD -j ACCEPT
+
+if [ "$firewall_enable" == "1" ]; then
+	if [ $firewall_rule_count -eq 0 ]; then
+		ip6tables -A INPUT -j lan_local_default
+		ip6tables -A FORWARD -i $LAN -j ACCEPT
+	else
+		ip6tables -A INPUT -j ACCEPT
+		ip6tables -A FORWARD -j ACCEPT
+	fi
+else
+	ip6tables -A INPUT -j lan_local_default
+	ip6tables -A FORWARD -i $LAN -j ACCEPT
+fi
+

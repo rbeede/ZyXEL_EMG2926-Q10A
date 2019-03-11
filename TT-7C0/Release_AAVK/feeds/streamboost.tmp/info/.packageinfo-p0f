@@ -1,0 +1,23 @@
+Source-Makefile: feeds/streamboost/p0f/Makefile
+Package: p0f
+Version: 3.06b-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpcap +p0f-db
+Menu-Depends: 
+Provides: 
+Build-Depends: libpcap
+Section: net
+Category: Network
+Title: p0f: passive fingerprinter
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: p0f-3.06b.tgz
+Type: ipkg
+Description: 	p0f is a tool that utilizes an array of sophisticated, purely
+	passive traffic fingerprinting mechanisms to identify the
+	players behind any incidental TCP/IP communications (often
+	as little as a single normal SYN) without interfering in
+	any way.
+http://lcamtuf.coredump.cx/p0f.shtml
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+
+

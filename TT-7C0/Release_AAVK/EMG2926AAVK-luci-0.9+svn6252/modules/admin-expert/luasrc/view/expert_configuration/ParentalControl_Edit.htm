@@ -1,0 +1,1038 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+
+<%
+   local luaSRules = {}
+   local config = "parental_netservice" .. rule
+   uci:foreach( "parental", config, function( section )
+      if not ( nil == section.name ) then
+         local tmp = section
+         tmp.id = section[ '.name' ]
+         table.insert( luaSRules, tmp )
+      end
+   end )
+   
+%>
+
+<script language="JavaScript" type="text/javascript">
+var D_NUM = 32;
+var jsEditNo = "";
+function JSSRoute( id, name, proto, port,user_define_name)
+{
+   this.id = id;
+   this.name = name;
+   this.proto = proto
+   this.port = port;
+   this.user_define_name = user_define_name;
+
+}
+
+
+var jsSRoutes = [
+   <%
+      for name, info in pairs(luaSRules) do
+         %> new JSSRoute( "<%= info.id %>", "<%= info.name %>", "<%= info.proto %>", "<%= info.port %>", "<%= info.user_define_name %>" ), <%
+      end
+   %>
+];
+
+function backToList2()
+{
+   document.getElementById( "edit" ).style.display="none";
+   document.getElementById( "tabs" ).style.display="block";
+   document.getElementById( "list" ).style.display="block";
+
+}
+
+function backToList()
+{
+   var submit_url = '<%=luci.dispatcher.build_url("expert", "configuration", "security", "ParentalControl")%>';
+	var loc = submit_url;
+	var code = 'location="' + loc + '"';
+    eval(code);
+}
+
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value )
+}
+
+function submitEdit2()
+{
+	for(var i=0; i < <%=#luaSRules%>; i++){
+		if(document.forms[0].service_name.value == "UserDefined") 
+			break;
+		if(document.forms[0].service_name.value == jsSRoutes[ i ].name) {
+			if(i!=jsEditNo){
+				alert( "Service is exist" );
+				return false;
+			}
+		}
+	}
+	if(document.forms[0].service_name.value == "UserDefined") {
+		if(checkPortRule(document.forms[0].service_port) == false ) {
+			alert( "Port Format is not Correct" );
+			return false;
+		}
+		if(!(checkInjection(document.forms[0].user_define_name.value)))
+		{
+			alert("<%:Injection_alert%> ` - > <");
+			return false;
+		}
+   }
+}
+function submitEdit()
+{
+	var set = "";
+	for(var i=0; i < document.SRForm.cfKeyWord_DomainList.options.length; i++){
+	       if(i!=(document.SRForm.cfKeyWord_DomainList.options.length - 1)) 
+				{set += document.SRForm.cfKeyWord_DomainList.options[i].text + ";";}
+		   else
+				{set += document.SRForm.cfKeyWord_DomainList.options[i].text;}
+	}		
+	document.SRForm.url_str.value=set;
+	if (document.getElementsByName( "StartHour" )[0].value > document.getElementsByName( "EndHour" )[0].value ) {
+		alert("<%:sch_warn1%>");
+               return false;
+	}else if(document.getElementsByName( "StartHour" )[0].value == document.getElementsByName( "EndHour" )[0].value) {
+		if (document.getElementsByName( "StartMin" )[0].value > document.getElementsByName( "EndMin" )[0].value ) {
+			alert("<%:sch_warn1%>");
+               return false;
+		}
+	}else{
+		showFullPath(' <%:Security%> > <%:parental_control%> ');
+	}
+
+	if ( /^\w{1,}$/.test( document.getElementsByName( "rule_name" )[0].value ) )
+	{
+		if (document.SRForm.Date_Mon.checked == "" ){	
+			if (document.SRForm.Date_Tue.checked == "" ){	
+				if (document.SRForm.Date_Wed.checked == "" ){	
+					if (document.SRForm.Date_Thu.checked == "" ){	
+						if (document.SRForm.Date_Fri.checked == "" ){	
+							if (document.SRForm.Date_Sat.checked == "" ){	
+								if (document.SRForm.Date_Sun.checked == "" ){	
+									alert("Please select at least a day.");
+									return false;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		alert( "<%:Route_Error_1%>" );
+		document.SRForm.rule_name.focus();
+		return false;
+	}
+}
+function editSR( entryNo )
+{
+   document.getElementById( "tabs" ).style.display="none";
+   document.getElementById( "list" ).style.display="none";
+   document.getElementById( "edit" ).style.display="block";
+
+   document.getElementsByName( "SRSubmitType" )[0].value = "edit";
+   jsEditNo = entryNo;
+   repaintEdit();
+}
+
+function repaintEdit()
+{
+   if ( jsEditNo != 'New' )
+   {
+      document.getElementsByName( "service_name" )[0].value = jsSRoutes[ jsEditNo ].name;
+	  document.getElementsByName( "user_define_name" )[0].value = jsSRoutes[ jsEditNo ].user_define_name;
+      document.getElementsByName( "service_proto" )[0].value = jsSRoutes[ jsEditNo ].proto;
+      document.getElementsByName( "SREditID" )[0].value = jsSRoutes[ jsEditNo ].id;
+	  doServiceChange()
+      document.getElementsByName( "service_port" )[0].value = jsSRoutes[ jsEditNo ].port;
+	  
+      showFullPath(' <%:Security%> > <%:parental_control%> ');
+   }
+   else
+   {
+      document.getElementsByName( "service_name" )[0].value = "UserDefined";
+      document.getElementsByName( "service_proto" )[0].value = "TCP";
+      document.getElementsByName( "service_port" )[0].value = "";
+      document.getElementsByName( "SREditID" )[0].value = 'New';
+      doServiceChange()
+      showFullPath(' <%:Security%> > <%:parental_control%> ');
+   }
+}
+
+function sumbitTable()
+{
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+   return true;
+}
+
+function checkValue(str){
+   var flag=0;
+	for(i=0;i < document.SRForm.cfKeyWord_DomainList.options.length;i++){
+		if(document.SRForm.cfKeyWord_DomainList.options[i].text == str){
+		   flag=1;
+		   break;	   
+		}		  
+	}
+	if(flag == 1)
+	   	return 1;
+	else
+    	return 0;
+}
+
+function checkInjection(str)
+{
+	var len = str.length;      
+	for (var i=0; i<str.length; i++) {
+		if ( str.charAt(i) == '`' || str.charAt(i) == '-' ||
+			 str.charAt(i) == '<' || str.charAt(i) == '>'){
+				return false;
+		}else
+	        continue;
+	}
+	return true;	
+}
+
+function checkAllNum(str)
+{
+	for (var i=0; i<str.length; i++){
+		if((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+
+		return false;
+	}
+	return true;
+}
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function isPortRule(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == ',' ) || (str.charAt(i) == '-' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+function getValueCount(str)
+{
+	var num=0;
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == ',' )  || (str.charAt(i) == '-' ))
+			num++;
+	}
+	return num;
+}
+
+function getValue2Count(str,char1)
+{
+	var num=0;
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == char1 ))
+			num++;
+	}
+	return num;
+}
+
+function getNthValue(str,index,char1)
+{
+	var num=0;
+	var s1=0;
+	var s2=0;
+	var max=0;
+
+	max=getValue2Count(str,char1);
+	
+	if(index == 1){
+		for (var i=0; i<str.length; i++) {
+			if ((str.charAt(i) == char1 ))
+				num++;		
+			s1=0;		
+			if(num == index){
+					s2=i;
+					break;
+				}
+		}
+	}else if(index == max+1){
+		for (var i=0; i<str.length; i++) {
+			if ((str.charAt(i) == char1 ))
+				num++;		
+			s2=str.length;		
+			if(num == max){
+					s1=i+1;
+					break;
+				}
+		}
+
+	}else{
+		for (var i=0; i<str.length; i++) {
+			if ((str.charAt(i) == char1 ))
+				num++;
+				
+			if(num == (index-1)){
+					s1=i+1;
+					break;
+				}
+		}
+		num=0;
+		for (var i=0; i<str.length; i++) {
+			if ((str.charAt(i) == char1 ))
+				num++;
+				
+			if(num == index){
+					s2=i;
+					break;
+				}
+		}
+	}
+		str1=str.substring(s1,s2);
+		return str1;
+}
+function checkPortRule(field)
+{
+    var len=0;
+    //check port value if null
+	if(field.value == ""){
+		//alert("<%:Port_Error_2%>");
+		return false;
+	}
+	//Rule accept "0~9" & "," & "-"
+	if (isPortRule(field.value) == 0) {
+		//alert("<%:NAT_Error_5%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	//The sum of "," and  "-" is less than 15
+	if (getValueCount(field.value) >= 15) {
+		//alert("<%:NAT_Error_5%>");
+		field.value = field.defaultValue;
+		field.focus();
+		    return false;
+	}
+	//check last char
+	len=field.value.length;
+	if ((field.value.charAt(len-1) == ',' )  || (field.value.charAt(len-1) == '-' )){
+		//alert("<%:NAT_Error_5%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	
+	//check port range
+	if (getValueCount(field.value) == 0) {
+		if(field.value != ""){
+		d1 = atoi(field.value, 1);
+		if(isAllNum( field.value ) == 0){
+			//alert("<%:Port_Error_2%>");
+			field.focus();
+			return false;
+		}
+		if(d1 > 65535 || d1 < 1){
+			//alert("<%:Port_Error_2%>");
+			field.focus();
+			return false;
+		}			
+	}
+	}else{
+	    var max=0;
+		max=getValue2Count(field.value,',');
+		if(max == 0){
+		    str1=field.value;
+			var num=0;
+		    len=str1.length;
+		    num=getValue2Count(str1,'-');
+		    if((num >= 2) || (len <= 2)){
+		    	//alert("<%:NAT_Error_5%>");
+				field.focus();
+				return false;
+		    }else{
+		    	t1=str1;
+		    	t2=str1;
+		    	s1=getNthValue(t1,1,'-');
+		    	s2=getNthValue(t2,2,'-');
+		    	d1 = atoi(s1, 1);
+		    	d2 = atoi(s2, 1);
+		    	if(d1 > 65535 || d1 < 1){
+		    		//alert("<%:Port_Error_2%>");
+					field.focus();
+					return false;
+		    	}
+		    	if(d2 > 65535 || d2 < 1){
+		    		//alert("<%:Port_Error_2%>");
+					field.focus();
+					return false;
+		    	}
+		    	if(d1 >= d2){
+		    		//alert("<%:NAT_Error_5%>");
+					field.focus();
+					return false;
+		    	}
+		    }
+		}else{
+			for (var i=1; i < max+2; i++) {
+	   			str1=getNthValue(field.value,i,',');
+	   			if(str1 == ""){
+		    		//alert("<%:Port_Error_2%>");
+					field.focus();return false;
+		    	}
+		    	if(str1.indexOf("-",0) == -1){
+		    		d1 = atoi(str1, 1);
+		    		if(d1 > 65535 || d1 < 1){
+		    			//alert("<%:Port_Error_2%>");
+						field.focus();return false;
+		    		}
+		    	}else{
+		    		var num=0;
+		    		len=str1.length;
+		    		num=getValue2Count(str1,'-');
+		    		if((num >= 2) || (len <= 2)){
+		    			//alert("<%:NAT_Error_5%>");
+						field.focus();return false;
+		    		}else{
+		    		    t1=str1;
+		    		    t2=str1;
+		    			s1=getNthValue(t1,1,'-');
+		    			s2=getNthValue(t2,2,'-');
+		    			d1 = atoi(s1, 1);
+		    			d2 = atoi(s2, 1);
+		    			if(d1 > 65535 || d1 < 1){
+		    				//alert("<%:Port_Error_2%>");
+							field.focus();return false;
+		    			}
+		    			if(d2 > 65535 || d2 < 1){
+		    				//alert("<%:Port_Error_2%>");
+							field.focus();return false;
+		    			}
+		    			if(d1 >= d2){
+		    				//alert("<%:NAT_Error_5%>");
+							field.focus();return false;
+		    			}
+		    		}
+		    	}
+	   		}
+		}
+	}
+	return true;
+}
+
+function cfKeyWord_AddKeyword_click(){	
+	var D_str=document.SRForm.cfKeyWord_Domain.value;
+	if(D_str!=""){
+		if(!(checkInjection(document.SRForm.cfKeyWord_Domain.value)))
+		{
+			alert("<%:Injection_alert%> ` - > <");
+			return false;
+		}
+
+		var list_num=document.SRForm.cfKeyWord_DomainList.length;
+		if(list_num < D_NUM){ 
+		    if(checkValue(D_str)==0){
+				document.SRForm.cfKeyWord_DomainList.options[list_num]=new Option(D_str, D_str);
+			}
+			else
+			{	    
+				alert("<%:CF_Error_1%>"); 
+				document.SRForm.cfKeyWord_Domain.value="";
+			}
+		}
+		else
+		   alert("<%:CF_Error_2%>");
+	} 
+}
+function cfKeyWord_ClearList_click(){
+	document.SRForm.cfKeyWord_DomainList.options.length=0;		    
+}
+function cfKeyWord_DeleteKeyword_click(){
+    
+	//for IE & firefox
+	if(document.SRForm.cfKeyWord_DomainList.selectedIndex >= 0){
+		document.SRForm.cfKeyWord_DomainList.remove(document.SRForm.cfKeyWord_DomainList.selectedIndex);
+		cfKeyWord_DeleteKeyword_click();
+	}
+} 
+function show_div(show,id) {
+	if(show)
+		document.getElementById(id).style.display = "block" ;
+	else
+		document.getElementById(id).style.display = "none" ;
+}
+function initAll()
+{	
+	show_div(false, "div_wpapsk_compatible");
+	if (document.SRForm.src_select.value == "Custom" ){	
+			show_div(true, "div_wpapsk_compatible");
+	}
+	if (document.SRForm.src_select.value == "Custom" ){	
+		document.getElementsByName( "src_select" )[0].value = "Custom";
+	}else if (document.SRForm.src_select.value == "All"){
+		document.getElementsByName( "src_select" )[0].value = "All";
+	}else{
+		document.SRForm.src_select.selectedIndex="<%=selectindx%>"
+	}
+}
+
+function doTimeChange(selectedindex)
+{
+	if (document.SRForm.EndHour.value == "24" ){	
+			document.getElementsByName( "EndMin" )[0].value = "00";
+			document.forms[0].EndMin.options[1].selected=false;
+	}	
+	if (document.SRForm.StartHour.value == "24" ){	
+			document.getElementsByName( "StartMin" )[0].value = "00";
+			document.forms[0].StartMin.options[1].selected=false;
+	}
+}
+
+function doUserChange(selectedindex)
+{
+	show_div(false, "div_wpapsk_compatible");
+	if (document.SRForm.src_select.value == "Custom" ){	
+			show_div(true, "div_wpapsk_compatible");
+	}	
+}
+
+function CheckValue()
+{
+	if (document.SRForm.src_select.value == "Custom" ){	
+		var re = /[A-Fa-f0-9][ACEace02468]:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}/;
+		if (document.SRForm.MAC_Address.value.length == 0) {
+			if (document.getElementById( "edit" ).style.display == "none") {
+				alert("<%:WAN_Error_18%>");
+				document.SRForm.MAC_Address.focus();
+				return false;
+			}
+		}
+		if (!re.test(document.SRForm.MAC_Address.value)) {
+			if (document.getElementById( "edit" ).style.display == "none") {
+				alert("<%:WAN_Error_19%>");
+				document.SRForm.MAC_Address.focus();
+				return false;
+			}
+		}
+	}
+}
+function deleteSR( entryNo, element )
+{
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","security","ParentalControl","ParentalControl_Edit")%>';
+	var loc = submit_url + '?delete=' + entryNo;
+	var code = 'location="' + loc + '"';
+    eval(code);
+}
+function doServiceChange()
+{
+	show_div(false, "div_range_show");
+	if(document.forms[0].service_name.value == "UserDefined") {
+		document.forms[0].service_proto.options[0].hidden=false;
+		document.forms[0].service_proto.options[1].hidden=false;
+		document.forms[0].service_proto.options[2].hidden=false;
+		document.forms[0].service_proto.options[0].selected=true;
+		document.forms[0].service_port.disabled=false;
+		show_div(true, "div_range_show");
+	}else if(document.forms[0].service_name.value == "XboxLive") {
+		document.forms[0].service_proto.options[0].hidden=true;
+		document.forms[0].service_proto.options[1].hidden=false;
+		document.forms[0].service_proto.options[2].hidden=false;
+		document.forms[0].service_proto.options[1].selected=true;
+		document.forms[0].service_port.disabled=true;
+	}else if(document.forms[0].service_name.value == "ISPEC_IKE") {
+		document.forms[0].service_proto.options[0].hidden=true;
+		document.forms[0].service_proto.options[1].hidden=true;
+		document.forms[0].service_proto.options[2].hidden=false;
+		document.forms[0].service_proto.options[2].selected=true;
+		document.forms[0].service_port.disabled=true;
+	}else{
+		document.forms[0].service_proto.options[0].hidden=false;
+		document.forms[0].service_proto.options[1].hidden=true;
+		document.forms[0].service_proto.options[2].hidden=true;
+		document.forms[0].service_proto.options[0].selected=true;
+		document.forms[0].service_port.disabled=true;
+	}
+	
+	if(document.forms[0].service_name.value == "UserDefined") {
+		document.getElementsByName( "service_port" )[0].value = "";
+	}else if(document.forms[0].service_name.value == "XboxLive") {
+		document.getElementsByName( "service_port" )[0].value = "3074";
+	}else if(document.forms[0].service_name.value == "HTTP") {
+		document.getElementsByName( "service_port" )[0].value = "80";
+	}else if(document.forms[0].service_name.value == "HTTPS") {
+		document.getElementsByName( "service_port" )[0].value = "443";
+	}else if(document.forms[0].service_name.value == "ISPEC_IKE") {
+		document.getElementsByName( "service_port" )[0].value = "500,4500";
+	}else if(document.forms[0].service_name.value == "MicrosoftRemoteDesktop") {
+		document.getElementsByName( "service_port" )[0].value = "3389";
+	}else if(document.forms[0].service_name.value == "NetMeeting") {
+		document.getElementsByName( "service_port" )[0].value = "1720";
+	}else if(document.forms[0].service_name.value == "POP3") {
+		document.getElementsByName( "service_port" )[0].value = "110";
+	}else if(document.forms[0].service_name.value == "PPTP") {
+		document.getElementsByName( "service_port" )[0].value = "1723";
+	}else if(document.forms[0].service_name.value == "SMTP") {
+		document.getElementsByName( "service_port" )[0].value = "25";
+	}else if(document.forms[0].service_name.value == "SSH") {
+		document.getElementsByName( "service_port" )[0].value = "22";
+	}else {
+		document.getElementsByName( "service_port" )[0].value = "5500,5800,5900-5910";
+	}
+	
+}
+function show_div(show,id) {
+	if(show)
+		document.getElementById(id).style.display = "block" ;
+	else
+		document.getElementById(id).style.display = "none" ;
+}
+</script>
+</head>
+<body onload="initAll();" >
+<div id="tabs">
+   <ul>
+      <li class="hightline"><a title="<%:parental_control%>"><span><%:parental_control%></span></a></li>
+   </ul>
+   <br class="clearfloat" />
+</div>
+<form method="post" name="SRForm" action="<%=controller%>/expert/configuration/security/ParentalControl/ParentalControl_Edit" onSubmit="return CheckValue()">
+   <div id="table">
+      <ul id="list">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>
+			   <li class="title" > <%:General%> </li>
+			     <div class="w_text">
+					 <ul>
+							<%local rule_enable = uci:get("parental",rule,"enable")%>
+							<li class="all_table">
+							<input name="rule_enable" type="checkbox" value="1" <%if rule_enable == "1" then%>  checked="CHECKED" <%end%>/> <%:active%>
+							</li>
+					 </ul>
+				 </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table"><%:parental_profile%> :</li>
+                        <li class="right_table">
+							<%local rule_name = uci:get("parental",rule,"name")%>
+                           <input name="rule_name" size="9" maxlength="9" value="<%=rule_name%>" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table"><%:home_network_user%>  :</li>
+                        <li class="right_table">
+							<select name="src_select" size="1" onchange="doUserChange(this.selectedIndex);">
+								<%local src_type = uci:get("parental",rule,"src_type")%>
+								<script language="JavaScript" type="text/javascript">
+									var i;
+									var entries = new Array();
+									var all_str = "<%=mac_list%>";
+									if (all_str.length) {
+										entries = all_str.split(";");
+										for (i = 0; i < entries.length-1; i++) {
+											document.write("<option >");
+											document.write(entries[i]);
+											document.write("</option >");
+										}
+									}
+								</script>
+								<option value="Custom" <%if src_type == "custom" then%> selected="selected"<%end%>> Custom</option>
+								<option value="All" <%if src_type == "all" then%> selected="selected"<%end%>> All</option>
+							</select>
+                        </li>
+                     </ul>
+					 
+                  </div>
+				   <ul id="div_wpapsk_compatible" style="display:none">
+						<div class="w_text">
+							<ul>
+								<li class="left_table"><%:mac_addr%> :</li>
+								<li class="right_table">
+									<%local MAC_Address = uci:get("parental",rule,"src_mac")
+									  local src_type = uci:get("parental",rule,"src_type")
+									  if ( src_type == "single" or src_type == "all") then
+									%>
+									<input name="MAC_Address" size="20" maxlength="20" type="text" />
+									<%else%>
+									<input name="MAC_Address" size="20" maxlength="20" value="<%=MAC_Address%>" type="text" />
+									<%end%>
+								</li>
+							</ul>
+						</div>
+					</ul>
+				  
+                  <div class="spaceair"></div>
+				  <li class="space"></li>
+				  <ul>
+				   <li class="title" > <%:internet_access_sche%> </li>
+					  <div class="w_text">
+						<%local rule_weekdays = uci:get("parental",rule,"weekdays")
+						  local Date_Mon=luci.sys.exec("uci get parental."..rule..".weekdays | grep Mon |sed 's/\"//g' | sed 's/://g'")
+						  local Date_Tue=luci.sys.exec("uci get parental."..rule..".weekdays | grep Tue |sed 's/\"//g' | sed 's/://g'")
+						  local Date_Wed=luci.sys.exec("uci get parental."..rule..".weekdays | grep Wed |sed 's/\"//g' | sed 's/://g'")
+						  local Date_Thu=luci.sys.exec("uci get parental."..rule..".weekdays | grep Thu |sed 's/\"//g' | sed 's/://g'")
+						  local Date_Fri=luci.sys.exec("uci get parental."..rule..".weekdays | grep Fri |sed 's/\"//g' | sed 's/://g'")
+						  local Date_Sat=luci.sys.exec("uci get parental."..rule..".weekdays | grep Sat |sed 's/\"//g' | sed 's/://g'")
+						  local Date_Sun=luci.sys.exec("uci get parental."..rule..".weekdays | grep Sun |sed 's/\"//g' | sed 's/://g'")
+						%>
+						 <ul>
+							<li class="left_table"><%:sch_day%> :</li>
+							<li class="right_table">
+							   <input name="Date_Mon" type="checkbox" value="1" <%if not( Date_Mon == "" ) then%>  checked="CHECKED" <%end%>/> <%:monday%>
+							   <input name="Date_Tue" type="checkbox" value="1" <%if not( Date_Tue == "" ) then%>  checked="CHECKED" <%end%>/> <%:tuesday%>
+							   <input name="Date_Wed" type="checkbox" value="1" <%if not( Date_Wed == "" ) then%>  checked="CHECKED" <%end%>/> <%:wednesday%>
+							   <input name="Date_Thu" type="checkbox" value="1"  <%if not( Date_Thu == "" ) then%>  checked="CHECKED" <%end%>/> <%:thursday%>
+							</li>
+						 </ul>
+						 <ul>
+							<li class="left_table"></li>
+							<li class="right_table">
+							   <input name="Date_Fri" type="checkbox" value="1"  <%if not( Date_Fri == "" ) then%>  checked="CHECKED" <%end%>/> <%:friday%>
+							   <input name="Date_Sat" type="checkbox" value="1"  <%if not( Date_Sat == "" ) then%>  checked="CHECKED" <%end%>/><%:saturday%>
+							   <input name="Date_Sun" type="checkbox" value="1"  <%if not( Date_Sun == "" ) then%>  checked="CHECKED" <%end%>/> <%:sunday%>
+							</li>
+						 </ul>
+					  </div>
+					  <div class="w_text">
+						 <ul>
+							<li class="left_table"><%:Time%> (<%:begin%> ~ <%:End%>)  :</li>
+							<li class="right_table">
+								<select name="StartHour" size="1" onchange="doTimeChange(this.selectedIndex);">
+									<%local StartHour = uci:get("parental",rule,"start_hour")%>
+									<%for j = 0, 24 do %>
+										<option value="<%= string.format( "%02d", j ) %>" <%if StartHour == string.format( "%02d", j ) then%>selected="selected"<%end%>><%= string.format( "%02d", j ) %></option>                                       
+                                    <%end%>                                    
+                                </select>
+                                (<%:sch_hour%>)&nbsp;
+                                <select name="StartMin" size="1" onchange="doTimeChange(this.selectedIndex);">
+									<%local StartMin = uci:get("parental",rule,"start_min")%>
+                                    <option value="00" <%if StartMin == "00" then%>selected="selected"<%end%>>00</option>
+                                    <option value="30" <%if StartMin == "30" then%>selected="selected"<%end%>>30 </option>
+                                </select>
+                                (<%:sch_min%>)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                                <select name="EndHour" size="1" onchange="doTimeChange(this.selectedIndex);">  
+									<%local EndHour = uci:get("parental",rule,"stop_hour")%>
+                                    <%for j = 0, 24 do%>                                     
+										<option value="<%= string.format( "%02d", j ) %>" <%if EndHour == string.format( "%02d", j ) then%>selected="selected"<%end%>><%= string.format( "%02d", j ) %></option>                                          
+                                    <%end%>                                      
+                                </select>
+                                (<%:sch_hour%>)
+                                <select name="EndMin" size="1" onchange="doTimeChange(this.selectedIndex);">
+									<%local EndMin = uci:get("parental",rule,"stop_min")%>
+                                    <option value="00" <%if EndMin == "00" then%>selected="selected"<%end%>>00</option>
+                                    <option value="30" <%if EndMin == "30" then%>selected="selected"<%end%>>30 </option>
+                                </select>
+                                (<%:sch_min%>)
+							</li>
+						 </ul>
+					  </div>
+					  <div class="spaceair"></div>
+					</ul>
+					<li class="space"></li>
+					<ul>
+						<li class="title" > <%:network_service%> </li>
+							<div class="w_text">
+								<ul>
+									<li class="left_table"><%:network_service_setting%>  :</li>
+									<li class="right_table">
+									<%local service_act = uci:get("parental",rule,"service_act")%>
+										<select name="service_act" size="1" >
+											<option value="block" <%if service_act == "block" then%>selected="selected"<%end%>> Block</option>
+											<option value="allow" <%if service_act == "allow" then%>selected="selected"<%end%>> Allow</option>                
+										</select> <%:selected_service%>
+									</li>
+								</ul>
+							</div>
+							<div class="w_text">
+								<ul>    
+									<input value="<%:add_new_service%>" type="button" onclick="editSR('New')" />
+								</ul>
+							</div>
+							
+							<ul>
+							  <div class="tableframe">
+								 <table width="70%"   cellpadding="0" cellspacing="0" class="table_frame">
+									<tr>
+									   <td>
+										  
+												   
+															<table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+															   <tr>
+																  <td height="26" colspan="4">
+																	 <table width="100%" border="0" cellspacing="0" cellpadding="0">
+																		<tr>
+																		   <td height="26" class="table_title">
+																			  <%:network_service_rule%><span class="cTitle"></span>
+																		   </td>
+																		</tr>
+																	 </table>
+																  </td>
+															   </tr>
+															   <tr class="top_font" align="center">
+																  <td width="35">#</td>																  
+																  <td width="90"><%:Service_Name%> </td>
+																   <td width="90"><%:Protocol%>:<%:Port%> </td>
+																  <td width="90"><%:Modify%></td>
+															   </tr>
+															   <% 
+																  for i = 1, #luaSRules do
+																  %>
+																	 <tr class="table_font" align="center">
+																		<td valign="top"><%= i %></td>
+																		<%if luaSRules[i].name == "UserDefined" then%>
+																			<td><%= luaSRules[i].user_define_name %></td>
+																		<%else%>
+																			<td><%= luaSRules[i].name %></td>
+																		<%end%>
+																		<td><%= luaSRules[i].proto %>:<%= luaSRules[i].port %></td>
+																		<td>
+																		   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','<%=media%>/admin/images/i_edit_on.gif',1)" ><img src="<%=media%>/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>" onclick="editSR(<%= i - 1 %>)"/></a>
+																			  &nbsp;&nbsp;
+																		   <a href="#"><img src="<%=media%>/admin/images/i_delete.gif" name="Image1411" width="18" height="18" border="0" id="Image1411"  title="<%:Delete%>" onclick="deleteSR(<%= i %>, this)" onmouseover="MM_swapImage('Image1411','','<%=media%>/admin/images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a>
+																		   <a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','<%=media%>/admin/images/i_delete_on.gif',1)"></a>
+																		</td>
+																		
+																	 </tr>
+																  <%
+																  end
+															   %>
+															</table>
+														 
+												
+									   </td>
+									</tr>
+								 </table>
+							  </div>
+                  <div class="spaceair"></div>
+               </ul>
+							
+							
+							<div class="spaceair"></div>	
+					 </ul>
+					<li class="space"></li>
+					   <ul>
+					   <li class="title" > <%:block_site_url_key%> </li>
+							<div class="w_text">
+								<table align="center" border="0" cellspacing="0" width="95%">
+									<tbody>
+										<tr>
+											<td id="SCFilterKeyword" nowrap="nowrap" width="10%"><%:Keyword%></td>
+											<td width="2%">&nbsp;</td>
+											<td width="20%"><input name="cfKeyWord_Domain" size="48" maxlength="127" type="text">
+											</td>
+											<td width="2%">&nbsp;</td>
+											<td width="66%"><input name="cfKeyWord_AddKeyword" id="SCFilterAdd" value="<%:Add%>" style="width: 60pt;" onclick="cfKeyWord_AddKeyword_click()" type="button">
+											</td>
+										</tr>
+										<tr>
+											<td>&nbsp;</td>
+										</tr>
+									</tbody>
+								</table>
+								<table align="center" border="0" cellspacing="0" width="95%">
+									<tbody>
+										<tr>
+											<td id="SCFilterKeywordList"><%:Keyword_List%></td>
+										</tr>
+										<tr>
+											<td><select name="cfKeyWord_DomainList" size="6" multiple="true" onchange="this.form.cfKeyWord_Domain.value = this.options[this.selectedIndex].text;">
+												<script language="JavaScript" type="text/javascript">
+													var i;
+													var entries = new Array();
+													var all_str = "<%=keywords%>";
+													if (all_str.length) {
+													entries = all_str.split(";");
+													for (i = 0; i < entries.length; i++) {
+															document.write(" <option >");
+															document.write(entries[i]);
+															document.write("</option >");
+														}
+													}
+												</script>
+											</select></td>
+										</tr>
+										<tr>
+											<td height="5"></td>
+										</tr>
+										<tr>
+											<td><input name="cfKeyWord_DeleteKeyword" id="SCFilterDelete" value=" <%:Delete%> " style="width: 60pt;" onclick="cfKeyWord_DeleteKeyword_click()" type="button">&nbsp;
+												<input name="cfKeyWord_ClearList" id="SCFilterClear" value="<%:Clear_All%> " style="width: 60pt;" onclick="cfKeyWord_ClearList_click()" type="button">
+											</td>
+										</tr>
+										<tr><td>&nbsp;</td></tr>
+										<tr>
+											<td height="5"  class="i_note" > <%:note%>: <%:notice_url%></td>
+										</tr>
+										<tr>
+											<td>&nbsp;</td>
+										</tr>	
+								</tbody>
+								</table>
+								
+							</div>
+							<div class="spaceair"></div>	
+					   </ul>
+				   
+				   
+               </ul>
+            </div>
+
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="apply" value="<%:Apply%>" type="submit" onclick="return submitEdit()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+				<input name="Back" value="<%:Back%>" type="submit" id="back" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+				<input value="" name="url_str" type="hidden"></li>
+            </div>
+         </li>
+		</ul>
+   </div>
+   
+   
+   
+   <div id="table">
+		<input type="hidden" name="SRSubmitType" value="table"/>
+		<input type="hidden" name="SREditID" />
+		<input type="hidden" name="SRDeleteIDs" />
+   <ul id="edit" style="display:none">
+         <li class="table_top"></li><li class="table_content">
+            <div class="data">
+               <ul>  
+					<div class="w_text">
+						<ul>
+							<li class="left_table"><%:Service_Name%>  :</li>
+							<li class="right_table">
+								<select name="service_name" size="1" onchange="doServiceChange(this.selectedIndex);" >
+									<option value="UserDefined" <%if service_name == "UserDefined" then%>selected="selected"<%end%>> UserDefined</option>
+									<option value="XboxLive" <%if service_name == "XboxLive" then%>selected="selected"<%end%>> XboxLive</option>
+									<option value="HTTP" <%if service_name == "HTTP" then%>selected="selected"<%end%>> HTTP</option> 
+									<option value="HTTPS" <%if service_name == "HTTPS" then%>selected="selected"<%end%>> HTTPS</option> 
+									<option value="ISPEC_IKE" <%if service_name == "ISPEC_IKE" then%>selected="selected"<%end%>> ISPEC_IKE</option> 
+									<option value="MicrosoftRemoteDesktop" <%if service_name == "MicrosoftRemoteDesktop" then%>selected="selected"<%end%>> MicrosoftRemoteDesktop</option> 
+									<option value="NetMeeting" <%if service_name == "NetMeeting" then%>selected="selected"<%end%>> NetMeeting</option> 
+									<option value="POP3" <%if service_name == "POP3" then%>selected="selected"<%end%>> POP3</option> 
+									<option value="PPTP" <%if service_name == "PPTP" then%>selected="selected"<%end%>> PPTP</option> 
+									<option value="SMTP" <%if service_name == "SMTP" then%>selected="selected"<%end%>> SMTP</option> 
+									<option value="SSH" <%if service_name == "SSH" then%>selected="selected"<%end%>> SSH</option> 
+									<option value="VCN" <%if service_name == "VCN" then%>selected="selected"<%end%>> VCN</option> 
+								</select>
+							</li>
+						</ul>
+					</div>
+					 <ul id="div_range_show" style="display:none">
+					<div class="w_text">
+                     <ul>
+                        <li class="left_table"></li>
+                        <li class="right_table">
+                           <input name="user_define_name" size="15" maxlength="15" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+				   </ul>
+					<div class="w_text">
+						<ul>
+							<li class="left_table"><%:Protocol%>  :</li>
+							<li class="right_table">
+								<select name="service_proto" size="1" onload="initAll();" >
+									<option value="TCP" selected="selected"> TCP</option>
+									<option value="UDP" selected="selected"> UDP</option>
+									<option value="TCP/UDP" selected="selected"> TCP/UDP</option> 
+								</select> 
+							</li>
+						</ul>
+					</div>
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table"><%:Port%>  :</li>
+                        <li class="right_table">
+                           <input name="service_port" size="31" maxlength="31" value="" type="text" />
+                        </li>
+                     </ul>
+                  </div>
+				  <div class="w_text">
+                     <ul>
+                        <li class="left_table"></li>
+                        <li class="right_table">
+                          (Example:4091,5091-6892)
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">               
+				<input name="apply2" value="<%:Apply%>" type="submit" onclick="return submitEdit2()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+				<input name="Back2" value="<%:Back%>" type="button" id="back" onclick="backToList2()" />
+                  &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+            </div>
+         </li>
+      </ul>
+   </div>
+   
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Security%> > <%:parental_control%>');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>

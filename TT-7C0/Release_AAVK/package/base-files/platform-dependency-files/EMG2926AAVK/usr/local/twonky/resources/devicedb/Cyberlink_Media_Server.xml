@@ -1,0 +1,12 @@
+<Server>
+	<DeviceId>
+		<DisplayName>CyberLink Media Server</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>&lt;modelName&gt;CyberLink Media Server&lt;/modelName&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>INVALID_CHILD_COUNT</Quirk>		
+	</DeviceQuirks>
+</Server>

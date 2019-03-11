@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>UPnP test tool</DisplayName>
+		<DeviceDescriptionRecognition BoolOp="OR">
+			<DescriptionText>UCTT 2.0</DescriptionText>
+			<DescriptionText>UPnP CTT 2.0</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>uctt.upnp.org:</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC1</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>	
+		<DefaultView>byfolder</DefaultView>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>UPNPSTRICT</Quirk>
+		<Quirk>VALIDATEDSORT</Quirk>
+		<Quirk>FORCEPOLLSTATEPARAM</Quirk>
+		<Quirk>NOT_PERSISTENT</Quirk>
+	</DeviceQuirks>
+</Client>

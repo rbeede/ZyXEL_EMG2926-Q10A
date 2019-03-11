@@ -1,0 +1,9 @@
+<div id="notification" class="popup small notification" data-bind="slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="popup_header_line" data-bind="css: {error: isError(), notification: !isError()}" ></div>
+    <div id="closebutton" class="button close" data-bind="click: onCloseClick, style:{display: isError() ? 'inline-block' : 'none'}" ></div>
+    <div class="notificationContent">
+        <div class="notificationIcon" data-bind="css: {niError: isError()}"></div>
+        <div class="notificationTitle" data-bind="html: title, css: {ntError: isError()}"></div>
+        <div class="notificationMsg" data-bind="html: message"></div>
+    </div>
+</div>

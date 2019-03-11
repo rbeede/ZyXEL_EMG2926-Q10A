@@ -1,0 +1,247 @@
+@charset "utf-8";
+@import url("reset.css");
+@import url("webfont.css");
+
+
+#content {
+   background: #transparent;
+   width: 980px;
+   margin: 0 auto;
+}
+#wrapper {
+   background-color: #f3f3f3;
+}
+
+.accountSettingsContainer, .footerContent {
+   width: 980px;
+   margin: 0px auto;
+}
+
+.serverSettingsWrapper {
+    width: 980px;
+    padding: 40px 0px;
+}
+
+.serverSettingsTitlebarWrapper {
+}
+
+.serverSettingsLeftNavItem:hover .serverSettingsLeftNavTextWrapper, .serverSettingsLeftNavItem.active .serverSettingsLeftNavTextWrapper {
+   color: #FFF;
+}
+
+.radioControlWrapper {
+    background: #EBEBEB;
+    padding: 5px 15px;
+    margin-top: 5px;
+    width: 400px;
+}
+
+.slab
+{
+	font-family: 'MavenPro', Arial, Helvetica, sans-serif;
+}
+
+a.actionbtn,a.actionbtnmd,a.actionbtnlg {
+	color: #555;
+	cursor: pointer;
+	display: inline-block;
+	font-family: Arial, Helvetica, sans-serif;
+	margin-right: 5px;
+	outline: none;
+	padding: 0;
+	text-decoration: none;
+	overflow: hidden;
+}
+
+#headWrapper {
+	background-color: #fff;
+	border: 4px solid #405865;
+	border-width: 4px 0 0;
+	min-height: 83px;
+	padding: 17px 0 0;
+	width: 100%;
+}
+#header {
+	color: #8c8c8c;
+	margin: 0 auto;
+	position: relative;
+	width: 980px;
+}
+#nav li {
+	float: left;
+}
+#nav a {
+	color: #8c8c8c;
+	cursor: pointer;
+	font-weight: normal;
+	font-style: normal;
+	font-family: 'MavenPro', Arial, Helvetica, sans-serif;
+	font-size: 16px;
+	line-height: 55px;
+	margin: 0 0 0 30px;
+	text-transform: lowercase;
+}
+.navactive {
+	color: #333;
+}
+#nav a:hover, #nav a:active {
+	color: #333;
+}
+
+#logodiv {
+	float: left;
+	padding: 0 20px 0 0;
+	height: 55px;
+	width: 200px;
+
+}
+#logo {
+	height: 55px;
+	width: 200px;
+	background: url("logo_twonky.png") no-repeat left top;
+}
+#login {
+
+   float: right;
+}
+#login ul {
+   float: right;
+}
+#login li.loginItem {
+	position: relative;
+	color: #8c8c8c;
+	font-family: 'MavenPro', Arial, Helvetica, sans-serif;
+   font-size: 16px;
+}
+#login li.loginItem a {
+	color: #8c8c8c;
+	cursor: pointer;
+   text-transform: lowercase;
+}
+#login li.loginItem a:hover {
+	color: #333;
+}
+
+#login li.loginItem {
+	float: left;
+	display: inline;
+	line-height: 55px;
+}
+
+#subnav h2 a span.title {
+	color: #405966;
+	display: inline-block;
+	font-family: 'MavenPro', Arial, Helvetica, sans-serif;
+	font-size: 1.17em;
+	font-weight: bold;
+   text-transform: uppercase;
+}
+
+#subnav ul li.current a {
+	background: #405966;
+	color: #fff !important;
+}
+
+.subHeader {
+}
+
+.subheaderTitle {
+	color: #405966;
+	font-size: 30px;
+	font-weight: bold;
+	padding: 0;
+}
+
+.boxHeader {
+   border-bottom: 2px solid #e7e7e7;
+
+   margin-bottom: 10px;
+   padding-bottom: 10px;
+}
+
+.boxHeader .titleWrapper {
+   display: block;
+
+
+   text-decoration: none;
+}
+
+.boxHeader .title {
+	color: #405966;
+	display: block;
+	float: left;
+	font-size: 16px;
+
+	font-style: normal;
+	font-weight: normal;
+	white-space: nowrap;
+	line-height: 1.750em;
+   height: 26px;
+   line-height: 26px;
+}
+
+.paddingLeft
+{
+	padding-left: 0;
+}
+
+#twFooterLegal {
+   float: right;
+   line-height: 20px;
+   white-space: nowrap;
+}
+#twFooterLegal li {
+   float: left;
+   margin-left: 20px;
+}
+.playlistButton {
+   margin: 0px 0px 10px 0px!important;
+}
+.toggleSpacer {
+   float: right;
+   width: 10px;
+   display: inline-block;
+}
+.toggleButton {
+   cursor: pointer;
+   -webkit-border-radius: 3px;
+   -moz-border-radius: 3px;
+   border-radius: 3px;
+   width: 150px;
+   overflow: hidden;
+   width: 125px;
+    height: 2.5em;
+   line-height: 2.5em;
+   display: inline-block;
+   float: right;
+   cursor: pointer;
+   background: #999 url(arrow_hide.png) no-repeat 90px 9px;
+}
+.toggleButton.hidden {
+   background: #999 url(arrow_show.png) no-repeat 90px 9px;
+
+}
+.toggleText {
+   float: left;
+   margin-left: 20px;
+   color: #ebebeb!important;
+}
+.hideSubheaderBody
+{
+	 display: none;
+}
+.hideSubheader
+{
+	 display: none;
+}
+input.longInput {
+   -moz-border-radius: 3px;
+   border-radius: 3px;
+   border: 1px solid #999;
+}
+#actionButtonContainer {
+   border: 1px dotted #ccc;
+   border-width: 1px 0 0;
+   padding: 20px 0 0;
+   
+}

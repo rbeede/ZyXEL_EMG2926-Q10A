@@ -1,0 +1,25 @@
+#!/bin/sh
+
+##check mode,if AP/UR,exit
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+. /etc/functions.sh
+include /lib/config
+
+dhcpEnable=$(uci_get dhcp lan enabled)
+
+[ "$dhcpEnable" == "1" ]&&[ "$ACTION" == "ifup" ]&&[ "$INTERFACE" == "lan" ]&&[ "$PROTO" == "static" ]&&{
+	/sbin/update_lan_dns
+	/etc/init.d/dnsmasq stop
+	/etc/init.d/dnsmasq start	
+}
+
+##check_dns_server,if dns_server can't connect,log it. #steven 2015.0317
+check_dns(){
+	check_dns_server=$(ping -W 1 -c 2 www.google.com | grep "www.google.com" | grep "statistics")
+	[ -z "$check_dns_server" ] && {
+	   logger  -p 4 -t "dnsmasq daemon" "dns server can't connect"
+	}
+}
+check_dns &

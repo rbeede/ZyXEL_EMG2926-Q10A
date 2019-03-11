@@ -1,0 +1,6 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony Network Media Receiver</DisplayName>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+</Client>

@@ -1,0 +1,291 @@
+body {
+    -webkit-text-size-adjust:100%;
+}
+
+hr {
+    padding: 2px;
+    margin-top: -3px;
+}
+
+h1 {
+    font-size:12pt;
+}
+
+p {
+    font-size:11pt;
+}
+
+.btn {
+    font-size:11pt;
+}
+
+.listitem {
+    font-size:13pt;
+}
+
+.listitemtext {
+    font-size:11pt;
+}
+
+.icn {
+    width:48pt;
+    height:24pt;
+    float:left;
+    margin-bottom: 4pt;
+}
+
+.outer_to_center_text {
+    display: table;
+    position: static;
+}
+
+.middle_to_center_text {
+    display: table-cell;
+    vertical-align: middle;
+}
+
+.floatL {
+	float: left;
+}
+.clear {
+	clear: both;
+	overflow: hidden;
+	display: block;
+	height: 0px;
+	line-height: 0px;
+}
+
+
+.leftAlign a.actionbtn,.leftAlign a.actionbtnmd,.leftAlign a.actionbtnlg
+	{
+	margin-left: 0px;
+	margin-right: 5px;
+}
+.actionbtn_l, .actionbtn_c, .actionbtn_r {
+	cursor: pointer;
+}
+a.actionbtn {
+	font-size: 1em;
+	font-weight: normal;
+	height: 20px;
+	margin-right: 10px;
+}
+
+a.actionbtnmd {
+	font-size: 1.17em;
+	height: 25px;
+}
+
+a.actionbtnlg {
+	font-size: 1.91em;
+	height: 36px;
+}
+
+a.actionbtnlg.bold {
+	font-weight: bold;
+}
+
+a.actionbtn .actionbtn_l,a.actionbtnmd .actionbtn_l,a.actionbtnlg .actionbtn_l {
+	float: left;
+	text-decoration: none;
+}
+
+a.actionbtn .actionbtn_l {
+	background: transparent url("/resources/webconfig/btn_sprite.png") no-repeat scroll 0 -60px;
+	width: 5px;
+	height: 20px;
+}
+
+a.actionbtnmd .actionbtn_l {
+	background: transparent url("/resources/webconfig/btn_sprite_md.png") no-repeat scroll 0 -75px;
+	width: 5px;
+	height: 25px;
+}
+
+a.actionbtnlg .actionbtn_l {
+	background: transparent url("/resources/webconfig/btn_sprite_lg.png") no-repeat scroll 0 -108px;
+	width: 10px;
+	height: 36px;
+}
+
+a.actionbtn .actionbtn_c,a.actionbtn .actionbtn_drop,a.actionbtnmd .actionbtn_c, a.actionbtnmd .actionbtn_drop ,a.actionbtnlg .actionbtn_c {
+	float: left;
+	text-decoration: none;
+	text-shadow: 1px 1px 0 #eee;
+}
+
+a.actionbtn .actionbtn_c,a.actionbtn .actionbtn_drop {
+	background: transparent url("/resources/webconfig/btn_sprite.png") repeat-x scroll 0 0;
+	line-height: 20px;
+}
+
+a.actionbtn .actionbtn_drop {
+	width: 15px;
+	overflow: hidden;
+	padding: 0 0 0 5px;
+}
+
+a.actionbtnmd .actionbtn_c,a.actionbtnmd .actionbtn_drop {
+	background: transparent url("/resources/webconfig/btn_sprite_md.png") repeat-x scroll 0 0;
+	line-height: 25px;
+}
+
+a.actionbtnmd.bold .actionbtn_c,a.actionbtnmd.bold .actionbtn_drop {
+	font-weight: bold;
+}
+
+a.actionbtnmd .actionbtn_drop {
+	width: 20px;
+	overflow: hidden;
+	padding-left: 5px;
+}
+
+a.actionbtnlg .actionbtn_c {
+	background: transparent url("/resources/webconfig/btn_sprite_lg.png") repeat-x scroll 0 0;
+	line-height: 33px;
+	padding: 0 0 3px;
+}
+
+a.actionbtn.noIconButton .actionbtn_c,a.actionbtnmd.noIconButton .actionbtn_c,a.actionbtnlg.noIconButton .actionbtn_c {
+	padding: 0 0.5em;
+}
+a.actionbtnlg .actionbtn_c.pause {
+	padding: 0px 19px;
+}
+
+a.actionbtn .actionbtn_r,a.actionbtnmd .actionbtn_r,a.actionbtnlg .actionbtn_r {
+	float: left;
+	overflow: hidden;
+	text-decoration: none;
+}
+
+a.actionbtn .actionbtn_r {
+	background: transparent url("/resources/webconfig/btn_sprite.png") no-repeat scroll -95px -60px;
+	width: 5px;
+	height: 20px;
+	line-height: 20px;
+}
+
+a.actionbtnmd .actionbtn_r {
+	background: transparent url("/resources/webconfig/btn_sprite_md.png") no-repeat scroll -95px -75px;
+	width: 5px;
+	height: 25px;
+	line-height: 25px;
+}
+
+a.actionbtnlg .actionbtn_r {
+	background: transparent url("/resources/webconfig/btn_sprite_lg.png") no-repeat scroll -134px -108px;
+	width: 10px;
+	height: 36px;
+	line-height: 36px;
+}
+
+a.actionbtn .actionbtn_ico {
+	width: 22px;
+	padding-left: 3px;
+}
+
+a.actionbtnmd .actionbtn_ico {
+	width: 25px;
+}
+a.actionbtnmd .actionbtn_r.actionbtn_ico {
+	background-position: -75px -75px;
+}
+
+a.actionbtnlg .actionbtn_ico {
+	width: 36px;
+}
+
+a.actionbtn:hover .actionbtn_l {
+	background-position: -25px -60px;
+}
+
+a.actionbtn:hover .actionbtn_c,a.actionbtn:hover .actionbtn_drop {
+	background-position: 0 -20px;
+	color: #252525;
+	text-shadow: 1px 1px 0 #cecece;
+}
+
+a.actionbtn:hover .actionbtn_r {
+	background-position: -120px -60px;
+}
+
+a.actionbtn:hover .actionbtn_r.actionbtn_ico {
+	background-position: -80px -60px;
+}
+
+a.actionbtnmd:hover .actionbtn_l {
+	background-position: -25px -75px;
+}
+a.actionbtnmd:hover .actionbtn_r.actionbtn_ico {
+	background-position: -100px -75px;
+}
+
+a.actionbtnmd:hover .actionbtn_c, a.actionbtnmd:hover .actionbtn_drop {
+	background-position: 0 -25px;
+	color: #222;
+	text-shadow: 1px 1px 0 #d6d6d6;
+}
+
+a.actionbtnmd:hover .actionbtn_r {
+	background-position: -120px -75px;
+}
+
+a.actionbtnlg:hover .actionbtn_l {
+	background-position: -36px -108px;
+}
+
+a.actionbtnlg:hover .actionbtn_c {
+	background-position: 0 -36px;
+	color: #252525;
+	text-shadow: 1px 1px 0 #cecece;
+}
+
+a.actionbtnlg:hover .actionbtn_r {
+	background-position: -170px -108px;
+}
+
+a.actionbtn.active .actionbtn_l {
+	background-position: -50px -60px;
+}
+
+a.actionbtn.active .actionbtn_c,a.actionbtn.active .actionbtn_drop {
+	background-position: 0 -40px;
+	color: #252525;
+	text-shadow: 1px 1px 0 #aaa;
+}
+
+a.actionbtn.active .actionbtn_r {
+	background-position: -145px -60px;
+}
+
+a.actionbtn.active .actionbtn_ico.actionbtn_r {
+	background-position: -100px -60px;
+}
+
+a.actionbtnmd.active .actionbtn_l {
+	background-position: -50px -75px;
+}
+
+a.actionbtnmd.active .actionbtn_c, a.actionbtnmd.active .actionbtn_drop {
+	background-position: 0 -50px;
+	color: #222;
+	text-shadow: 1px 1px 0 #d6d6d6;
+}
+a.actionbtnmd.active .actionbtn_r {
+	background-position: -145px -75px;
+}
+a.actionbtnmd.active .actionbtn_r.actionbtn_ico {
+	background-position: -125px -75px;
+}
+a.actionbtnlg.active .actionbtn_l {
+	background-position: -72px -108px;
+}
+a.actionbtnlg.active .actionbtn_c {
+	background-position: 0 -72px;
+	color: #000;
+}
+a.actionbtnlg.active .actionbtn_r {
+	background-position: -206px -108px;
+}
+

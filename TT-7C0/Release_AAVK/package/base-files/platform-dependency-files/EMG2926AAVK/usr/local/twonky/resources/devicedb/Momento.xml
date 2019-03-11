@@ -1,0 +1,25 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Momento</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Momento</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG800x600</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<PretendServer>WMC</PretendServer>
+			<Version>DLNANO</Version>
+			<DescriptionFile>devicedescription-xbox.xml</DescriptionFile>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>8player</DisplayName>
+		<HttpRecognition>
+			<HttpText>8player</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>AUTO</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEGORG</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

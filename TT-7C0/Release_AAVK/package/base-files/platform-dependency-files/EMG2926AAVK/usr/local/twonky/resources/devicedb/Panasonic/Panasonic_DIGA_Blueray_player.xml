@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Panasonic DIGA Blueray player</DisplayName>
+		<HttpRecognition>
+			<HttpText>Panasonic-UPnPSDK</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

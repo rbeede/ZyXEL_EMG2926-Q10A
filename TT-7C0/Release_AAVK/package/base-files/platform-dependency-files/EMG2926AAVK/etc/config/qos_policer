@@ -1,0 +1,27 @@
+# Created for quality of service (Qos).
+#
+# Meter Type 1.tbf 2.srtcm 3.trtcm
+# Action 1.DROP 2.DSCP Remark
+
+config 'qos' general
+        option enable             '0'
+        option policer_count      '1'
+
+
+config 'policer' policer1
+        option enable      '0'
+        option name        'test1'
+        option metertype   'tbf'
+        option crate       '33'
+        option burst       '100'
+        option excess      '0'
+        option peekrate    '0'
+        option peekburst   '0'
+        option cAction     'drop'
+        option pAction     '0'
+        option cDSCP       '0'
+        option ncAction    'dscp'
+        option ncDSCP      '15'
+        option class_count '2'
+        option class1      'class1'
+        option class2      'class2'

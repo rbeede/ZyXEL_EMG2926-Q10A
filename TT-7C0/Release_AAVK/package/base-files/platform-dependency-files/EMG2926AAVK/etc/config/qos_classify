@@ -1,0 +1,4 @@
+#Created for quality of service (Qos).
+
+config 'qos' general
+        option class_count '0'

@@ -1,0 +1,25 @@
+#!/bin/sh
+
+if [ -f "/tmp/rootfs" ]; then
+        rm /tmp/rootfs
+fi
+
+Project_Name=$(firmware_info |grep "Project Name"|awk '{print$3}')
+SERVER="ftp://ftp2.zyxel.com/${Project_Name}/firmware"
+#SERVER="ftp://zyus2504:zyus2504@ftp2.zyxel.com.tw/${Project_Name}/firmware"
+
+FW_NAME=$1
+echo "$FW_NAME" > /tmp/FW_NAME
+
+fw_server_test &
+
+#wget ftp://$SERVER/$FW_NAME -O /tmp/rootfs
+wget $SERVER/$FW_NAME -O /tmp/rootfs
+
+if [ ! -f "/tmp/rootfs" ]; then
+        echo "fail" > /tmp/get_online_fw
+else
+        echo "success" > /tmp/get_online_fw
+fi
+
+killall fw_server_test

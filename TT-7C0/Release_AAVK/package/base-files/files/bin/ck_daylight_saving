@@ -1,0 +1,57 @@
+#!/bin/sh
+
+##check daylight saving
+local ds_enable=$(uci get time.DST.enable)
+local st_month=$(uci get time.DST.start_month)
+local st_day=$(uci get time.DST.start_day)
+local st_clock=$(uci get time.DST.start_clock)
+local end_month=$(uci get time.DST.end_month)
+local end_day=$(uci get time.DST.end_day)
+local end_clock=$(uci get time.DST.end_clock)
+local now_month=$(date +%m)
+local now_day=$(date +%d)
+local now_clock=$(date +%H)
+local now_min=$(date +%M)
+local ck_in_dlsaving=0
+
+if [ $ds_enable -eq 1 ]; then
+	if [ $now_month -gt $st_month -a $now_month -lt $end_month ]; then
+		ck_in_dlsaving=1
+	elif [ $now_month -eq $st_month -a $now_month -eq $end_month ]; then
+		if [ $now_day -gt $st_day -a $now_day -lt $end_day ]; then
+			ck_in_dlsaving=1
+		elif [ $now_day -eq $st_day -a $now_day -eq $end_day ]; then
+			if [ $now_clock -ge $st_clock -a $now_clock -lt $end_clock ]; then
+				ck_in_dlsaving=1
+			fi
+		elif [ $now_day -eq $st_day ]; then
+			if [ $now_clock -ge $st_clock ]; then
+				ck_in_dlsaving=1
+			fi
+		elif [ $now_day -eq $end_day ]; then
+			if [ $now_clock -lt $end_clock ]; then
+				ck_in_dlsaving=1
+			fi
+		fi
+	elif [ $now_month -eq $st_month ]; then
+		if [ $now_day -gt $st_day ]; then
+			ck_in_dlsaving=1
+		elif [ $now_day -eq $st_day ]; then
+			if [ $now_clock -ge $st_clock ]; then
+				ck_in_dlsaving=1
+			fi
+		fi
+	elif [ $now_month -eq $end_month ]; then
+		if [ $now_day -lt $end_day ]; then
+			ck_in_dlsaving=1
+		elif [ $now_day -eq $end_day ]; then
+			if [ $now_clock -lt $end_clock ]; then
+				ck_in_dlsaving=1
+			fi
+		fi
+	fi
+fi
+##2015.0420 Steven
+ck_in_dlsaving=0
+printf $ck_in_dlsaving
+

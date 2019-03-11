@@ -1,0 +1,177 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"  />
+<meta http-equiv="Pragma" content="no-cache">
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style>
+td {white-space: nowrap;}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+function btnApply()
+{
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote", "wol")%>';
+	var loc = submit_url + '?wol_apply=Apply';
+	
+	with ( document.forms[0] ){
+		if(wolWANEnable.checked == true){
+			loc += '&wol_wan_enable=' + 1;
+		}
+		else{
+			loc += '&wol_wan_enable=' + 0;
+		}
+		
+		if(wol_port.value == ""){
+			loc += '&wol_port=' + 9;
+		}
+		else{
+			loc += '&wol_port=' + wol_port.value;
+		}
+		
+		loc += '&host_mac=' + host_mac.value;
+		
+		var code = 'location="' + loc + '"';
+     	eval(code);
+	}
+}
+function btnStart()
+{
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","remote", "wol")%>';
+	var loc = submit_url + '?wol_start=1';
+	
+	with ( document.forms[0] ){
+		loc += '&host_mac=' + host_mac.value;
+		
+		var code = 'location="' + loc + '"';
+     	eval(code);
+	}
+}
+</script>
+</head>
+<%
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+<body>
+<form method="post" name="remote_wol">
+<div id="tabs">
+  <ul>
+  	<li><a href="<%=controller%>/expert/configuration/management/remote" title="<%:WWW%>" ><span><%:WWW%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/management/remote/telnet" title="<%:Telnet%>"><span><%:Telnet%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/management/remote/ssh" title="<%:SSH%>"><span><%:SSH%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/management/remote/snmpsetting" title="SNMP"><span>SNMP</span></a></li>
+    <li class="hightline"><a title="<%:Wake_On_LAN%>"><span><%:Wake_On_LAN%></span></a></li>
+   
+  </ul>
+  <br class="clearfloat" />
+</div>
+	<div id="table">
+  	<ul>
+    	<li class="table_content">
+      	<div class="data">
+        	<ul>
+        		<li class="title">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                   <tr><td nowrap id="bmTitle"><%:Wake_On_LAN_over_WAN_Settings%></td>
+                   </tr></table>
+        		</li>
+				<li class="w_text">
+	            	<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		                <ul>
+		                	<% local enable = uci:get("wol","main","enabled")%>
+		                     <li class="left_table"><input type="checkbox" name="wolWANEnable" value=1 <%if enable == "1" then%>checked<%end%> ><font id="WolOverWAN"><%:Enable_WOL_over_WAN%></font></li>
+		                	 <li class="right_table"></li>
+		                </ul>
+		                <ul>     
+		                     <li class="left_table"><%:Port%> </li>
+		                     <li class="right_table">
+		                        <input name="wol_port" size="5" maxlength="5" value="<%= uci:get( "wol", "main", "port" )%>" type="text" />
+		                     </li>
+		                </ul>
+	              </table>
+            	</li>
+            <li></li>
+						<li></li>
+					</ul>
+        </div>
+      </li>
+      
+      <li class="table_content">
+      	<div class="data">
+           <ul>
+                <div class="space"></div>
+        	<li class="title">
+                 <table border="0" cellpadding="0" cellspacing="0">
+                  <tr><td nowrap id="bmTitle"><%:Wake_On_LAN%></td>
+                  </tr>
+                 </table>
+                </li>
+
+	        <li class="w_text">
+            	 <table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+                  <ul>
+                     <li class="left_table"><%:Wake_MAC_Address%> </li>
+                     <li class="right_table">
+                        <input name="host_mac" size="17" maxlength="17" value="<%= uci:get( "wol", "wol", "mac" )%>" type="text" />&nbsp;&nbsp;&nbsp;
+                        <input type=button id="wolStart" name="wolStart" value="<%:Start%>" onClick="btnStart()">
+                     </li>
+                  </ul>
+                 </table>
+                </li>
+
+                <div class="w_text"> <span class="i_note"><%:Note%>:</span>
+                </div>
+                <div class="w_text"><%:Remote_MGMT_Note_3%>
+                </div>
+                <div class="spaceair"></div>            
+	  </ul>
+        </div>
+      </li>
+      
+      <center>
+      <li class="table_button">
+      <input type="button" id="wolApply" name="wolApply" value="<%:Apply%>" onClick="btnApply()">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+      <input type="reset" id="wolReset" name="Cancel" value="<%:cancel%>">
+      </li>
+      </center>
+    </ul>
+  </div>
+ 	</form>
+</body>
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Remote_MGMT%> > <%:Wake_On_LAN%>');
+</script>
+</html>

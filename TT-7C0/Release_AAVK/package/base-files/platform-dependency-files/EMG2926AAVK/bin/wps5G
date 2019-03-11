@@ -1,0 +1,149 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+WLAN=$1
+ENABLE=$2
+MODE=$3
+VAR1=$4
+BRIDGE=$(uci get wireless.ath10.group)
+IPADDR=$(uci_get network lan ipaddr)
+hstapd_cli="hostapd_cli -p /tmp/run/hostapd-wifi1/ -i ath10"
+wlan_disable=$(uci get wireless.ath10.disabled)
+wps_enabled=$(uci get wps5G.wps.enabled)
+
+[ "$wlan_disable" = "1" -o "$wps_enabled" = "0" ] && exit 0
+
+chk_wps_status() {
+	local status=$(hostapd_cli -p /tmp/run/hostapd-wifi1/ -i ath10 get_config |grep wps_state| awk -F"=" '{print $2}' )
+	local configured=$(uci_get wps5G wps conf)
+
+	if [ "$status" == "configured" ]; then
+		if [ "$configured" == "0" ]; then		
+
+			#If wps status is unconfigured, we will 
+			#use wpa2psk compatible mode.
+			auth=WPA2PSK
+			encryption=WPA2PSK
+			uci_set wireless $WLAN WPAPSKCompatible 0	
+			uci_set wireless $WLAN auth $auth
+			uci_set wireless $WLAN encryption $encryption
+			uci_set wireless $WLAN WPAPSKkey $wpapsk
+			uci_commit wireless
+
+			uci_set wps5G wps conf 1
+			uci_commit wps5G
+						
+			wifi up			
+		fi
+	fi
+}
+
+wps_btn_led() {	
+	echo timer > /sys/class/leds/WiFi/trigger
+
+	local count=0
+	while [ "$count" -le 120 ];
+	do
+		##led ctrl		
+		led_ctrl WPS blink 250 250
+		count=$(($count+1))
+		chk_wps_link=$(cat /tmp/wps_link_success)
+		if [ -n "$chk_wps_link" ];then		
+			rm /tmp/wps_link_success
+			led_ctrl WPS off && sleep 3 && led_ctrl WPS on &
+			
+			echo "0" > /tmp/wps5G_btn
+
+			if [ -f "/tmp/wps5G_HW_btn" ] ;then			
+				rm /tmp/wps5G_HW_btn
+			else
+				echo "1" > /tmp/wps5G_connect_success		
+			fi
+			
+			break			
+		fi
+		sleep 1
+	done
+
+	if [ "$count" -ge 120 ]; then
+		led_ctrl WPS off && sleep 10 && led_ctrl WPS on &
+		echo "0" > /tmp/wps5G_btn
+		
+		if [ -f "/tmp/wps5G_HW_btn" ] ;then			
+			rm /tmp/wps5G_HW_btn
+		else
+			echo "1" > /tmp/wps5G_connect_timeout		
+		fi
+		
+	fi
+
+}
+
+
+if [ "$WLAN" == "ath10" ]; then
+	WLAN_STATUS=$(uci_get wireless $WLAN disabled)
+else
+	echo "No such interface"
+	exit 1
+fi
+
+if [ "$WLAN_STATUS" == "1" ]; then
+	exit 1
+fi
+
+if [ "$ENABLE" == "on" ]; then
+
+	if [ "$WLAN" == "ath10" ]; then
+		cfg=wps5G
+		conf_pid=$(ps | grep "watch -tn 1 wps_conf_5G" | grep "grep" -v | awk '{print $1}')
+		if [ "$conf_pid" == "" ]; then
+			watch -tn 1 wps_conf_5G 1>/dev/null 2>&1 &
+		fi
+	fi
+	
+	local ap_pin=$(uci_get $cfg wps appin)
+	local configured=$(uci_get $cfg wps conf)
+	local PIN_enable=$(uci_get $cfg wps PinEnable)
+	
+	#if PIN_enable=0 -> use PBC ; PIN_enable=1 -> use PIN-code
+	if [ "$PIN_enable" == "0" ]; then
+		eval "$hstapd_cli wps_ap_pin disable"	
+	elif [ "$PIN_enable" == "1" ]; then
+		eval "$hstapd_cli wps_ap_pin set $ap_pin"
+	fi
+
+	if [ "$MODE" == "wps_btn" ]; then
+		echo "1" > /tmp/wps5G_btn	
+		chk_wps_status
+		sleep 1
+		eval "$hstapd_cli wps_pbc"
+		wps_btn_led
+	elif [ "$MODE" == "wps_pin" ]; then
+		echo "1" > /tmp/wps5G_btn	
+		chk_wps_status
+		sleep 1
+		eval "$hstapd_cli wps_pin any $VAR1" 120
+		wps_btn_led
+	fi
+	conf_pid=$(ps | grep "watch -tn 1 wps_conf_5G" | grep "grep" -v | awk '{print $1}')	
+    kill $conf_pid
+	
+else
+	local wps_enabled=$(uci_get wps wps enabled)
+        local wps5G_enabled=$(uci_get wps5G wps enabled)
+
+        if [ "$wps_enabled" == "0" ] && [ "$wps5G_enabled" == "0" ]; then
+
+                ## turn off WPS LED
+                led_ctrl WPS off
+        fi
+
+        if [ "$WLAN" == "ath10" ]; then
+                conf_pid=$(ps | grep "watch -tn 1 wps_conf_5G" | grep "grep" -v | awk '{print $1}')
+                kill $conf_pid
+		rm /tmp/wps_chk_status_5G		
+        fi	
+
+fi
+

@@ -1,0 +1,91 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("application/xhtml+xml")
+
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body  >
+<div id="tabs">
+  <ul>
+    <li><a href="<%=controller%>/expert/configuration/network/lan" title="IP"><span>IP</span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/lan/ipalias" title="IP Alias"><span>IP Alias</span></a></li>
+    <li class="hightline"><a title="Advanced"><span>Advanced</span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+        <div class="data">
+          <ul><div class="w_text">
+            <ul>
+              <li class="left_table">Multicast :</li>
+              <li class="right_table">
+                <select name="WAN_Multicast" size="1">
+                  <option value="00000000" selected="selected">None </option>
+                  <option value="00000001">IGMP-v1 </option>
+                  <option value="00000002">IGMP-v2 </option>
+                </select>
+              </li>
+            </ul>
+            </div>
+			<div class="w_text">
+  <ul>
+    <li class="left_table">Any IP Setup  :</li>
+    <li class="right_table">
+      <input name="ssid_state" id="radio" type="radio" value="enable" checked="checked" />
+      Enable
+      <input name="ssid_state" id="radio2" type="radio" value="disable" />
+      Disable</li>
+          </ul>
+         </div>
+			<div class="w_text"><ul> <li class="alltable"><input name="WAN_IP_WanToLan" type="checkbox" /> 
+			Allow between LAN and WAN </li>
+			</ul></div>
+    <div class="spaceair"></div>	
+          </ul>
+      </div>
+    </li>
+     <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="Apply" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="Cancel" type="reset" />
+        </center>
+      </div></li>
+  </ul>
+</div>
+
+</body>
+<script language="JavaScript">    
+<!--
+showFullPath('Network > Lan ');
+//-->
+</script>
+</html>

@@ -1,0 +1,48 @@
+Source-Makefile: feeds/streamboost/d3js/Makefile
+Package: d3js
+Submenu: JavaScript
+Version: 3.1.6-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: JavaScript library for manipulating documents based on data
+Maintainer: 
+Source: v3.1.6.tar.gz
+Type: ipkg
+Description:   D3.js is a JavaScript library for manipulating documents based on
+  data. D3 helps you bring data to life using HTML, SVG and CSS. D3’s
+  emphasis on web standards gives you the full capabilities of modern
+  browsers without tying yourself to a proprietary framework, combining
+  powerful visualization components and a data-driven approach to DOM
+  manipulation
+http://d3js.org/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_d3js
+	config d3js_USE_CUSTOM_VERSION
+		depends on PACKAGE_d3js
+		bool "Use custom package version"
+		default n
+	config d3js_CUSTOM_VERSION
+		depends on d3js_USE_CUSTOM_VERSION
+		string " version as string (default version: 3.1.6)"
+		default "3.1.6"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_d3js
+	config d3js_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_d3js
+		bool "Use custom source directory"
+		default n
+	config d3js_CUSTOM_SOURCE_DIR
+		depends on d3js_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

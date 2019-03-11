@@ -1,0 +1,2646 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+#WAN="eth0"
+#LAN="ifb0"
+
+# System settings:
+BIN_IPT=$(which iptables)
+BIN_EBT=$(which ebtables)
+BIN_TC=$(which tc)
+
+BW_TC_MASK="0x0000FFFF"
+VLAN_MASK="0xF0000000"
+WLAN_MASK="0x0F000000"
+GUEST_WLAN_DL_MARK="0x01000000"
+GUEST_WLAN_UL_MARK="0x02000000"
+GUEST_5G_WLAN_DL_MARK="0x04000000"
+GUEST_5G_WLAN_UL_MARK="0x08000000"
+DIRECTION_MASK="0x00FF0000"
+DL_MARK="0x00800000"
+UL_MARK="0x00400000"
+wan_MARK="0x00010000"
+wan1_MARK="0x00020000"
+wan2_MARK="0x00040000"
+wan3_MARK="0x00080000"
+wan4_MARK="0x00100000"
+wan5_MARK="0x00200000"
+
+# set minimum bandwidth to 1kbps
+MINBW=30
+MINBW=1
+
+sys_mag()
+{
+	echo " Bandwidth MGMT : $1 " 1> /dev/null
+}
+
+wan_cos_setup()
+{
+
+	for i in "" 1 2 3 4
+	do
+		wan_cfg=wan"$i"
+		wan_enable=$(uci get network.$wan_cfg.enable)
+		[ "$wan_enable" == "1" ] && {
+			ifname=$(uci get network.$wan_cfg.ifname)
+			set_pri=$(uci get network.$wan_cfg.pri)
+
+			[ ! -z "$set_pri" ] && vconfig set_egress_map "$ifname" "0" "$set_pri"
+
+		}
+	done
+}
+
+
+wan_cos_start()
+{
+
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null"
+
+	$BIN_IPT -t mangle -F 	BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -t mangle -FBW_EGRESSMAP_COS 2> /dev/null"
+
+	$BIN_IPT -t mangle -X 	BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -t mangle -X BW_EGRESSMAP_COS 2> /dev/null"
+
+	$BIN_IPT -t mangle -N BW_EGRESSMAP_COS 2> /dev/null 
+	sys_mag "$BIN_IPT -t mangle -N BW_EGRESSMAP_COS 2> /dev/null"
+
+	for i in "" 1 2 3 4
+	do
+
+		wan_cfg=wan"$i"
+		wan_enable=$(uci get network.$wan_cfg.enable)
+		[ "$wan_enable" == "1" ] && {
+			ifname=$(uci get network.$wan_cfg.ifname)
+			set_pri=$(uci get network.$wan_cfg.pri)
+
+			[ ! -z "$set_pri" ] && vconfig set_egress_map "$ifname" "0" "$set_pri"
+
+			if [ "$set_pri" != "0" ]; then
+
+				if [ ! -z "$set_pri" ]; then
+	
+					set_pri=$((set_pri *2))
+					set_pri=$((set_pri +1))
+					set_pri="0x"$(awk "BEGIN{x=sprintf(\"%x\",$set_pri);print x}")"0000000"
+		
+					$BIN_IPT -t mangle -I BW_EGRESSMAP_COS -o $ifname -j  MARK --or-mark $set_pri
+					sys_mag "$BIN_IPT -t mangle -I BW_EGRESSMAP_COS -o $ifname -j  MARK --or-mark $set_pri"
+		
+				fi 
+			fi
+		}
+
+	done
+
+	$BIN_IPT -I POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -I POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null"
+
+}
+
+
+wan_cos_stop()
+{
+
+	sys_mag "wan_cos_stop start"
+
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null"
+
+	$BIN_IPT -t mangle -F BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -t mangle -F BW_EGRESSMAP_COS 2> /dev/null"
+
+	$BIN_IPT -t mangle -X $chain 2> /dev/null
+	sys_mag "$BIN_IPT -t mangle -X BW_EGRESSMAP_COS 2> /dev/null"
+
+
+	sys_mag "wan_cos_stop end"
+
+}
+
+
+setup_downstream_classifier()
+{
+
+	sys_mag "setup_downstream_classifier start"
+
+	#filter downstream
+	$BIN_TC filter add dev ifb0 parent 1: protocol all prio 0 u32 match mark ${DL_MARK} ${DL_MARK} flowid 1:10
+	sys_mag "$BIN_TC filter add dev ifb0 parent 1: protocol all prio 0 u32 match mark ${DL_MARK} ${DL_MARK} flowid 1:10"
+
+	#mark downstream
+	for i in "" 1 2 3 4
+	do
+		wan_cfg=wan"$i"
+		wan_enable=$(uci get network.$wan_cfg.enable)
+		[ "$wan_enable" == "1" ] && {
+
+			## check wan protocol
+			local wanProto=$(uci get network.$wan_cfg.proto)
+			if [ "$wanProto" == "pppoe" ];then
+				wanInt="$wanProto"-$wan_cfg
+				$BIN_IPT -t mangle -A BW_FORM_INF_MARK -i $wanInt -j MARK --or-mark $DL_MARK
+				sys_mag " $BIN_IPT -t mangle -A BW_FORM_INF_MARK -i $wanInt -j MARK --or-mark $DL_MARK"
+			else
+				$BIN_IPT -t mangle -D BW_FORM_INF_MARK -i eth0 -j MARK --or-mark $DL_MARK
+				sys_mag " $BIN_IPT -t mangle -A BW_FORM_INF_MARK -i eth0 -j MARK --or-mark $DL_MARK"
+				$BIN_IPT -t mangle -A BW_FORM_INF_MARK -i eth0 -j MARK --or-mark $DL_MARK
+				sys_mag " $BIN_IPT -t mangle -A BW_FORM_INF_MARK -i eth0 -j MARK --or-mark $DL_MARK"
+			fi	
+		}
+
+	done
+
+	sys_mag "setup_downstream_classifier end"
+
+}
+
+
+lan_side_traffic()
+{
+	sys_mag "lan_side_traffic"
+
+	#TBD: need to process lan/waln traffic	
+
+	sys_mag "lan_side_traffic"
+}
+
+downstream_mark1()
+{
+
+
+	$BIN_TC filter add dev ifb0 parent 1: protocol all prio 0 u32 match mark ${DL_MARK} ${DL_MARK} flowid 1:10
+	sys_mag "$BIN_TC filter add dev ifb0 parent 1: protocol all prio 0 u32 match mark ${DL_MARK} ${DL_MARK} flowid 1:10"
+
+	for i in "" 1 2 3 4
+	do
+
+		wan_cfg=wan"$i"
+		wan_enable=$(uci get network.$wan_cfg.enable)
+		[ "$wan_enable" == "1" ] && {
+
+			## check wan protocol
+			local wanProto=$(uci get network.$wan_cfg.proto)
+			if [ "$wanProto" == "pppoe" ];then
+				wanInt="$wanProto"-$wan_cfg
+			else
+				wanInt=$(uci get network.$wan_cfg.ifname)
+			fi	
+
+			inf_mark=$wan_cfg"_MARK"
+			[ "$wan_cfg" == "wan" ] && inf_mark="wan_MARK"
+
+			mark=$(($inf_mark | $DL_MARK))
+			[ "$wanInt" != "0" ] && append cmd "-i $wanInt "
+
+			$BIN_IPT -t mangle -A BW_FORM_INF_MARK $cmd -j MARK --or-mark $mark
+			sys_mag " $BIN_IPT -t mangle -A BW_FORM_INF_MARK $cmd -j MARK --or-mark $mark"
+
+
+		}
+
+	done
+
+}
+
+qos_roIngressMark()
+{
+	sys_mag "qos_roIngressMark $1 $2"
+	local queue="$1"
+	local fromInt="$2"
+	local mark=""
+	local queue_int=$(uci get qos.$queue.interface)
+
+	#Grab the information of the queue
+	local cmd=""
+	local chain=""
+	local target_chain=""
+	local wanSection=""
+	local wanInt=""
+	local brInt=""
+	local inf_mark=""
+
+	# Grab the interface
+	if [ "$fromInt" != "0" ]; then        
+
+		wanSection=$(uci get intfGrp.$fromInt.wanint)
+		[ "$wanSection" == "WAN" ] && wanSection="wan"	
+
+		wanInt=$(uci get network.$wanSection.ifname)
+
+		brInt=$(uci get network.$wanSection.bind_LAN)
+
+		#if [ -z "$brInt" ] || [ "$wanSection" == "wan" ] ; then 
+		#	brInt="br-lan"
+		#fi
+
+	fi
+
+	inf_mark=$wanSection"_MARK"
+	[ "$wanSection" == "wan" ] && inf_mark="wan_MARK"
+	
+	[ "$queue" == "drop" ] && queue_int=wan
+
+	if [ "$queue_int" == "wan" ]; then
+
+		mark=$(($inf_mark | $UL_MARK))
+		[ "$fromInt" != "0" ] && append cmd "-i $brInt "		
+		target_chain=BW_UL_SET_MARK
+
+	elif [ "$queue_int" == "lan" ]; then
+
+		## check wan protocol
+		local wanProto=$(uci get network.$wanSection.proto)
+		if [ "$wanProto" == "pppoe" ];then
+			wanInt="$wanProto"-$wanSection
+		fi	
+
+		mark=$(($inf_mark | $DL_MARK))
+		[ "$fromInt" != "0" ] && append cmd "-i $wanInt "
+		target_chain=BW_DL_SET_MARK
+	fi
+
+	sys_mag " queue $queue Int = $Int mark1 = $mark1 mark2 = $mark2 queue_id = $queue_id ethType = $ethType  cmd = $cmd"
+	
+	$BIN_IPT -t mangle -I BW_SET_MARK -m mark --mark $mark/$DIRECTION_MASK -j $target_chain
+	sys_mag "$BIN_IPT -t mangle -I BW_SET_MARK -m mark --mark $mark/$DIRECTION_MASK -j $target_chain"
+	
+	$BIN_IPT -t mangle -I BW_FORM_INF_MARK -m mark --mark $mark/$DIRECTION_MASK -j RETURN
+	sys_mag " $BIN_IPT -t mangle -I BW_FORM_INF_MARK -m mark --mark $mark/$DIRECTION_MASK -j RETURN"
+	
+	$BIN_IPT -t mangle -I BW_FORM_INF_MARK $cmd -j MARK --or-mark $mark
+	sys_mag " $BIN_IPT -t mangle -I BW_FORM_INF_MARK $cmd -j MARK --or-mark $mark"
+	 
+	sys_mag "qos_roIngressMark end      "
+}
+
+qos_brIngressMark()
+{
+
+	sys_mag "qos_roIngressMark : queue=$1 fromInt=$2"
+
+	local queue="$1"
+	local fromInt="$2"
+	local mark=""
+	local queue_int=$(uci get qos.$queue.interface)
+
+	#Grab the information of the queue
+	local cmd=""
+	local chain=""
+	local table=""
+	local target_chain=""
+	local wanSection=""
+	local wanInt=""
+	local vlanInt=""
+	local brInt=""
+	local inf_mark=""
+
+	# Grab the interface
+	if [ "$fromInt" != "0" ]; then        
+
+		wanSection=$(uci get intfGrp.$fromInt.wanint)
+		[ "$wanSection" == "WAN" ] && wanSection="wan"
+
+		wanInt=$(uci get network.$wanSection.ifname)
+		brInt=$(uci get network.$wanSection.bind_LAN)
+
+		#if [ -z "$brInt" ] || [ "$wanSection" == "wan" ] ; then 
+		#	brInt="br-lan"
+		#fi
+
+		vlanInt=$(uci get intfGrp.$fromInt.vlan_name)
+
+	fi
+	
+	inf_mark=$wanSection"_MARK"
+	[ "$wanSection" == "wan" ] && inf_mark="wan_MARK"
+
+	[ "$queue" == "drop" ] && queue_int=wan	
+	
+	if [ "$queue_int" == "wan" ]; then
+		mark=$(($inf_mark | $UL_MARK))
+		[ "$fromInt" != "0" ] && append cmd "-i $brInt"
+		#[ "$fromInt" != "0" ] && append cmd "-i $vlanInt "
+
+		chain=BW_FORM_INF_MARK
+		table="broute"		
+		
+		target_chain=BW_UL_SET_MARK
+
+	elif [ "$queue_int" == "lan" ]; then
+
+		mark=$(($inf_mark | $DL_MARK))
+		[ "$fromInt" != "0" ] && append cmd "-i $wanInt "
+		#[ "$fromInt" != "0" ] && append cmd "-i $vlanInt "
+		
+		chain=BW_FORM_INF_MARK
+		table="broute"
+		target_chain=BW_DL_SET_MARK
+	fi
+
+	sys_mag " queue $queue Int = $Int mark1 = $mark1 mark2 = $mark2 queue_id = $queue_id ethType = $ethType  cmd = $cmd"
+	
+	$BIN_EBT -t $table -I  BW_SET_MARK --mark $mark/$DIRECTION_MASK -j $target_chain
+	sys_mag " $BIN_EBT -t $table -I  BW_SET_MARK --mark $mark/$DIRECTION_MASK -j $target_chain"
+	
+	$BIN_EBT -t $table -I  $chain --mark $mark/$DIRECTION_MASK -j RETURN
+	sys_mag " $BIN_EBT -t $table -I  $chain --mark $mark/$DIRECTION_MASK -j RETURN"
+
+	$BIN_EBT -t $table -I $chain $cmd -j mark --mark-or $mark --mark-target CONTINUE
+	sys_mag " $BIN_EBT -t $table -I $chain $cmd -j mark --mark-or  $mark --mark-target CONTINUE"
+	 
+	sys_mag "qos_brIngressMark  end"
+}
+
+## Design QoS arch and implementation by sean ling
+##
+##
+##  -----PREROUTING----------------------POSTROUTING----------
+##         |-BW_FORM_INF_MARK                  |-BW_SET_MARK
+##                                             |       |-BW_UL_SET_MARK
+##					       |       |-BW_UL_SET_MARK
+##                                             |-BW_SET_COS
+##
+##
+##up/downstream flow
+## input interface -> first stage marker  -> DNAT -> secand stage marker -> filter -> queue -> output interface
+##
+##First mark direction and interface  , than mrrk queue id
+##Filter classifity packet by queue id at last stage
+
+init_iptable()          
+{
+	sys_mag "init_iptable  qos_enable= $1"
+	local qos_enable="$1"
+	
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null
+	$BIN_IPT -D PREROUTING -t mangle -j BW_FORM_INF_MARK 2> /dev/null
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_DL_SET_MARK 2> /dev/null
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_UL_SET_MARK 2> /dev/null
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_SET_MARK 2> /dev/null
+	$BIN_IPT -D POSTROUTING -t mangle -j BW_SET_COS 2> /dev/null
+	
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null"
+	sys_mag "$BIN_IPT -D PREROUTING -t mangle -j BW_FORM_INF_MARK 2> /dev/null"
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_UL_SET_MARK 2> /dev/null"
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_DL_SET_MARK 2> /dev/null"
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_SET_MARK 2> /dev/null"
+	sys_mag "$BIN_IPT -D POSTROUTING -t mangle -j BW_SET_COS 2> /dev/null"
+
+	$BIN_IPT -t mangle -D PREROUTING -i ath3 -j MARK --set-mark $GUEST_WLAN_UL_MARK/${WLAN_MASK}
+	$BIN_IPT -t mangle -D POSTROUTING -o ath3 -j MARK --set-mark $GUEST_WLAN_DL_MARK/${WLAN_MASK}
+	$BIN_IPT -t mangle -D POSTROUTING -o ath13 -j MARK --set-mark $GUEST_5G_WLAN_DL_MARK/${WLAN_MASK}
+	$BIN_IPT -t mangle -D PREROUTING -i ath13 -j MARK --set-mark $GUEST_5G_WLAN_UL_MARK/${WLAN_MASK}
+
+	sys_mag "iptables -t mangle -D POSTROUTING -o ath3 -j MARK --set-mark $GUEST_WLAN_DL_MARK/${WLAN_MASK}"
+	sys_mag "iptables -t mangle -D PREROUTING -i ath3 -j MARK --set-mark $GUEST_WLAN_UL_MARK/${WLAN_MASK}"
+	sys_mag "iptables -t mangle -D POSTROUTING -o ath13 -j MARK --set-mark $GUEST_5G_WLAN_DL_MARK/${WLAN_MASK}"
+	sys_mag "iptables -t mangle -D PREROUTING -i ath13 -j MARK --set-mark $GUEST_5G_WLAN_UL_MARK/${WLAN_MASK}"
+
+	#LIST="BW_DL_MARK  BW_UL_MARK BW_SET_MARK BW_UL_SET_MARK BW_DL_SET_MARK BW_SET_COS"
+	LIST="BW_FORM_INF_MARK BW_SET_MARK BW_UL_SET_MARK BW_DL_SET_MARK BW_SET_COS"
+	for chain in $LIST
+	do 
+	
+		$BIN_IPT -t mangle -F $chain 2> /dev/null
+		$BIN_IPT -t mangle -X $chain 2> /dev/null
+
+		sys_mag "$BIN_IPT -t mangle -F $chain 2> /dev/null"
+		sys_mag "$BIN_IPT -t mangle -X $chain 2> /dev/null"
+
+		if [ "$qos_enable" = "1" ] || [ "$guest_wlan_enable" = "1" ]  ; then
+		$BIN_IPT -t mangle -N $chain 2> /dev/null 
+		sys_mag "$BIN_IPT -t mangle -N $chain 2> /dev/null"
+		fi
+		
+	done
+
+	$BIN_IPT -A POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null
+	sys_mag "$BIN_IPT -A POSTROUTING -t mangle -j BW_EGRESSMAP_COS 2> /dev/null"
+	
+	if [ "$qos_enable" = "1" ] ; then
+
+		#$BIN_IPT -A PREROUTING -t mangle -j BW_DL_MARK 2> /dev/null
+		#$BIN_IPT -A POSTROUTING -t mangle -j BW_UL_MARK 2> /dev/null
+		$BIN_IPT -A PREROUTING -t mangle -j BW_FORM_INF_MARK 2> /dev/null
+		$BIN_IPT -A POSTROUTING -t mangle -j BW_SET_MARK 2> /dev/null
+		$BIN_IPT -A POSTROUTING -t mangle -j BW_SET_COS 2> /dev/null
+
+		#sys_mag " $BIN_IPT -A PREROUTING -t mangle -j BW_DL_MARK 2> /dev/null"
+		#sys_mag " $BIN_IPT -A POSTROUTING -t mangle -j BW_UL_MARK 2> /dev/null"
+		sys_mag "$BIN_IPT -A PREROUTING -t mangle -j BW_FORM_INF_MARK 2> /dev/null"
+		sys_mag "$BIN_IPT -A POSTROUTING -t mangle -j BW_SET_MARK 2> /dev/null"
+		sys_mag "$BIN_IPT -A POSTROUTING -t mangle -j BW_SET_COS 2> /dev/null"
+
+		# Configure classify setting
+		#config_load qos_classify
+		#config_foreach setup_ro_direction_rule class
+
+	fi
+
+	sys_mag "init_iptable end "
+}
+
+init_ebtable()          
+{
+	sys_mag "init_ebtable  qos_enable= $1  "
+	local qos_enable="$1"
+	
+	$BIN_EBT -t broute -D BROUTING -j BW_FORM_INF_MARK 2> /dev/null
+	$BIN_EBT -t broute -D BROUTING -j BW_DL_SET_MARK 2> /dev/null
+	$BIN_EBT -t broute -D BROUTING -j BW_UL_SET_MARK 2> /dev/null
+	$BIN_EBT -t broute -D BROUTING -j BW_SET_MARK 2> /dev/null
+	$BIN_EBT -t broute -D BROUTING -j BW_SET_COS 2> /dev/null
+	
+	sys_mag " $BIN_EBT -t broute -D BROUTING -j BW_FORM_INF_MARK 2> /dev/null"
+	sys_mag " $BIN_EBT -t broute -D BROUTING -j BW_UL_SET_MARK 2> /dev/null"
+	sys_mag " $BIN_EBT -t broute -D BROUTING -j BW_DL_SET_MARK 2> /dev/null"
+	sys_mag " $BIN_EBT -t broute -D BROUTING -j BW_SET_MARK 2> /dev/null"
+	sys_mag " $BIN_EBT -t broute -D BROUTING -j BW_SET_COS 2> /dev/null"
+	
+	OP_LIXT="F X"
+	for op in $OP_LIXT
+	do 
+
+		LIST="BW_FORM_INF_MARK BW_SET_MARK BW_UL_SET_MARK BW_DL_SET_MARK BW_SET_COS"
+		for chain in $LIST
+		do 
+			$BIN_EBT -t broute  -$op $chain 2> /dev/null
+			sys_mag "$BIN_EBT -t broute -$op $chain 2> /dev/null"
+		done	
+
+	done
+	
+	if [ "$qos_enable" = "1" ]; then
+		
+		LIST="BW_FORM_INF_MARK BW_SET_MARK BW_UL_SET_MARK BW_DL_SET_MARK BW_SET_COS"
+		for chain in $LIST
+		do 
+			$BIN_EBT -t broute -N $chain 2> /dev/null
+			sys_mag "$BIN_EBT -t broute -N $chain 2> /dev/null"
+			
+		done
+		
+		LIST="BW_FORM_INF_MARK BW_SET_MARK BW_SET_COS"
+		for chain in $LIST
+		do 
+			$BIN_EBT -t broute -N $chain 2> /dev/null
+			sys_mag "$BIN_EBT -t broute -N $chain 2> /dev/null"
+			
+			$BIN_EBT -t broute -A BROUTING -j $chain 2> /dev/null
+			sys_mag "$BIN_EBT -t broute -A BROUTING -j $chain 2> /dev/null"
+			
+		done
+
+		# Configure classify setting
+		#config_load qos_classify
+		#config_foreach setup_br_direction_rule class
+
+	fi
+
+	sys_mag "init_ebtable  end"
+}
+
+##setup queue $1:queue name
+setup_queue_root(){
+	
+	sys_mag "setup_queue_root  queue_name= $1"
+
+	local queue_name="$1"
+	
+	local queue_enable=$(uci get qos.$queue_name.enable)
+	if [ "$queue_enable" == "1" ]; then
+	
+		local class_id="1"$(uci get qos.$queue_name.classid)
+		local limit=$(uci get qos.$queue_name.rate)
+		local priority=$(uci get qos.$queue_name.priority)
+		local interface=$(uci get qos.$queue_name.interface)
+		local weight=$(uci get qos.$queue_name.weight)
+		local quantum="$(($weight * 1514))"
+		local dev_name=""
+		local limit_rate=""
+		
+		if [ "$limit" != "0" ]; then
+
+			if [ $limit -lt $MINBW ]; then
+				limit_rate=$MINBW"kbit"
+			else
+				limit_rate=$limit"kbit"
+			fi
+
+		else
+		
+			[ "$interface" == "lan" ] && limit_rate=$(uci get qos.general.download)"kbit"
+				
+			[ "$interface" == "wan" ] && limit_rate=$(uci get qos.general.upload)"kbit"
+				
+		fi
+		
+		[ "$interface" == "lan" ] && dev_name="ifb0"
+			
+		[ "$interface" == "wan" ] && dev_name="eth0"
+			
+		#Configure sub-class and qdisc 
+		$BIN_TC  class add dev ${dev_name} parent 1:1 classid 1:$class_id htb rate ${MINBW}"kbit" ceil $limit_rate  prio $priority quantum $quantum
+		sys_mag "$BIN_TC  class add dev ${dev_name} parent 1:1 classid 1:$class_id htb rate ${MINBW}"kbit" ceil $limit_rate  prio $priority quantum $quantum"
+		bw_set_leaf_node "${dev_name}" "${class_id}"	
+		
+	fi
+	sys_mag "setup_queue_root  end"
+}
+
+setup_default_queue_root(){
+
+	sys_mag "setup_default_queue_root  queue_name= $1"
+	local queue_name="$1"
+	local class_id="1"$(uci get qos.$queue_name.classid)
+	local priority=$(uci get qos.$queue_name.priority)
+	local interface=$(uci get qos.$queue_name.interface)
+	local dev_name=""
+	local limit_rate=""
+	
+	sys_mag "class_id $class_id priority $priority interface $interface"
+	
+	if [ "$interface" == "wan" ]; then
+	
+		limit_rate=$(uci get qos.general.upload)"kbit"	
+		dev_name="eth0"
+		
+	fi
+
+	if [ "$interface" == "lan" ]; then
+	
+		limit_rate=$(uci get qos.general.download)"kbit"	
+		dev_name="ifb0"
+		
+	fi
+
+	## get qos state
+	local qos_enable=$(uci get qos.general.enable)
+	[ "$qos_enable" == "0" ] && limit_rate="9999kbit" 
+
+	if [ ! -z "$dev_name" ]; then
+
+		# Configure sub-class and qdisc 
+		$BIN_TC class add dev ${dev_name} parent 1:1 classid 1:$class_id htb rate 1kbit ceil ${limit_rate}  prio $priority quantum 1514
+		sys_mag "$BIN_TC class add dev ${dev_name} parent 1:1 classid 1:$class_id htb rate 1kbit ceil ${limit_rate}  prio $priority quantum 1514"
+		bw_set_leaf_node "${dev_name}" "$class_id"
+		
+	fi
+
+	sys_mag "setup_default_queue_root  end"
+}
+
+bw_set_leaf_node ()
+{
+	sys_mag "bw_set_leaf_node dev=$1  parenthandle=$2"
+	local dev=$1
+	local parenthandle=$2
+
+	# Add qdisc priority queue
+	$BIN_TC qdisc add dev ${dev} parent 1:${parenthandle} handle ${parenthandle}: prio
+	
+	sys_mag " $BIN_TC qdisc add dev ${dev} parent 1:${parenthandle} handle ${parenthandle}: prio"
+	
+	$BIN_TC qdisc add dev ${dev} parent ${parenthandle}:1 handle ${parenthandle}1: sfq perturb 9
+
+	sys_mag "$BIN_TC qdisc add dev ${dev} parent ${parenthandle}:1 handle ${parenthandle}1: sfq perturb 9"
+
+	$BIN_TC qdisc add dev ${dev} parent ${parenthandle}:2 handle ${parenthandle}2: sfq perturb 10
+
+	sys_mag " $BIN_TC qdisc add dev ${dev} parent ${parenthandle}:2 handle ${parenthandle}2: sfq perturb 10"
+	
+	$BIN_TC qdisc add dev ${dev} parent ${parenthandle}:3 handle ${parenthandle}3: sfq perturb 11
+	
+	sys_mag " $BIN_TC qdisc add dev ${dev} parent ${parenthandle}:3 handle ${parenthandle}3: sfq perturb 11"
+	
+	sys_mag "bw_set_leaf_node end"
+}
+
+qos_brIngressClass()
+{
+
+	sys_mag "qos_brIngressClass class_name=$1 queue_id=$2 ethType=$3 fromInt=$4 "$mark"=$5 "
+	local class_name="$1"
+	local queue_id="$2"
+	local ethType="$3"
+	local fromInt="$4"
+	local mark="$5"
+
+	local inf_mark=""
+	local direction_mark=""
+	local wanSection=""
+	local queue=""
+	local queue_int=""
+	local cmd=""
+	local chain=""
+	local action=""
+	
+	local ethStr=""
+	local ifcStr=""
+	local smac=""
+	local dmac=""
+	local src=""
+	local dst=""
+	local proto=""
+	local sport=""
+	local dport=""
+	local dhcpStr=""
+	local dscpCheck=""
+	local vidCheck=""
+	local vpriCheck=""
+	local iplength=""
+	local tcpflags=""
+	local servicesStr=""
+	local servicesCmd=""
+	local flowId=""
+
+	# Grab the outgoing interface
+	if [ "$fromInt" != "0" ]; then
+        
+		wanSection=$(uci get intfGrp.$fromInt.wanint)
+		[ "$wanSection" == "WAN" ] && wanSection="wan"
+
+		inf_mark=$wanSection"_MARK"
+		[ "$wanSection" == "wan" ] && inf_mark="wan_MARK"
+		
+	fi
+	
+	# Grab the information of the queue
+	queue=$(uci get qos_classify.$class_name.queue)
+	queue_int=$(uci get qos.$queue.interface)
+	[ "$queue" == "drop" ] && queue_int="wan"
+
+	if [ "$queue_int" == "wan" ]; then
+
+		direction_mark=$(($inf_mark | $UL_MARK))
+		append ifcStr "--mark $direction_mark/$DIRECTION_MASK "
+		chain="BW_UL_SET_MARK"
+		
+	else
+		
+		direction_mark=$(($inf_mark | $DL_MARK))
+		append ifcStr "--mark $direction_mark/$DIRECTION_MASK  "
+		chain="BW_DL_SET_MARK"
+		
+	fi
+	
+	#Setup Ether Type
+	case "$ethType" in
+		8021q)
+			append ethStr "-p 802_1Q"
+		;;
+		arp)
+			append ethStr "-p ARP"
+		;;
+		ip)
+			append ethStr "-p IPV4 "
+		;;        
+	esac
+	
+	
+	# Set matched/Exclude Source MAC address and mask
+	local srcMac=$(uci get qos_classify.$class_name.srcMac)
+	if [ ! -z "$srcMac" ]; then
+
+		append smac "--src "
+
+		local srcMacExclude=$(uci get qos_classify.$class_name.srcMacExclude)
+		[ ! -z "$srcMacExclude" ] && append smac "!"
+
+		append smac "$srcMac"
+
+		local srcMacMask=$(uci get qos_classify.$class_name.srcMacMask)
+		[ ! -z "$srcMacMask" ] && smac=$smac"/$srcMacMask "
+
+	fi
+
+	# Set matched/exclude Destination MAC address and mask
+	local destMac=$(uci get qos_classify.$class_name.destMac)			
+	if [ ! -z "$destMac" ]; then
+
+		append dmac "--dst "
+
+		local destMacExclude=$(uci get qos_classify.$class_name.destMacExclude)
+		[ ! -z "$destMacExclude" ] && append dmac "!"
+
+		append dmac "$destMac"
+
+		local destMacMask=$(uci get qos_classify.$class_name.destMacMask)
+		[ ! -z "$destMacMask" ] && dmac=$dmac"/$destMacMask "
+
+	fi
+
+	#Ether Type is IP
+	if [ "$ethType" == "ip" ]; then
+	
+		# Set matched/exclude source IP address/mask
+		local srcIp=$(uci get qos_classify.$class_name.srcIp)
+		if [ ! -z "$srcIp" ]; then
+
+			local srcIpExclude=$(uci get qos_classify.$class_name.srcIpExclude)
+			[ ! -z "$srcIpExclude" ] && append src " ! "
+
+			append src "--ip-src $srcIp"
+
+			local srcMask=$(uci get qos_classify.$class_name.srcMask)
+			[ ! -z "$srcMask" ] && src=$src"/$srcMask"
+
+		fi
+
+		# Set matched/exclude destination ip address/mask
+		local destIp=$(uci get qos_classify.$class_name.destIp) 
+		if [ ! -z "$destIp" ]; then
+
+			local destIpExclude=$(uci get qos_classify.$class_name.destIpExclude)
+			[ ! -z "$destIpExclude" ] && append dst " ! "
+
+			append dst "--ip-dst $destIp"
+
+			local destMask=$(uci get qos_classify.$class_name.destMask)
+			[ ! -z "$destMask" ] && dst=$dst"/$destMask"
+			
+		fi
+		
+		# Set matched/exclude DSCP value 
+		local dscp=$(uci get qos_classify.$class_name.dscp)
+		if [ ! -z "$dscp" ]; then
+		
+			append dscpCheck "--ip-dscp"
+
+			dscpExclude=$(uci get qos_classify.$class_name.dscpExclude)
+			[ ! -z "$dscpExclude" ] && append dscpCheck "!"
+		
+			append dscpCheck "$dscp"
+			
+		fi
+
+		# Set matched/exclude protocol
+		local protocol=$(uci get qos_classify.$class_name.protocol)	
+		if [ ! -z "$protocol" ] ; then 	
+
+			append proto "--ip-proto"
+
+			[ ! -z "$protocolExclude" ] && append proto " ! "
+
+			append proto "$protocol "
+			
+			#TCP ACK
+			local tcpAckActive=$(uci get qos_classify.$class_name.tcpAckActive)
+			if [ "6" == "$protocol" ] && [ ! -z "$tcpAckActive" ]; then
+
+				append tcpflags "--ip-tcp-flags"
+
+				local tcpAckExclude=$(uci get qos_classify.$class_name.tcpAckExclude)
+				[ ! -z "$tcpAckExclude=" ] && append tcpflags " ! "
+
+				append tcpflags "ACK ACK"
+
+			fi
+
+		fi
+		
+		#Set matched/exclude DHCP option
+		local dhcp=$(uci get qos_classify.$class_name.dhcp)                
+		if [ ! -z "$dhcp" ]; then
+		
+			case "$dhcp" in
+				60)				
+					append dhcpStr "--ip-dhcp-opt60 "
+				;;
+				61)
+					append dhcpStr "--ip-dhcp-opt61 "
+				;;
+				77)
+					append dhcpStr "--ip-dhcp-opt77"
+				;;
+				125)
+					append dhcpStr "--ip-dhcp-opt121"
+				;;
+			esac
+			
+			dhcpExclude=$(uci get qos_classify.$class_name.dhcpExclude)
+			[ ! -z "$dhcpExclude" ] && append dhcpStr " ! "
+
+			setDhcp=$(uci get qos_classify.$class_name.setDhcp)
+			[ ! -z "$setDhcp" ] && append dhcpStr "$setDhcp"
+	
+		fi
+		
+		# Set matched/exclude source port
+		local srcPort_min=$(uci get qos_classify.$class_name.srcPort_min)
+		if [ ! -z "$srcPort_min" ]; then 
+
+			append sport "--ip-sport"
+			
+			local srcPortExclude=$(uci get qos_classify.$class_name.srcPortExclude)
+			[ ! -z "$srcPortExclude" ] && append sport " ! "
+
+			append sport "$srcPort_min"
+
+			local srcPort_max=$(uci get qos_classify.$class_name.srcPort_max)
+			if [ ! -z "$srcPort_max" ] && [ "$srcPort_max" != "$srcPort_min" ]; then
+				sport=$sport":$srcPort_max"
+			fi
+
+		fi
+
+		# Set matched/exclude destination port 
+		local destPort_min=$(uci get qos_classify.$class_name.destPort_min)
+		if [ ! -z "$destPort_min" ]; then 
+
+			append dport "--ip-dport"
+
+			local destPortExclude=$(uci get qos_classify.$class_name.destPortExclude)
+			[ ! -z "$destPortExclude" ] && append dport " ! "
+
+			append dport "$destPort_min"
+		
+			local destPort_max=$(uci get qos_classify.$class_name.destPort_max)
+			if [ ! -z "$destPort_max" ] && [ "$destPort_max"  != "$destPort_min"  ]; then
+				dport=$dport":$destPort_max"
+			fi
+
+		fi
+		
+		# Set matched/exclude IP packet length range
+		local pktLength_min=$(uci get qos_classify.$class_name.pktLength_min)
+		local pktLength_max=$(uci get qos_classify.$class_name.pktLength_max)
+		if [ ! -z "$pktLength_min" ]&&[ ! -z "$pktLength_min" ]; then	
+
+			append iplength "--ip-length"
+
+			local pktLengthExclude=$(uci get qos_classify.$class_name.pktLengthExclude)
+			[ ! -z "$pktLengthExclude" ] && append iplength " ! "
+			
+			if [ ! -z "$pktLength_max" ] && [ "$pktLength_min"  != "$pktLength_max"  ]; then
+				append iplength "$pktLength_min:$pktLength_max"
+			fi
+		fi
+	
+	fi
+
+	#Ether Type is 802.1Q
+	if [ "$ethType" == "8021q" ]; then
+		
+		# Set matched/exclude  vlan id(802.1Q)
+		local vlanId=$(uci get qos_classify.$class_name.vlanId)
+		if [ ! -z "$vlanId" ]; then
+
+			append vidCheck "--vlan-id "
+
+			local vlanIdExclude=$(uci get qos_classify.$class_name.vlanIdExclude)
+			[ ! -z "$vlanIdExclude" ] && append vidCheck "!"
+
+			append vidCheck " $vlanId "
+
+		fi
+		
+		# Get matched/exclude ethernet priority (8012P)
+		local prio=$(uci get qos_classify.$class_name.prio)
+		if [ ! -z "$prio" ]; then
+
+			append vpriCheck "--vlan-prio"
+
+			local prioExclude=$(uci get qos_classify.$class_name.prioExclude)
+			[ ! -z "$prioExclude" ] && append vpriCheck "!"
+
+			append vpriCheck " $prio "
+
+		fi
+	fi
+		
+	#Configure  classify setting to netfilter
+	
+	if [ "$mark" != "0x00000000" ]; then
+		action="mark --mark-or $mark --mark-target CONTINUE"
+	else
+		action="DROP" 
+	fi	
+	
+	if [ ! -z "$service" ]; then
+		
+		local i=1
+		local service_count=`expr $(uci get qos_service.general.service_count) `
+		while [ $i -le $service_count ]
+		do
+			local service_name=$(uci get qos_service.$i.name)
+			if [ "$service_name" == "$service" ]; then
+			
+				local service_protocol=$(uci get qos_service.$i.protocol)
+				local service_Port=$(uci get qos_service.$i.Port)
+				local service_PortRange=$(uci get qos_service.$i.PortRange)
+
+				sys_mag " $service_name $service_protocol $service_Port "
+				
+				if [ "$service_protocol" == "2" ]; then
+				
+					if [ ! -z "$serviceExclude" ]; then
+					
+							 
+			
+						[ ! -z "$service_PortRange" ] && servicesStr="--ip-proto 6 --ip-dport ! $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="--ip-proto 6 --ip-dport ! $service_Port "
+						
+						
+						[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain  --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+						
+				
+						[ ! -z "$service_PortRange" ] && servicesStr="--ip-proto 17  --ip-dport ! $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="--ip-proto 17  --ip-dport ! $service_Port "
+
+						[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain  --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+					
+					else
+
+						servicesStr="--ip-proto 6  --ip-sport $service_Port"
+
+						[ "DROP" != "$action" ] &&  command="$BIN_EBT -t broute  -I $chain  --mark  $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength  $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j MARK --set-mark $mark"
+						sys_mag " $command"
+						$command
+
+						servicesStr="--ip-proto 6  --ip-dport $service_Port"
+
+						[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain  --mark  $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j MARK --set-mark $mark"
+						sys_mag " $command"
+						$command
+					
+						servicesStr="--ip-proto 17  --ip-sport $service_Port"
+
+						[ "DROP" != "$action" ] &&  command="$BIN_EBT -t broute  -I $chain --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j MARK --set-mark $mark"
+						sys_mag " $command"
+						$command
+
+						servicesStr="--ip-proto 17  --ip-dport $service_Port"
+
+						[ "DROP" != "$action" ] &&  command="$BIN_EBT -t broute  -I $chain --mark  $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+					
+					fi
+					
+				else
+				
+					if [ ! -z "$serviceExclude" ]; then
+				
+						[ ! -z "$service_PortRange" ] && servicesStr="--ip-proto $service_protocol --ip-sport ! $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="--ip-proto $service_protocol  --ip-sport ! $service_Port "
+
+						[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+
+					else
+				
+						[ ! -z "$service_PortRange" ] && servicesStr="--ip-proto $service_protocol  --ip-sport $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p $service_protocol  --sport $service_Port"
+
+						[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+						
+						[ ! -z "$service_PortRange" ] && servicesStr="---ip-proto $service_protocol --ip-dport $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p $service_protocol  --dport $service_Port"	
+
+						[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain --mark $mark/$BW_TC_MASK $ethStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_EBT -t broute -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+						
+					fi
+				
+				fi						
+			fi
+			
+			i=`expr $i + 1`
+	
+		done
+	
+	else
+	
+		[ "DROP" != "$action" ] && command="$BIN_EBT -t broute  -I $chain --mark $mark/$BW_TC_MASK  $ethStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j ACCEPT"
+		sys_mag " $command"
+		$command
+
+		command="$BIN_EBT -t broute  -I $chain  $ifcStr $ethStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j $action"
+		sys_mag " $command"
+		$command
+		
+	fi
+	sys_mag "qos_brIngressClass end"
+}
+
+qos_roIngressClass()
+{
+
+	sys_mag "qos_roIngressClass class_name=$1 queue_id=$2 ethType=$3 fromInt=$4 "$mark"=$5 "
+	local class_name="$1"
+	local queue_id="$2"
+	local ethType="$3"
+	local fromInt="$4"
+	local mark="$5"
+	local inf_mark=""
+	local direction_mark=""
+	local wanSection=""
+	local queue=""
+	local queue_int=""
+	
+	local cmd=""
+	local chain=""
+	local table="mangle"
+	local action=""
+	
+	local ifcStr=""
+	local toIntStr=""
+	local smac=""
+	local dmac=""
+	local dhcpStr=""
+	local src=""
+	local dst=""
+	local proto=""
+	local sport=""
+	local dport=""
+	local dscpCheck=""
+	local vidCheck=""
+	local vpriCheck=""
+	local iplength=""
+	local tcpflags=""
+	local servicesStr=""
+	local servicesCmd=""
+	local flowId=""
+	
+	# Grab the outgoing interface
+	if [ "$fromInt" != "0" ]; then        
+		wanSection=$(uci get intfGrp.$fromInt.wanint)
+		[ "$wanSection" == "WAN" ] && wanSection="wan"
+		wanInt=$(uci get network.$wanSection.ifname)
+		
+		## grep to interface info
+		brInt=$(uci get network.$wanSection.bind_LAN)
+
+		inf_mark=$wanSection"_MARK"
+		[ "$wanSection" == "wan" ] && inf_mark="wan_MARK"
+		
+		# check wan protocol
+		local wanProto=$(uci get network.$wanSection.proto)
+		if [ "$wanProto" == "pppoe" ] ;then
+			wanInt="$wanProto"-$wanSection
+		fi	
+
+	fi
+
+	# Grab the information of the queue
+	queue=$(uci get qos_classify.$class_name.queue)
+	queue_int=$(uci get qos.$queue.interface)
+	[ "$queue" == "drop" ] && queue_int="wan"
+	
+	if [ "$queue_int" == "wan" ]; then
+
+		direction_mark=$(($inf_mark | $UL_MARK))
+		append ifcStr "-m mark --mark $direction_mark/$DIRECTION_MASK "
+
+		append toIntStr "-o $wanInt "
+
+		#table="mangle"
+		chain="BW_UL_SET_MARK"
+		
+	else
+		
+		direction_mark=$(($inf_mark | $DL_MARK))
+		append ifcStr "-m mark --mark $direction_mark/$DIRECTION_MASK  "
+		append toIntStr "-o $brInt "
+		#table="mangle"
+		chain="BW_DL_SET_MARK"
+		
+	fi
+	
+	# Set matched/Exclude source MAC address
+	local srcMac=$(uci get qos_classify.$class_name.srcMac)
+	if [ ! -z "$srcMac" ]; then
+
+		append smac "-m mac "
+
+		local srcMacExclude=$(uci get qos_classify.$class_name.srcMacExclude)
+		[ ! -z "$srcMacExclude" ] && append smac "!"
+
+		append smac "--mac-source $srcMac"
+
+		local srcMacMask=$(uci get qos_classify.$class_name.srcMacMask)
+		
+		[ ! -z "$srcMacMask" ] && smac=$smac"/$srcMacMask "
+
+	fi
+	
+	# Set matched/Exclude destination MAC address
+	local destMac=$(uci get qos_classify.$class_name.destMac)
+	if [ ! -z "$destMac" ]; then
+
+		[ -z "$srcMac" ] && append dmac "-m mac "
+
+		local destMacExclude=$(uci get qos_classify.$class_name.destMacExclude)
+
+		[ ! -z "$destMacExclude" ] && append dmac "!"
+
+		append dmac "--mac-destination $destMac"
+
+		local destMacMask=$(uci get qos_classify.$class_name.destMacMask)
+
+		[ ! -z "$destMacMask" ] && dmac=$dmac"/$destMacMask "
+
+	fi
+
+	# Set matched/exclude source IP address/mask
+	local srcIp=$(uci get qos_classify.$class_name.srcIp)
+	if [ ! -z "$srcIp" ]; then
+		
+		local srcIpExclude=$(uci get qos_classify.$class_name.srcIpExclude)
+
+		[ ! -z "$srcIpExclude" ] && append src " ! "
+		
+		append src "-s $srcIp"
+
+		local srcMask=$(uci get qos_classify.$class_name.srcMask)
+		[ ! -z "$srcMask" ] && src=$src"/$srcMask"
+
+	fi
+
+	# Set matched/exclude destination IP address/mask
+	local destIp=$(uci get qos_classify.$class_name.destIp) 
+	if [ ! -z "$destIp" ]; then
+	
+		local destIpExclude=$(uci get qos_classify.$class_name.destIpExclude)
+		[ ! -z "$destIpExclude" ] && append dst " ! "
+
+		append dst "-d $destIp"
+
+		local destMask=$(uci get qos_classify.$class_name.destMask)
+		
+		[ ! -z "$destMask" ] && dst=$dst"/$destMask"
+		
+	fi
+	
+	#Set matched/exclude DHCP option(TBD)
+	local dhcp=$(uci get qos_classify.$class_name.dhcp)
+	[ ! -z "$dhcp" ] &&	goto exit_roIngressClass_label
+	
+	#if [ ! -z "$dhcp" ]; then
+	#
+	#	append dhcpStr "-m dhcp "
+	#	
+	#	case "$dhcp" in
+	#		60)				
+	#			append dhcpStr "--ip-dhcp-opt60 "
+	#		;;
+	#		61)
+	#			append dhcpStr "--ip-dhcp-opt61 "
+	#		;;
+	#		77)
+	#			append dhcpStr "--ip-dhcp-opt77"
+	#		;;
+	#		125)
+	#			append dhcpStr "--ip-dhcp-opt121"
+	#		;;
+	#		esac
+	#	
+	#
+	#	dhcpExclude=$(uci get qos_classify.$class_name.dhcpExclude)
+	#	[ ! -z "$dhcpExclude" ] && append dhcpStr " ! "
+	#
+	#
+	#	setDhcp=$(uci get qos_classify.$class_name.setDhcp)
+	#	[ ! -z "$setDhcp" ] && append dhcpStr "$setDhcp"
+
+	#fi
+	
+	
+	
+	# Set matched/exclude protocol 
+	# Set matched/exclude multiport if protocol is TCP or UDP
+	# Set matched/exclude TCP ACK option if protocol is TCP
+	local protocol=$(uci get qos_classify.$class_name.protocol)
+	local srcPort_min=$(uci get qos_classify.$class_name.srcPort_min)
+
+	if [ ! -z "$protocol" ] || [ ! -z "$srcPort_min" ]; then 
+
+		local protocolExclude=$(uci get qos_classify.$class_name.protocolExclude)
+		
+		[ ! -z "$protocolExclude" ] && append proto " ! "
+		
+		append proto "-p"
+		
+		[ -z "$protocol" ] && protocol="tcp"
+		append proto "$protocol "
+
+		#Only TCP or UDP support multport option
+		if [ "6" == "$protocol" ] || [ "17" == "$protocol" ]; then
+			
+			#source port
+			local srcPort_min=$(uci get qos_classify.$class_name.srcPort_min)
+			local srcPort_max=$(uci get qos_classify.$class_name.srcPort_max)
+			if [ ! -z "$srcPort_min" ]; then 
+
+				[ ! -z "$srcPort_max" ] && append sport "-m multiport"
+			
+				srcPortExclude=$(uci get qos_classify.$class_name.srcPortExclude)
+				
+				[ ! -z "$srcPortExclude" ] && append sport " ! "
+
+				append sport "--sports $srcPort_min"
+
+				if [ ! -z "$srcPort_max" ] && [ "$srcPort_max" != "$srcPort_min" ]; then 
+					sport=$sport":$srcPort_max"
+				fi
+			fi
+
+			#destination port 
+			local destPort_min=$(uci get qos_classify.$class_name.destPort_min)
+			local destPort_max=$(uci get qos_classify.$class_name.destPort_max)
+			if [ ! -z "$destPort_min" ]; then 
+
+				if [ ! -z "$destPort_max" ]; then 
+						[  -z "$srcPort_max" ] && append dport "-m multiport"
+				fi
+				destPortExclude=$(uci get qos_classify.$class_name.destPortExclude)
+
+				[ ! -z "$destPortExclude" ] && append dport " ! "
+
+				append dport "--dports $destPort_min"
+
+				if [ ! -z "$destPort_max" ] && [ "$destPort_max"  != "$destPort_min"  ]; then 
+					dport=$dport":$destPort_max"
+				fi
+			fi
+		fi
+		
+		#TCP ACK option
+		local tcpAckActive=$(uci get qos_classify.$class_name.tcpAckActive)
+		if [ "6" == "$protocol" ] && [ ! -z "$tcpAckActive" ]; then
+
+			tcpAckExclude=$(uci get qos_classify.$class_name.tcpAckExclude)
+
+			[ "1" == "$tcpAckExclude" ] && append tcpflags " ! "
+
+			append tcpflags "--tcp-flags ACK ACK"
+
+		fi
+	fi  
+
+	#Set matched/exclude service
+	local service=$(uci get qos_classify.$class_name.service)
+	#if [ ! -z "$service" ]; then
+
+	#	SERVICE_LIST="FTP SIP RTSP"
+	#	for service_type in $SERVICE_LIST
+	#	do 
+	#		sys_mag " $service_type  $service  "
+	#		
+	#		if [ "$service_type" == "$service" ] ; then
+	#		
+	#			append servicesCmd " -m helper"
+	#		
+				serviceExclude=$(uci get qos_classify.$class_name.serviceExclude)
+
+	#			[ ! -z "$serviceExclude" ] && append servicesCmd " ! "
+
+	#			append servicesCmd " --helper $service"
+
+	#		fi
+			
+	#	done
+
+	#fi  
+
+
+
+	# Set matched/exclude IP Length
+	local pktLength_min=$(uci get qos_classify.$class_name.pktLength_min)
+	local pktLength_max=$(uci get qos_classify.$class_name.pktLength_max)
+	if [ ! -z "$pktLength_min" ]&&[ ! -z "$pktLength_min" ]; then	
+
+		append iplength " -m length"
+		
+		pktLengthExclude=$(uci get qos_classify.$class_name.pktLengthExclude)
+
+		[ ! -z "$pktLengthExclude" ] && append iplength " ! "
+
+		append iplength " --length $pktLength_min:$pktLength_max"
+
+	fi
+
+	# Set matched/exclude dscp 
+	local dscp=$(uci get qos_classify.$class_name.dscp)
+	if [ ! -z "$dscp" ]; then
+
+		append dscpCheck "-m dscp "
+
+		dscpExclude=$(uci get qos_classify.$class_name.dscpExclude)
+
+		[ ! -z "$dscpExclude" ] && append dscpCheck "!"
+
+		append dscpCheck " --dscp $dscp"
+
+	fi
+
+
+	# Set matched/exclude  vlan id(802.1q)
+	local vlanId=$(uci get qos_classify.$class_name.vlanId)
+	if [ ! -z "$vlanId" ]; then
+
+
+		append vidCheck "-m ether"
+
+		local vlanIdExclude=$(uci get qos_classify.$class_name.vlanIdExclude)
+
+		[ "1" == "$vlanIdExclude" ] && append vidCheck "!"
+
+		append vidCheck "--vid $vlanId "
+
+	fi
+
+	# Get matched/exclude ethernet priority (8012p)
+	local prio=$(uci get qos_classify.$class_name.prio)
+	if [ ! -z "$prio" ]; then
+
+		append vpriCheck "-m ether"
+
+		local prioExclude=$(uci get qos_classify.$class_name.prioExclude)
+		
+		[ "1" == "$prioExclude" ] && append vpriCheck "!"
+		
+		append vpriCheck "--vpri $prio "
+
+	fi
+	
+	#Configure  classify setting to netfilter
+	
+	if [ "$mark" != "0x00000000" ]; then
+
+		action="MARK --or-mark $mark"
+	
+	else
+
+		action="DROP" 
+
+	fi	
+	
+	if [ -z "$dhcp" ]; then
+	
+	if [ ! -z "$service" ]; then
+		
+		local i=1
+		local service_count=`expr $(uci get qos_service.general.service_count) `
+		while [ $i -le $service_count ]
+		do
+			local service_name=$(uci get qos_service.$i.name)
+			if [ "$service_name" == "$service" ]; then
+			
+				local service_protocol=$(uci get qos_service.$i.protocol)
+				local service_Port=$(uci get qos_service.$i.Port)
+				local service_PortRange=$(uci get qos_service.$i.PortRange)
+
+				sys_mag " $service_name $service_protocol $service_Port "
+				
+				if [ "$service_protocol" == "2" ]; then
+				
+					if [ ! -z "$serviceExclude" ]; then
+			
+						[ ! -z "$service_PortRange" ] && servicesStr="-p 6 -m multiport ! --ports $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p 6 -m multiport ! --port $service_Port "
+
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+						
+				
+						[ ! -z "$service_PortRange" ] && servicesStr="-p 17 -m multiport ! --ports $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p 17 -m multiport ! --port $service_Port "
+
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+					
+					else
+
+						servicesStr="-p 6 --sport $service_Port"
+
+						[ "DROP" != "$action" ] &&  command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength  $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j MARK --set-mark $mark"
+						sys_mag " $command"
+						$command
+
+						servicesStr="-p 6 --dport $service_Port"
+
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j MARK --set-mark $mark"
+						sys_mag " $command"
+						$command
+					
+						servicesStr="-p 17 --sport $service_Port"
+
+						[ "DROP" != "$action" ] &&  command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j MARK --set-mark $mark"
+						sys_mag " $command"
+						$command
+
+						servicesStr="-p 17 --dport $service_Port"
+
+						[ "DROP" != "$action" ] &&  command="$BIN_IPT -t $table  -I $chain -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+					
+					fi
+					
+				else
+				
+					if [ ! -z "$serviceExclude" ]; then
+				
+						[ ! -z "$service_PortRange" ] && servicesStr="-p $service_protocol -m multiport ! --ports $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p $service_protocol -m multiport ! --port $service_Port "
+
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+
+					else
+				
+						[ ! -z "$service_PortRange" ] && servicesStr="-p $service_protocol -m multiport --sports $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p $service_protocol  --sport $service_Port"
+
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $vidCheck $vpriCheck $iplength $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+						
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+						
+						[ ! -z "$service_PortRange" ] && servicesStr="-p $service_protocol -m multiport --dports $service_PortRange"
+
+						[ ! -z "$service_Port" ] && servicesStr="-p $service_protocol  --dport $service_Port"								
+						
+
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j RETURN"
+						sys_mag " $command"
+						$command
+
+						command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesStr -j $action"
+						sys_mag " $command"
+						$command
+						
+						[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j RETURN"
+						sys_mag " $command"
+						$command
+
+						#command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j MARK --set-mark $mark"
+						#command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $dhcpStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j $action"
+						#sys_mag " : $command"
+						#$command
+					
+					fi
+				
+				fi						
+			fi
+			
+			i=`expr $i + 1`
+	
+		done
+	
+	else
+	
+		[ "DROP" != "$action" ] && command="$BIN_IPT -t $table  -I $chain  -m mark --mark $mark/$BW_TC_MASK  $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j RETURN"
+		sys_mag " $command"
+		$command
+
+		#command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j MARK --set-mark $mark"
+		command="$BIN_IPT -t $table  -I $chain $toIntStr $ifcStr $smac $dmac $src $dst $proto $sport $dport $tcpflags $dscpCheck $iplength $vidCheck $vpriCheck $servicesCmd -j $action"
+		sys_mag " $command"
+		$command
+	
+	fi
+	
+	fi
+		
+	#exit_roIngressClass_label:
+	sys_mag "qos_roIngressClass "
+}
+
+
+qos_brEgressMark()
+{
+	sys_mag " qos_brEgressMark class_name=$1 queue_id=$2"
+	local class_name="$1"
+	local queue_id="$2"
+
+	local mark=0x$(awk "BEGIN{x=sprintf(\"%07x\",$queue_id);print x}") 
+
+	#$BIN_EBT -t broute -A BW_POST_MARK --mark $mark/$BW_TC_MASK -j BW_SET_COS 2>/dev/null
+	#sys_mag "$BIN_EBT -t broute -A BW_POST_MARK --mark $mark/$BW_TC_MASK -j BW_SET_COS 2>/dev/null"
+	
+	$BIN_EBT -t broute -A BW_SET_COS --mark $mark/$BW_TC_MASK -j ACCEPT 
+	sys_mag "$BIN_EBT -t broute -A BW_SET_COS --mark $mark/$BW_TC_MASK -j ACCEPT "	
+	
+	#Mark DSCP
+	set_dscp=$(uci get qos_classify.$class_name.set_dscp)
+	if [ ! -z "$set_dscp" ]; then
+		
+		$BIN_EBT -t broute -I BW_SET_COS --mark $mark/$BW_TC_MASK -j ftos --set-ftos $set_dscp 
+		sys_mag " $BIN_EBT -t broute -I BW_SET_COS --mark $mark/$BW_TC_MASK -j ftos --set-ftos $set_dscp "
+	
+	fi
+	
+	#Mark 802.1Q
+	vidMark_action=$(uci get qos_classify.$class_name.vidMark_action)	
+	if [ ! -z "$vidMark_action" ]; then
+	
+		local vid=""
+
+		set_vid=$(uci get qos_classify.$class_name.set_vid)
+
+		sys_mag "$set_vid"
+		[ -z "$set_vid" ] && set_vid="0"
+		
+		case "$vidMark_action" in
+		unchange)				
+			vid="0x4000"
+		;;
+		Remark)
+			vid="0x2"$(awk "BEGIN{x=sprintf(\"%03x\",$set_vid);print x}")
+		;;
+		Remove)
+			vid="0x3000"
+		;;
+		Add)
+			vid="0x1"$(awk "BEGIN{x=sprintf(\"%03x\",$set_vid);print x}")
+		;;
+		esac
+		
+		$BIN_EBT -t broute -I BW_SET_COS --mark $mark/$BW_TC_MASK -j  mark --vtag-set $vid --mark-target CONTINUE
+		sys_mag "$BIN_EBT -t broute  -I BW_SET_COS --mark $mark/$BW_TC_MASK -j mark --vtag-set $vid"
+		
+	fi   
+	
+	#Mark 802.1P
+	set_prio=$(uci get qos_classify.$class_name.set_prio)
+	if [ "$set_prio" != "unchange" ]; then
+		if [ ! -z "$set_prio" ]; then
+		
+			set_prio=$((set_prio *2))
+			set_prio=$((set_prio +1))
+			set_prio="0x"$(awk "BEGIN{x=sprintf(\"%x\",$set_prio);print x}")"0000000"
+			
+			$BIN_EBT -t broute -I BW_SET_COS --mark $mark/$BW_TC_MASK -j mark --mark-or $set_prio
+			sys_mag "$BIN_EBT -t broute -I BW_SET_COS --mark $mark/$BW_TC_MASK -j mark --mark-or $set_prio"
+			
+		fi 
+	fi 
+	sys_mag " qos_brEgressMark end"
+}
+
+qos_roEgressMark()
+{
+	sys_mag "qos_roEgressMark  class_name=$1 queue_id=$2 mark=$3 fromInt=$4 queue_int=$5"
+
+	local class_name="$1"
+	local queue_id="$2"
+	local mark="$3"
+	local fromInt="$4"
+	local queue_int="$5"
+	
+
+	#local mark=0x$(awk "BEGIN{x=sprintf(\"%07x\",$queue_id);print x}") 
+	
+	#$BIN_IPT -t mangle -A BW_POST_MARK  -m mark --mark $mark/$BW_TC_MASK -j BW_SET_COS 2>/dev/null
+	#sys_mag "$BIN_IPT -t mangle -A BW_POST_MARK  -m mark --mark $mark/$BW_TC_MASK -j BW_SET_COS 2>/dev/null"
+
+	$BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK -j RETURN 
+	sys_mag "$BIN_IPT -t mangle -m mark --mark $mark/$BW_TC_MASK -A BW_SET_COS -j RETURN"
+	
+	set_dscp=$(uci get qos_classify.$class_name.set_dscp)
+	if [ ! -z "$set_dscp" ]; then
+		
+		$BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK -j DSCP --set-dscp $set_dscp 
+		sys_mag " $BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK -j DSCP --set-dscp $set_dscp "
+		
+	fi
+	
+	#Set action for 802.1Q
+	vidMark_action=$(uci get qos_classify.$class_name.vidMark_action)	
+	if [ ! -z "$vidMark_action" ]; then
+	
+		local vid=""
+
+		set_vid=$(uci get qos_classify.$class_name.set_vid)
+
+		sys_mag "$set_vid"
+		[ -z "$set_vid" ] && set_vid="0"
+		
+		case "$vidMark_action" in
+		unchange)				
+			vid="0x4000"
+		;;
+		Remark)
+			vid="0x2"$(awk "BEGIN{x=sprintf(\"%03x\",$set_vid);print x}")
+		;;
+		Remove)
+			vid="0x3000"
+		;;
+		Add)
+			vid="0x1"$(awk "BEGIN{x=sprintf(\"%03x\",$set_vid);print x}")
+		;;
+		esac
+		
+		$BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK -j  MARK --vtag-set $vid
+		sys_mag "$BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK  -j MARK --vtag-set $vid"
+		
+	fi   
+	
+	
+	#Configure switch for mark 802.1Q
+	if [ "Remark" == "$vidMark_action" ] || [ "Add" == "$vidMark_action" ] ; then
+	
+		local lanport=$(uci get intfGrp.$fromInt.lanport)
+		set_vid=$(uci get qos_classify.$class_name.set_vid)
+		
+	fi   
+
+
+	set_prio=$(uci get qos_classify.$class_name.set_prio)
+	if [ "$set_prio" != "unchange" ]; then
+		if [ ! -z "$set_prio" ]; then
+		
+			set_prio=$((set_prio *2))
+			set_prio=$((set_prio +1))
+			set_prio="0x"$(awk "BEGIN{x=sprintf(\"%x\",$set_prio);print x}")"0000000"
+			
+			$BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK -j  MARK --or-mark $set_prio
+			sys_mag "$BIN_IPT -t mangle -I BW_SET_COS -m mark --mark $mark/$BW_TC_MASK  -j MARK --or-mark $set_prio"
+			
+		fi 
+	fi 
+	sys_mag "end"
+}
+
+setup_classifier()
+{
+	sys_mag " setup_classifier $1"
+	local class_name="$1"
+	local ethType=""
+	local queue_id=""
+	local mark=""
+	local fromInt=""
+	local queue_int=""
+	local wanSection=""
+	local wanProto=""
+	local class_enable=$(uci get qos_classify.$class_name.enable)
+	
+	#Grab the information of the queue
+	local queue=$(uci get qos_classify.$class_name.queue)
+	local ethType=$(uci get qos_classify.$class_name.ethType)
+	local fromInt=$(uci get qos_classify.$class_name.fromInt)
+	local queue_int=$(uci get qos.$queue.interface)
+
+	##get queue id and mark or set drop action
+	if [ "$queue" != "drop" ]; then  
+		queue_id="1"$(uci get qos.$queue.classid)
+		mark="0x"$(awk "BEGIN{x=sprintf(\"%07x\",$queue_id);print x}")
+
+		if [ "$queue_int" == "wan" ]; then
+			Int="eth0"
+
+			#check WAN protocol
+			wanSection=$(uci get intfGrp.$fromInt.wanint)
+			[ "$wanSection" == "WAN" ] && wanSection="wan"
+			wanProto=$(uci get network.$wanSection.proto)
+
+		elif [ "$queue_int" == "lan" ]; then
+			Int="ifb0"
+			#[ "$fromInt" != "0" ] && append cmd "-i $wanInt "
+		fi
+
+
+	else
+		# set mark as 0x00000000 if user want to drop packet(Q_DROP)
+		mark="0x00000000"
+	fi
+
+	sys_mag " queue $queue Int = $Int mark = $mark queue_id = $queue_id ethType = $ethType"
+
+	if [ "$class_enable" == "1" ]; then
+
+		if [ "$mark" != "0x00000000" ]; then
+	
+			## setup packet filter	
+			case "$ethType" in
+			na)
+				$BIN_TC filter add dev $Int parent 1: protocol ip prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id
+				sys_mag "$BIN_TC filter add dev $Int parent 1: protocol ip prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id"
+			;;
+			8021q)
+				$BIN_TC filter add dev $Int parent 1: protocol 802.1q prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id
+				sys_mag "$BIN_TC filter add dev $Int parent 1: protocol 802.1q prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id"
+				$BIN_TC filter add dev $Int parent 1: protocol ip prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id
+				sys_mag "$BIN_TC filter add dev $Int parent 1: protocol ip prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id"
+			;;
+			arp)
+				$BIN_TC filter add dev $Int parent 1: protocol arp prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id
+				sys_mag "$BIN_TC filter add dev $Int parent 1: protocol arp prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id"
+			;;
+			ip)
+				if [ "$wanProto" == "pppoe" ] ;then
+					$BIN_TC filter add dev $Int parent 1: protocol all prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id
+					sys_mag "$BIN_TC filter add dev $Int parent 1: protocol all prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id"
+
+				else
+					$BIN_TC filter add dev $Int parent 1: protocol ip prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id
+					sys_mag "$BIN_TC filter add dev $Int parent 1: protocol ip prio 0 u32 match mark ${mark} ${BW_TC_MASK} flowid 1:$queue_id"
+				fi	
+
+			;;        
+			esac
+		
+		fi
+
+
+		qos_brIngressMark "$queue" "$fromInt"
+		qos_roIngressMark "$queue" "$fromInt"
+		
+		# Configure classify setting ,apply iptables or ebtables
+		qos_brIngressClass "$class_name" "$queue_id" "$ethType" "$fromInt" "$mark"
+		qos_roIngressClass "$class_name" "$queue_id" "$ethType" "$fromInt" "$mark"
+
+		if [ "$mark" != "0x00000000" ]; then
+			qos_brEgressMark "$class_name" "$queue_id" "$mark" "$fromInt" "$queue_int"
+			qos_roEgressMark "$class_name" "$queue_id" "$mark" "$fromInt" "$queue_int"
+		fi
+	fi
+	sys_mag " setup_classifier end"
+}
+
+
+wlan_redirect()
+{
+
+	sys_mag " wlan_redirect $1"
+	local wlan_if=$1
+		
+	## get wifi device states
+	local wifi_dev_disable=$(uci get wireless.$1.disabled)
+
+	if [ $wifi_dev_disable == "0" ]; then
+
+		## Configure lan root qdisc and redirect to ifb0
+		$BIN_TC  qdisc add dev $wlan_if root handle 1: htb default 10
+		$BIN_TC  filter add dev $wlan_if parent 1: protocol all u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0
+
+		sys_mag " $BIN_TC  qdisc add dev $wlan_if root handle 1: htb default 10"
+		sys_mag " $BIN_TC  filter add dev $wlan_if parent 1: protocol all u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0"
+		
+	fi
+	sys_mag " wlan_redirect end"
+}
+
+
+delete_queue_root()
+{
+
+	sys_mag " delete_queue_root $1"
+	local dev=$1
+	
+	$BIN_TC  qdisc del dev $dev root 2>/dev/null
+	sys_mag " $BIN_TC  qdisc del dev $dev root 2>/dev/null"
+
+	sys_mag " delete_queue_root end"
+}
+
+
+
+qos_start() 
+{
+
+	sys_mag "qos_start : guest_wlan_24G_bandwidth_enable = $2  guest_wlan_5G_bandwidth_enable = $2"
+	local qos_enable="$1"
+	local guest_wlan_24G_bandwidth_enable="$2"
+	local guest_wlan_5G_bandwidth_enable="$3"
+
+	## insert modules
+	LIST="sch_htb cls_u32 cls_fw sch_prio sch_sfq xt_IPID act_mirred"
+	for module in $LIST
+	do 	
+		[ "`lsmod | grep $module`" == "" ] && insmod $module 2> /dev/null	
+	done
+
+	[ "`lsmod | grep ifb`" == "" ] && insmod ifb numifbs=1 2> /dev/null
+
+	## Setup Intermediate functional block device.
+	[ -z "`ifconfig | grep ifb0`" ] && ifconfig ifb0 up 2> /dev/null
+	
+	local upload=$(uci get qos.general.upload)
+	local download=$(uci get qos.general.download)
+
+	if [ $upload -lt $MINBW ]; then
+		upload_r2q="$(($MINBW / 13))"
+		upload=$MINBW"kbit"
+	else
+		upload_r2q="$(($upload / 13))"
+		upload=$upload"kbit"
+	fi
+	
+	if [ $download -lt $MINBW ]; then
+		download_r2q="$(($MINBW / 13))"
+		download=$MINBW"kbit"
+	else
+		download_r2q="$(($download / 13))"
+		download=$download"kbit"
+	fi
+
+	if [ "$qos_enable" == "0" ] ; then
+		upload="9999kbit"
+		download="9999kbit"
+	fi
+	
+	##create ifb0 root qdisc 
+	sys_mag "$BIN_TC  qdisc add dev ifb0 root handle 1: htb default 118 r2q $download_r2q"
+	$BIN_TC  qdisc add dev ifb0 root handle 1: htb default 118 r2q $download_r2q
+
+	##create eth0 root qdisc 
+	sys_mag "$BIN_TC  qdisc add dev eth0 root handle 1: htb default 10 r2q $upload_r2q"
+	$BIN_TC  qdisc add dev eth0 root handle 1: htb default 10 r2q $upload_r2q
+	
+	##create eth1 root qdisc and redirect to ifb0 
+	sys_mag "$BIN_TC  qdisc add dev eth1 root handle 1: htb default 10 r2q $download_r2q"
+	$BIN_TC  qdisc add dev eth1 root handle 1: htb default 10 r2q $download_r2q
+
+	$BIN_TC  filter add dev eth1 parent 1: protocol all u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0
+	sys_mag " $BIN_TC  filter add dev eth1 parent 1: protocol all u32 match u32 0 0 flowid 1:1 action mirred egress redirect dev ifb0"
+
+	##create wlan root qdisc and redirect to ifb0 if Qos enable or Guest wlan enable
+	config_load wireless
+
+	##2.4G : ath0~3  5G : ath10~13
+	config_foreach wlan_redirect wifi-iface
+	
+	## Configure eth0/ifb0 root class  if Qos enable or Guest wlan enable 
+	## Qos and Guest wlan function use same eth0/ifb0 to do bw mangement
+	sys_mag "$BIN_TC  class add dev eth0 parent 1: classid 1:1 htb rate $upload ceil $upload "
+	$BIN_TC  class add dev eth0 parent 1: classid 1:1 htb rate $upload ceil $upload 
+
+	sys_mag "$BIN_TC  class add dev ifb0 parent 1: classid 1:1 htb rate $download ceil $download"
+	$BIN_TC  class add dev ifb0 parent 1: classid 1:1 htb rate $download ceil $download
+
+	config_load qos 
+	config_foreach setup_queue_root queue	
+	config_foreach setup_default_queue_root DefaultQueue
+
+	if [ "$qos_enable" == "1" ] ; then 
+
+		#Configure downstream default traffic
+		setup_downstream_classifier
+
+		# Configure classify setting
+		config_load qos_classify
+		config_foreach setup_classifier class
+	fi
+	
+	# Configure queue and class if guest wlan enable
+	if [ "$guest_wlan_24G_bandwidth_enable" == "1" ] ; then 
+
+		# chk ath3 binding in default group 
+		local intGrp_wlan_member=$(uci get intfGrp.Default,wlan)
+		if [ -z "$(echo $intGrp_wlan_member | grep "23")" ]; then
+			guest_24g_wlan_start
+		fi
+	fi
+
+	if [ "$guest_wlan_5G_bandwidth_enable" == "1" ] ; then 
+
+		# chk ath13 binding in default group 
+		if [ -z "$(echo $intGrp_wlan_member | grep "13")" ]; then
+			guest_5g_wlan_start
+		fi
+	fi
+
+	#TBD: need to process lan/waln traffic
+	#downstream_mark
+	#lan_side_traffic
+
+	sys_mag "qos_start end"
+}
+
+qos_stop()
+{
+	sys_mag "qos_stop"
+
+	## Delete root qdisc
+	#config_load network
+	#config_foreach del_root interface
+	
+	LIST="eth0 eth1 ifb0"
+	for ifname in $LIST
+	do 	
+		delete_queue_root "$ifname"	
+	done
+
+	## Delete wifi root qdisc
+	config_load wireless
+
+	## wifi0~1
+	#config_foreach delete_queue_root wifi-device
+
+	## 2.4G : ath0~3 5G : ath10~13
+	config_foreach delete_queue_root wifi-iface
+
+	#remove modules
+	LIST="sch_htb cls_u32 cls_fw sch_prio sch_sfq xt_IPID cls_fw act_mirred"
+	for module in $LIST
+	do 	
+		[ "`lsmod | grep $module`" != "" ] && rmmod $module 2> /dev/null 
+	done
+	
+	[ "`ifconfig | grep ifb0`" != "" ] && ifconfig  ifb0 down 2> /dev/null
+
+	wan_cos_stop
+
+	sys_mag "qos_stop end "
+}
+
+guest_24g_wlan_start()
+{
+	sys_mag "guest_24g_wlan_start"
+	
+	local max_bandwidth=$(uci_get wireless ath3 guest_max_bandwidth)
+	local max_bandwidth=$max_bandwidth"kbit"
+
+	##get queue id
+	local queue_count=`expr $(uci get qos.general.wanQueue_count) + $(uci get qos.general.lanQueue_count) + 1`
+	local queue_id=1"$queue_count"
+	local mark="0x"$(awk "BEGIN{x=sprintf(\"%07x\",$queue_id);print x}")
+
+	#download
+	$BIN_TC class add dev ifb0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 7 quantum 1514
+	sys_mag "$BIN_TC class add dev ifb0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 1 quantum 1514"
+	
+	bw_set_leaf_node "ifb0" "${queue_id}"
+	$BIN_TC filter add dev ifb0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_WLAN_DL_MARK} ${WLAN_MASK} flowid 1:$queue_id
+	sys_mag "$BIN_TC filter add dev ifb0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_WLAN_DL_MARK} ${WLAN_MASK} flowid 1:$queue_id"
+	
+	iptables -t mangle -I POSTROUTING -o ath3 -j MARK --set-mark $GUEST_WLAN_DL_MARK/${WLAN_MASK}
+	sys_mag "iptables -t mangle -A POSTROUTING -o ath3 -j MARK --set-mark $GUEST_WLAN_DL_MARK/${WLAN_MASK}"
+	
+	#upload
+	$BIN_TC class add dev eth0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 7 quantum 1514
+	sys_mag "$BIN_TC class add dev eth0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 1 quantum 1514"
+	
+	bw_set_leaf_node "eth0" "${queue_id}"
+	$BIN_TC filter add dev eth0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_WLAN_UL_MARK} ${WLAN_MASK} flowid 1:$queue_id
+	sys_mag "$BIN_TC filter add dev eth0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_WLAN_UL_MARK} ${WLAN_MASK} flowid 1:$queue_id"
+	
+	
+	iptables -t mangle -I PREROUTING -i ath3 -j MARK --set-mark $GUEST_WLAN_UL_MARK/${WLAN_MASK}
+	sys_mag "iptables -t mangle -A PREROUTING -i ath3 -j MARK --set-mark $GUEST_WLAN_UL_MARK/${WLAN_MASK}"
+
+	sys_mag "guest_24g_wlan_start end"
+}
+
+
+guest_5g_wlan_start()
+{
+	sys_mag "guest_5g_wlan_start"
+	local iface="ath13"
+		
+	local max_bandwidth=$(uci_get wireless ath13 guest_max_bandwidth)
+
+	local max_bandwidth=$max_bandwidth"kbit"
+
+	##get queue id
+	local queue_count=`expr $(uci get qos.general.wanQueue_count) + $(uci get qos.general.lanQueue_count) + 2`
+	local queue_id=1"$queue_count"
+	local mark="0x"$(awk "BEGIN{x=sprintf(\"%07x\",$queue_id);print x}")
+
+	#download
+	$BIN_TC class add dev ifb0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 7 quantum 1514
+	sys_mag "$BIN_TC class add dev ifb0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 1 quantum 1514"
+	
+	bw_set_leaf_node "ifb0" "${queue_id}"
+	
+	$BIN_TC filter add dev ifb0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_5G_WLAN_DL_MARK} ${WLAN_MASK} flowid 1:$queue_id
+	sys_mag "	$BIN_TC filter add dev ifb0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_5G_WLAN_DL_MARK} ${WLAN_MASK} flowid 1:$queue_id"
+	
+	$BIN_IPT -t mangle -I POSTROUTING -o ath13 -j MARK --set-mark $GUEST_5G_WLAN_DL_MARK/${WLAN_MASK}
+	sys_mag "iptables -t mangle -I POSTROUTING -o ath13 -j MARK --set-mark $GUEST_5G_WLAN_DL_MARK/${WLAN_MASK}"
+	
+	#upload
+	$BIN_TC class add dev eth0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 7 quantum 1514
+	sys_mag "$BIN_TC class add dev eth0 parent 1:1 classid 1:$queue_id htb rate 1kbit ceil $max_bandwidth prio 1 quantum 1514"
+	
+	bw_set_leaf_node "eth0" "${queue_id}"
+	$BIN_TC filter add dev eth0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_5G_WLAN_UL_MARK} ${WLAN_MASK} flowid 1:$queue_id
+	sys_mag "$BIN_TC filter add dev eth0 parent 1: protocol ip prio 0 u32 match mark ${GUEST_5G_WLAN_UL_MARK} ${WLAN_MASK} flowid 1:$queue_id"
+	
+	$BIN_IPT -t mangle -I PREROUTING -i ath13 -j MARK --set-mark $GUEST_5G_WLAN_UL_MARK/${WLAN_MASK}
+	sys_mag "iptables -t mangle -I PREROUTING -i ath13 -j MARK --set-mark $GUEST_5G_WLAN_UL_MARK/${WLAN_MASK}"
+	
+	sys_mag "guest_5g_wlan_start  end"
+}
+
+edit_queue()
+{
+	sys_mag "edit_queue "
+	local queue_count=`expr $(uci get qos.general.wanQueue_count) + $(uci get qos.general.lanQueue_count)`
+	local i=1
+	while [ $i -le $queue_count ]
+	do
+		delete=$(uci get qos.$i.delete)
+
+		if [ "$delete" = "1" ] ; then
+
+			## remove queue 
+			interface=$(uci get qos.$i.interface)
+			qosid=$i
+			uci del qos.$qosid
+			
+			##If queue is deleted, then related classifiers will be removed too
+			local class_count=`expr $(uci get qos_classify.general.class_count) `
+			local j=1
+			while [ $j -le $class_count ]
+			do
+
+				class_queue=$(uci get qos_classify.class$j.queue)
+				if [ "$class_queue" = "$qosid" ] ; then
+					classid=$j
+					uci del qos_classify.class$classid
+					
+					while [ $classid -lt $class_count ]
+					do
+						uci rename qos_classify.class`expr $classid + 1`=class$classid
+						classid=`expr $classid + 1`
+					done
+					
+					class_count=`expr $class_count - 1`
+					j=`expr $j - 1`
+
+					uci set qos_classify.general.class_count=$class_count 
+					uci commit qos_classify
+
+				fi
+
+				j=`expr $j + 1`
+			done
+
+			## rename queue section name
+			while [ $qosid -lt $queue_count ]
+			do
+				uci rename qos.`expr $qosid + 1`=$qosid
+				qosid=`expr $qosid + 1`
+			done
+			
+			qosid='0' 
+			
+			# rename queue section name
+			while [ $qosid -lt $queue_count ]
+			do
+				uci set qos."$qosid".classid=$qosid
+				qosid=`expr $qosid + 1`
+			done
+			
+			queue_count=`expr $queue_count - 1`
+			i=`expr $i - 1`
+
+			if [ "$interface" = "wan" ] ; then
+				local wanQueue_count=$(uci get qos.general.wanQueue_count)
+				uci set qos.general.wanQueue_count=`expr $wanQueue_count - 1`
+			else [ "$interface" = "lan" ]
+				local lanQueue_count=$(uci get qos.general.lanQueue_count)
+				uci set qos.general.lanQueue_count=`expr $lanQueue_count - 1`
+			fi
+
+			uci commit qos
+		fi
+
+		i=`expr $i + 1`
+	done
+
+	sys_mag "edit_queue  end"
+}
+
+edit_class()
+{
+	sys_mag "edit_class  $1    $2   $3"
+
+	local class_count=`expr $(uci get qos_classify.general.class_count) `
+	local i=1
+	while [ $i -le $class_count ]
+	do
+		delete=$(uci get qos_classify.class$i.delete)
+
+		if [ "$delete" = "1" ] ; then
+
+			classid=$i
+			uci del qos_classify.class$classid
+
+			while [ $classid -lt $class_count ]
+			do
+				uci rename qos_classify.class`expr $classid + 1`=class$classid
+				classid=`expr $classid + 1`
+			done
+
+			class_count=`expr $class_count - 1`
+			i=`expr $i - 1`
+
+			uci set qos_classify.general.class_count=$class_count 
+			uci commit qos_classify
+		fi
+
+		i=`expr $i + 1`
+	done
+
+	sys_mag "edit_class end"
+}
+
+boot() {
+	### EMG2306/ZyXEL/Sean 2014/2/24 ###
+	sys_mag " boot"
+
+	## get qos state	
+	local qos_enable=$(uci get qos.general.enable)
+	
+	## get guest wlan state
+	wifi_hw_on=$(cat /tmp/wlan_on)
+
+	if [ "$wifi_hw_on" = "1" ] ; then
+
+		local ath3_disabled_24G=$(uci_get wireless ath3 disabled)    
+		local ath13_disabled_5G=$(uci_get wireless ath13 disabled)   
+
+		if [ "$ath3_disabled_24G" == "0" ] ; then 
+
+			local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+			local guest_wlan_24G_bandwidth_enable=$(uci_get wireless ath3 guest_bandwidth_enable)
+
+			if [ "$guest_wlan_24G_enabled" == "1" ] && [ "$guest_wlan_24G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_24G_bandwidth_enable="1"
+			else
+				guest_wlan_24G_bandwidth_enable="0"
+			fi  
+		fi  
+
+		if [ "$ath13_disabled_5G" == "0" ] ; then 
+
+			local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)	
+			local guest_wlan_5G_bandwidth_enable=$(uci_get wireless ath13 guest_bandwidth_enable)
+		
+			if [ "$guest_wlan_5G_enabled" == "1" ] && [ "$guest_wlan_5G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_5G_bandwidth_enable="1"
+			else
+				guest_wlan_5G_bandwidth_enable="0"
+			fi  
+		fi
+	fi
+	
+	##check hw_nat
+	/sbin/chk_sfe	
+		
+	if [ "$qos_enable" == "1" ] ; then
+
+	        ##init all the rules of QoS.
+	        init_iptable "$qos_enable" 
+        	init_ebtable "$qos_enable"
+
+		qos_start "$qos_enable" "$guest_wlan_24G_bandwidth_enable" "$guest_wlan_5G_bandwidth_enable"
+	fi
+
+	sys_mag " boot  end"
+}
+
+start() {
+	### EMG2306/ZyXEL/Sean 2014/2/24 ###
+	sys_mag "start"
+	
+	wan_cos_stop
+
+	## get qos state
+	local qos_enable=$(uci get qos.general.enable)
+	
+	## get guest wlan state
+	wifi_hw_on=$(cat /tmp/wlan_on)
+
+	if [ "$wifi_hw_on" = "1" ] ; then
+
+		local ath3_disabled_24G=$(uci_get wireless ath3 disabled)    
+		local ath13_disabled_5G=$(uci_get wireless ath13 disabled)   
+
+		if [ "$ath3_disabled_24G" == "0" ] ; then 
+
+			local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+			local guest_wlan_24G_bandwidth_enable=$(uci_get wireless ath3 guest_bandwidth_enable)
+
+			if [ "$guest_wlan_24G_enabled" == "1" ] && [ "$guest_wlan_24G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_24G_bandwidth_enable="1"
+			else
+				guest_wlan_24G_bandwidth_enable="0"
+			fi  
+		fi  
+
+		if [ "$ath13_disabled_5G" == "0" ] ; then 
+
+			local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)	
+			local guest_wlan_5G_bandwidth_enable=$(uci_get wireless ath13 guest_bandwidth_enable)
+		
+			if [ "$guest_wlan_5G_enabled" == "1" ] && [ "$guest_wlan_5G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_5G_bandwidth_enable="1"
+			else
+				guest_wlan_5G_bandwidth_enable="0"
+			fi  
+		fi
+	fi
+	
+	##check hw_nat
+	/sbin/chk_sfe
+
+	## flush all the rules of QoS.
+	init_iptable "$qos_enable" 
+	init_ebtable "$qos_enable"
+	
+	if [ "$qos_enable" = "1" ]; then
+	
+		qos_start "$qos_enable" "$guest_wlan_24G_bandwidth_enable" "$guest_wlan_5G_bandwidth_enable"
+	else
+	
+		if [ "$guest_wlan_24G_bandwidth_enable" = "1" ] || [ "$guest_wlan_5G_bandwidth_enable" = "1" ] ; then
+			guest_wlan
+		else
+			qos_stop
+		fi
+
+	fi
+
+	wan_cos_start
+
+	sys_mag "start  end"
+}
+
+restart() {
+	### EMG2926/ZyXEL/Sean 2014/2/24 ###
+	sys_mag "restart "
+
+	wan_cos_stop
+
+	## get qos state
+	local qos_enable=$(uci get qos.general.enable)
+	
+	## get guest wlan state
+	wifi_hw_on=$(cat /tmp/wlan_on)
+
+	if [ "$wifi_hw_on" = "1" ] ; then
+
+		local ath3_disabled_24G=$(uci_get wireless ath3 disabled)    
+		local ath13_disabled_5G=$(uci_get wireless ath13 disabled)   
+
+		if [ "$ath3_disabled_24G" == "0" ] ; then 
+
+			local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+			local guest_wlan_24G_bandwidth_enable=$(uci_get wireless ath3 guest_bandwidth_enable)
+
+			if [ "$guest_wlan_24G_enabled" == "1" ] && [ "$guest_wlan_24G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_24G_bandwidth_enable="1"
+			else
+				guest_wlan_24G_bandwidth_enable="0"
+			fi  
+		fi  
+
+		if [ "$ath13_disabled_5G" == "0" ] ; then 
+
+			local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)	
+			local guest_wlan_5G_bandwidth_enable=$(uci_get wireless ath13 guest_bandwidth_enable)
+		
+			if [ "$guest_wlan_5G_enabled" == "1" ] && [ "$guest_wlan_5G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_5G_bandwidth_enable="1"
+			else
+				guest_wlan_5G_bandwidth_enable="0"
+			fi  
+		fi
+	fi
+	
+	##edit queue
+	edit_queue
+
+	##edit class
+	edit_class
+	
+	##check hw_nat
+	/sbin/chk_sfe
+
+	## flush all the rules of QoS.
+	init_iptable "$qos_enable" 
+	init_ebtable "$qos_enable" 
+
+	if [ "$qos_enable" = "1" ] ; then
+		qos_stop
+		qos_start "$qos_enable" "$guest_wlan_24G_bandwidth_enable" "$guest_wlan_5G_bandwidth_enable"
+	else
+
+		if [ "$guest_wlan_24G_bandwidth_enable" = "1" ] || [ "$guest_wlan_5G_bandwidth_enable" = "1" ] ; then
+			guest_wlan
+		else
+			qos_stop
+		fi
+	fi
+
+	wan_cos_start
+
+	sys_mag "restart  end "
+}
+
+stop(){
+	### EMG2926/ZyXEL/Sean 2014/2/24 ###	
+	sys_mag "stop "
+
+        ## get qos state
+        local qos_enable=$(uci get qos.general.enable)
+
+	## get guest wlan state
+	wifi_hw_on=$(cat /tmp/wlan_on)
+
+	if [ "$wifi_hw_on" = "1" ] ; then
+
+		local ath3_disabled_24G=$(uci_get wireless ath3 disabled)    
+		local ath13_disabled_5G=$(uci_get wireless ath13 disabled)   
+
+		if [ "$ath3_disabled_24G" == "0" ] ; then 
+
+			local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+			local guest_wlan_24G_bandwidth_enable=$(uci_get wireless ath3 guest_bandwidth_enable)
+
+			if [ "$guest_wlan_24G_enabled" == "1" ] && [ "$guest_wlan_24G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_24G_bandwidth_enable="1"
+			else
+				guest_wlan_24G_bandwidth_enable="0"
+			fi  
+		fi  
+
+		if [ "$ath13_disabled_5G" == "0" ] ; then 
+
+			local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)	
+			local guest_wlan_5G_bandwidth_enable=$(uci_get wireless ath13 guest_bandwidth_enable)
+		
+			if [ "$guest_wlan_5G_enabled" == "1" ] && [ "$guest_wlan_5G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_5G_bandwidth_enable="1"
+			else
+				guest_wlan_5G_bandwidth_enable="0"
+			fi  
+		fi
+	fi
+
+	##check hw_nat
+	/sbin/chk_sfe
+
+	## flush all the rules of QoS.
+	init_iptable "$qos_enable" 
+	init_ebtable "$qos_enable"
+
+	if [ "$guest_wlan_24G_bandwidth_enable" = "1" ] || [ "$guest_wlan_5G_bandwidth_enable" = "1" ] ; then
+		guest_wlan
+	else
+		qos_stop
+	fi
+
+	sys_mag "stop  end "
+}
+
+guest_wlan() {
+	sys_mag "guest_wlan   "
+	### EMG2306/ZyXEL/Sean 2014/2/24 ###
+
+        ##init all the rules of QoS.
+        init_iptable "$qos_enable" 
+	init_ebtable "$qos_enable"
+
+	## get guest wlan state
+	wifi_hw_on=$(cat /tmp/wlan_on)
+
+	if [ "$wifi_hw_on" = "1" ] ; then
+
+		local ath3_disabled_24G=$(uci_get wireless ath3 disabled)    
+		local ath13_disabled_5G=$(uci_get wireless ath13 disabled)   
+
+		if [ "$ath3_disabled_24G" == "0" ] ; then 
+
+			local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+			local guest_wlan_24G_bandwidth_enable=$(uci_get wireless ath3 guest_bandwidth_enable)
+
+			if [ "$guest_wlan_24G_enabled" == "1" ] && [ "$guest_wlan_24G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_24G_bandwidth_enable="1"
+			else
+				guest_wlan_24G_bandwidth_enable="0"
+			fi  
+		fi  
+
+		if [ "$ath13_disabled_5G" == "0" ] ; then 
+
+			local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)	
+			local guest_wlan_5G_bandwidth_enable=$(uci_get wireless ath13 guest_bandwidth_enable)
+		
+			if [ "$guest_wlan_5G_enabled" == "1" ] && [ "$guest_wlan_5G_bandwidth_enable" == "1" ]; then 
+				guest_wlan_5G_bandwidth_enable="1"
+			else
+				guest_wlan_5G_bandwidth_enable="0"
+			fi  
+		fi
+	fi
+
+	## Delete root qdisc
+	LIST="eth0 eth1 ifb0"
+	for ifname in $LIST
+	do 	
+		delete_queue_root "$ifname"	
+	done
+
+	## Delete wifi root qdisc
+	config_load wireless
+
+	## 2.4G : ath0~3 5G : ath10~13
+	config_foreach delete_queue_root wifi-iface
+
+	##check hw_nat
+	/sbin/chk_sfe
+	
+	if [ "$guest_wlan_24G_bandwidth_enable" == "1"  ] || [ "$guest_wlan_5G_bandwidth_enable" == "1" ] ; then
+
+		## insert modules
+		LIST="sch_htb cls_u32 cls_fw sch_prio sch_sfq xt_IPID act_mirred"
+		for module in $LIST
+		do 	
+			[ "`lsmod | grep $module`" == "" ] && insmod $module 2> /dev/null	
+		done
+
+		local bandwidth_manage_24G=$(uci_get wireless ath3 guest_bandwidth_enable)
+		local max_bandwidth_24G=$(uci_get wireless ath3 guest_max_bandwidth)
+		max_bandwidth_24G=$max_bandwidth_24G"kbit"
+
+		local bandwidth_manage_5G=$(uci_get wireless ath13 guest_bandwidth_enable)
+		local max_bandwidth_5G=$(uci_get wireless ath13 guest_max_bandwidth)
+		max_bandwidth_5G=$max_bandwidth_5G"kbit"
+
+	fi
+
+	##download##
+	#if Guest WLAN 5G enable.
+	if [ "$guest_wlan_5G_bandwidth_enable" == "1" ]; then
+		tc qdisc add dev ath13 root handle 10: htb default 10
+		tc class add dev ath13 parent 10: classid 10:1 htb rate $max_bandwidth_5G ceil $max_bandwidth_5G
+		tc class add dev ath13 parent 10:1 classid 10:10 htb rate 1kbit ceil $max_bandwidth_5G prio 1
+		tc qdisc add dev ath13 parent 10:10 handle 100: pfifo limit 10000
+	fi
+
+	#if Guest WLAN 2.4G enable.
+	if [ "$guest_wlan_24G_bandwidth_enable" == "1" ]; then
+		tc qdisc add dev ath3 root handle 20: htb default 20
+		tc class add dev ath3 parent 20: classid 20:1 htb rate $max_bandwidth_24G ceil $max_bandwidth_24G
+		tc class add dev ath3 parent 20:1 classid 20:20 htb rate 1kbit ceil $max_bandwidth_24G prio 1
+		tc qdisc add dev ath3 parent 20:20 handle 200: pfifo limit 10000
+	fi
+			
+	##upload##
+	if [ "$guest_wlan_24G_bandwidth_enable" == "1"  ] || [ "$guest_wlan_5G_bandwidth_enable" == "1" ] ; then
+
+		tc qdisc add dev eth0 root handle 30: htb default 30
+		tc class add dev eth0 parent 30: classid 30:1 htb rate 1024mbps ceil 1024mbps
+		tc class add dev eth0 parent 30:1 classid 30:30 htb rate 1kbit ceil 1024mbps prio 1
+		tc qdisc add dev eth0 parent 30:30 handle 300: pfifo limit 10000
+
+		#5G
+		if [ "$guest_wlan_5G_bandwidth_enable" == "1"  ] ; then
+			$BIN_TC class add dev eth0 parent 30:1 classid 30:10 htb rate 1kbit ceil $max_bandwidth_5G prio 2
+			$BIN_TC qdisc add dev eth0 parent 30:10 handle 100: pfifo limit 10000
+			#tc filter add dev eth0 parent 30: protocol ip prio 100 handle 20 fw classid 30:20
+			#iptables -t mangle -D PREROUTING -i ath13 -j MARK --set-mark 20
+			#iptables -t mangle -A PREROUTING -i ath13 -j MARK --set-mark 20
+
+			$BIN_TC filter add dev eth0 parent 30: protocol ip prio 0 u32 match mark ${GUEST_5G_WLAN_UL_MARK} ${WLAN_MASK} flowid 30:10
+			$BIN_IPT -t mangle -A PREROUTING -i ath13 -j MARK --set-mark $GUEST_5G_WLAN_UL_MARK/${WLAN_MASK}
+
+		fi
+
+		#2.4G
+		if [ "$guest_wlan_24G_bandwidth_enable" == "1"  ] ; then
+			$BIN_TC class add dev eth0 parent 30:1 classid 30:20 htb rate 1kbit ceil $max_bandwidth_24G prio 2
+			$BIN_TC qdisc add dev eth0 parent 30:20 handle 200: pfifo limit 10000
+			#tc filter add dev eth0 parent 30: protocol ip prio 100 handle 10 fw classid 30:10
+			#iptables -t mangle -D PREROUTING -i ath13 -j MARK --set-mark 10
+			#iptables -t mangle -A PREROUTING -i ath13 -j MARK --set-mark 10
+
+			$BIN_TC filter add dev eth0 parent 30: protocol ip prio 100 u32 match mark ${GUEST_WLAN_UL_MARK} ${WLAN_MASK} flowid 30:20
+			$BIN_IPT -t mangle -A PREROUTING -i ath3 -j MARK --set-mark $GUEST_WLAN_UL_MARK/${WLAN_MASK}
+		fi
+
+	fi			
+
+	sys_mag "guest_wlan  end "
+}
+
+case "$1" in 
+    boot)
+        boot
+    ;;
+    start)
+        start
+    ;;
+	restart)
+        restart
+    ;;
+	guest_wlan)
+        guest_wlan
+    ;;
+	stop)
+        stop
+    ;;
+    edit)
+        ##edit queue
+        edit_queue
+        ##edit class
+        edit_class
+    ;;
+    wan_cos_setup)
+        wan_cos_setup
+    ;;
+    *)
+        $1_$2 
+    ;;
+esac
+

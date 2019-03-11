@@ -1,0 +1,53 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+
+START=99
+
+setmac() {
+	echo setmac
+	mac=""
+	i=1
+	ruleIdx=$(uci get parental_monitor.general.ruleIdx)
+	mac_list=$(uci get parental_monitor.$ruleIdx.mac_list)
+	rules=`echo $mac_list | awk '{FS=";"} {print NF}'`
+	while [ "$i" -le "$rules" ]
+	do
+		device=`echo $mac_list | awk '{FS=";"} {print $'$i'}'`
+		[ "$i" == "1" ] && {
+			mac=`grep "$device" /tmp/dhcp.leases | awk -F ' ' '{ print $2}'` 
+		}|| {
+			mac="$mac"";"`grep "$device" /tmp/dhcp.leases | awk -F ' ' '{ print $2}'`
+		}
+		i=$(( $i + 1 ))
+	done
+	
+	uci set parental_monitor.$ruleIdx.mac=$mac
+	uci commit parental_monitor
+}
+
+
+boot() {
+	echo "From: Home Router" > /var/mail
+	echo "To: Dear Parent" >> /var/mail
+	echo "Subject: Your children arrived home." >> /var/mail
+	echo "Dear Parent," >> /var/mail
+	echo "" >> /var/mail
+	echo "	Your children arrived home." >> /var/mail
+	echo "" >> /var/mail
+	echo "Best Regards" >> /var/mail
+
+	/sbin/parental_monitor start
+}
+
+start() {
+	##check hw_nat
+	setmac
+	/sbin/parental_monitor start
+}
+
+stop() {
+	##check hw_nat
+	/sbin/chk_hwnat	
+	/sbin/parental_monitor stop
+}
+

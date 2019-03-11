@@ -1,0 +1,48 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+proto=`uci get network.wan.proto`
+
+local ath3_disabled_24G=$(uci_get wireless ath3 disabled)
+local ath13_disabled_5G=$(uci_get wireless ath13 disabled)
+
+local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)
+
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+WAN="$proto"-wan
+else
+WAN=`uci get network.wan.ifname`
+fi
+LAN="br-lan"
+
+	
+	for iface in ath3 ath13
+	do
+		#echo "iface=$iface" >> /tmp/debug_log
+		#iptables -D FORWARD -i $iface -o vlan10 -j ACCEPT 2>/dev/null
+		iptables -D FORWARD -i $iface -o pppoe-wan -j ACCEPT 2>/dev/null
+		iptables -D FORWARD -i $iface -o pptp-wan -j ACCEPT 2>/dev/null
+		iptables -D INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+		iptables -D INPUT -i $iface -j DROP
+		iptables -D FORWARD -i $iface -o $LAN -j DROP
+		
+		if [ "$ath3_disabled_24G" == "0" ] && [ "$iface" == "ath3" ] && [ "$guest_wlan_24G_enabled" == "1" ]; then
+		
+			echo "$iface (2.4G) guest wlan add iptables!! " >> /tmp/debug_log
+			iptables -A FORWARD -i $iface -o $WAN -j ACCEPT
+			iptables -I INPUT -i $iface -j DROP
+			iptables -I INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+			iptables -I FORWARD -i $iface -o $LAN -j DROP
+		
+		elif [ "$ath13_disabled_5G" == "0" ] && [ "$iface" == "ath13" ] && [ "$guest_wlan_5G_enabled" == "1" ]; then
+			
+			echo "$iface (5G) guest wlan add iptables!! " >> /tmp/debug_log
+			iptables -A FORWARD -i $iface -o $WAN -j ACCEPT
+			iptables -I INPUT -i $iface -j DROP
+			iptables -I INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+			iptables -I FORWARD -i $iface -o $LAN -j DROP
+		fi
+		
+	done

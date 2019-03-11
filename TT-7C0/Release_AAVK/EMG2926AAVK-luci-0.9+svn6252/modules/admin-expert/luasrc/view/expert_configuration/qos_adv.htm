@@ -1,0 +1,872 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<title>QoS/Bandwidth Management Settings</title>
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style>
+td {white-space: nowrap;}
+</style>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta http-equiv="Pragma" content="no-cache">
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+function doFindCurrentRule(CurrentIndex)
+{
+	num = parseInt(CurrentIndex);
+	document.forms[0].BW_rtnCurIndex.value = num;
+}
+function doEditRule()
+{
+	document.forms[0].BW_rtnFlag.value = 1;
+}
+function doDeleteRule()
+{
+	document.forms[0].BW_rtnFlag.value = 2;
+}
+function doFindAppRule(CurrentIndex)
+{
+	num = parseInt(CurrentIndex);
+	document.forms[0].BW_rtnAppIndex.value = num;
+}
+function doEditAppRule()
+{
+	document.forms[0].BW_rtnAppFlag.value = 1;
+}
+
+function checkBWVal( portObj)
+{
+	if (portObj.value == "")
+	{
+		alert("The value of bandwitdth can not accept empty.");
+		portObj.value = 100000;
+		return;
+	}
+	var portVal=atoi(portObj.value, 1);
+	if ( isNaN(portVal) || portVal < 0 )
+	{
+		alert("The value of bandwitdth is not valid value.");
+		portObj.value = 100000;
+		return;
+	}
+}
+
+function BwStrValue()
+{
+
+    var uploadBandwidth = "<%= uci:get("qos","shaper","port_rate_eth0")%>";
+    var downloadBandwidth = "<%= uci:get("qos","shaper","port_rate_lan")%>";
+	
+    if( uploadBandwidth =="" ){
+	    document.QoSSetup.UploadBandwidth_value.value = "";
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 0;
+	}else if( uploadBandwidth == 64 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 64;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 1;
+	}else if( uploadBandwidth == 96 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 96;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 2;
+	}else if( uploadBandwidth == 128 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 128;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 3;
+	}else if( uploadBandwidth == 192 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 192;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 4;
+	}else if( uploadBandwidth == 256 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 256;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 5;
+	}else if( uploadBandwidth == 384 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 384;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 6;
+	}else if( uploadBandwidth == 512 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 512;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 7;
+	}else if( uploadBandwidth == 768 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 768;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 8;
+	}else if( uploadBandwidth == 1024 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 1024;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 9;
+	}else if( uploadBandwidth == 2048 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 2048;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 10;
+	}else if( uploadBandwidth == 4096 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 4096;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 11;
+	}else if( uploadBandwidth == 8192 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 8192;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 12;
+	}else if( uploadBandwidth == 10240 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 10240;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 13;
+	}else if( uploadBandwidth == 12288 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 12288;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 14;
+	}else if( uploadBandwidth == 16384 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 16384;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 15;
+	}else if( uploadBandwidth == 20480 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 20480;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 16;
+	}else if( uploadBandwidth == 24576 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 24576;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 17;
+	}else if( uploadBandwidth == 32768 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 32768;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 18;
+	}else if( uploadBandwidth == 65536 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 65536;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 19;
+	}else if( uploadBandwidth == 90112 ){
+	    document.QoSSetup.UploadBandwidth_value.value = 90112;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 20;
+	}else{
+	    document.QoSSetup.UploadBandwidth_value.value = uploadBandwidth;
+		document.QoSSetup.UploadBandwidth_select.options.selectedIndex = 0;
+	}
+	
+	if( downloadBandwidth =="" ){
+	    document.QoSSetup.DownloadBandwidth_value.value = "";
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 0;
+	}else if( downloadBandwidth == 64 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 64;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 1;
+	}else if( downloadBandwidth == 96 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 96;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 2;
+	}else if( downloadBandwidth == 128 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 128;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 3;
+	}else if( downloadBandwidth == 192 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 192;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 4;
+	}else if( downloadBandwidth == 256 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 256;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 5;
+	}else if( downloadBandwidth == 384 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 384;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 6;
+	}else if( downloadBandwidth == 512 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 512;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 7;
+	}else if( downloadBandwidth == 768 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 768;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 8;
+	}else if( downloadBandwidth == 1024 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 1024;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 9;
+	}else if( downloadBandwidth == 2048 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 2048;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 10;
+	}else if( downloadBandwidth == 4096 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 4096;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 11;
+	}else if( downloadBandwidth == 8192 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 8192;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 12;
+	}else if( downloadBandwidth == 10240 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 10240;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 13;
+	}else if( downloadBandwidth == 12288 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 12288;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 14;
+	}else if( downloadBandwidth == 16384 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 16384;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 15;
+	}else if( downloadBandwidth == 20480 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 20480;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 16;
+	}else if( downloadBandwidth == 24576 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 24576;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 17;
+	}else if( downloadBandwidth == 32768 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 32768;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 18;
+	}else if( downloadBandwidth == 65536 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 65536;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 19;
+	}else if( downloadBandwidth == 90112 ){
+	    document.QoSSetup.DownloadBandwidth_value.value = 90112;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 20;
+	}else{
+	    document.QoSSetup.DownloadBandwidth_value.value = downloadBandwidth;
+		document.QoSSetup.DownloadBandwidth_select.options.selectedIndex = 0;
+	}
+
+}
+
+function UpdoServiceChange(index){
+   if(index==0){
+   		document.QoSSetup.UploadBandwidth_value.value="";
+   }else{
+		document.QoSSetup.UploadBandwidth_value.value=document.QoSSetup.UploadBandwidth_select.options[index].value;
+	}
+}
+function DowndoServiceChange(index){
+   if(index==0){
+   		document.QoSSetup.DownloadBandwidth_value.value="";
+   }else{
+		document.QoSSetup.DownloadBandwidth_value.value=document.QoSSetup.DownloadBandwidth_select.options[index].value;
+	}
+}
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function btnApply()
+{
+	var i,j;
+	var idx;
+	var appPrio = "";
+	var appEnable = "";
+	var userEnable = "";
+	var userCategory = "";
+	var userDir = "";
+	var userName = "";
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","management","qos","advance")%>';
+	var loc = submit_url + '?apply=Apply';
+	with ( document.forms[0] ){
+		
+		/* for shapping rate */
+		//=====================================================
+		if(document.QoSSetup.UploadBandwidth_value.value != ""){
+			d1 = atoi(document.QoSSetup.UploadBandwidth_value.value, 1);
+			if(isAllNum( document.QoSSetup.UploadBandwidth_value.value ) == 0){
+				alert("The value of bandwitdth is not valid value.");
+				document.QoSSetup.UploadBandwidth_value.focus();
+				return false;
+			}
+			if(d1 > 90112 || d1 < 64){
+				alert("Please set value between 64~90112");
+				document.QoSSetup.UploadBandwidth_value.focus();
+				return false;
+			}
+		}else{
+			alert("The value of bandwitdth can not accept empty.");
+			document.QoSSetup.UploadBandwidth_value.focus();
+			return false;
+		}
+		//+++++++++++++++++++++++++++++++++++++++++++++++++++++
+		if(document.QoSSetup.DownloadBandwidth_value.value != ""){
+			d1 = atoi(document.QoSSetup.DownloadBandwidth_value.value, 1);
+			if(isAllNum( document.QoSSetup.DownloadBandwidth_value.value ) == 0){
+				alert("The value of bandwitdth is not valid value.");
+				document.QoSSetup.DownloadBandwidth_value.focus();
+				return false;
+			}
+			if(d1 > 90112 || d1 < 64){
+				alert("Please set value between 64~90112");
+				document.QoSSetup.DownloadBandwidth_value.focus();
+				return false;
+			}
+		}else{
+			alert("The value of bandwitdth can not accept empty.");
+			document.QoSSetup.DownloadBandwidth_value.focus();
+			return false;
+		}		
+		//=====================================================
+		
+		loc += '&UploadBandwidth_value=' + UploadBandwidth_value.value;
+		loc += '&DownloadBandwidth_value=' + DownloadBandwidth_value.value;
+		
+		/* for pre-defined app */
+		for (i=1;i<=6;i++){
+			idx = document.getElementById("appPrio" + i).selectedIndex;
+			appPrio += document.getElementById("appPrio" + i).options[idx].value + ",";
+			
+			if(i == 1 || i == 5){
+			
+			   if(i == 1){
+				for(j=1;j<=4;j++){
+					if(document.getElementById("appEnable" + i + "_" + j).checked == true){
+						appEnable += "1,";
+					}
+					else{
+						appEnable += "0,";
+					}
+				}
+			  }
+			  else{
+				for(j=1;j<=3;j++){
+					if(document.getElementById("appEnable" + i + "_" + j).checked == true){
+						appEnable += "1,";
+					}
+					else{
+						appEnable += "0,";
+					}
+				}			  
+			  }
+			}
+			else{
+				if(document.getElementById("appEnable" + i).checked == true){
+					appEnable += "1,";
+				}
+				else{
+					appEnable += "0,";
+				}
+			}
+		}
+		
+		/* for user-defined cfg */
+		for (i=1;i<=8;i++){
+			
+			idx = document.getElementById("userPrio" + i).selectedIndex;
+			userCategory += document.getElementById("userPrio" + i).options[idx].value + ",";
+			
+			idx = document.getElementById("userDir" + i).selectedIndex;
+			userDir += document.getElementById("userDir" + i).options[idx].value + ",";
+			
+			if(document.getElementById("userEnable" + i).checked == true){
+				userEnable += "1,";
+			}
+			else{
+				userEnable += "0,";
+			}
+			
+			userName += document.getElementById("userName" + i).value + ",";
+				
+		}
+	 
+	 loc += '&app_prio=' + appPrio;
+	 loc += '&app_enable=' + appEnable;
+	 loc += '&user_category=' + userCategory;
+	 loc += '&user_name=' + userName;
+	 loc += '&user_enable=' + userEnable;
+	 loc += '&user_dir=' + userDir;
+	
+   	 var code = 'location="' + loc + '"';
+     eval(code);	
+	}
+}
+
+</script>
+</head>
+<!--     body      -->
+<body onload="BwStrValue();BwStrValue();MM_preloadImages('<%=media%>/admin/images/i_edit_on.gif','<%=media%>/admin/images/i_delete_on.gif')">
+<!--<h1 id="QoSTitleStr">Quality of Service Settings </h1>
+<p id="QoSIntroStr"> You may setup rules to provide Quality of Service guarantees for specific applications.</p>
+<hr>-->
+<form method="post" name="QoSSetup" action="<%=controller%>/expert/configuration/management/qos/advance">
+<div id="tabs">
+  <ul>
+  	<li><a href="<%=controller%>/expert/configuration/management/qos" title="<%:General%>"><span><%:General%></span></a></li>
+    <li class="hightline"><a title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<input type="hidden" id="App_Prio" name="app_prio" value="">
+<input type="hidden" id="App_Enable" name="app_enable" value="">
+<input type="hidden" id="User_Category" name="user_category" value="">
+<input type="hidden" id="User_Name" name="user_name" value="">
+<input type="hidden" id="User_Enable" name="user_enable" value="">
+<input type="hidden" id="User_Dir" name="user_dir" value="">
+
+
+<div id="table">
+	<ul>
+    <li class="table_content">
+    	<div class="data">
+      	<ul>
+      		<li class="title">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                   <tr><td nowrap id="advTitle1"><%:Management_Bandwidth%></td>
+                   </tr></table>
+      		</li>
+			<li class="w_text">
+          	<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+            	<tr>
+					<td width="8%"><font id="advUpBWStr"><%:Upstream_Bandwidth%></font>&nbsp;&nbsp;</td>
+					<td width="5%"><input name="UploadBandwidth_value" size="8" maxlength="12" value="" type="text"> &nbsp; (Kbps) &nbsp; &nbsp; &nbsp;</td>
+					
+	                <td width="15%"> <select name="UploadBandwidth_select" id="UploadBandwidth_select" size="1" onchange="UpdoServiceChange(this.selectedIndex);">
+					<option value="00">User Defined</option>
+					<option value="64">64 Kbps</option>
+					<option value="96">96 Kbps</option>
+					<option value="128">128 Kbps</option>
+					<option value="192">192 Kbps</option>
+					<option value="256">256 Kbps</option>
+					<option value="384">384 Kbps</option>
+					<option value="512">512 Kbps</option>
+					<option value="768">768 Kbps</option>
+					<option value="1024">1M bps</option>
+					<option value="2048">2M bps</option>
+					<option value="4096">4M bps</option>
+					<option value="8192">8M bps</option>
+					<option value="10240">10M bps</option>
+					<option value="12288">12M bps</option>
+					<option value="16384">16M bps</option>
+					<option value="20480">20M bps</option>
+					<option value="24576">24M bps</option>
+					<option value="32768">32M bps</option>
+					<option value="65536">64M bps</option>
+					<option value="90112">88M bps</option>					
+					</select>
+					</td>
+					
+              	</tr>
+           	</table>
+          	</li>
+			<li class="w_text">
+          	<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+            	<tr>
+              		<td width="8%"><font id="advDownBWStr"><%:Downstream_Bandwidth%></font>&nbsp;&nbsp;</td>
+					<td width="5%"><input name="DownloadBandwidth_value" size="8" maxlength="12" value="" type="text"> &nbsp; (Kbps) &nbsp; &nbsp; &nbsp;</td>
+					
+                    <td width="15%"><select name="DownloadBandwidth_select" id="DownloadBandwidth_select" size="1" onchange="DowndoServiceChange(this.selectedIndex);">
+					<option value="00">User Defined</option>
+					<option value="64">64 Kbps</option>
+					<option value="96">96 Kbps</option>
+					<option value="128">128 Kbps</option>
+					<option value="192">192 Kbps</option>
+					<option value="256">256 Kbps</option>
+					<option value="384">384 Kbps</option>
+					<option value="512">512 Kbps</option>
+					<option value="768">768 Kbps</option>
+					<option value="1024">1M bps</option>
+					<option value="2048">2M	bps</option>
+					<option value="4096">4M bps</option>
+					<option value="8192">8M bps</option>
+					<option value="10240">10M bps</option>
+					<option value="12288">12M bps</option>
+					<option value="16384">16M bps</option>
+					<option value="20480">20M bps</option>
+					<option value="24576">24M bps</option>
+					<option value="32768">32M bps</option>
+					<option value="65536">64M bps</option>
+					<option value="90112">88M bps</option>					
+					</select>
+					</td>
+				
+				</tr>
+            </table>
+	    	</li>
+			<li class="space3"></li>
+			<li class="title">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                   <tr><td nowrap id="advTitle2"><%:Application_List%></td>
+                   </tr>
+                   </table>
+			</li>
+			<li></li>
+			<li class="w_text2">
+    			<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+<tr>
+<td height="26" colspan="3"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+<tr>
+<td width="5" height="26"><img src="<%=media%>/admin/images/table_top_left.gif" width="5" height="26" /></td>
+<td background="<%=media%>/admin/images/table_top_center.gif"class="table_title"><font id ="advTitle2_1"><%:Application_List%></font></td>
+<td width="5" height="26"><img src="<%=media%>/admin/images/table_top_right.gif" width="5" height="26" /></td>
+</tr>
+</table></td>
+</tr>
+
+      				<tr>
+        				<td>
+        						<table width="100%" cellpadding="0" cellspacing="0" >
+							        <tr >
+							          <td width="5%"><center>
+							            <span class="top_left">#</span>
+							          </center>                            </td>
+							          <td width="15%"><center>
+							            <span class="top_font" id="advAppPrio"><%:Priority%></span>
+							          </center>                            </td>
+							          <td width="35%"><center>
+							            <span class="top_font" id="advAppCategory"><%:Category%></span>
+							          </center>                            </td>
+							          <td width="25%"><center>
+							            <span class="top_font" id="advAppService"><%:Service%></span>
+							          </center>		                       </td>							  
+									  <td width="20%"><center>                                                
+							            <span class="top_right" id="advAppSetting"><%:Advanced_Setting%></span>
+							          </center>                            </td>
+									</tr>
+
+		    <tr><td><center><span class=table_left>1</span></center></td>
+			<td><center><span class=table_font><select id="appPrio1" size=1>
+			<%
+				prio = uci:get("qos","app_policy_0","prio")
+			%> 
+			<option value="1" <%if prio == "1" then%> selected <%end%> ><%:High%></option>
+			<option value="2" <%if prio == "2" then%> selected <%end%> ><%:Mid%></option>
+			<option value="3" <%if prio == "3" then%> selected <%end%> ><%:Low%></option>
+			</select></span></center></td>
+			
+			<td><center><span class=table_font><%:Game_Console%></span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_0","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable1_1" value=1 <%if enable == "1" then%>checked<%end%> >  <%:XBox_Live%></span></td>
+            
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_0" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage1','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+			
+		    </tr>
+		    
+			<tr><td><center><span class=table_left> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_1","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable1_2" value=1 <%if enable == "1" then%>checked<%end%> >  <%:PlayStation%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_1" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage2','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+
+			</tr>
+			
+			<tr><td><center><span class=table_left> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_2","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable1_3" value=1 <%if enable == "1" then%>checked<%end%> >  <%:MSN_Game_Zone%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_2" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage3','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+		
+			</tr>
+			
+			<tr><td><center><span class=table_left> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_3","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable1_4" value=1 <%if enable == "1" then%>checked<%end%> >  <%:Battlenet%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_3" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage4','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+			
+			</tr>
+			
+			<tr><td><center><span class=table_left>2</span></center></td>
+			<td><center><span class=table_font><select id=appPrio2 size=1> 
+			<%
+				prio = uci:get("qos","app_policy_4","prio")
+			%>
+			<option value="1" <%if prio == "1" then%> selected <%end%> ><%:High%></option>
+			<option value="2" <%if prio == "2" then%> selected <%end%> ><%:Mid%></option>
+			<option value="3" <%if prio == "3" then%> selected <%end%> ><%:Low%></option>			
+			</select></span></center></td>
+			
+			<td><center><span class=table_font><%:VoIP%></span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_4","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable2" value=1 <%if enable == "1" then%>checked<%end%> >  <%:VoIP%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_4" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage5','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+
+			</tr>
+			
+			<tr><td><center><span class=table_left>3</span></center></td>
+			<td><center><span class=table_font><select id="appPrio3" size=1>
+			<%
+				prio = uci:get("qos","app_policy_5","prio")
+			%> 
+			<option value="1" <%if prio == "1" then%> selected <%end%> ><%:High%></option>
+			<option value="2" <%if prio == "2" then%> selected <%end%> ><%:Mid%></option>
+			<option value="3" <%if prio == "3" then%> selected <%end%> ><%:Low%></option>
+			</select></span></center></td>
+			
+			<td><center><span class=table_font><%:Instant_Messenger%></span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_5","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable3" value=1 <%if enable == "1" then%>checked<%end%> >  <%:Instant_Messenger%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_5" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage6','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+			
+			</tr>
+			
+			<tr><td><center><span class=table_left>4</span></center></td>
+			<td><center><span class=table_font><select id="appPrio4" size=1>
+			<%
+				prio = uci:get("qos","app_policy_6","prio")
+			%> 
+			<option value="1" <%if prio == "1" then%> selected <%end%> ><%:High%></option>
+			<option value="2" <%if prio == "2" then%> selected <%end%> ><%:Mid%></option>
+			<option value="3" <%if prio == "3" then%> selected <%end%> ><%:Low%></option>
+			</select></span></center></td>
+			
+			<td><center><span class=table_font><%:Web_Surfing%></span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_6","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable4" value=1 <%if enable == "1" then%>checked<%end%> >  <%:Web_Surfing%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_6" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage7','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+
+			</tr>
+			
+			<tr><td><center><span class=table_left>5</span></center></td>
+			<td><center><span class=table_font><select id="appPrio5" size=1>
+			<%
+				prio = uci:get("qos","app_policy_7","prio")
+			%> 
+			<option value="1" <%if prio == "1" then%> selected <%end%> ><%:High%></option>
+			<option value="2" <%if prio == "2" then%> selected <%end%> ><%:Mid%></option>
+			<option value="3" <%if prio == "3" then%> selected <%end%> ><%:Low%></option>
+			</select></span></center></td>
+			
+			<td><center><span class=table_font><%:P2P_FTP%></span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_7","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable5_1" value=1 <%if enable == "1" then%>checked<%end%> > <%:FTP%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_7" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage8','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+
+			</tr>
+			
+			<tr><td><center><span class=table_left> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_8","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable5_2" value=1 <%if enable == "1" then%>checked<%end%> > <%:eMule%></span></td>
+						
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_8" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage9','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+
+			<tr><td><center><span class=table_left> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<td><center><span class=table_font> </span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_9","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable5_3" value=1 <%if enable == "1" then%>checked<%end%> > <%:BitTorrent%></span></td>
+						
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_9" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage10','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+			
+			</tr>			
+			<tr><td><center><span class=table_left>6</span></center></td>
+			<td><center><span class=table_font><select id="appPrio6" size=1>
+			<%
+				prio = uci:get("qos","app_policy_10","prio")
+			%> 
+			<option value="1" <%if prio == "1" then%> selected <%end%> ><%:High%></option>
+			<option value="2" <%if prio == "2" then%> selected <%end%> ><%:Mid%></option>
+			<option value="3" <%if prio == "3" then%> selected <%end%> ><%:Low%></option>
+			</select></span></center></td>
+			
+			<td><center><span class=table_font><%:E_Mail%></span></center></td>
+			<%
+				enable = uci:get("qos","app_policy_10","enable")
+			%>
+			<td><span class=table_font><input type=checkbox id="appEnable6" value=1 <%if enable == "1" then%>checked<%end%> >  <%:E_Mail%></span></td>
+
+			<td><center><span class=table_right>
+			<a href="<%=controller%>/expert/configuration/management/qos/advance?edit_AdvSet=app_policy_10" 
+			onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage11','','<%=media%>/admin/images/i_edit_on.gif',1)">
+			<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> /></a></span></center></td>			
+			
+			</tr>
+
+        <tr>
+         	<td height="5" colspan="9">
+		         <table width="100%" height="5" border="0" cellpadding="0" cellspacing="0">
+			         <tr>
+				         <td width="5" height="5"><img src="<%=media%>/admin/images/table_bottom_left.gif" width="5" height="5" /></td>
+				         <td height="5" background="<%=media%>/admin/images/table_bottom_center.gif"><img src="<%=media%>/admin/images/table_bottom_center.gif" width="1" height="5" /></td>
+				         <td width="5"><img src="<%=media%>/admin/images/table_bottom_right.gif" width="5" height="5" /></td>
+				         </tr>
+				         </table></td>
+			         </tr>
+		         </table>
+		       <div class="spaceair"></div>
+               <div class="w_text"></div>
+               <div class="spaceair"></div>
+
+		         </td>
+         </tr>
+        </table>
+			    </li>
+				<li></li>
+				<li class="space3"></li>
+				<li class="title">
+                  <table border="0" cellpadding="0" cellspacing="0">
+                   <tr><td nowrap id="advTitle3"><%:User_defined_Service%></td>
+                   </tr></table>
+				</li>
+				<li></li>
+				<li class="w_text2">
+        	<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+<tr>
+<td height="26" colspan="6"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+<tr>
+<td width="5" height="26"><img src="<%=media%>/admin/images/table_top_left.gif" width="5" height="26" /></td>
+<td background="<%=media%>/admin/images/table_top_center.gif"class="table_title"><font id ="advTitle3_1"><%:User_defined_Service%></font></td>
+<td width="5" height="26"><img src="<%=media%>/admin/images/table_top_right.gif" width="5" height="26" /></td>
+</tr>
+</table></td>
+</tr>
+             <tr >
+               <td width="5%"><center>
+                 <span class="top_left">#</span>
+               </center>                            </td>
+               <td width="10%"><center>
+                 <span class="top_font" id="advUserEnable"><%:Enable%></span>
+               </center>                            </td>
+               <td width="20%"><center>
+                 <span class="top_font" id="advUserDir"><%:Direction%></span>
+               </center>                            </td>
+               <td width="30%"><center>
+                 <span class="top_font" id="advUserName"><%:Service_Name%></span>
+               </center>                            </td>
+               <td width="15%"><center>
+                 <span class="top_font" id="advUserCategory"><%:Category%></span>
+               </center>                            </td>
+               <td width="15%"><center>
+                 <span class="top_right" id="advUserModify"><%:Modify%></span>
+               </center>                            </td>
+             </tr>
+			 <% for i=1,8 do %>
+			 <% userCfg = uci:get_all("qos","eg_policy_" .. i)%>
+			 <tr ><td><center><span class=table_left><%=i%></span></center></td>
+				<td><center><span class=table_font><input type=checkbox id="userEnable<%=i%>" value=1 <%if userCfg["enable"] == "1" then %>checked<%end%> ></span></center></td>
+				<td><center><span class=table_font><select id="userDir<%=i%>" >
+				<option value="lan" <%if userCfg["to_intf"] == "lan" then%> selected <%end%> >To LAN&WLAN</option>
+				<option value="wan" <%if userCfg["to_intf"] == "wan" then%> selected <%end%> >To WAN</option>
+				<td><center><span class=table_font><input type=text size=12 maxlength=19 id="userName<%=i%>" <% if userCfg["name"] == "" then %>value=""<%else%>value='<%=userCfg["name"]%>'<%end%> ></span></center></td><td><center><span class=table_font>
+				<select id="userPrio<%=i%>" size=1>
+				<option value="Game Console" <%if userCfg["apptype"] == "Game Console" then%> selected <%end%> ><%:Game_Console%></option>
+				<option value="VoIP" <%if userCfg["apptype"] == "VoIP" then%> selected <%end%> ><%:VoIP%></option>
+				<option value="Instant Messanger" <%if userCfg["apptype"] == "Instant Messanger" then%> selected <%end%> ><%:Instant_Messenger%></option>
+				
+				<option value="Web Surfing" <%if userCfg["apptype"] == "Web Surfing" then%> selected <%end%> ><%:Web_Surfing%></option>
+				<option value="P2P/FTP" <%if userCfg["apptype"] == "P2P/FTP" then%> selected <%end%> ><%:P2P_FTP%></option>
+				<option value="E-Mail" <%if userCfg["apptype"] == "E-Mail" then%> selected <%end%> ><%:E_Mail%></option>
+				</select></span></center></td>
+				
+				<td><center><span class=table_right>
+				<a href="<%=controller%>/expert/configuration/management/qos/advance?edit=eg_policy_<%=i%>" 
+				onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userEditImage<%=i%>','','<%=media%>/admin/images/i_edit_on.gif',1)">
+				<img src="<%=media%>/admin/images/i_edit.gif" width=18 height=18 border=0 title=<%:Edit%> ></a>				
+				<a href="<%=controller%>/expert/configuration/management/qos/advance?delete=eg_policy_<%=i%>" 
+				onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('userDelImage<%=i%>','','<%=media%>/admin/images/i_delete_on.gif',1)"> 
+				<img src="<%=media%>/admin/images/i_delete.gif" width=18 height=18 border=0 title=<%:Delete%> ></a></span></center></td>
+				
+			 </tr>
+			 <% end %>
+
+             <tr>
+             	<td height="5" colspan="6">
+             		<table width="100%" height="5" border="0" cellpadding="0" cellspacing="0">
+             			<tr>
+             				<td width="5" height="5"><img src="<%=media%>/admin/images/table_bottom_left.gif" width="5" height="5" /></td>
+                    <td height="5" background="<%=media%>/admin/images/table_bottom_center.gif"><img src="<%=media%>/admin/images/table_bottom_center.gif" width="1" height="5" /></td>
+                    <td width="5"><img src="<%=media%>/admin/images/table_bottom_right.gif" width="5" height="5" /></td>
+                  </tr>
+                </table>
+             	</td>
+             </tr>
+             </table></td>
+             </tr>
+            </table>
+			    </li>
+				<li></li>
+				<li></li>
+       </ul>
+     </div>
+    </li>
+    <center>
+        <li class="table_button">
+		<input type="button" value="<%:Apply%>" id="advApply" name="apply" onClick="btnApply()"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+		<input type="reset" value="<%:cancel%>" id="advReset" name="reset" onClick="window.location.reload()" >
+        </li>
+        </center>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Bandwidth_MGMT%> > <%:Advance%>');
+</script>
+</html>
+

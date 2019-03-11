@@ -1,0 +1,46 @@
+<Client>
+	<DeviceId>
+		<DisplayName>U-Verse</DisplayName>
+        <DeviceDescriptionRecognition>
+            <DescriptionText>&lt;manufacturer&gt;PacketVideo&lt;/manufacturer&gt;</DescriptionText>
+            <DescriptionText>&lt;modelName&gt;U-verse TV&lt;/modelName&gt;</DescriptionText>
+            <DescriptionText>&lt;modelDescription&gt;ATT U-verse TV&lt;/modelDescription&gt;</DescriptionText>
+        </DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>Mediaroom</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG640x480</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<PretendServer>WMC</PretendServer>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-win7.xml</DescriptionFile>
+		</DLNA>
+		<MimeTranslations>
+				<MimeTypeSuppress>audio/x-aiff</MimeTypeSuppress>
+				<MimeTypeSuppress>video/x-msvideo</MimeTypeSuppress>
+				<MimeTypeSuppress>audio/x-flac</MimeTypeSuppress>
+				<MimeTypeSuppress>audio/mp4</MimeTypeSuppress>
+				<MimeTypeSuppress>audio/mp1</MimeTypeSuppress>
+				<MimeTypeSuppress>audio/x-mpeg</MimeTypeSuppress>
+				<MimeTypeSuppress>application/ogg</MimeTypeSuppress>
+				<MimeTypeSuppress>image/gif</MimeTypeSuppress>
+				<MimeTypeSuppress>image/png</MimeTypeSuppress>
+				<MimeTypeSuppress>video/x-msvideo</MimeTypeSuppress>
+				<MimeTypeSuppress>video/mpeg2</MimeTypeSuppress>
+				<MimeTypeSuppress>video/mpeg</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_DURATION</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+		<Quirk>UNLIMITED</Quirk>
+		<Quirk>FORCE_VIDEOBITRATE</Quirk>
+	</DeviceQuirks>
+</Client>

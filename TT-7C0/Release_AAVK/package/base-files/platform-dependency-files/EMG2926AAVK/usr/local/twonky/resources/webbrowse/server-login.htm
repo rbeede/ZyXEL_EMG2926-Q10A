@@ -1,0 +1,41 @@
+<div id="serverlogin" class="serverlogin">
+    <div class="subHeader">
+    	<span class="titleWrapper">
+        	<span class="subheaderTitle" string="login" />
+		</span>
+    </div>
+	<div class="paddingLeft">
+		<div class="smallServerContentSpacer"></div>
+    	<span class="titleWrapper">
+        	<span id="logintext" class="title" string="logintext" ></span>
+		</span>
+		<div class="smallServerContentSpacer"></div>
+		<table>
+		 <tr>	
+			<td>
+				<span string="username" />
+			</td>
+			<td>
+				<input id="username" type="text" class="inputGap" value="guest" onkeyup="usernameInputKeyUp(event)" onfocus="this.select()" />
+			</td>
+		 </tr>
+		 <tr>
+			<td>
+				<span string="password" />
+			</td>
+			<td>
+				<input id="password" type="password" class="inputGap" onkeyup="passwordInputKeyUp(event)" disabled="true" />
+			</td>
+		 </tr>
+		</table>
+		<div class="smallServerContentSpacer"></div>
+    	<span class="titleWrapper">
+        	<span id="loginFailed" class="title error" />
+		</span>
+		<div class="smallServerContentSpacer"></div>
+	</div>
+	<div id="loginActionButton">
+    	<a id="loginButton" class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="loginOK()"><span class="actionbtn_l"></span><span class="actionbtn_c" string="btnOk"></span><span class="actionbtn_r"></span></a>
+    	<div class="clear"></div>
+	</div>
+</div>

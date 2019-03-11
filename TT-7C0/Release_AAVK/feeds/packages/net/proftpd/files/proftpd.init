@@ -1,0 +1,301 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2010 OpenWrt.org
+
+START=40
+
+BIN="/usr/sbin/proftpd -c /var/proftpd.conf"
+RUN_D=/var
+PID_F=$RUN_D/proftpd.pid
+
+
+check_SAMBA_user(){
+
+	local users=6
+
+	i=1
+	uid=1000
+	config_load system	
+	
+	while [ $i -lt $users ];
+	do
+		
+		config_get enable samba_user_${i} enable
+		[ "$enable" == "1" ] || {
+			i=$(($i + 1))
+			continue;
+		}
+		
+		config_get name samba_user_${i} name
+
+		echo "$name:*:$uid:1000:$name:/var:/bin/ash" >> /etc/passwd	
+
+		i=$(($i + 1))
+		uid=$(($uid + 1))
+	done
+		
+}
+	
+proftp_creat_user() {
+
+	local users=6
+
+	cp  /etc/passwd /tmp/password
+	cat /tmp/password | grep "root:" > /tmp/passwd
+	cat /tmp/password | grep "daemon:/var:/bin/false" >> /tmp/passwd
+	cat /tmp/password | grep "ftp:" | grep "home" >> /tmp/passwd
+	cat /tmp/password | grep "network:/var:/bin/false" >> /tmp/passwd
+	cat /tmp/password | grep "nobody:/var:/bin/false" >> /tmp/passwd
+
+	cat /tmp/passwd > /etc/passwd
+
+	config_load system
+	config_get enable general enable
+
+	[ "$enable" == "1" ] && {
+		check_SAMBA_user
+	}
+		
+	i=1
+	uid=1000	
+	recovery=""
+	while [ $i -lt $users ];
+	do
+		config_load proftpd		
+		config_get proftpd_enable profile${i} enable
+		config_get proftpd_name profile${i} name
+		config_get proftpd_passwd profile${i} password
+		
+		[ "$proftpd_enable" == "1" ] || {
+			i=$(($i + 1))
+			continue;
+		}
+		
+		k="0"
+		config_load system
+		config_get enable general enable
+
+		if [ "$enable" == "1" ]; then		
+			j=1
+			while [ $j -lt $users ];
+			do
+				config_load system		
+				config_get samba_enable samba_user_${j} enable
+				config_get samba_name samba_user_${j} name
+				
+				[ "$samba_enable" == "1" ] || {
+						j=$(($j + 1))
+						continue;
+				}
+				
+				if [ "$proftpd_name" == "$samba_name" ];then
+				
+					while read line
+					do
+					
+						account=$(echo $line | grep "$samba_name" | awk -F ":" '{print $1}')
+
+						if [ "$account" != "" ];then
+							k="1"
+							break
+						fi
+						
+						k="0"
+												
+					done < /etc/passwd
+					
+				else
+					k="0"
+				fi
+
+				if [ "$k" == "1" ];then
+					break
+				fi
+							
+				j=$(($j + 1))							
+			done	
+		fi			
+
+		if [ "$k" == "0" ];then
+			if [ "$proftpd_name" == "ftp" ]; then
+				cat /etc/passwd |grep "ftp:" | grep "home" >>/tmp/ftp
+				deluser ftp
+				recovery=1
+			elif [ "$proftpd_name" == "daemon" ]; then
+				cat /etc/passwd |grep 'daemon:/var:/bin/false' >>/tmp/ftp
+				deluser daemon
+				recovery=1
+			elif [ "$proftpd_name" == "network" ]; then
+				cat /etc/passwd |grep 'network:/var:/bin/false' >>/tmp/ftp
+				deluser network
+				recovery=1
+			elif [ "$proftpd_name" == "nobody" ]; then
+				cat /etc/passwd |grep 'nobody:/var:/bin/false' >>/tmp/ftp
+				deluser nobody
+				recovery=1
+			fi
+			echo "$proftpd_name:*:$uid:1000:$proftpd_name:/var:/bin/ash" >> /etc/passwd
+			uid=$(($uid + 1))
+		fi
+		
+		(echo $proftpd_passwd; sleep 1; echo $proftpd_passwd) | passwd $proftpd_name 		
+						
+		i=$(($i + 1))
+	done
+	
+	
+	if [ "$recovery" == "1" ]; then
+		cat /tmp/ftp >>/etc/passwd
+		rm /tmp/ftp
+		break
+	fi
+	
+	
+}
+	
+	
+proftp_brok_head() {
+    local allow_usb1_rx
+    local allow_usb1_tx
+    local allow_usb2_rx
+    local allow_usb2_tx
+    local allow_login
+    local name
+    local ar
+    local port
+    local limit
+    local connection
+ 
+    config_get port $1 port
+    config_get connection $1 max_connection
+    for i in $(seq 1 5)
+    do
+	  name=$(uci_get proftpd profile$i name)
+	  ar=$(uci_get proftpd profile$i usb1_rw)
+	  [ $ar == "1" ] && allow_usb1_rx="$allow_usb1_rx $name,"
+	  [ $ar == "2" ] && {
+	  	allow_usb1_tx="$allow_usb1_tx $name,"
+		allow_usb1_rx="$allow_usb1_rx $name,"
+	  }
+	  ar=$(uci_get proftpd profile$i usb2_rw)
+	  [ $ar == "1" ] && allow_usb2_rx="$allow_usb2_rx $name," 
+	  [ $ar == "2" ] && {
+	  	allow_usb2_tx="$allow_usb2_tx $name," 
+	  	allow_usb2_rx="$allow_usb2_rx $name,"
+	  }
+	  ar=$(uci_get proftpd profile$i enable)
+	  [ $ar == "1" ] && allow_login="$allow_login $name,"
+    done
+	
+    sed -e "s#|PORT|#$port#g" \
+	    -e "s#|ALLOW_USB1_READ_USER|#$allow_usb1_rx#g" \
+	    -e "s#|ALLOW_USB1_WRITE_USER|#$allow_usb1_tx#g" \
+	    -e "s#|ALLOW_USB2_READ_USER|#$allow_usb2_rx#g" \
+	    -e "s#|ALLOW_USB2_WRITE_USER|#$allow_usb2_tx#g" \
+	    -e "s#|ALLOW_LOGIN_USER|#$allow_login#g" \
+	    -e "s#|MAX_CONNECTION|#$connection#g" \
+	    -e "/^.*AllowUser $/d" \
+	    /etc/proftpd.conf > /var/proftpd.conf
+	    
+    for i in $(seq 1 5)
+    do
+      name=$(uci_get proftpd profile$i name)
+      limit=$(uci_get proftpd profile$i downlo_speed)
+      [ $limit != "0" ] && echo "TransferRate RETR $limit user $name" >> /var/proftpd.conf
+      limit=$(uci_get proftpd profile$i uplo_speed)
+      [ $limit != "0" ] && echo "TransferRate STOR $limit user $name" >> /var/proftpd.conf
+    done
+}
+
+start() {
+
+	local nom
+	local res
+	local user_NUM=6		
+	
+	proftp_brok_head global
+
+	config_load proftpd		
+	config_get enable global enable
+	
+	if [ "$enable" = "1" ]; then
+	
+		proftp_creat_user
+
+		proftp_brok_head global
+		
+		[ ! -f $PID_F ] && $BIN
+		
+	else
+
+		cp  /etc/passwd /tmp/password	
+		cat /tmp/password | grep "root:" > /tmp/passwd
+		cat /tmp/password | grep "daemon:/var:/bin/false" >> /tmp/passwd
+		cat /tmp/password | grep "ftp:" | grep "home" >> /tmp/passwd
+		cat /tmp/password | grep "network:/var:/bin/false" >> /tmp/passwd
+		cat /tmp/password | grep "nobody:/var:/bin/false" >> /tmp/passwd
+
+		cat /tmp/passwd > /etc/passwd		
+	
+		config_load system
+		config_get enable general enable
+				
+		if [ "$enable" == "1" ]; then		
+			i=1
+			while [ $i -lt $user_NUM ];
+			do
+				config_get enable samba_user_${i} enable
+				config_get samba_name samba_user_${i} name
+				
+				[ "$enable" = "1" ] || {
+					i=$(($i + 1))
+					continue;
+				}
+
+				cat /tmp/password | grep ":$samba_name:/var:/bin/ash" >> /etc/passwd
+												
+				i=$(($i + 1))
+			done
+		else
+			rm /etc/samba/smbpasswd
+			touch /etc/samba/smbpasswd		
+		fi		
+		
+	fi	
+
+	/etc/init.d/password start	
+		
+	rm /tmp/password
+	rm /tmp/passwd
+
+	echo "1" > /tmp/initial_proftpd
+
+}
+
+stop() {
+
+	ps | grep proftpd | grep "grep" -v | awk '{print $1}' > /tmp/proftpd_pid
+
+	proftpd_pid=$(cat /tmp/proftpd_pid)
+
+	[ -n "$proftpd_pid" ] && {
+
+		while read line
+		do
+
+		   last_pid=$(cat /tmp/proftpd.pid)
+		   [ -z "$last_pid" ] && break
+		   if [ $line == $last_pid ]; then
+				break
+		   else
+				kill $line
+		   fi
+
+		done < /tmp/proftpd_pid
+
+	}
+
+	[ -f $PID_F ] && kill $(cat $PID_F)
+	rm $PID_F
+	rm /tmp/proftpd_pid
+	
+}

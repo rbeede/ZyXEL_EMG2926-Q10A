@@ -1,0 +1,122 @@
+#!/usr/bin/lua
+
+local protocol = require "luci.http.protocol"
+local uci = require("luci.model.uci").cursor()
+
+print ("Content-type:application:json\n")
+-- print ("hihi")
+
+
+params = protocol.urldecode_params(os.getenv("QUERY_STRING") or "")
+
+if params["eventFlows"] then
+	-- print (params["beginTime"])
+	-- print (params["endTime"])
+
+	-- local handle = io.popen("dump_events_by_time_json " .. params["beginTime"] .. " " .. params["endTime"])
+	local handle = io.popen("dump_flow_events_index_json " .. params["beginIndex"] .. " " .. params["endIndex"])
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["preCalculateFlow"] then
+	local handle = io.popen("dump_flow_precalculateFlow " .. params["timestamp"] ..  " 1 500 1 1")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["preCalculateFlowShowOnly"] then
+	local handle = io.popen("dump_flow_precalculateFlow " .. params["timestamp"] ..  " 1 500 2 1")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["removePrecalculatedAndNodeHistory"] then
+	local handle = io.popen("redis-cli DEL eventdb:perDevicePrecalculated nodehistory:nodes")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["dbUsageInfo"] then
+	local handle = io.popen("dump_fetchUsageInfo 0 0 0 0")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["writeDBUsageInfo"] then
+	local handle = io.popen("dump_fetchUsageInfo 1 " .. tonumber(params["resetDay"]) .. " " .. tonumber(params["quotaUsage"]) .. " " .. tonumber(params["warningThreshold"]) )
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["perDevice"] then
+	local handle = io.popen("dump_flow_perDevice_index " .. params["beginIndex"] .. " " .. params["endIndex"])
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["nodeHistory"] then
+	local handle = io.popen("dump_fetchNodeHistory ".. params["appendRealtimeData"])
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["lowBoundIndexByTimestamp"] then
+	local handle = io.popen("redis-cli --eval /bin/fetchNearTimestamp.lua logCalculation " .. params["timestamp"] .. " 500")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["delPreCalculateFlow"] then
+	local handle = io.popen("redis-cli DEL eventdb:perDevicePrecalculated")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["numOfCurrentEventFlows"] then
+	local handle = io.popen("dump_flow_numOfIndex")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+elseif params["retireOzker"] then
+	local handle = io.popen("ps | grep '[{]dump_flow_event\\|[{]ozker' | awk '{print $1}' | xargs kill -9")
+	local result = handle:read("*a")
+	handle:close()
+	print (result)
+	-- print "{\"message\":\"ok\"}"
+	-- print "333"
+elseif params["streamboostDebug"] then
+	local enableDebug = "0"
+	if (params["streamboostDebug"] == "1") then
+		enableDebug = "1"
+	end
+	uci:set("appflow","tccontroller","enable_streamboostDebug", enableDebug)
+	uci:commit("appflow")
+	print ("{\"message\":\"enableDebug set to " .. enableDebug .. "\"}")
+else
+	print "{\"message\":\"unknown command\"}"
+end -- if params["eventFlows"] then
+
+
+
+-- QUERY_STRING = os.getenv("QUERY_STRING")
+
+
+-- if QUERY_STRING then
+--   print ("query string: ")
+--   print (QUERY_STRING)
+--   print ("query before split:")
+--   query = split(QUERY_STRING, "&")
+--   print ("query before after:")
+-- 	print (query)
+
+  -- for _, v in ipairs (query) do
+  -- 	print (get_data)
+  -- 	print ("hihi2")
+  --   -- assemble_value (v, get_data)
+  -- end -- for
+-- end -- if
+
+-- local params = {}
+-- local echo = {}
+-- for name, value in string.gmatch(info .. '&', '(.-)%=(.-)%&') do
+-- value = string.gsub(value , '%+', ' ')
+-- value = string.gsub(value , '%%(%x%x)', function(dpc)
+-- return string.char(tonumber(dpc,16))
+-- end )
+-- params[name] = value
+-- value = string.gsub(value, "%&", "&amp;")
+-- value = string.gsub(value, "%<", "&lt;")
+-- value = string.gsub(value, '%"', "&quot;")
+-- echo[name] = value
+-- end

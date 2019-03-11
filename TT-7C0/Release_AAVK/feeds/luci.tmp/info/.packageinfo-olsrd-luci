@@ -1,0 +1,224 @@
+Source-Makefile: feeds/luci/olsrd-luci/Makefile
+Package: olsrd-luci
+Menu: 1
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpthread
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Optimized Link State Routing Daemon
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Optimized Link State Routing Daemon
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-arprefresh
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - ARP Refresh Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - ARP Refresh Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-dot-draw
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Dot Draw Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Dot Draw Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-bmf
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci +kmod-tun
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Basic Multicast Forwarding Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Basic Multicast Forwarding Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-dyn-gw
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Dynamic Gateway Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Dynamic Gateway Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-dyn-gw-plain
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Dynamic Gateway Plugin (Plain Version)
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Dynamic Gateway Plugin (Plain Version)
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-httpinfo
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - HTTP/HTML Info Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - HTTP/HTML Info Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-nameservice
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Hostname Propagation Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Hostname Propagation Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-secure
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Security Extensions Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Security Extensions Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-txtinfo
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - HTTP/Plaintext Info Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - HTTP/Plaintext Info Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-quagga
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Quagga Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Quagga Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-watchdog
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - Watchdog Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - Watchdog Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+Package: olsrd-luci-mod-mdns
+Submenu: Freifunk
+Version: 0.5.6-r7+luci1-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread olsrd-luci
+Menu-Depends: 
+Provides: 
+Section: luci
+Category: LuCI
+Title: OLSR - mDNS Plugin
+Maintainer: Jo-Philipp Wich <xm@subsignal.org>
+Source: olsrd-0.5.6-r7.tar.bz2
+Type: ipkg
+Description: OLSR - mDNS Plugin
+http://www.olsr.org/
+Jo-Philipp Wich <xm@subsignal.org>
+@@
+
+

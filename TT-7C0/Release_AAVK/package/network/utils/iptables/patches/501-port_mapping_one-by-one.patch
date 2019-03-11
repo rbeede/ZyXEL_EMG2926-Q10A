@@ -1,0 +1,92 @@
+--- a/extensions/libipt_DNAT.c	
++++ b/extensions/libipt_DNAT.c
+@@ -58,13 +58,27 @@
+ }
+ 
+ /* Ranges expected in network order. */
++#if 1 /* Support one-to-one port mapping. */
++static struct xt_entry_target *
++parse_to(char *arg, int portok, struct ipt_natinfo *info, char **matchRule)
++#else
+ static struct xt_entry_target *
+ parse_to(char *arg, int portok, struct ipt_natinfo *info)
++#endif
+ {
+ 	struct nf_nat_range range;
+ 	char *colon, *dash, *error;
+ 	const struct in_addr *ip;
+ 
++#if 1 /* Support one-to-one port mapping.*/
++	int matchMinPort = 0;
++	int matchMaxPort = 0;
++	char *matchColon = NULL;
++	char *search = NULL;
++	char *tmp = NULL;
++	int i = 0;
++#endif
++
+ 	memset(&range, 0, sizeof(range));
+ 	colon = strchr(arg, ':');
+ 
+@@ -105,6 +119,32 @@
+ 					   "Port range `%s' funky\n", colon+1);
+ 			range.min.tcp.port = htons(port);
+ 			range.max.tcp.port = htons(maxport);
++#if 1 /* Support one-to-one port mapping. */
++				/* Find out the external port range in match rule. */
++			tmp = *matchRule;
++			range.mappingFlag = 0;
++ 			for (i = 1; tmp != NULL; i++)
++ 			{
++ 				tmp = *(matchRule + i);
++ 				if ((search = strstr(tmp, "dport")) != NULL)
++ 				{
++ 					search = *(matchRule + i + 1);
++ 					matchMinPort = atoi(search);
++ 					matchColon = strchr(search, ':');
++ 					matchMaxPort = atoi(matchColon + 1);
++
++ 					/* If the port range of match rule is same as forward port range, nothing to do here. */
++ 					if ((matchMinPort != port) && (matchMaxPort != maxport))
++ 					{
++ 						range.mappingMin.tcp.port = htons(matchMinPort);
++ 						range.mappingMax.tcp.port = htons(matchMaxPort);
++ 						range.mappingFlag = 1;
++ 					}
++ 					break;
++					}
++				}
++#endif
++
+ 		}
+ 		/* Starts with a colon? No IP info...*/
+ 		if (colon == arg)
+@@ -166,7 +206,11 @@
+ 				xtables_error(PARAMETER_PROBLEM,
+ 					   "Multiple --to-destination not supported");
+ 		}
++#if 1 /* Support one-to-one port mapping. */
++		*target = parse_to(optarg, portok, info, argv);
++#else
+ 		*target = parse_to(optarg, portok, info);
++#endif
+ 		/* WTF do we need this for?? */
+ 		if (*flags & IPT_DNAT_OPT_RANDOM)
+ 			info->mr.range[0].flags |= IP_NAT_RANGE_PROTO_RANDOM;
+--- a/include/net/netfilter/nf_nat.h
++++ b/include/net/netfilter/nf_nat.h
+@@ -40,6 +40,14 @@
+ 
+ 	/* Inclusive: network order */
+ 	union nf_conntrack_man_proto min, max;
++
++#if 1 /* Support one-to-one port mapping. */
++	/* mappingFlag is 1, if it needs to do one-to-one port mapping. */
++	unsigned int mappingFlag;
++
++	/* Record external port information. */
++	union nf_conntrack_man_proto mappingMin, mappingMax;
++#endif
+ };
+ 
+ /* For backwards compat: don't use in modern code. */

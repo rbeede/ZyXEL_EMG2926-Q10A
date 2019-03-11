@@ -1,0 +1,27 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony Nasne</DisplayName>
+		<HttpRecognition>
+			<HttpText>nasne</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>nasne</DescriptionText>
+			<DescriptionText>Sony</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<DTCP/>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<DTCPMoveSinkUserAgent>UPnP/1.0</DTCPMoveSinkUserAgent>
+		</HTTP>
+		<DTCP>
+			<AkeSocketScheme>THREE_SOCKET_SCHEME</AkeSocketScheme>
+		</DTCP>			
+	</Adaptations>
+</Client>

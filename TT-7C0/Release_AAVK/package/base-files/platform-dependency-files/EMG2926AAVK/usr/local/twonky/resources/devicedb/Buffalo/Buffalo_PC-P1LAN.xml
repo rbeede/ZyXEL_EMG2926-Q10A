@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Buffalo PC-P1LAN</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>PC-P1LAN</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>IGNORESORT</Quirk>
+	</DeviceQuirks>
+</Client>

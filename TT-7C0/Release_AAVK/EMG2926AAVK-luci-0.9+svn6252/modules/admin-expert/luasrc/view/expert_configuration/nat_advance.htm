@@ -1,0 +1,256 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+local uci = require("luci.model.uci").cursor()
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js"></script>
+<script language="JavaScript" type="text/javascript">
+Butterlate.setTextDomain("NAT_DOMAIN");    
+   
+function formCheck()
+{
+	var ui_inS= new Array(12); 
+	var ui_inE= new Array(12); 
+	var ui_trS= new Array(12); 
+	var ui_trE= new Array(12);   	
+	ui_inS[0] = document.NAT_ADV.inComing_port_start1.value;
+	ui_inS[1] = document.NAT_ADV.inComing_port_start2.value;
+	ui_inS[2] = document.NAT_ADV.inComing_port_start3.value;
+	ui_inS[3] = document.NAT_ADV.inComing_port_start4.value;
+	ui_inS[4] = document.NAT_ADV.inComing_port_start5.value;
+	ui_inS[5] = document.NAT_ADV.inComing_port_start6.value;
+	ui_inS[6] = document.NAT_ADV.inComing_port_start7.value;
+	ui_inS[7] = document.NAT_ADV.inComing_port_start8.value;
+	ui_inS[8] = document.NAT_ADV.inComing_port_start9.value;
+	ui_inS[9] = document.NAT_ADV.inComing_port_start10.value;
+	ui_inS[10] = document.NAT_ADV.inComing_port_start11.value;
+	ui_inS[11] = document.NAT_ADV.inComing_port_start12.value;	
+	ui_inE[0] = document.NAT_ADV.inComing_port_end1.value;
+	ui_inE[1] = document.NAT_ADV.inComing_port_end2.value;
+	ui_inE[2] = document.NAT_ADV.inComing_port_end3.value;
+	ui_inE[3] = document.NAT_ADV.inComing_port_end4.value;
+	ui_inE[4] = document.NAT_ADV.inComing_port_end5.value;
+	ui_inE[5] = document.NAT_ADV.inComing_port_end6.value;
+	ui_inE[6] = document.NAT_ADV.inComing_port_end7.value;
+	ui_inE[7] = document.NAT_ADV.inComing_port_end8.value;
+	ui_inE[8] = document.NAT_ADV.inComing_port_end9.value;
+	ui_inE[9] = document.NAT_ADV.inComing_port_end10.value;
+	ui_inE[10] = document.NAT_ADV.inComing_port_end11.value;
+	ui_inE[11] = document.NAT_ADV.inComing_port_end12.value;	
+	ui_trS[0] = document.NAT_ADV.trigger_port_start1.value;
+	ui_trS[1] = document.NAT_ADV.trigger_port_start2.value;
+	ui_trS[2] = document.NAT_ADV.trigger_port_start3.value;
+	ui_trS[3] = document.NAT_ADV.trigger_port_start4.value;
+	ui_trS[4] = document.NAT_ADV.trigger_port_start5.value;
+	ui_trS[5] = document.NAT_ADV.trigger_port_start6.value;
+	ui_trS[6] = document.NAT_ADV.trigger_port_start7.value;
+	ui_trS[7] = document.NAT_ADV.trigger_port_start8.value;
+	ui_trS[8] = document.NAT_ADV.trigger_port_start9.value;
+	ui_trS[9] = document.NAT_ADV.trigger_port_start10.value;
+	ui_trS[10] = document.NAT_ADV.trigger_port_start11.value;
+	ui_trS[11] = document.NAT_ADV.trigger_port_start12.value;	
+	ui_trE[0] = document.NAT_ADV.trigger_port_end1.value;
+	ui_trE[1] = document.NAT_ADV.trigger_port_end2.value;
+	ui_trE[2] = document.NAT_ADV.trigger_port_end3.value;
+	ui_trE[3] = document.NAT_ADV.trigger_port_end4.value;
+	ui_trE[4] = document.NAT_ADV.trigger_port_end5.value;
+	ui_trE[5] = document.NAT_ADV.trigger_port_end6.value;
+	ui_trE[6] = document.NAT_ADV.trigger_port_end7.value;
+	ui_trE[7] = document.NAT_ADV.trigger_port_end8.value;
+	ui_trE[8] = document.NAT_ADV.trigger_port_end9.value;
+	ui_trE[9] = document.NAT_ADV.trigger_port_end10.value;
+	ui_trE[10] = document.NAT_ADV.trigger_port_end11.value;
+	ui_trE[11] = document.NAT_ADV.trigger_port_end12.value;	
+	//check value
+	for(i=0;i<12;i++){	
+	   if(ui_inS[i]!=0){	
+	        if(ui_inS[i] > 65535 || ui_inS[i] < 1){
+				alert("<%:Port_Error_2%>");
+				return false;
+			}
+			
+			if(ui_inE[i] > 65535 || ui_inE[i] < 1){
+				alert("<%:Port_Error_2%>");
+				return false;
+			}
+			
+			if(ui_trS[i] > 65535 || ui_trS[i] < 1){
+				alert("<%:Port_Error_2%>");
+				return false;
+			}
+			
+			if(ui_trE[i] > 65535 || ui_trE[i] < 1){
+				alert("<%:Port_Error_2%>");
+				return false;
+			}	        
+	        	   
+	        if(ui_inE[i] < ui_inS[i]){
+	         	alert("<%:NAT_Error_6%>");
+	         	return false;
+	    	}	    	 	   
+	        if(ui_trS[i]==0){
+	    		alert("<%:NAT_Error_7%>");
+	         	return false;
+	    	} 	    		         
+	    	if(ui_trE[i] < ui_trS[i]){
+	         	alert("<%:NAT_Error_8%>");
+	         	return false;
+	    	}		    	
+	   }     
+	}	
+	//check range
+	for(i=1;i<12;i++){
+	    if(ui_inS[i]!=0){	          
+	         for(j=0;j < i;j++){	    
+	            if((ui_inS[i]>=ui_inS[j])&& (ui_inS[i]<=ui_inE[j])){
+	               alert("<%:NAT_Error_9%>");
+	               return false;
+	             }	             
+	             if((ui_inE[i]>=ui_inS[j])&& (ui_inE[i]<=ui_inE[j])){
+	               alert("<%:NAT_Error_10%>");
+	               return false;
+	             }	            
+	            if((ui_trS[i]>=ui_trS[j])&& (ui_trS[i]<=ui_trE[j])){
+	               alert("<%:NAT_Error_11%>");	             
+	               return false;   
+	               }            
+	            if((ui_trE[i]>=ui_trS[j])&& (ui_trE[i]<=ui_trE[j])){
+	               alert("<%:NAT_Error_12%>");	             
+	               return false;   
+	               }   
+	         }
+	    }
+	}
+	showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );	
+	return true;	
+}
+function updateState()
+{
+	initTranslation();	
+}
+    
+</script>
+</head>
+<body style="background-color: rgb(255, 255, 255);" onload="updateState()">
+<form method="post" name="NAT_ADV" action="<%=controller%>/expert/configuration/network/nat/nat_advance">
+<div id="tabs">
+  <ul>
+    <li><a href="<%=controller%>/expert/configuration/network/nat" title="<%:General%>"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/nat/portfw?new" title="<%:Port_Forwarding%>"><span><%:Port_Forwarding%></span></a></li>
+	<li class="hightline"><a title="<%:Port_Trigger%>"><span><%:Port_Trigger%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>     <li class="table_content">
+		<div class="data">
+			<ul>
+				<div class="title" id="NatAdvanveAppRuleSum"><span class="cTitle"> <%:Application_Rules_Summary%> </span></div>
+					<div class="tableframe">
+						<table width="95%" align="center" border="0" cellpadding="0" cellspacing="0">	
+							<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+								<tr>
+									<td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+										<tr>
+											<td><table width="100%" cellpadding="0" cellspacing="0" >
+												<tr>
+													<td height="26" colspan="7"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+														<tr>
+															<td height="26"class="table_title" id="NatAdvanvePortTriggerRule"><span class="cTitle"> <%:Port_Trigger_Rules%> </span></td>
+														</tr>
+													</table></td>
+												</tr>
+													<tr class="top_font" align="center">
+														<td rowspan="2" valign="top" width="5%" align="center"><span class="top_left3">#</span></td>
+														<td rowspan="2" align="center"><font class="top_font3"><span id="NatAdvanveName"> <%:Name%> </span></font></td>
+														<td colspan="2" align="center"><font class="top_font"><span id="NatAdvanveIncoming"> <%:Incoming%> </span></font></td>
+														<td colspan="2" align="center"><font class="top_right"><span id="NatAdvanveTrigger"> <%:Trigger%> </span></font></td>
+													</tr>
+													<tr class="top_font" align="center">
+														<td width="20%" align="center"><font class="top2_font"><span id="NatAdvanvePort1"> <%:Port%> </span></font></td>
+														<td width="20%" align="center"><font class="top2_font"><span id="NatAdvanveEndPort1"> <%:End_Port%> </span></font></td>
+														<td width="20%" align="center"><font class="top2_font"><span id="NatAdvanvePort2"> <%:Port%> </span></font></td>
+														<td width="20%" align="center"><font class="top2_right"><span id="NatAdvanveEndPort2"> <%:End_Port%> </span></font></td>
+													</tr>
+													<%local t=luci.sys.net.porttrigger() %>
+													<input type="hidden" name="preData" value="<%=t%>">
+													<tr class="table_font" align="center">
+													<td valign="top"><center><span class="table_left">1</span></center></td><td><center><span><input name="trigger_name1" <%if t[1] then%> value="<%=t[1].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start1" size="10" maxlength="31" <%if t[1] then%> value="<%=t[1].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end1" size="10" maxlength="31" <%if t[1] then%> value="<%=t[1].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start1" size="10" maxlength="31" <%if t[1] then%> value="<%=t[1].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end1" size="10" maxlength="31" <%if t[1] then%> value="<%=t[1].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData1"  <%if t[1] then%> value="<%=t[1].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">2</span></center></td><td><center><span><input name="trigger_name2" <%if t[2] then%> value="<%=t[2].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start2" size="10" maxlength="31" <%if t[2] then%> value="<%=t[2].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end2" size="10" maxlength="31" <%if t[2] then%> value="<%=t[2].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start2" size="10" maxlength="31" <%if t[2] then%> value="<%=t[2].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end2" size="10" maxlength="31" <%if t[2] then%> value="<%=t[2].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData2"  <%if t[2] then%> value="<%=t[2].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">3</span></center></td><td><center><span><input name="trigger_name3" <%if t[3] then%> value="<%=t[3].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start3" size="10" maxlength="31" <%if t[3] then%> value="<%=t[3].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end3" size="10" maxlength="31" <%if t[3] then%> value="<%=t[3].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start3" size="10" maxlength="31" <%if t[3] then%> value="<%=t[3].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end3" size="10" maxlength="31" <%if t[3] then%> value="<%=t[3].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData3"  <%if t[3] then%> value="<%=t[3].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">4</span></center></td><td><center><span><input name="trigger_name4" <%if t[4] then%> value="<%=t[4].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start4" size="10" maxlength="31" <%if t[4] then%> value="<%=t[4].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end4" size="10" maxlength="31" <%if t[4] then%> value="<%=t[4].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start4" size="10" maxlength="31" <%if t[4] then%> value="<%=t[4].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end4" size="10" maxlength="31" <%if t[4] then%> value="<%=t[4].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData4"  <%if t[4] then%> value="<%=t[4].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">5</span></center></td><td><center><span><input name="trigger_name5" <%if t[5] then%> value="<%=t[5].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start5" size="10" maxlength="31" <%if t[5] then%> value="<%=t[5].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end5" size="10" maxlength="31" <%if t[5] then%> value="<%=t[5].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start5" size="10" maxlength="31" <%if t[5] then%> value="<%=t[5].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end5" size="10" maxlength="31" <%if t[5] then%> value="<%=t[5].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData5"  <%if t[5] then%> value="<%=t[5].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">6</span></center></td><td><center><span><input name="trigger_name6" <%if t[6] then%> value="<%=t[6].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start6" size="10" maxlength="31" <%if t[6] then%> value="<%=t[6].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end6" size="10" maxlength="31" <%if t[6] then%> value="<%=t[6].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start6" size="10" maxlength="31" <%if t[6] then%> value="<%=t[6].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end6" size="10" maxlength="31" <%if t[6] then%> value="<%=t[6].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData6"  <%if t[6] then%> value="<%=t[6].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">7</span></center></td><td><center><span><input name="trigger_name7" <%if t[7] then%> value="<%=t[7].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start7" size="10" maxlength="31" <%if t[7] then%> value="<%=t[7].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end7" size="10" maxlength="31" <%if t[7] then%> value="<%=t[7].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start7" size="10" maxlength="31" <%if t[7] then%> value="<%=t[7].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end7" size="10" maxlength="31" <%if t[7] then%> value="<%=t[7].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData7"  <%if t[7] then%> value="<%=t[7].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">8</span></center></td><td><center><span><input name="trigger_name8" <%if t[8] then%> value="<%=t[8].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start8" size="10" maxlength="31" <%if t[8] then%> value="<%=t[8].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end8" size="10" maxlength="31" <%if t[8] then%> value="<%=t[8].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start8" size="10" maxlength="31" <%if t[8] then%> value="<%=t[8].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end8" size="10" maxlength="31" <%if t[8] then%> value="<%=t[8].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData8"  <%if t[8] then%> value="<%=t[8].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">9</span></center></td><td><center><span><input name="trigger_name9" <%if t[9] then%> value="<%=t[9].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start9" size="10" maxlength="31" <%if t[9] then%> value="<%=t[9].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end9" size="10" maxlength="31" <%if t[9] then%> value="<%=t[9].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start9" size="10" maxlength="31" <%if t[9] then%> value="<%=t[9].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end9" size="10" maxlength="31" <%if t[9] then%> value="<%=t[9].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData9"  <%if t[9] then%> value="<%=t[9].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">10</span></center></td><td><center><span><input name="trigger_name10" <%if t[10] then%> value="<%=t[10].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start10" size="10" maxlength="31" <%if t[10] then%> value="<%=t[10].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end10" size="10" maxlength="31" <%if t[10] then%> value="<%=t[10].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start10" size="10" maxlength="31" <%if t[10] then%> value="<%=t[10].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end10" size="10" maxlength="31" <%if t[10] then%> value="<%=t[10].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData10"  <%if t[10] then%> value="<%=t[10].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">11</span></center></td><td><center><span><input name="trigger_name11" <%if t[11] then%> value="<%=t[11].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start11" size="10" maxlength="31" <%if t[11] then%> value="<%=t[11].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end11" size="10" maxlength="31" <%if t[11] then%> value="<%=t[11].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start11" size="10" maxlength="31" <%if t[11] then%> value="<%=t[11].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end11" size="10" maxlength="31" <%if t[11] then%> value="<%=t[11].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData11"  <%if t[11] then%> value="<%=t[11].trigger_name%>" <%else%> value="" <%end%>>
+													<td valign="top"><center><span class="table_left">12</span></center></td><td><center><span><input name="trigger_name12" <%if t[12] then%> value="<%=t[12].trigger_name%>" <%else%> value="" <%end%> size="15" maxlength="31" type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_start12" size="10" maxlength="31" <%if t[12] then%> value="<%=t[12].inComing_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="inComing_port_end12" size="10" maxlength="31" <%if t[12] then%> value="<%=t[12].inComing_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_font"><input name="trigger_port_start12" size="10" maxlength="31" <%if t[12] then%> value="<%=t[12].trigger_port_start%>" <%else%> value="0" <%end%> type="text"></span></center></td><td><center><span class="table_right"><input name="trigger_port_end12" size="10" maxlength="31" <%if t[12] then%> value="<%=t[12].trigger_port_end%>" <%else%> value="0" <%end%> type="text"></span></center></td></tr>
+													<tr class="table_font" align="center"><input type="hidden" name="preData12"  <%if t[12] then%> value="<%=t[12].trigger_name%>" <%else%> value="" <%end%>>
+													</tr>							
+												</table></td>
+										</tr>
+									</table>
+								</tr>	
+							</table>
+						</table>
+					</div>
+				<div class="spaceair"> </div>	
+		   </ul>		   
+	     </div>									  	
+	</li>		
+    <li class="table_button">
+      <div class="button">
+        <center>
+			<input value=" <%:Apply%> " id="natApply" name="apply" onclick="return formCheck()" type="submit"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+			<input value=" <%:cancel%> " id="natReset" name="reset" onclick="window.location.reload()" type="reset">
+        </center>
+      </div>
+    </li> 
+   </ul>	
+</div>
+</form>
+</body>
+<script language="JavaScript">
+	showFullPath(' <%:Network%> > <%:NAT%> > <%:Port_Trigger%>');
+	showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );	
+</script>
+</html>

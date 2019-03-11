@@ -1,0 +1,44 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+START=97
+start() {
+	local sys_mode=$(get_sys_mode)
+	[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && {
+		#time_daemon start
+		time_mode=$(uci get time.main.mode)
+		if [ "$time_mode" = "manual" ] ; then
+			time_record="/etc/time_record"
+			if [ -f "$time_record" ]; then		
+	
+				time_set=$(cat /etc/time_record)
+				/bin/date $time_set
+			else
+				time_daemon start
+			fi
+		else
+			time_daemon start
+		fi
+	} || {
+		time_mode=$(uci get time.main.mode)
+		if [ "$time_mode" = "manual" ] ; then
+			time_record="/etc/time_record"
+			if [ -f "$time_record" ]; then		
+	
+				time_set=$(cat /etc/time_record)
+				/bin/date $time_set
+			fi
+		fi
+	
+		### applying after WAN connection up ###
+		exit 0
+	}
+}
+stop() {
+	time_daemon stop
+}
+restart() {
+	time_daemon restart
+}
+reload() {
+	time_daemon reload
+}

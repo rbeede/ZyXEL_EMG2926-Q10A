@@ -1,0 +1,85 @@
+#!/bin/sh
+
+# -----------------------------------------------------------------------
+# The Script is For dumping MAC addresses by port, and generating 4 files
+# in /tmp/ folder to record all MAC addresses from each port. 
+# -----------------------------------------------------------------------
+
+rm /tmp/mac_port1
+rm /tmp/mac_port2
+rm /tmp/mac_port3
+rm /tmp/mac_port4
+
+touch /tmp/mac_port1
+touch /tmp/mac_port2
+touch /tmp/mac_port3
+touch /tmp/mac_port4
+
+# FOR loop run from Port1 to Port4.
+for i in 1 2 3 4
+do
+
+    ATU_DATA0_REG=0xFFFFFFFF
+    ATU_DATA1_REG=0xFFFFFFFF
+    ATU_DATA2_REG=0xFFFFFFFF
+
+    # get Port number 
+    case "$i" in
+        1)
+                port_num_bit=0x100
+        ;;
+        2)
+                port_num_bit=0x200
+        ;;
+        3)
+                port_num_bit=0x300
+        ;;
+        4)
+                port_num_bit=0x400
+        ;;
+    esac
+
+    # set ATU_DATA_REG for searching MAC address from 00:00:00:00:00:00
+    echo 0x0600 > /proc/driver/ar8216/regAddr
+    echo 0x0 > /proc/driver/ar8216/regVal
+    echo 0x0604 > /proc/driver/ar8216/regAddr
+    echo 0x0 > /proc/driver/ar8216/regVal
+    echo 0x0608 > /proc/driver/ar8216/regAddr
+    echo 0x0 > /proc/driver/ar8216/regVal
+
+    echo 0x060c > /proc/driver/ar8216/regAddr
+    echo `expr $((0x80004006|$port_num_bit))` > /proc/driver/ar8216/regVal
+
+    # Dumping MAC address to files.
+    while [ "$ATU_DATA0_REG" != "0x00000000" -a "$ATU_DATA1_REG" != "0x00000000" -a "$ATU_DATA2_REG" != "0x00000000" ]
+    do
+
+         echo 0x0600 > /proc/driver/ar8216/regAddr
+         ATU_DATA0_REG=`cat /proc/driver/ar8216/regVal`
+         echo 0x0604 > /proc/driver/ar8216/regAddr
+         ATU_DATA1_REG=`cat /proc/driver/ar8216/regVal`
+         echo 0x0608 > /proc/driver/ar8216/regAddr
+         ATU_DATA2_REG=`cat /proc/driver/ar8216/regVal`
+
+         # if the ATU_DATA0_REG value is 0x00, that mean no MAC address in ARP table.
+         if [ "$ATU_DATA0_REG" != "0x00000000" ]; then
+     
+              mac1=`expr substr $ATU_DATA0_REG 9 2`
+              mac2=`expr substr $ATU_DATA0_REG 7 2`
+              mac3=`expr substr $ATU_DATA0_REG 5 2`
+              mac4=`expr substr $ATU_DATA0_REG 3 2`
+              mac5=`expr substr $ATU_DATA1_REG 9 2`
+              mac6=`expr substr $ATU_DATA1_REG 7 2`
+
+              mac_address=$mac6":"$mac5":"$mac4":"$mac3":"$mac2":"$mac1
+              echo $mac_address >> /tmp/mac_port"$i"
+
+         fi         
+
+         echo 0x060c > /proc/driver/ar8216/regAddr
+         echo `expr $((0x80004006|$port_num_bit))` > /proc/driver/ar8216/regVal 
+ 
+   done
+done
+
+exit $?

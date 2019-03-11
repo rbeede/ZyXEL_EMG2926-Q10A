@@ -1,0 +1,326 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+apply(){
+proto=$(uci_get network wan proto)
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+WAN="$proto"-wan
+key="P-t-P:"
+else
+WAN=$(uci_get network wan ifname)
+key="Bcast:"
+fi
+LAN="br-lan"
+#LAN=$(uci_get network lan ifname)
+
+natenable=$(uci_get nat general nat)
+#vic add 20150930 
+ftpenable=$(uci_get nat general ftp)
+h323enable=$(uci_get nat general h323)
+sipenable=$(uci_get nat general sip)
+snmpenable=$(uci_get nat general snmp)
+rtspenable=$(uci_get nat general rtsp)
+ircenable=$(uci_get nat general irc)
+pptpenable=$(uci_get nat general pptp)
+l2tpenable=$(uci_get nat general l2tp)
+ipsecenable=$(uci_get nat general ipsec)
+
+
+if [ "$ftpenable" == "enable" ];then
+	insmod nf_conntrack_ftp
+	insmod nf_nat_ftp
+else
+	rmmod nf_nat_ftp
+	rmmod nf_conntrack_ftp
+fi
+
+if [ "$h323enable" == "enable" ];then
+	insmod nf_conntrack_h323
+	insmod nf_nat_h323
+else
+	rmmod nf_nat_h323
+	rmmod nf_conntrack_h323
+fi
+
+if [ "$sipenable" == "enable" ];then
+	insmod nf_conntrack_sip
+	insmod nf_nat_sip
+else
+	rmmod nf_nat_sip
+	rmmod nf_conntrack_sip
+fi
+ 
+if [ "$snmpenable" == "enable" ];then
+        insmod nf_conntrack_snmp
+        insmod nf_nat_snmp_basic
+else
+        rmmod nf_nat_snmp_basic
+        rmmod nf_conntrack_snmp
+fi
+
+if [ "$rtspenable" == "enable" ];then
+        insmod nf_conntrack_rtsp
+        insmod nf_nat_rtsp
+else
+        rmmod nf_nat_rtsp
+        rmmod nf_conntrack_rtsp
+fi
+
+if [ "$ircenable" == "enable" ];then
+        insmod nf_conntrack_irc
+        insmod nf_nat_irc
+else
+        rmmod nf_nat_irc
+        rmmod nf_conntrack_irc
+fi
+
+if [ "$pptpenable" == "enable" ];then
+        iptables -D FORWARD -p gre -j DROP
+		iptables -D FORWARD -p udp --dport 1723 -j DROP
+else
+         iptables -I FORWARD -p udp --dport 1723 -j DROP
+        iptables -I FORWARD -p gre -j DROP
+fi
+
+if [ "$l2tpenable" == "enable" ];then
+		iptables -D FORWARD -p udp --dport 1701 -j DROP
+else
+ 		iptables -I FORWARD -p udp --dport 1701 -j DROP
+fi
+
+if [ "$ipsecenable" == "enable" ];then
+		iptables -D FORWARD -p udp --dport 50 -j DROP
+		iptables -D FORWARD -p udp --dport 51 -j DROP
+		iptables -D FORWARD -p udp --dport 4500 -j DROP
+		iptables -D FORWARD -p udp --dport 500 -j DROP
+else
+       	iptables -I FORWARD -p udp --dport 500 -j DROP
+		iptables -I FORWARD -p udp --dport 4500 -j DROP
+		iptables -I FORWARD -p udp --dport 51 -j DROP
+		iptables -I FORWARD -p udp --dport 50 -j DROP
+
+fi
+
+if [ "$natenable" == "enable" ];then
+
+	insmod x_tables  2>&- >&-
+    insmod ip_tables  2>&- >&-
+    insmod ip6_tables  2>&- >&-
+
+    insmod nfnetlink  2>&- >&-
+    insmod nf_defrag_ipv4  2>&- >&-
+    insmod nf_conntrack  2>&- >&-
+    insmod nf_conntrack_ipv4  2>&- >&-
+    insmod nf_conntrack_ipv6 2>&- >&-
+    insmod nf_nat  2>&- >&-
+    insmod nf_conntrack_proto_gre  2>&- >&-
+    insmod nf_conntrack_proto_sctp  2>&- >&-
+    insmod nf_conntrack_netlink  2>&- >&-
+    insmod xt_connbytes  2>&- >&-
+    insmod xt_conntrack  2>&- >&-
+    insmod xt_tcpudp  2>&- >&-
+    insmod iptable_nat  2>&- >&-
+    insmod iptable_filter  2>&- >&-
+    insmod iptable_raw  2>&- >&-
+    insmod ipt_MASQUERADE  2>&- >&-
+    insmod xt_connlimit  2>&- >&-
+   if [ "$ftpenable" == "enable" ];then
+    	insmod nf_conntrack_ftp  2>&- >&-
+    	insmod nf_nat_ftp  2>&- >&-
+	fi
+	if [ "$sipenable" == "enable" ];then
+    	insmod nf_conntrack_sip  2>&- >&-
+    	insmod nf_nat_sip  2>&- >&-
+	fi    
+    insmod xt_TCPMSS  2>&- >&-
+    insmod nf_conntrack_pptp  2>&- >&-
+    insmod nf_nat_proto_gre  2>&- >&-
+    insmod nf_nat_pptp  2>&- >&-
+    insmod xt_multiport 2>&- >&-
+
+    iptables -N forwarding_rule_nat
+    #iptables -N forwarding_session_limit
+	
+    iptables -t nat -N prerouting_rule_nat
+    iptables -t nat -N postrouting_rule_nat
+
+    ##for remote mgnt
+    iptables -t nat -N prerouting_RMGM
+    
+    ## NAT MASQUERADE
+    iptables -t nat -A postrouting_rule_nat -o $WAN -j MASQUERADE
+    iptables -t nat -A POSTROUTING -j postrouting_rule_nat
+
+    ## Add MINIUPNPD/prerouting_RMMG_TR069 chain
+    iptables -t nat -N MINIUPNPD 2>/dev/null
+    iptables -t nat -N prerouting_RMMG_TR069 2>/dev/null
+
+    ##check mode,if AP/UR,exit
+    local sys_mode=$(get_sys_mode)
+    [ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+	count=$(uci_get nat general rules_count)
+	local_wanip=$(ifconfig $WAN |grep "inet addr" | awk -F'addr:' '{print $2}'| awk -F"$key" '{print $1}')
+	ruleid=1
+	while [ "$ruleid" -le "$count" ]
+	do
+	  StatusEnable=$(uci_get nat rule$ruleid StatusEnable)
+	  if [ "$StatusEnable" = "1" ] ; then
+	    service=$(uci_get nat rule$ruleid service)
+	    localip=$(uci_get nat rule$ruleid local_ip)
+	    wanip=$(uci_get nat rule$ruleid wan_ip)
+	    proto=$(uci_get nat rule$ruleid protocol)
+	    port=$(uci_get nat rule$ruleid port)
+	    ##Add multiport and port range support
+	    multiport_ck1=$(echo $port| sed -n '/,/p')
+	    multiport_ck2=$(echo $port| sed -n '/ /p')	
+
+	    if [ -n "$multiport_ck2" ];then
+		port=$(echo $port| sed -n 's/ /,/gp')
+	    fi
+
+	    portrange=$(echo $port| sed -n 's/-/:/gp')
+	    
+	    if [ -n "$portrange" ];then
+		portzone="$portrange"
+	    else
+		portzone="$port"
+	    fi
+
+	    if [ -n "$multiport_ck1" -o -n "$multiport_ck2" ];then
+		multiport_on="-m multiport"
+		ip_port="$localip"
+	    else
+		multiport_on=""		
+		ip_port="$localip:$port"
+	    fi
+	    ##--------------------------------------	
+	    case $wanip in
+	    0.0.0.0) wan="" ;;
+	    *) wan="-s $wanip" ;;
+	    esac
+
+	    ip_head=$(echo $localip | awk -F '.' '{print $1"."$2"."$3}')
+	
+	   case $service in
+	    any)
+	    iptables -t nat -I prerouting_rule_nat -i $WAN $wan -j DNAT --to $localip
+	    iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -j ACCEPT
+	    ;;
+	    *)
+			case $proto in
+			tcp)
+				iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp $multiport_on --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp $multiport_on --dport $portzone -j ACCEPT
+
+				##NAT loopback
+				iptables -t nat -I prerouting_rule_nat -d $local_wanip -p tcp --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -p tcp --dport $port -d $localip -j ACCEPT
+				iptables -t nat -I postrouting_rule_nat -s $ip_head.0/24 -p tcp --dport $port -d $localip -j MASQUERADE
+				;;
+			udp)
+				iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp $multiport_on --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp $multiport_on --dport $portzone -j ACCEPT
+
+				##NAT loopback
+				iptables -t nat -I prerouting_rule_nat -d $local_wanip -p udp --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -p udp --dport $port -d $localip -j ACCEPT
+				iptables -t nat -I postrouting_rule_nat -s $ip_head.0/24 -p udp --dport $port -d $localip -j MASQUERADE
+				;;
+			*)
+					
+				iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p tcp $multiport_on --dport $portzone -j DNAT --to $ip_port
+				iptables -t nat -I prerouting_rule_nat -i $WAN $wan -p udp $multiport_on --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p tcp $multiport_on --dport $portzone -j ACCEPT
+				iptables -I forwarding_rule_nat -i $WAN $wan -d $localip -p udp $multiport_on --dport $portzone -j ACCEPT
+
+				##NAT loopback
+				iptables -t nat -I prerouting_rule_nat -d $local_wanip -p tcp --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -p tcp --dport $port -d $localip -j ACCEPT
+				iptables -t nat -I postrouting_rule_nat -s $ip_head.0/24 -p tcp --dport $port -d $localip -j MASQUERADE
+
+				iptables -t nat -I prerouting_rule_nat -d $local_wanip -p udp --dport $portzone -j DNAT --to $ip_port
+				iptables -I forwarding_rule_nat -p udp --dport $port -d $localip -j ACCEPT
+				iptables -t nat -I postrouting_rule_nat -s $ip_head.0/24 -p udp --dport $port -d $localip -j MASQUERADE
+
+				;;
+			esac
+	    ;;
+	    esac
+	  fi
+	  ruleid=`expr $ruleid + 1`
+	done
+	
+	iptables -t nat -I PREROUTING -j prerouting_rule_nat
+fi
+
+## session limit
+#sessions_user=$(uci_get nat general sessions_user)
+#if [ "$sessions_user" != "" ];then
+#	iptables -A forwarding_session_limit -m connlimit --connlimit-above $sessions_user -j DROP
+#fi
+ 
+changeToSer=$(uci_get nat general changeToSer)
+case $changeToSer in
+1) 	
+	changeToSerIP=$(uci_get nat general changeToSerIP)
+    local remote_www=$(uci_get firewall remote_www port)
+    local remote_telnet=$(uci_get firewall remote_telnet port)
+
+    iptables -t nat -A prerouting_RMGM -i $WAN -p tcp --dport $remote_www -j ACCEPT
+    iptables -t nat -A prerouting_RMGM -i $WAN -p tcp --dport $remote_telnet -j ACCEPT
+    iptables -t nat -I PREROUTING -j prerouting_RMGM
+
+    iptables -t nat -A prerouting_rule_nat -i $WAN $wan -j DNAT --to $changeToSerIP
+    iptables -A forwarding_rule_nat -i $WAN $wan -d $changeToSerIP -j ACCEPT
+
+    ip_head=$(echo $changeToSerIP | awk -F '.' '{print $1"."$2"."$3}')
+	WAN_ip=$(ifconfig $WAN |grep "inet addr" | awk -F'addr:' '{print $2}'| awk -F"$key" '{print $1}')
+
+    ##NAT loopback
+	iptables -t nat -I prerouting_rule_nat -d $WAN_ip -j DNAT --to $changeToSerIP
+	iptables -I forwarding_rule_nat -d $changeToSerIP -j ACCEPT
+	iptables -t nat -I postrouting_rule_nat -s $ip_head.0/24 -d $changeToSerIP -j MASQUERADE
+    ;;
+esac
+
+## reload port triggering
+## iptables app reorder will be done in porttrigering
+/etc/init.d/portTrigger reload
+
+## Protect Miniupnpd
+iptables -t nat -D PREROUTING -i $WAN -j MINIUPNPD 2>/dev/null
+iptables -t nat -I PREROUTING -i $WAN -j MINIUPNPD 2>/dev/null
+
+## Protect TR069
+iptables -t nat -D PREROUTING -j prerouting_RMMG_TR069 2>/dev/null
+iptables -t nat -I PREROUTING -j prerouting_RMMG_TR069 2>/dev/null
+}
+
+cmd=$1
+
+case "$cmd" in
+apply|start|stop|reload|restart|init) 
+		iptables -t nat -F prerouting_rule_nat 2>/dev/null
+		iptables -t nat -F postrouting_rule_nat 2>/dev/null
+		iptables -F forwarding_rule_nat 2>/dev/null
+		#iptables -F forwarding_session_limit 2>/dev/null
+		iptables -t nat -F prerouting_RMGM 2>/dev/null
+		
+		iptables -t nat -D PREROUTING -j prerouting_rule_nat 2>/dev/null
+		iptables -t nat -D POSTROUTING -j postrouting_rule_nat 2>/dev/null
+		iptables -D FORWARD -j forwarding_rule_nat 2>/dev/null
+		#iptables -D FORWARD -j forwarding_session_limit 2>/dev/null  
+		iptables -t nat -D PREROUTING -j prerouting_RMGM 2>/dev/null   
+		
+		iptables -t nat -X prerouting_rule_nat 2>/dev/null
+		iptables -t nat -X postrouting_rule_nat 2>/dev/null
+		iptables -X forwarding_rule_nat 2>/dev/null
+		#iptables -X forwarding_session_limit 2>/dev/null
+		iptables -t nat -X prerouting_RMGM 2>/dev/null
+		     
+		apply;;
+esac
+

@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips Wireless HiFi Speaker</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Philips Wireless HiFi Speaker</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>IGNORE_STOP_AFTER_PLAY</Quirk>
+		<Quirk>NEEDS_STOP_4_AV</Quirk>
+		<Quirk>ACCEPT_SAME_SEQ</Quirk>
+		<Quirk>POLL_AVT_STATE</Quirk>
+		<Quirk>SUBSCRIBE_TWICE</Quirk>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

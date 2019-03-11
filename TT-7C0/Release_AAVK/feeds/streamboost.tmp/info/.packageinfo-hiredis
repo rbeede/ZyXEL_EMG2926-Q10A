@@ -1,0 +1,19 @@
+Source-Makefile: feeds/streamboost/hiredis/Makefile
+Package: hiredis
+Submenu: database
+Version: 0.11.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: libs
+Category: Libraries
+Title: hiredis
+Maintainer: Mo Chen <moc@qualcomm.com>
+Source: v0.11.0.tar.gz
+Type: ipkg
+Description: hiredis
+https://github.com/redis/hiredis
+Mo Chen <moc@qualcomm.com>
+@@
+
+

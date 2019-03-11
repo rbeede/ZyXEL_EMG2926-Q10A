@@ -1,0 +1,6 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+uci_set luci themes ZyXEL "/luci-static/zyxel"
+uci_commit luci

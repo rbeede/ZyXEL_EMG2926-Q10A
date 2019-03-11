@@ -1,0 +1,203 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body >
+<form method="post" name="IGMP_APP" action="<%=controller%>/expert/monitor/igmp_status" >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="IGMP Statistics"><span>IGMP Statistics</span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+
+
+    <li class="table_top"></li>
+
+    <li class="table_content">
+      <div class="data">
+        <ul>
+
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="<%:Refresh%>" type="submit" onClick="show(this.form)" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+        </center>
+      </div>
+	
+          <div class="tableframe">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+              <tr>
+                <td>
+	
+  				<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <table width="100%" cellpadding="0" cellspacing="0" >
+                                <tr>
+                                  <td height="26" colspan="6">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                      <tr>
+                                        <td height="26" class="table_title">IGMP Multicast Group Statistics</td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                              <tr align="center"  class="top_font">
+                                <td width="35">#</td>
+                                <td >Multicast Group</td>
+                                <td >Last Report Time</td>
+                                <td >Total Joins</td>
+                                <td >Total Leaves</td>								
+                              </tr>
+                              <script language="JavaScript">
+                                var count;
+                                var ipList=new Array();
+                                var macList=new Array();
+                                var start="true";
+                                var ipConfig="";
+                                var macConfig="";
+                                var oriIp=new Array();
+                                var oriMac=new Array();
+                                var oriCount=0;
+                              </script>
+							  	  
+                            <% luci.sys.net.igmp_status("1",function(rt) %>
+                              <tr align="center" class="table_font">
+                                <td ><%=rt.index%></td>
+                                <td><%=rt.ipAdd%></td>
+                                <td><%=rt.date_igmp%> <%=rt.time_igmp%></td>
+                                <td><%=rt.join_igmp%></td>
+                                <td><%=rt.leave_igmp%></td>								
+                            <% end) %>
+															
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>
+		  
+		  <br> <br> <br>
+          <div class="tableframe">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">	
+			
+              <tr>
+                <td>
+  				<table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <table width="100%" cellpadding="0" cellspacing="0" >
+                                <tr>
+                                  <td height="26" colspan="6">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                      <tr>
+                                        <td height="26" class="table_title">IGMP LAN Host Statistics</td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                              <tr align="center"  class="top_font">
+                                <td width="35">#</td>
+                                <td >Multicast Group</td>
+                                <td >Last Report Time</td>
+                                <td >Total Joins</td>
+                                <td >Total Leaves</td>								
+                              </tr>
+                              <script language="JavaScript">
+                                var count;
+                                var ipList=new Array();
+                                var macList=new Array();
+                                var start="true";
+                                var ipConfig="";
+                                var macConfig="";
+                                var oriIp=new Array();
+                                var oriMac=new Array();
+                                var oriCount=0;
+                              </script>
+							  	  
+                            <% luci.sys.net.igmp_status("2",function(rt) %>
+                              <tr align="center" class="table_font">
+                                <td ><%=rt.index%></td>
+                                <td><%=rt.ipAdd%></td>
+                                <td><%=rt.date_igmp%> <%=rt.time_igmp%></td>
+                                <td><%=rt.join_igmp%></td>
+                                <td><%=rt.leave_igmp%></td>								
+                            <% end) %>
+															
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>				  
+				  
+				  
+                </td>
+              </tr>
+            </table>
+          </div>
+
+		  
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+
+  </ul>
+</div>
+<script language="JavaScript">
+showFullPath(' <%:monitor%> > IGMP Statistics');
+
+
+
+</script>
+</form>
+</body>
+</html>

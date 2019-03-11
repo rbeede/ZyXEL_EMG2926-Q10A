@@ -1,0 +1,306 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org 
+START=97
+
+. /etc/functions.sh
+include /lib/config
+
+boot() {
+	start
+	exit 0
+
+}
+
+# This script is a part of wifi_schedule5G script
+start() {
+	if [ -f /etc/crontabs/root ]; then
+		sed -i -e '/wireless_scheduling5G.sh/d' /etc/crontabs/root
+	fi
+	WLANStatus=$(uci_get wifi_schedule5G wlan enabled)
+
+	if [ "$WLANStatus" != "enable" ]; then
+		chk_wifi=$(iwconfig ath10)
+		[ -n "$chk_wifi" ] || {
+			echo wifi1 > /tmp/WirelessDev
+			/etc/init.d/wireless restart
+		}
+		echo "`date +%Y/%m/%d\ %H:%M:%S`: killall -9 crond ; wifi5G scheduling didn't enable!!" >> /tmp/debug_log
+		killall -9 crond
+		crond -c /etc/crontabs
+		exit 0
+	fi
+
+	echo "`date +%Y/%m/%d\ %H:%M:%S`: killall -9 crond ; wifi5G scheduling enable!!" >> /tmp/debug_log	
+	killall -9 crond
+
+	sys_hh=$(date | awk '{print $4}' |  cut -f1 -d':')	##hour
+	sys_mm=$(date | awk '{print $4}' |  cut -f2 -d':')	##min
+	sys_ss=$(date | awk '{print $4}' |  cut -f3 -d':')	##sec
+	
+	# Modify time error for "Wireless LAN Scheduling", NBG5615, WenHsiang, 2012/07/04
+	
+	dst_enable=$(echo `/bin/ck_daylight_saving`)
+	if [ "$dst_enable" = "1" ]; then
+	   dst_start_month=$(uci_get time DST start_month)
+	   dst_start_day=$(uci_get time DST start_day)
+	   dst_start_clock=$(uci_get time DST start_clock)
+	   dst_start_miniute="00"
+	   dst_start=$dst_start_month$dst_start_day$dst_start_clock$dst_start_miniute
+
+	   dst_end_month=$(uci_get time DST end_month)
+	   dst_end_day=$(uci_get time DST end_day)
+	   dst_end_clock=$(uci_get time DST end_clock)
+	   dst_end_miniute="00"
+	   dst_end=$dst_end_month$dst_end_day$dst_end_clock$dst_end_miniute
+
+	   now_MM=$(date +%D | cut -f1 -d"/")
+	   now_DD=$(date +%D | cut -f2 -d"/")
+	   now_hh=$(date +%H)                ## date +%H : 00-23 ; date +%k : 0-23
+	   now_mm=$(date +%M)
+	   now=$now_MM$now_DD$now_hh$now_mm
+		  
+	   test $now -ge $dst_start && r1="ge"
+	   test $now -le $dst_end && r2="le"
+
+	   if [ "$r1" = "ge" ] && [ "$r2" = "le" ]; then
+		  if [ "$now_hh" = "23" ]; then
+		     week_day_modified="1"
+			 sys_hh="00"
+		  else
+		     week_day_modified="0"
+			#sys_hh=$((sys_hh + 1))
+						
+			case $now_hh in
+				"00") sys_hh="01" ;;
+				"01") sys_hh="02" ;;
+				"02") sys_hh="03" ;;
+				"03") sys_hh="04" ;;
+				"04") sys_hh="05" ;;
+				"05") sys_hh="06" ;;
+				"06") sys_hh="07" ;;
+				"07") sys_hh="08" ;;
+				"08") sys_hh="09" ;;
+				"09") sys_hh="10" ;;
+				"10") sys_hh="11" ;;
+				"11") sys_hh="12" ;;
+				"12") sys_hh="13" ;;
+				"13") sys_hh="14" ;;
+				"14") sys_hh="15" ;;
+				"15") sys_hh="16" ;;
+				"16") sys_hh="17" ;;
+				"17") sys_hh="18" ;;
+				"18") sys_hh="19" ;;
+				"19") sys_hh="20" ;;
+				"20") sys_hh="21" ;;
+				"21") sys_hh="22" ;;
+				"22") sys_hh="23" ;;
+				*) echo "wifi_scheduling: now_hh not in range!!" ;;
+				
+			esac
+		  fi
+	   fi
+	fi
+	
+	sys_total=`expr $sys_hh \* 3600 + $sys_mm \* 60 + $sys_ss`
+
+###     everyday
+	every_enable=$(uci_get wifi_schedule5G everyday enabled)
+	if [ "$every_enable" = "1" ]; then
+		every_status_onoff=$(uci_get wifi_schedule5G everyday status_onoff)
+		every_start_hour=$(uci_get wifi_schedule5G everyday start_hour)
+		every_start_min=$(uci_get wifi_schedule5G everyday start_min)
+		every_end_hour=$(uci_get wifi_schedule5G everyday end_hour)
+		every_end_min=$(uci_get wifi_schedule5G everyday end_min)
+
+		client_start_total=`expr $every_start_hour \* 3600 + $every_start_min \* 60 + 0`
+		client_end_total=`expr $every_end_hour \* 3600 + $every_end_min \* 60 + 0`
+
+		if [ "$every_status_onoff" = "1" ]; then
+			if [ "$every_start_hour" = "$every_end_hour" ] && [ "$every_start_min" = "$every_end_min" ]; then
+				/etc/wireless_scheduling5G.sh up
+
+				[ "$dst_enable" = "1" ] && {			
+	  				[ "$every_start_hour" = "0" ] || every_start_hour=$((every_start_hour - 1))	
+				}
+				echo "$every_start_min $every_start_hour * * * /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+			else
+				if [ $sys_total -lt $client_start_total ] || [ $sys_total -gt $client_end_total ]; then #Out of time range
+					echo "Turn off wifi" >> /dev/null
+					/etc/wireless_scheduling5G.sh down
+				else
+					echo "Turn on wifi" >> /dev/null
+					/etc/wireless_scheduling5G.sh up
+				fi
+				
+				[ "$dst_enable" = "1" ] && {			
+	  				[ "$every_start_hour" = "0" ] || every_start_hour=$((every_start_hour - 1))
+					[ "$every_end_hour" = "0" ] || every_end_hour=$((every_end_hour - 1))
+				}
+				echo "$every_start_min $every_start_hour * * * /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+				echo "$every_end_min $every_end_hour * * * /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+			fi
+		else
+			if [ "$every_start_hour" = "$every_end_hour" ] && [ "$every_start_min" = "$every_end_min" ]; then
+				/etc/wireless_scheduling5G.sh down
+
+				[ "$dst_enable" = "1" ] && {			
+	  				[ "$every_start_hour" = "0" ] || every_start_hour=$((every_start_hour - 1))	
+				}
+				echo "$every_start_min $every_start_hour * * * /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+			else
+				if [ $sys_total -lt $client_start_total ] || [ $sys_total -gt $client_end_total ]; then #Out of time range
+					echo "Turn on wifi" >> /dev/null
+					/etc/wireless_scheduling5G.sh up
+				else
+					echo "Turn off wifi" >> /dev/null
+					/etc/wireless_scheduling5G.sh down
+				fi
+
+				[ "$dst_enable" = "1" ] && {			
+	  				[ "$every_start_hour" = "0" ] || every_start_hour=$((every_start_hour - 1))
+					[ "$every_end_hour" = "0" ] || every_end_hour=$((every_end_hour - 1))
+				}
+				echo "$every_start_min $every_start_hour * * * /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+				echo "$every_end_min $every_end_hour * * * /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+			fi
+		fi
+	else
+		option_to_array()
+		{
+			local cfg="$1"
+			local day
+			local status_onoff
+			local start_hour
+			local start_min
+			local end_hour
+			local end_min
+			local enabled
+
+			case $cfg in
+				"mon") day="1" ;;
+				"tue") day="2" ;;
+				"wed") day="3" ;;
+				"thu") day="4" ;;
+				"fri") day="5" ;;
+				"sat") day="6" ;;
+				"sun") day="0" ;;
+			esac
+			
+			week_day=$(date | awk '{print $1}')
+			
+			# Modify time error for "Wireless LAN Scheduling", NBG5615, WenHsiang, 2012/07/04
+			if [ "$week_day_modified" = "1" ]; then
+				case $week_day in
+				"Mon") sys_day="2" ;;
+				"Tue") sys_day="3" ;;
+				"Wed") sys_day="4" ;;
+				"Thu") sys_day="5" ;;
+				"Fri") sys_day="6" ;;
+				"Sat") sys_day="0" ;;
+				"Sun") sys_day="1" ;;
+				esac							
+			else
+				case $week_day in					
+				"Mon") sys_day="1" ;;
+				"Tue") sys_day="2" ;;
+				"Wed") sys_day="3" ;;
+				"Thu") sys_day="4" ;;
+				"Fri") sys_day="5" ;;
+				"Sat") sys_day="6" ;;
+				"Sun") sys_day="0" ;;
+				esac
+			fi
+            # Modify time error for "Wireless LAN Scheduling", NBG5615, WenHsiang, 2012/07/04      
+
+			config_get enable "$cfg" enabled
+			if [ "$enable" = '1' ]; then
+				config_get status_onoff "$cfg" status_onoff
+				config_get start_hour "$cfg" start_hour
+				config_get start_min "$cfg" start_min
+				config_get end_hour "$cfg" end_hour
+				config_get end_min "$cfg" end_min
+
+				client_start_total=`expr $start_hour \* 3600 + $start_min \* 60 + 0`
+	                        client_end_total=`expr $end_hour \* 3600 + $end_min \* 60 + 0`
+
+				if [ "$status_onoff" = "1" ]; then
+					if [ "$start_hour" = "$end_hour" ] && [ "$start_min" = "$end_min" ]; then
+						if [ "$sys_day" == "$day" ]; then
+							/etc/wireless_scheduling5G.sh up
+						fi
+
+						[ "$dst_enable" = "1" ] && {			
+	  						[ "$start_hour " = "0" ] || start_hour =$((start_hour - 1))	
+						}
+						echo "$start_min $start_hour * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+						echo "59 23 * * $day /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root 
+					else
+						if [ "$sys_day" = "$day" ]; then
+							if [ $sys_total -gt $client_start_total -a $sys_total -lt $client_end_total ]; then
+								echo "Turn on wifi" >> /dev/null
+								/etc/wireless_scheduling5G.sh up
+							elif [ $sys_total -gt $client_end_total ]; then
+								echo "Turn off wifi" >> /dev/null
+								/etc/wireless_scheduling5G.sh down
+							elif [ $sys_total -lt $client_start_total ]; then
+								/etc/wireless_scheduling5G.sh down
+							fi
+						fi
+
+						[ "$dst_enable" = "1" ] && {			
+	  						[ "$start_hour" = "0" ] || start_hour=$((start_hour - 1))
+							[ "$end_hour" = "0" ] || end_hour=$((end_hour - 1))
+						}
+						echo "$start_min $start_hour * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+						echo "$end_min $end_hour * * $day /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+					fi
+				else
+					if [ "$start_hour" = "$end_hour" ] && [ "$start_min" = "$end_min" ]; then
+						if [ "$sys_day" = "$day" ]; then
+							/etc/wireless_scheduling5G.sh down
+						fi
+
+						[ "$dst_enable" = "1" ] && {			
+	  						[ "$start_hour" = "0" ] || start_hour=$((start_hour - 1))	
+						}
+						echo "0 0 * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+						echo "$start_min $start_hour * * $day /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+						echo "59 23 * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+					else
+						if [ "$sys_day" = "$day" ]; then
+							if [ $sys_total -gt $client_start_total -a $sys_total -lt $client_end_total ];then
+								echo "Turn off wifi" >> /dev/null
+								/etc/wireless_scheduling5G.sh down
+							elif [ $sys_total -gt $client_end_total ]; then
+								echo "Turn on wifi" >> /dev/null
+								/etc/wireless_scheduling5G.sh up
+							elif [ $sys_total -lt $client_start_total ]; then
+								/etc/wireless_scheduling5G.sh up
+							fi
+						fi
+
+						[ "$dst_enable" = "1" ] && {			
+	  						[ "$start_hour" = "0" ] || start_hour=$((start_hour - 1))
+							[ "$end_hour" = "0" ] || end_hour=$((end_hour - 1))
+						}
+						echo "0 0 * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+						echo "$start_min $start_hour * * $day /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+						echo "$end_min $end_hour * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+					fi
+				fi
+			else
+				#If the day is not chosen, the wireless should be up in the day.
+				if [ "$sys_day" = "$day" ]; then
+					/etc/wireless_scheduling5G.sh up
+				fi
+				echo "0 0 * * $day /etc/wireless_scheduling5G.sh up" >> /etc/crontabs/root
+				echo "59 23 * * $day /etc/wireless_scheduling5G.sh down" >> /etc/crontabs/root
+			fi
+		}
+
+		config_load "wifi_schedule5G"
+		config_foreach option_to_array service
+	fi
+
+	crond -c /etc/crontabs
+}

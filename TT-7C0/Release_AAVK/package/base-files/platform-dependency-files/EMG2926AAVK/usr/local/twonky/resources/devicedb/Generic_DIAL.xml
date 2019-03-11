@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Generic DIAL</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>dial-multiscreen-org:service:dial</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

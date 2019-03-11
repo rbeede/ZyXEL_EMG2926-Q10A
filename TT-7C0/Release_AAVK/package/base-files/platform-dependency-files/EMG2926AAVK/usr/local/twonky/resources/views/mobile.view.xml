@@ -1,0 +1,24 @@
+<view name='mobile' path='mobile.view'>
+	<navtree>
+		<container id='music'>
+			<link id='music/all' />
+			<link id='music/genre' />
+			<link id='music/artists' />
+			<link id='music/albums' />
+			<link id='music/playlists' />
+			<link id='music/audiobooks' />
+		</container>
+		<container id='picture' >
+			<link id='picture/all' />
+			<link id='picture/date' />
+			<link id='picture/albums' />
+    		<link id='picture/playlists' />
+		</container>
+		<container id='video' >
+			<link id='video/all' />
+			<link id='video/albums' />
+			<link id='video/date' />
+			<link id='video/playlists' />
+		</container>
+	</navtree>
+</view>

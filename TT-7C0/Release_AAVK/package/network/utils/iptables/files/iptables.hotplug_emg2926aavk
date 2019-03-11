@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+#defaultwan=$(uci get network.general.defaultWan)
+
+if [ "$ACTION" = "ifup" ]; then
+	if [ "${INTERFACE:0:3}" = "wan" ]; then
+		iptables -F FORWARD 2>/dev/null
+		/etc/init.d/firewall reload
+	fi
+fi
+

@@ -1,0 +1,14 @@
+Index: linux-3.3.8/arch/mips/ath79/mach-ap136.c
+===================================================================
+--- linux-3.3.8.orig/arch/mips/ath79/mach-ap136.c	2014-06-10 15:35:53.871380161 +0800
++++ linux-3.3.8/arch/mips/ath79/mach-ap136.c	2014-06-10 15:53:01.323353127 +0800
+@@ -179,6 +179,9 @@
+ 	/* GMAC0 is connected to the RMGII interface */
+ 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+ 	ath79_eth0_data.phy_mask = BIT(0);
++	ath79_eth0_data.speed = SPEED_1000;
++	ath79_eth0_data.duplex = DUPLEX_FULL;
++	ath79_eth0_data.force_link = 1;
+ 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+ 
+ 	ath79_register_eth(0);

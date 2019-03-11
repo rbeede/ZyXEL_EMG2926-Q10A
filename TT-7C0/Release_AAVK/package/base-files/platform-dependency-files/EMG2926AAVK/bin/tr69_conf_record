@@ -1,0 +1,22 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+add_conf_record(){
+	[ -e "/tmp/DataBaseBackup/tr69_conf_count" ] || (echo 0 > /tmp/DataBaseBackup/tr69_conf_count)
+
+        local conf_date=$(date)
+        local date_r=${conf_date// /.}
+	local conf_count=$(cat /tmp/DataBaseBackup/tr69_conf_count)
+        echo "======= $1 $date_r $conf_count ======="
+
+	if [ "$conf_count" = "64" ]; then
+		sed -e "1,1"d /tmp/DataBaseBackup/tr69_dl_url > /tmp/DataBaseBackup/tr69_dl_url.tmp
+		mv -f /tmp/DataBaseBackup/tr69_dl_url.tmp /tmp/DataBaseBackup/tr69_dl_url
+		echo "$1,$date_r" >> /tmp/DataBaseBackup/tr69_dl_url
+	else
+		echo "$1,$date_r" >> /tmp/DataBaseBackup/tr69_dl_url
+	fi
+}
+
+add_conf_record $1

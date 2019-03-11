@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Netgear EVA 2000</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>EVA2000</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1280x720</Target>
+		</Scaling>
+	</Capabilities>
+</Client>

@@ -1,0 +1,58 @@
+diff -ruN a/arch/mips/ath79/mach-emg3425aayj.c b/arch/mips/ath79/mach-emg3425aayj.c
+--- a/arch/mips/ath79/mach-emg3425aayj.c	2015-06-30 09:44:48.337529000 +0800
++++ b/arch/mips/ath79/mach-emg3425aayj.c	2015-08-13 20:29:02.821296303 +0800
+@@ -150,10 +150,11 @@
+ static struct ar8327_pad_cfg emg3425aayj_ar8327_pad0_cfg = {
+ 	.mode = AR8327_PAD_MAC_SGMII,
+ 	.sgmii_clk_phase_sel = AR8327_SGMII_CLK_PHASE_SEL3,
++	.mac06_exchange = true,
+ };
+ 
+ static struct ar8327_pad_cfg emg3425aayj_ar8327_pad6_cfg = {
+-	.mode = AR8327_PAD_MAC_RGMII,
++	.mode = AR8327_PAD_PHY_RGMII,
+ 	.txclk_delay_en = true,
+ 	.rxclk_delay_en = true,
+ 	.txclk_delay_sel = AR8327_CLK_DELAY_SEL1,
+@@ -173,7 +174,7 @@
+ 		.rxpause = 1,
+ 	},
+ 	.port6_cfg = {
+-		.force_link = 1,
++		.force_link = 0,
+ 		.speed = AR8327_PORT_SPEED_1000,
+ 		.duplex = 1,
+ 		.txpause = 1,
+@@ -261,6 +262,7 @@
+ 				    ARRAY_SIZE(emg3425aayj_mdio0_info));
+ 
+ 	/* GMAC0 is connected to RGMII interface */
++#if 0
+ 	ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+ 	ath79_eth0_data.phy_mask = BIT(0);
+ 	ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
+@@ -274,7 +276,24 @@
+ 
+ 	ath79_register_eth(0);
+ 	ath79_register_eth(1);
++#else
++        ath79_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
++        ath79_eth0_data.phy_mask = BIT(4);
++        ath79_eth0_data.mii_bus_dev = &ath79_mdio0_device.dev;
++        ath79_eth0_pll_data.pll_1000 = 0xa6000000; 
++        ath79_eth0_pll_data.pll_100 = 0x80000101; 
++        ath79_eth0_pll_data.pll_10 = 0x80001313; 
++        ath79_register_eth(0);
++        
++        ath79_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_SGMII;
++        ath79_eth1_data.speed = SPEED_1000;
++        ath79_eth1_data.duplex = DUPLEX_FULL;
++        ath79_eth1_pll_data.pll_1000 = 0x03000101;
++        ath79_eth1_data.mii_bus_dev = &ath79_mdio0_device.dev;
++        ath79_init_mac(ath79_eth1_data.mac_addr, art + EMG3425AAYJMAC1_OFFSET, 0);
+ 
++        ath79_register_eth(1);        
++#endif
+ 	//Gary
+ 	check_sgmii_debug();
+ 

@@ -1,0 +1,60 @@
+Source-Makefile: feeds/streamboost/libsbdaemon/Makefile
+Package: libsbdaemon
+Submenu: Utilities
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Variant: prod
+Section: Bigfoot
+Category: Bigfoot
+Title: Daemonizing Library
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: libsbdaemon-.tar.gz
+Type: ipkg-prebuilt
+Description:  This package contains a library for decrypting Streamboost daemon configuration files.  Logging level is compiled to INFO.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_libsbdaemon
+	config libsbdaemon_USE_CUSTOM_VERSION
+		depends on PACKAGE_libsbdaemon
+		bool "Use custom package version"
+		default n
+	config libsbdaemon_CUSTOM_VERSION
+		depends on libsbdaemon_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_libsbdaemon
+	config libsbdaemon_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_libsbdaemon
+		bool "Use custom source directory"
+		default n
+	config libsbdaemon_CUSTOM_SOURCE_DIR
+		depends on libsbdaemon_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+Package: libsbdaemon-rtll
+Submenu: Utilities
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Variant: rtll
+Section: Bigfoot
+Category: Bigfoot
+Title: Daemonizing Library
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: libsbdaemon-.tar.gz
+Type: ipkg-prebuilt
+Description:  This package contains a library for decrypting Streamboost daemon configuration files.  Logging level is configurable at run-time.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+
+

@@ -1,0 +1,46 @@
+<Client>
+	<DeviceId>
+		<DisplayName>YAMAHA DMC</DisplayName>
+		<HttpRecognition>
+			<HttpText>YAMAHA_MusicCAST2</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<DescriptionFile>devicedescription-yamaha.xml</DescriptionFile>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>audio/x-aiff</In>
+				<Out>audio/aiff</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-flac</In>
+				<Out>audio/flac</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-aac</In>
+				<Out>audio/mp4</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/mp1</In>
+				<Out>audio/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-mpeg</In>
+				<Out>audio/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>application/ogg</In>
+				<Out>audio/ogg</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+</Client>

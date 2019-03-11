@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WD TV Play</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WD TV Play</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<ExtraProtocolInfo>http-get:*:video/vnd.dlna.mpeg-tts:*</ExtraProtocolInfo>
+	</Adaptations>
+</Client>

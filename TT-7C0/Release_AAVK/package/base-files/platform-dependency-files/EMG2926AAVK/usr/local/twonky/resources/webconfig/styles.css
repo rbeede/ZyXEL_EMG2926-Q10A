@@ -1,0 +1,134 @@
+@charset "utf-8";
+@import url("reset.css");
+@import url("webfont.css");
+
+body {
+	color: #89959a;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 100%;
+}
+#twHeader {
+	background-color: #fff;
+	border: 4px solid #405865;
+	border-width: 4px 0 0;
+	min-height: 83px;
+	padding: 17px 0 0;
+	width: 100%;
+}
+#twContent {
+	background-color: #f3f3f3;
+	padding: 60px 0;
+}
+#twFooter {
+	background-color: #405966;
+	color: #99aebb;
+	padding: 85px 0 130px;
+}
+.contentContainer {
+	margin: 0 auto;
+	width: 960px;
+}
+a {
+	text-decoration: none;
+}
+#twNav {
+	float: right;
+	font-family: "MavenPro", Arial, Helvetica, sans-serif;
+	font-size: 16px;
+	line-height: 55px;
+	text-transform: lowercase;
+}
+#twNav li {
+	float: left;
+	margin: 0 0 0 30px;
+}
+#twNav a {
+	color: #8c8c8c;
+}
+#twNav a:hover {
+	color: #333;
+}
+#twFooterNav {
+	float: left;
+	font-family: "MavenPro", Arial, Helvetica, sans-serif;
+	font-size: 16px;
+	line-height: 30px;
+	text-transform: lowercase;
+}
+#twFooterNav li {
+	float: left;
+	margin: 0 30px 0 0;
+}
+#twFooterNav a {
+	color: #99aebb;
+}
+#twFooterNav a:hover {
+	color: #fff;
+}
+#twFooterSocial {
+	float: right;
+	font-family: "MavenPro", Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	text-transform: lowercase;
+}
+#twFooterSocial li {
+	float: left;
+	margin: 0 0 0 30px;
+	padding: 7px 0 0;
+}
+#twFooterCopy {
+	font-size: 10px;
+	padding: 20px 0 0;
+	text-align: right;
+}
+.breadcrumb {
+	color: #405966;
+	font-size: 11px;
+	padding: 0 0 20px;
+}
+.breadcrumb a {
+	color: #405966;
+}
+.breadcrumb a:hover {
+	text-decoration: underline;
+}
+.headerTitle {
+	color: #405966;
+	font-size: 30px;
+	font-weight: bold;
+	padding: 0 0 24px;
+}
+.subTitle {
+	color: #569fd3;
+	font-size: 16px;
+}
+p {
+	font-size: 12px;
+	line-height: 18px;
+}
+.clear {
+	clear: both;
+}
+#twSocBeam span {
+	float: left;
+	line-height: 30px;
+	margin: 0 10px 0 0;
+}
+#twSoctw img {
+	background: url("../images/ico_social.png") no-repeat -1px -1px;
+	width: 19px;
+	height: 19px;
+}
+#twSocfb img {
+	background: url("../images/ico_social.png") no-repeat -21px -1px;
+	width: 18px;
+	height: 19px;
+}
+#twSocyt img {
+	background: url("../images/ico_social.png") no-repeat -41px -1px;
+	width: 42px;
+	height: 19px;
+}
+#twSoctw:hover img { background-position: -1px -22px }
+#twSocfb:hover img { background-position: -21px -22px }
+#twSocyt:hover img { background-position: -41px -22px }

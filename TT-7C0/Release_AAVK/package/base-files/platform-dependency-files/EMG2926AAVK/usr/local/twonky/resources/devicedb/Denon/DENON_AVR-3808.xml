@@ -1,0 +1,16 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DENON AVR-3808</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>AVR-3808</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<ExtraProtocolInfo>http-get:*:audio/x-flac:*,http-get:*:audio/x-wav:*,http-get:*:audio/wav:*,http-get:*:audio/wave:*</ExtraProtocolInfo>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

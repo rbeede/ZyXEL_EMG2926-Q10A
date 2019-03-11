@@ -1,0 +1,2289 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+
+
+local igmpEnabled0 = uci:get("igmpproxy","wan","igmpEnabled")
+local igmpEnabled1 = uci:get("igmpproxy","wan1","igmpEnabled")
+local igmpEnabled2 = uci:get("igmpproxy","wan2","igmpEnabled")
+local igmpEnabled3 = uci:get("igmpproxy","wan3","igmpEnabled")
+local igmpEnabled4 = uci:get("igmpproxy","wan4","igmpEnabled")
+
+-%>
+
+<%
+local offset = 0
+local t={}
+t=luci.sys.net.getDNS()
+local dns1Type, dns2Type, dns3Type
+if uci:get("network","wan1","dns1") then	dns1Type=string.match(uci:get("network","wan1","dns1"),"%a+") end
+if uci:get("network","wan1","dns2") then dns2Type=string.match(uci:get("network","wan1","dns2"),"%a+") end
+if uci:get("network","wan1","dns3") then dns3Type=string.match(uci:get("network","wan1","dns3"),"%a+") end					
+
+local dns1=uci:get("network","wan1","dns1")
+local dns2=uci:get("network","wan1","dns2")
+local dns3=uci:get("network","wan1","dns3")
+
+local dns_table ={} 
+dns_table=luci.sys.net.get_WAN1_DNS()
+
+local isp_dns1 = "0.0.0.0"
+local isp_dns2 = "0.0.0.0"
+local isp_dns3 = "0.0.0.0"
+
+if dns1Type == "ISP" then 
+	if dns_table[1] then 
+		isp_dns1=dns_table[1]
+	end
+else 
+	offset=offset+1 	
+end
+
+if dns2Type == "ISP" then 
+	if dns_table[2 - offset] then 
+		isp_dns2=dns_table[2 - offset]
+	end
+else	
+		offset=offset+1
+end
+
+if dns3Type == "ISP" then 
+	if dns_table[3 - offset] then 
+		isp_dns3=dns_table[3 - offset]
+	end
+end
+
+offset=0		
+	
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style> 
+.on {display:on}
+.off {display:none}
+td {white-space: nowrap;}
+</style>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+<%
+   local luaWAN = {}
+   
+   uci:foreach( "network", "interface", function( section )
+       if not ( nil == section.ifname or "loopback" == section[ '.name' ] ) then
+         local tmp = section
+         
+         tmp.id = section[ '.name' ]
+         if ( nil == string.find(tmp.id,"lan")) then
+           table.insert( luaWAN, tmp )
+         end
+      end
+   end )
+   
+%>
+
+var ori_igmpEnabled0 = "<%=igmpEnabled0%>";
+var ori_igmpEnabled1 = "<%=igmpEnabled1%>";
+var ori_igmpEnabled2 = "<%=igmpEnabled2%>";
+var ori_igmpEnabled3 = "<%=igmpEnabled3%>";
+var ori_igmpEnabled4 = "<%=igmpEnabled4%>";
+
+function show_div(show,id) 
+{
+	if(show)
+		document.getElementById(id).className  = "on" ;
+    else
+    	document.getElementById(id).className  = "off" ;
+}
+
+function dov6DNSConfig(para)
+{
+	if(para.value == "disable" )
+		show_div(true, "div_static_v6dns");
+	else
+		show_div(false, "div_static_v6dns");
+}
+
+function doDNSConfig(para)
+{
+	if(para.value == "disable" )
+		show_div(true, "div_static_dns");
+	else
+		show_div(false, "div_static_dns");
+}
+
+function doAddrConfig(para)
+{
+	if(para.value == "static" ) {
+		show_div(true, "div_static_addr");
+		document.wanCfg1.auto_dns[0].disabled = true;
+		document.wanCfg1.auto_dns[1].checked = true;
+		show_div(true, "div_static_dns");
+		show_div(false, "div_dhcp6_option");
+	}
+	else {
+		document.wanCfg1.auto_dns[0].disabled = false;
+		
+		show_div(false, "div_static_addr");
+		show_div(true, "div_dhcp6_option");
+		
+		if ( document.wanCfg1.auto_dns[1].checked == true )
+			show_div(true, "div_static_dns");
+	}
+}
+
+function do6RDConfig(para)
+{
+	if(para.value == "static" ) {
+		show_div(true, "div_static_6rd");
+	}
+	else {		
+		show_div(false, "div_static_6rd");
+	}
+}
+
+function do6RDenableck(para)
+{
+	if(para.checked == true ) {
+		show_div(true, "6RD_enable");
+	}
+	else{
+		show_div(false, "6RD_enable");
+	}
+}
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function checkRange(str, num, min, max)
+{
+	d = atoi(str, num);
+	if (d > max || d < min)
+		return false;
+	return true;
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function checkNumFormat( num )
+{
+	var re = /^[0-9]+$/;
+	if (!re.test(num)){
+		return false; 
+	}
+		return true;
+}
+
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value );
+}
+
+function checkNetmaskFormat( value )
+{
+  return /^255\.255\.255\.(255|254|252|248|240|224|192|128|0)|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|(254|252|248|240|224|192|128)\.0\.0\.0$/.test( value );
+}
+
+
+function checkIpRange(ipaddr, netmask)
+{
+	
+	
+	ipaddr_1 = atoi(ipaddr.value, 1);
+	ipaddr_2 = atoi(ipaddr.value, 2);
+	ipaddr_3 = atoi(ipaddr.value, 3);
+	ipaddr_4 = atoi(ipaddr.value, 4);
+
+	mask_1 = atoi(netmask.value, 1);
+	mask_2 = atoi(netmask.value, 2);
+	mask_3 = atoi(netmask.value, 3);
+	mask_4 = atoi(netmask.value, 4);
+
+	firstadr_1 = ipaddr_1 & mask_1 ;
+	firstadr_2 = ipaddr_2 & mask_2 ;
+	firstadr_3 = ipaddr_3 & mask_3 ;
+	firstadr_4 = ipaddr_4 & mask_4 ;
+
+	lastadr_1 = ipaddr_1 | (~ mask_1 & 0xff);
+	lastadr_2 = ipaddr_2 | (~ mask_2 & 0xff);
+	lastadr_3 = ipaddr_3 | (~ mask_3 & 0xff);
+	lastadr_4 = ipaddr_4 | (~ mask_4 & 0xff);
+
+	if(( firstadr_4 == ipaddr_4 ) && (firstadr_3 == ipaddr_3 ) && (firstadr_2 == ipaddr_2 ) && (firstadr_1 == ipaddr_1 ))
+	{
+		alert("<%:IP_Error_3%>");
+		ipaddr.value = ipaddr.defaultValue;
+		ipaddr.focus();
+		return false;
+	}
+
+	if ((lastadr_4 == ipaddr_4 ) && (lastadr_3 == ipaddr_3 ) && (lastadr_2 == ipaddr_2 ) && (lastadr_1 == ipaddr_1 ))
+	{
+		alert("<%:IP_Error_3%>");
+		ipaddr.value = ipaddr.defaultValue;
+		ipaddr.focus();
+		return false;
+	}
+
+	return true;
+}
+
+function checkIpAddr(field, ismask)
+{
+	if (field.value == "") {
+		alert("<%:IP_Error_1%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	if (isAllNum(field.value) == 0) {
+		alert("<%:IP_Error_2%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	if (ismask) {
+		if ( !checkNetmaskFormat( field.value) )	
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	else {
+		if ( !checkIPFormat( field.value) )	
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	return true;
+}
+
+function CheckValue()
+{
+
+	if ("" == document.getElementsByName( "wan_name" )[0].value ){
+			alert("Please enter WAN name.");
+			document.getElementsByName( "wan_name" )[0].focus();
+			return false;
+	}
+		
+	if (!checkNumFormat(document.getElementsByName( "wan_vid" )[0].value) ) {
+		    alert("VID should be set in range 1-4094!");
+			document.getElementsByName( "wan_vid" )[0].focus();
+		    return false;
+	}
+	else
+	{
+		// check the vid range and vid be used or not.
+		if (document.getElementsByName( "wan_vid" )[0].value < 1 || document.getElementsByName( "wan_vid" )[0].value > 4094){
+				alert("VID should be set in range 1-4094!");
+				document.getElementsByName( "wan_vid" )[0].focus();
+				return false;
+		}
+		else
+		{      
+		<%for i = 1, #luaWAN do%>
+		  var vid_test = <%=luaWAN[i].vid%>
+		  <%local myvid = uci:get("network","wan1","vid")%>
+			  
+			if ( document.getElementsByName( "wan_vid" )[0].value == vid_test && document.getElementsByName( "wan_vid" )[0].value != <%=myvid%>){
+				  
+			  alert("The VID has been allocated by WAN interface!");
+			  return false;
+			}
+		<%end%>
+		}
+	}
+
+    if (document.wanCfg1.connectionType.options.selectedIndex == 0) //PPPoE
+    {
+         if(document.wanCfg1.pppoeUser.value == "")
+         {
+            alert("<%:WAN_Error_5%>");
+			return false;
+         }
+         if(document.wanCfg1.pppoePass.value == "")
+         {
+            alert("<%:WAN_Error_6%>");
+			return false;
+         }
+		if ((document.wanCfg1.pppoeMTU.value < 1360) || (document.wanCfg1.pppoeMTU.value > 1492)) {
+			alert("<%:WAN_Error_21%>");
+			return false;
+		}
+		
+		if (isAllNum(document.wanCfg1.pppoeMTU.value) == 0) {
+			alert("<%:WAN_Error_22%>");
+			document.wanCfg1.pppoeMTU.value = document.wanCfg1.pppoeMTU.defaultValue;
+			document.wanCfg1.pppoeMTU.focus();
+			return false;
+		}
+		
+	    if (document.wanCfg1.pppoeIdleTime.disabled == false)
+		{
+			if (document.wanCfg1.pppoeIdleTime.value == "")
+			{
+				alert("<%:WAN_Error_11%>");
+				document.wanCfg1.pppoeIdleTime.focus();
+				document.wanCfg1.pppoeIdleTime.select();
+				return false;
+			}
+			
+			if (isAllNum(document.wanCfg1.pppoeIdleTime.value) == 0) 
+			{
+		       alert("<%:WAN_Error_2%>");
+		       document.wanCfg1.pppoeIdleTime.value = document.wanCfg1.pppoeIdleTime.defaultValue;
+		       document.wanCfg1.pppoeIdleTime.focus();
+		       return false;
+	        }
+        }
+		
+		if (document.wanCfg1.pppoeWanIPMode[1].checked == true) {
+			if (!checkIpAddr(document.wanCfg1.pppoeWanIpAddr, false))
+				return false;
+		}
+		
+		// PPPOE with Static IP: dns should not be assigned from ISP when WAN is Static IP
+		if (((document.wanCfg1.dns1Type.options.selectedIndex == 0) ||
+			(document.wanCfg1.dns2Type.options.selectedIndex == 0)||
+			(document.wanCfg1.dns3Type.options.selectedIndex == 0)) && (document.wanCfg1.pppoeWanIPMode[0].checked == false))
+		{
+			alert("<%:WAN_Error_4%>");
+			return false;
+		}
+    }
+	/*else if (document.wanCfg1.connectionType.options.selectedIndex == 1) //PPTP
+    {
+        if (document.wanCfg1.pptp_serverIp.value == "")
+		{
+				alert("<%:IP_Error_1%>");
+				return false;
+        }else if (!checkIpAddr(document.wanCfg1.pptp_serverIp, false)){
+				return false;
+		}
+		
+		if (document.wanCfg1.pptp_config_ip[1].checked == true) //Static IP
+        {
+             if (!checkIpAddr(document.wanCfg1.pptp_staticIp, false))
+			     return false;
+		     if (!checkIpAddr(document.wanCfg1.pptp_staticNetmask, true))
+			     return false;
+			if (!checkIpRange(document.wanCfg1.pptp_staticIp,document.wanCfg1.pptp_staticNetmask))
+				return false;	
+		     if (document.wanCfg1.pptp_staticGateway.value != "")
+		     {
+			     if (!checkIpAddr(document.wanCfg1.pptp_staticGateway, false))
+				     return false;
+             }
+	   	}
+		 
+		if(document.wanCfg1.pptpUser.value == "")
+        {
+            alert("<%:WAN_Error_5%>");
+			return false;
+        }
+		
+        if(document.wanCfg1.pptpPass.value == "")
+        {
+            alert("<%:WAN_Error_6%>");
+			return false;
+        }
+		
+		if ((document.wanCfg1.pptpMTU.value < 1360) || (document.wanCfg1.pptpMTU.value > 1492)) 
+		{
+			alert("<%:WAN_Error_21%>");
+            return false;
+		}
+		
+		if (isAllNum(document.wanCfg1.pptpMTU.value) == 0)
+		{
+			alert("<%:WAN_Error_22%>");
+			document.wanCfg1.pptpMTU.value = document.wanCfg1.pptpMTU.defaultValue;
+			document.wanCfg1.pptpMTU.focus();
+			return false;
+		}
+		
+	    if (document.wanCfg1.pptpIdleTime.disabled == false)
+		{
+			if (document.wanCfg1.pptpIdleTime.value == "")
+			{
+				alert("<%:WAN_Error_11%>");
+				document.wanCfg1.pptpIdleTime.focus();
+				document.wanCfg1.pptpIdleTime.select();
+				return false;
+			}
+			if (isAllNum(document.wanCfg1.pptpIdleTime.value) == 0) 
+			{
+		       alert("<%:WAN_Error_2%>");
+		       document.wanCfg1.pptpIdleTime.value = document.wanCfg1.pptpIdleTime.defaultValue;
+		       document.wanCfg1.pptpIdleTime.focus();
+		       return false;
+	        }
+        }
+		
+		if (document.wanCfg1.pptpWanIPMode[1].checked == true) {
+			if (!checkIpAddr(document.wanCfg1.pptpWanIpAddr, false))
+				return false;
+		}
+    }*/
+//  else if(document.wanCfg1.connectionType.options.selectedIndex == 2)	
+    else if(document.wanCfg1.connectionType.options.selectedIndex == 1)//Index 1 seems could not be passed if only have two option.
+    {   
+		// not IPv6 Only
+		if( document.wanCfg1.IP_Mode.options.selectedIndex == 0 || document.wanCfg1.IP_Mode.options.selectedIndex == 1 )
+		{ 
+			//Static IP
+			if (document.wanCfg1.WAN_IP_Auto[1].checked == true)
+			{
+				if (!checkIpAddr(document.wanCfg1.staticIp, false))
+					return false;
+					
+				if (!checkIpAddr(document.wanCfg1.staticNetmask, true))
+					return false;
+
+				if (!checkIpRange(document.wanCfg1.staticIp,document.wanCfg1.staticNetmask))
+					return false;
+					
+				if (document.wanCfg1.staticGateway.value != "")
+				{
+					if (!checkIpAddr(document.wanCfg1.staticGateway, false))
+						return false;
+				}
+				
+				//Static IP: dns should not be assigned from ISP when WAN is Static IP
+				if ((document.wanCfg1.dns1Type.options.selectedIndex == 0) ||
+					(document.wanCfg1.dns2Type.options.selectedIndex == 0)||
+					(document.wanCfg1.dns3Type.options.selectedIndex == 0))
+				{
+					alert("<%:WAN_Error_4%>");
+					return false;
+				}
+			}
+			
+			if ((document.wanCfg1.ethMTU.value < 1360) || (document.wanCfg1.ethMTU.value > 1500)) {
+				alert("<%:WAN_Error_20%>");
+				return false;
+			}
+			
+			if (isAllNum(document.wanCfg1.ethMTU.value) == 0) {
+				alert("<%:WAN_Error_22%>");
+				document.wanCfg1.ethMTU.value = document.wanCfg1.ethMTU.defaultValue;
+				document.wanCfg1.ethMTU.focus();
+				return false;
+			}
+
+			/*if( document.wanCfg1.IP_Mode.options.selectedIndex == 0 ){
+				if (document.wanCfg1.auto_6rd[1].checked == true){
+					if (document.wanCfg1.zy6rd6prefix.value == ""){
+						alert("<%:WAN_Error_6rd_1%>");
+						return false;
+					}
+					if (document.wanCfg1.zy6rd4ip.value == ""){
+						alert("<%:WAN_Error_6rd_2%>");
+						return false;
+					}
+					if (document.wanCfg1.zy6rd6prefixleng.value - document.wanCfg1.zy6rd4prefixleng.value != 32){
+						alert("<%:WAN_Error_6rd_3%>");
+						return false;
+					}
+				}
+			}*/	
+        }
+		
+		// IPv6 only
+		else if ( document.wanCfg1.IP_Mode.options.selectedIndex == 2 )
+		{}
+    }	
+    else if(document.wanCfg1.connectionType.options.selectedIndex == 2)
+    {
+		return true;
+    }
+    else //unknown WAN Mode
+		 return false;
+     
+	//DNS
+	if (document.wanCfg1.dns1Type.options.selectedIndex == 1) //DNS1 User-Defined
+	{
+        if(document.wanCfg1.staticPriDns.value == "")
+        {
+            alert("<%:WAN_Error_12%>");
+            return false;
+        }
+		
+        if(document.wanCfg1.staticPriDns.value == "0.0.0.0")
+        {
+            alert("<%:WAN_Error_13%>");
+            return false;
+        }
+		
+        if (!checkIpAddr(document.wanCfg1.staticPriDns, false))
+			return false;
+    }
+	
+    if (document.wanCfg1.dns2Type.options.selectedIndex == 1)
+    {
+        if(document.wanCfg1.staticSecDns.value == "")
+        {
+            alert("<%:WAN_Error_14%>");
+            return false;
+        }
+		
+        if(document.wanCfg1.staticSecDns.value == "0.0.0.0")
+        {
+            alert("<%:WAN_Error_15%>");
+            return false;
+        }
+		
+        if (!checkIpAddr(document.wanCfg1.staticSecDns, false))
+			return false;
+    }
+	
+	if (document.wanCfg1.dns3Type.options.selectedIndex == 1)
+    {
+        if(document.wanCfg1.staticThiDns.value == "")
+        {
+            alert("<%:WAN_Error_16%>");
+            return false;
+        }
+		
+        if(document.wanCfg1.staticThiDns.value == "0.0.0.0")
+        {
+            alert("<%:WAN_Error_17%>");
+            return false;
+        }
+		
+        if (!checkIpAddr(document.wanCfg1.staticThiDns, false))
+			return false;
+    }
+	
+    if (document.wanCfg1.WAN_MAC_Clone[1].checked == true)
+	{
+        if (!checkIpAddr(document.wanCfg1.spoofIPAddr, false))
+			return false;
+    }
+    else if (document.wanCfg1.WAN_MAC_Clone[2].checked == true)
+	{
+		var re = /[A-Fa-f0-9][ACEace02468]:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}:[A-Fa-f0-9]{2}/;
+		
+		if (document.wanCfg1.macCloneMac.value.length == 0)
+		{
+			alert("<%:WAN_Error_18%>");
+			document.wanCfg1.macCloneMac.focus();
+			return false;
+		}
+		
+		if (!re.test(document.wanCfg1.macCloneMac.value))
+		{
+			alert("<%:WAN_Error_19%>");
+			document.wanCfg1.macCloneMac.focus();
+			return false;
+		}
+	}
+	
+	//DNSv6
+	if (document.wanCfg1.dnsv6_1Type.options.selectedIndex == 1) //DNS1 User-Defined
+	{
+        if(document.wanCfg1.staticPriDnsv6.value == "")
+        {
+            alert("<%:IPv6_DNS_Error_1%>");
+            return false;
+        }
+		
+        if(document.wanCfg1.staticPriDnsv6.value == "::/0")
+        {
+            alert("<%:IPv6_DNS_Error_2%>");
+            return false;
+        }
+		
+        if (!checkIPv6Addr(document.wanCfg1.staticPriDnsv6, false))
+			return false;
+    }
+	
+    if (document.wanCfg1.dnsv6_2Type.options.selectedIndex == 1)
+    {
+        if(document.wanCfg1.staticSecDnsv6.value == "")
+        {
+            alert("<%:IPv6_DNS_Error_3%>");
+            return false;
+        }
+		
+        if(document.wanCfg1.staticSecDnsv6.value == "::/0")
+        {
+            alert("<%:IPv6_DNS_Error_4%>");
+            return false;
+        }
+		
+        if (!checkIPv6Addr(document.wanCfg1.staticSecDnsv6, false))
+			return false;
+    }
+	
+	if (document.wanCfg1.dnsv6_3Type.options.selectedIndex == 1)
+    {
+        if(document.wanCfg1.staticThiDnsv6.value == "")
+        {
+            alert("<%:IPv6_DNS_Error_5%>");
+            return false;
+        }
+		
+        if(document.wanCfg1.staticThiDnsv6.value == "::/0")
+        {
+            alert("<%:IPv6_DNS_Error_6%>");
+            return false;
+        }
+		
+        if (!checkIPv6Addr(document.wanCfg1.staticThiDnsv6, false))
+			return false;
+    }
+	
+	var ipaddres = document.wanCfg1.lan_addr.value;
+	var static_ipaddres = document.wanCfg1.staticIp.value;
+	var ipword = ipaddres.split(".",3);
+	var staticipword = static_ipaddres.split(".",3);
+	
+	ipword= ipword + '\0';
+	staticipword = staticipword + '\0';
+	
+	if ( ipword == staticipword ) {
+		alert("The subnet of WAN is the same as subnet of LAN.");
+		return false;		
+	}
+
+	if(ori_igmpEnabled0 == "enable" || ori_igmpEnabled2 == "enable" || ori_igmpEnabled3 == "enable" || ori_igmpEnabled4 == "enable")
+	{	
+		if(ori_igmpEnabled1 == "disable" && document.wanCfg1.igmpEnabled.value == "enable")
+		{	
+			if (!confirm("Enable Multicast Setup on this WAN interface will automatically disable the same setting on others!!"))
+			{
+				return false;
+			}
+		}
+	}
+	
+	pppoeNailup_Click(); //PPPoE
+	pptpNailup_Click();//PPTP
+
+	showWebMessage( 1 , '<%:Message%>' , '<%:msg_config%>' );
+	if ( document.getElementsByName( "apply_status" )[0].value == 1 )
+	{
+		return false;
+	}
+	else
+	{
+		document.getElementsByName( "apply_status" )[0].value = 1 ;
+	}
+	
+	return true;  
+
+
+}
+
+function connectionTypeSwitch()
+{
+    var config_status;  // old status for config
+	
+	show_div(false, "PPPoE_setting1");
+//	show_div(false, "PPTP_setting1");
+	show_div(false,  "Ethernet_setting1");
+	show_div(false, "DHCP_option_setting");
+	show_div(false, "div_dhcp6_option");	
+	show_div(false, "PPPoE_v6DNS");
+	show_div(false, "v4Dns");
+	show_div(false, "macDns");
+	show_div(false, "div_auto_6rd");
+	show_div(false, "Bridge_setting1");
+	show_div(false, "igmpproxy");
+	
+	//pppoe
+	if (document.wanCfg1.connectionType.options.selectedIndex == 0) {
+		show_div(false, "6RD");
+		show_div(true, "IP_mode");
+		show_div(false, "v4_only_mode");
+		show_div(true, "PPPoE_setting1");
+		show_div(false, "Bridge_setting1");
+		show_div(false, "Ethernet_setting1");
+		show_div(false, "DHCP_option_setting");
+		show_div(false, "div_dhcp6_option"); 
+		show_div(true, "v4Dns");    
+		show_div(false, "PPPoE_v6DNS");
+		show_div(true, "macDns");
+		show_div(true, "igmpproxy");
+
+		show_div(false, "div_auto_6rd");
+		show_div(false, "div_static_6rd");
+		document.wanCfg1.auto_6rd[1].checked = true;
+		
+		//dual stack
+		if( document.wanCfg1.IP_Mode.options.selectedIndex == 1 ){
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(true, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(true, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(true, "igmpproxy");
+		}
+		
+		//ipv6
+		else if( document.wanCfg1.IP_Mode.options.selectedIndex == 2 ){
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(true, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(true, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(false, "igmpproxy");
+		}
+		config_status = "PPPOE";
+	}
+/*
+	//pptp
+	else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {
+		show_div(true, "PPTP_setting1");
+		show_div(true, "v4Dns"); 
+		config_status = "PPTP";
+    }
+*/
+	//ipoe
+//  else if (document.wanCfg1.connectionType.options.selectedIndex == 2) {
+    else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {//Index 1 seems could not be passed if only have two option.
+	
+		show_div(false, "6RD");
+		//ipv4
+		if (document.wanCfg1.IP_Mode.options.selectedIndex == 0){
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(true, "Ethernet_setting1");
+			ethernet_mode_switch();
+			show_div(false, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(true, "igmpproxy");
+		}
+		
+		//dual stack
+		else if (document.wanCfg1.IP_Mode.options.selectedIndex == 1){
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(true, "Ethernet_setting1");
+			ethernet_mode_switch();
+			show_div(false, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(true, "igmpproxy");
+		}
+		
+		//ipv6
+		else if (document.wanCfg1.IP_Mode.options.selectedIndex == 2){
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(true, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd"); 
+			show_div(false, "igmpproxy");
+
+		}
+		config_status = "Ethernet"; 
+    }
+    if (document.wanCfg1.connectionType.options.selectedIndex == 2)  {
+		show_div(false, "6RD");
+		show_div(false, "IP_mode");
+		show_div(true, "v4_only_mode");	
+		show_div(false, "PPPoE_setting1");
+		show_div(true, "Bridge_setting1");
+		show_div(false, "Ethernet_setting1");
+		show_div(false, "DHCP_option_setting");
+		show_div(false, "div_dhcp6_option"); 
+		show_div(false, "v4Dns");    
+		show_div(false, "PPPoE_v6DNS");
+		show_div(false, "macDns");
+		show_div(false, "div_auto_6rd");
+		show_div(false, "igmpproxy");
+		config_status = "Bridge";	
+    }	
+    return config_status;
+}
+
+function pppoe_nailup_switch()
+{
+    if (document.wanCfg1.pppoeNailedup.checked == true)
+	{
+		document.wanCfg1.pppoeIdleTime.disabled = true;
+	}
+    else
+	{
+		document.wanCfg1.pppoeIdleTime.disabled = false;
+	}
+}
+
+function pptp_nailup_switch()
+{
+    if (document.wanCfg1.pptpNailedup.checked == true)
+	{
+		document.wanCfg1.pptpIdleTime.disabled = true;
+	}
+    else
+	{
+		document.wanCfg1.pptpIdleTime.disabled = false;
+	}
+}
+
+function pppoeNailup_Click()
+{
+	document.wanCfg1.pppoeNailedup.value = document.wanCfg1.pppoeNailedup.checked ? "1": "0";
+	return true;
+}
+
+function pptpNailup_Click()
+{
+	document.wanCfg1.pptpNailedup.value = document.wanCfg1.pptpNailedup.checked ? "1": "0";
+	return true;
+}
+
+function ethernet_mode_switch()
+{
+	if(document.wanCfg1.connectionType.options.selectedIndex == 1)
+	{
+		if (document.wanCfg1.WAN_IP_Auto[0].checked == true) //DHCP
+		{		
+			show_div(true, "DHCP_option_setting");
+			document.wanCfg1.staticIp.disabled = true;
+			document.wanCfg1.staticNetmask.disabled = true;
+			document.wanCfg1.staticGateway.disabled = true;
+			document.wanCfg1.dns1Type.options.selectedIndex=0;
+			document.wanCfg1.dns2Type.options.selectedIndex=0;
+			document.wanCfg1.dns3Type.options.selectedIndex=0;
+			//document.wanCfg1.staticPriDns.disabled = true;
+			//document.wanCfg1.staticPriDns.value = "0.0.0.0";
+			//document.wanCfg1.staticPriDns.value = "";
+			//document.wanCfg1.staticSecDns.disabled = true;
+			document.getElementById("staticPriDns").readOnly = true;
+			document.getElementById("staticSecDns").readOnly = true;
+			document.getElementById("staticThiDns").readOnly = true;
+			//document.wanCfg1.staticThiDns.disabled = true;
+			//document.wanCfg1.staticSecDns.value = "0.0.0.0";
+			//document.wanCfg1.staticSecDns.value = "";
+		}
+		else //Static IP
+		{
+			show_div(false, "DHCP_option_setting");
+			document.wanCfg1.staticIp.disabled = false;
+			document.wanCfg1.staticNetmask.disabled = false;
+			document.wanCfg1.staticGateway.disabled = false;
+			document.wanCfg1.dns1Type.options.selectedIndex=1;
+			document.wanCfg1.dns2Type.options.selectedIndex=1;
+			document.wanCfg1.dns3Type.options.selectedIndex=1;
+			document.wanCfg1.staticPriDns.disabled = false;
+			document.wanCfg1.staticSecDns.disabled = false;
+			document.wanCfg1.staticThiDns.disabled = false;
+			document.getElementById("staticPriDns").readOnly = false;
+			document.getElementById("staticSecDns").readOnly = false;
+			document.getElementById("staticThiDns").readOnly = false;
+		}
+	}
+	else
+	{
+		show_div(false, "DHCP_option_setting");
+	}
+}
+
+function DNS1TypeSwitch()
+{
+   if (document.wanCfg1.dns1Type.options.selectedIndex == 0)
+   {
+        //document.wanCfg1.staticPriDns.disabled = true;
+		document.getElementById("staticPriDns").readOnly = true;
+   }
+   else
+   {
+        //document.wanCfg1.staticPriDns.disabled = false;
+		document.getElementById("staticPriDns").readOnly = false;
+   }
+   
+   if (document.wanCfg1.dns1Type.options.selectedIndex == 2)
+   {
+        document.wanCfg1.staticPriDns.disabled = true;
+   }
+   else
+   {
+        document.wanCfg1.staticPriDns.disabled = false;
+   }
+   
+}
+
+function DNS2TypeSwitch()
+{
+   if (document.wanCfg1.dns2Type.options.selectedIndex == 0)
+   {
+        //document.wanCfg1.staticSecDns.disabled = true;
+		document.getElementById("staticSecDns").readOnly = true;
+   }
+   else
+   {
+        //document.wanCfg1.staticSecDns.disabled = false;
+		document.getElementById("staticSecDns").readOnly = false;
+   }
+   
+   if (document.wanCfg1.dns2Type.options.selectedIndex == 2)
+   {
+        document.wanCfg1.staticSecDns.disabled = true;
+   }
+   else
+   {
+        document.wanCfg1.staticSecDns.disabled = false;
+   }
+   
+}
+
+function DNS3TypeSwitch()
+{
+   if (document.wanCfg1.dns3Type.options.selectedIndex == 0)
+   {
+        //document.wanCfg1.staticThiDns.disabled = true;
+		document.getElementById("staticThiDns").readOnly = true;
+   }
+   else
+   {
+        //document.wanCfg1.staticThiDns.disabled = false;
+		document.getElementById("staticThiDns").readOnly = false;
+   }
+   
+   if (document.wanCfg1.dns3Type.options.selectedIndex == 2)
+   {
+        document.wanCfg1.staticThiDns.disabled = true;
+   }
+   else
+   {
+        document.wanCfg1.staticThiDns.disabled = false;
+   }
+   
+}
+
+function DNSv6_1TypeSwitch()
+{
+   if (document.wanCfg1.dnsv6_1Type.options.selectedIndex == 0)
+   {
+        //document.wanCfg1.staticPriDnsv6.disabled = true;
+		document.getElementById("staticPriDnsv6").readOnly = true;
+   }
+   else
+   {
+        //document.wanCfg1.staticPriDnsv6.disabled = false;
+		document.getElementById("staticPriDnsv6").readOnly = false;
+   }
+   
+   if (document.wanCfg1.dnsv6_1Type.options.selectedIndex == 2)
+   {
+        document.wanCfg1.staticPriDnsv6.disabled = true;
+   }
+   else
+   {
+        document.wanCfg1.staticPriDnsv6.disabled = false;
+   }
+   
+}
+
+function DNSv6_2TypeSwitch()
+{
+   if (document.wanCfg1.dnsv6_2Type.options.selectedIndex == 0)
+   {
+        //document.wanCfg1.staticSecDnsv6.disabled = true;
+		document.getElementById("staticSecDnsv6").readOnly = true;
+   }
+   else
+   {
+        //document.wanCfg1.staticSecDnsv6.disabled = false;
+		document.getElementById("staticSecDnsv6").readOnly = false;
+   }
+   
+   if (document.wanCfg1.dnsv6_2Type.options.selectedIndex == 2)
+   {
+        document.wanCfg1.staticSecDnsv6.disabled = true;
+   }
+   else
+   {
+        document.wanCfg1.staticSecDnsv6.disabled = false;
+   }
+   
+}
+
+function DNSv6_3TypeSwitch()
+{
+   if (document.wanCfg1.dnsv6_3Type.options.selectedIndex == 0)
+   {
+        //document.wanCfg1.staticThiDnsv6.disabled = true;
+		document.getElementById("staticThiDnsv6").readOnly = true;
+   }
+   else
+   {
+        //document.wanCfg1.staticThiDnsv6.disabled = false;
+		document.getElementById("staticThiDnsv6").readOnly = false;
+   }
+   
+   if (document.wanCfg1.dnsv6_3Type.options.selectedIndex == 2)
+   {
+        document.wanCfg1.staticThiDnsv6.disabled = true;
+   }
+   else
+   {
+        document.wanCfg1.staticThiDnsv6.disabled = false;
+   }
+   
+}
+
+function IPmodeConfig()
+{
+	var IPmode;
+	
+	show_div(false, "PPPoE_setting1"); 
+//	show_div(false, "PPTP_setting1");
+	show_div(false, "Ethernet_setting1");
+	show_div(false, "DHCP_option_setting");
+	show_div(false, "div_dhcp6_option");	
+	show_div(false, "PPPoE_v6DNS");
+	show_div(false, "macDns");//only ipoe ipv6 disable.
+	show_div(false, "6RD"); 
+	show_div(false, "Bridge_setting1");
+	show_div(false, "igmpproxy");
+
+	//IPv4
+    if (document.wanCfg1.IP_Mode.options.selectedIndex == 0)
+	{
+		show_div(false, "6RD");
+		show_div(false, "div_auto_6rd");
+		//pppoe
+		if (document.wanCfg1.connectionType.options.selectedIndex == 0) {
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(true, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd"); 		
+			show_div(false, "div_static_6rd");
+			show_div(true, "igmpproxy");
+			document.wanCfg1.auto_6rd[1].checked = true;
+		}
+/*
+		//pptp
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {
+			show_div(true, "PPTP_setting1");
+			show_div(true, "v4Dns"); 
+		}
+*/
+		//ipoe
+//		else if (document.wanCfg1.connectionType.options.selectedIndex == 2) {
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {//Index 1 seems could not be passed if only have two option.
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(true, "Ethernet_setting1");
+			//ethernet_mode_switch();
+			show_div(false, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(true, "igmpproxy");
+
+		}
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 2) 
+		{
+			show_div(false, "IP_mode");
+			show_div(true, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(true, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(false, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(false, "igmpproxy");
+		}
+		IPmode = "IPv4_Only"; 
+	}
+	
+	//Dual Stack
+	else if (document.wanCfg1.IP_Mode.options.selectedIndex == 1)
+	{
+	
+		//pppoe
+		if (document.wanCfg1.connectionType.options.selectedIndex == 0) {
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(true, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(true, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(true, "igmpproxy");
+
+		}
+/*
+		//pptp
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {
+			show_div(true, "PPTP_setting1");
+			show_div(false, "IP_mode");
+			show_div(true, "v4_only_mode");
+			show_div(true, "v4Dns"); 
+		}
+*/
+		//ipoe
+//		else if (document.wanCfg1.connectionType.options.selectedIndex == 2) {
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {//Index 1 seems could not be passed if only have two option.
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(true, "Ethernet_setting1");
+			//ethernet_mode_switch();
+			show_div(true, "div_dhcp6_option"); 
+			show_div(true, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(true, "igmpproxy");
+			
+			<%
+				local v6_proto = uci.get("network","wan1","v6_proto")
+			%>
+			
+			var IPv6_proto = "<%=v6_proto%>";
+			
+			if( IPv6_proto == "static" ) 
+			{
+				show_div(true, "div_static_addr");
+//				show_div(false, "div_auto_addr");
+//				document.wanCfg1.auto_dns[0].disabled = true;
+//				document.wanCfg1.auto_dns[1].checked = true;
+				show_div(true, "div_static_dns");
+				show_div(false, "div_dhcp_option");
+			}
+			else 
+			{
+//				document.wanCfg1.auto_dns[0].disabled = false;
+				show_div(false, "div_static_addr");
+//				show_div(true, "div_auto_addr");
+				show_div(true, "div_dhcp_option");
+//				if ( document.wanCfg1.auto_dns[1].checked == true )
+//					show_div(true, "div_static_dns");
+			}
+			
+		}
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 2) 
+		{
+			show_div(false, "IP_mode");
+			show_div(true, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(true, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(false, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(false, "igmpproxy");
+		} 
+		IPmode = Daul_Stack;
+	}
+	
+	//IPv6
+	else if (document.wanCfg1.IP_Mode.options.selectedIndex == 2)
+	{
+	
+		//pppoe
+		if (document.wanCfg1.connectionType.options.selectedIndex == 0) {
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(true, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(true, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(false, "igmpproxy");
+
+		}
+/*
+		//pptp
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {
+			show_div(true, "PPTP_setting1");
+			show_div(true, "v4Dns"); 
+		}
+*/
+		//ipoe
+//		else if (document.wanCfg1.connectionType.options.selectedIndex == 2) {
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 1) {//Index 1 seems could not be passed if only have two option.
+			show_div(true, "IP_mode");
+			show_div(false, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(false, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(true, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(true, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(false, "igmpproxy");
+
+		} 
+		else if (document.wanCfg1.connectionType.options.selectedIndex == 2) 
+		{
+			show_div(false, "IP_mode");
+			show_div(true, "v4_only_mode");		
+			show_div(false, "PPPoE_setting1");
+			show_div(true, "Bridge_setting1");
+			show_div(false, "Ethernet_setting1");
+			show_div(false, "DHCP_option_setting");
+			show_div(false, "div_dhcp6_option"); 
+			show_div(false, "v4Dns");    
+			show_div(false, "PPPoE_v6DNS");
+			show_div(false, "macDns");
+			show_div(false, "div_auto_6rd");
+			show_div(false, "igmpproxy");
+		}
+		IPmode = "IPv6_Only"; 
+	}
+      return IPmode;  
+}
+
+function v4DNS_Set()
+{
+	<%if dns1Type=="ISP" then%>
+		document.wanCfg1.dns1Type.options.selectedIndex=0;
+		document.wanCfg1.staticPriDns.disabled = true;
+		document.getElementById("staticPriDns").readOnly = true;
+		document.wanCfg1.staticPriDns.value = "<%=isp_dns1%>";
+	<% elseif dns1Type== "USER" then %>
+		document.wanCfg1.dns1Type.options.selectedIndex=1;
+		document.wanCfg1.staticPriDns.disabled = false;
+		document.getElementById("staticPriDns").readOnly = false;
+		document.wanCfg1.staticPriDns.value = "<%=string.gsub(dns1,"USER,","")%>";
+	<% elseif dns1Type== "NONE" then %>
+		document.wanCfg1.dns1Type.options.selectedIndex=2;
+		document.wanCfg1.staticPriDns.disabled = true;
+		document.getElementById("staticPriDns").readOnly = true;
+		document.wanCfg1.staticPriDns.value = "";
+	<%end%>
+	
+	<%if dns2Type=="ISP" then%>
+		document.wanCfg1.dns2Type.options.selectedIndex=0;
+		document.wanCfg1.staticSecDns.disabled = true;
+		document.getElementById("staticSecDns").readOnly = true;
+		document.wanCfg1.staticSecDns.value = "<%=isp_dns2%>";
+	<% elseif dns2Type== "USER" then %>
+		document.wanCfg1.dns2Type.options.selectedIndex=1;
+		document.wanCfg1.staticSecDns.disabled = false;
+		document.getElementById("staticSecDns").readOnly = false;
+		document.wanCfg1.staticSecDns.value = "<%=string.gsub(dns2,"USER,","")%>";
+	<% elseif dns2Type== "NONE" then %>
+		document.wanCfg1.dns2Type.options.selectedIndex=2;
+		document.wanCfg1.staticSecDns.disabled = true;
+		document.getElementById("staticSecDns").readOnly = true;
+		document.wanCfg1.staticSecDns.value = "";
+	<%end%>
+	
+	<%if dns3Type=="ISP" then%>
+		document.wanCfg1.dns3Type.options.selectedIndex=0;
+		document.wanCfg1.staticThiDns.disabled = true;
+		document.getElementById("staticThiDns").readOnly = true;
+		document.wanCfg1.staticThiDns.value = "<%=isp_dns3%>";
+	<% elseif dns3Type== "USER" then %>
+		document.wanCfg1.dns3Type.options.selectedIndex=1;
+		document.wanCfg1.staticThiDns.disabled = false;
+		document.getElementById("staticThiDns").readOnly = false;
+		document.wanCfg1.staticThiDns.value = "<%=string.gsub(dns3,"USER,","")%>";
+	<% elseif dns3Type== "NONE" then %>
+		document.wanCfg1.dns3Type.options.selectedIndex=2;
+		document.wanCfg1.staticThiDns.disabled = true;
+		document.getElementById("staticThiDns").readOnly = true;
+		document.wanCfg1.staticThiDns.value = "";
+	<%end%>
+}
+
+function initValue()
+{
+	showWebMessage( 0, "<%:Message%>", "<%:Ready%>");	
+	IPmodeConfig();	
+	<% local proto = uci:get("network","wan1","proto") %>
+	<% if proto == "bridge" then %> show_div(false, "6RD"); <% end %>
+	ethernet_mode_switch();
+	v4DNS_Set();
+}
+ 
+function pppoe_wanIP_mode_switch()
+{
+    if (document.wanCfg1.pppoeWanIPMode[0].checked == true)
+	{		
+		document.wanCfg1.pppoeWanIpAddr.disabled = true;
+		document.wanCfg1.dns1Type.options.selectedIndex=0;
+		document.wanCfg1.dns2Type.options.selectedIndex=0;
+		document.wanCfg1.dns3Type.options.selectedIndex=0;
+		document.wanCfg1.staticPriDns.disabled = true;
+		document.wanCfg1.staticSecDns.disabled = true;
+		document.wanCfg1.staticThiDns.disabled = true;
+		document.getElementById("staticPriDns").readOnly = true;
+		document.getElementById("staticSecDns").readOnly = true;
+		document.getElementById("staticThiDns").readOnly = true;
+	}
+	else
+	{
+		document.wanCfg1.pppoeWanIpAddr.disabled = false;
+		document.wanCfg1.dns1Type.options.selectedIndex=1;
+		document.wanCfg1.dns2Type.options.selectedIndex=1;
+		document.wanCfg1.dns3Type.options.selectedIndex=1;
+		document.wanCfg1.staticPriDns.disabled = false;
+		document.wanCfg1.staticSecDns.disabled = false;
+		document.wanCfg1.staticThiDns.disabled = false;
+		document.getElementById("staticPriDns").readOnly = false;
+		document.getElementById("staticSecDns").readOnly = false;
+		document.getElementById("staticThiDns").readOnly = false;
+	}
+}
+ 
+function pptp_wanIP_mode_switch() 
+{
+    if (document.wanCfg1.pptpWanIPMode[0].checked == true)
+	{		
+		document.wanCfg1.pptpWanIpAddr.disabled = true;
+		document.wanCfg1.dns1Type.options.selectedIndex=0;
+        document.wanCfg1.dns2Type.options.selectedIndex=0;
+		document.wanCfg1.dns3Type.options.selectedIndex=0;
+        document.wanCfg1.staticPriDns.disabled = true;
+        document.wanCfg1.staticSecDns.disabled = true;
+		document.wanCfg1.staticThiDns.disabled = true;
+	}
+	else
+	{
+		document.wanCfg1.pptpWanIpAddr.disabled = false;
+        document.wanCfg1.dns1Type.options.selectedIndex=1;
+        document.wanCfg1.dns2Type.options.selectedIndex=1;
+		document.wanCfg1.dns3Type.options.selectedIndex=1;
+        document.wanCfg1.staticPriDns.disabled = false;
+        document.wanCfg1.staticSecDns.disabled = false;
+		document.wanCfg1.staticThiDns.disabled = false;
+	}
+	
+	if (document.wanCfg1.pptp_config_ip[0].checked == true)
+	{		
+		document.wanCfg1.pptp_staticIp.disabled = true;
+	    document.wanCfg1.pptp_staticNetmask.disabled = true;
+        document.wanCfg1.pptp_staticGateway.disabled = true;
+	}
+    else 
+	{
+		document.wanCfg1.pptp_staticIp.disabled = false;
+	    document.wanCfg1.pptp_staticNetmask.disabled = false;
+        document.wanCfg1.pptp_staticGateway.disabled = false;
+	}
+} 
+
+function mac_clone_switch()
+{
+    if (document.wanCfg1.WAN_MAC_Clone[0].checked == true) //Factory Default
+	{
+	   document.wanCfg1.spoofIPAddr.disabled = true;
+	   document.wanCfg1.macCloneMac.disabled = true;
+	}
+	else if (document.wanCfg1.WAN_MAC_Clone[1].checked == true) //SpoofIP
+	{
+	   document.wanCfg1.spoofIPAddr.disabled = false;
+	   document.wanCfg1.macCloneMac.disabled = true;
+	}
+	else if (document.wanCfg1.WAN_MAC_Clone[2].checked == true) //MacClone
+	{
+	   document.wanCfg1.spoofIPAddr.disabled = true;
+	   document.wanCfg1.macCloneMac.disabled = false;
+	}
+}
+
+function changeControl()
+{
+   	var f = document.wanCfg1;
+	
+	if (f.dhcp60Enable.checked == true)
+	{
+        f.vendor_id.disabled = false;
+		//f.SecuredIP_all_flag.value = "";
+	} else 
+	{
+		f.vendor_id.disabled = true;
+		f.vendor_id.value ="";
+	}
+}
+
+
+</script>
+</head>
+<body onLoad="initValue();">
+<form method="post" name="wanCfg1" action="<%=controller%>/expert/configuration/network/wan/wan1" onSubmit="return CheckValue()">
+<% local LAN_addr = uci:get("network","lan","ipaddr") %>
+<input type="hidden" id="lan_addr" name="lan_addr" value='<%=LAN_addr%>' />
+<input name="apply_status" id="apply_status" value="0" type="hidden" />
+<div id="tabs"><ul>
+    <li class="hightline"><a title="<%:Broadband%>"><span><%:Broadband%></span></a></li>
+    <!-- <li><a href="<=controller%>/expert/configuration/network/wan/ipv6" title="IPv6"><span>IPv6</span></a></li> -->
+    <!--<<li><a href="<%=controller%>/expert/configuration/network/wan/advanced" title="<%:Advanced%>"><span><%:Advanced%></span></a></li>-->
+</ul><br class="clearfloat" /></div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li> <li class="table_content">
+        <div class="data">
+          <ul>
+            <div class="title"><%:ISP_Parameters_for_Internet_Access%></div>
+
+
+                  <div class="w_text">
+                     <ul>
+                        <li class="left_table">WAN Name :</li>
+                        <li class="right_table">
+                            <% local wan_name = uci:get("network","wan1","name") %>     
+                            <input name="wan_name" size="9" maxlength="9" <% if wan_name then%>value="<%=wan_name%>"<%else%>value=""<%end%> type="text" />
+                        </li>
+                     </ul>
+                  </div>
+
+
+            <div class="w_text">
+              <ul>
+                <li class="left_table"> <%:Encapsulation%> :</li>
+                <li class="right_table">
+				  <% local proto = uci:get("network","wan1","proto") %>
+                  <% local v6_proto = uci:get("network","wan1","v6_proto") %>
+                  <select name="connectionType" size="1" onChange="connectionTypeSwitch();">
+                    <option value="PPPOE" id="wanPPPOE" <% if proto == "pppoe" or v6_proto == "pppoe" then %>SELECTED<% end %>><%:PPPoE%> </option>
+					<!-- <option value="PPTP" id="wanPPTP" <% if proto == "pptp" then %>SELECTED<% end %>><%:PPTP%> </option> -->
+                    <option value="Ethernet" id="wanEthernet" <% if proto == "dhcp" or proto == "static" then %>SELECTED<% end %>><%:IPoE%> </option>
+		    <option value="Bridge" id="wanBridge" <% if proto == "bridge" then %>SELECTED<% end %>>Bridge </option>
+                  </select>
+                </li>
+              </ul>
+            </div>	
+<span id="v4_only_mode" class="off">
+            <div class="w_text">
+              <ul>
+                <li class="left_table"> IPv4 / IPv6 :</li>
+                <li class="right_table">
+                   IPv4 Only
+                </li>
+              </ul>
+            </div>
+ </span>
+
+			<!-- <div class="w_text">	-->
+ <span id="IP_mode" class="on">
+			<div class="w_text" style="display: none;">
+              <ul>
+                <li class="left_table"> IPv4 / IPv6 :</li>
+                <li class="right_table">
+                  <% local IP_version = uci:get("network","wan1","IP_version") %>
+                  <select name="IP_Mode" size="1" onChange="IPmodeConfig();">
+					<option value="IPv4_Only" id="wanmode1" <% if IP_version == "IPv4_Only" then %>SELECTED<% end %>><%:IPv4_Only%></option>
+					<option value="Dual_Stack" id="wanmode2" <% if IP_version == "Dual_Stack" then %>SELECTED<% end %>><%:Dual_Stack%></option>
+					<option value="IPv6_Only" id="wanmode3" <% if IP_version == "IPv6_Only" then %>SELECTED<% end %>><%:IPv6_Only%></option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+ </span>			
+	    <div class="w_text">
+	      <ul>
+                <% local w_vid = uci:get("network","wan1","vid") 
+		   local wan_pri = uci:get("network","wan1","pri")%>
+                <li class="left_table"> VID : (1-4094)</li>
+                <li class="right_table">
+                  <input name="wan_vid" maxlength="4" size="4" <%if not ( "4500" == w_vid ) then%>value="<%=w_vid%>"<%else%>value="" <%end%>/>
+                </li>
+
+		<li class="left_table">Priority : [0-7] </li>
+                <li class="right_table">
+					<select onchange="" size="1" name="wan_pri">                  
+					<option value="0" id="wan_pri" <% if wan_pri == "0" or wan_pri == nil then %>SELECTED<% end %> >0 BE</option>
+					<option value="1" id="wan_pri" <% if wan_pri == "1" then %>SELECTED<% end %> >1 BK</option>
+					<option value="2" id="wan_pri" <% if wan_pri == "2" then %>SELECTED<% end %> >2 SPARE</option>
+					<option value="3" id="wan_pri" <% if wan_pri == "3" then %>SELECTED<% end %> >3 EE</option>
+					<option value="4" id="wan_pri" <% if wan_pri == "4" then %>SELECTED<% end %> >4 CL</option>
+					<option value="5" id="wan_pri" <% if wan_pri == "5" then %>SELECTED<% end %> >5 VI</option>
+					<option value="6" id="wan_pri" <% if wan_pri == "6" then %>SELECTED<% end %> >6 VO</option>
+					<option value="7" id="wan_pri" <% if wan_pri == "7" then %>SELECTED<% end %> >7 NC</option>
+					</select>
+                </li>
+
+              </ul>
+            </div>
+			
+		<span id = "PPPoE_setting1" class = "off" >	
+            <div class="space"></div>
+            <div class="title"><b><%:PPP_Information%></b></div>
+            <div class="w_text">
+              <ul><% local UserName_pppoeUser = uci:get("network","wan1","username") %>
+                <li class="left_table"><%:PPP_Username%> : </li>
+                <li class="right_table">
+                  <input name="pppoeUser" type="text" size="32" maxlength="50" <% if UserName_pppoeUser then %>value="<%=UserName_pppoeUser%>"<% else %>value=""<% end %> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+			
+			<%
+				local origin_pppoePass = luci.sys.exec("uci get network.wan.password | tr -d '\n'")
+				local origin_pppoePass_len = string.len(origin_pppoePass)
+				x =  math.floor (origin_pppoePass_len/4) 
+				y = origin_pppoePass_len%4
+				local pppoePass_1 = string.rep("!@#^",x)
+				local pppoePass_2 = string.rep("<",y)
+				local Password_pppoePass = pppoePass_1 ..pppoePass_2
+				
+			%>
+              <ul>
+			    <li class="left_table"><%:PPP_Password%> : </li>
+                <li class="right_table">
+                  <input type="password" name="pppoePass" size="32" maxlength="50" onfocus="this.value=''"<% if Password_pppoePass then %>value="<%=Password_pppoePass%>"<% else %>value=""<% end %> />
+                </li>
+              </ul>
+            </div>
+	    <div class="w_text">
+              <ul><% local pppoe_mtu = uci:get("network","wan1","pppoe_mtu") %>
+                <li class="left_table"><%:MTU%> : </li>
+                <li class="right_table">
+                  <input name="pppoeMTU" maxlength="15" size="15" <%if pppoe_mtu then%>value="<%=pppoe_mtu%>"<%else%>value="" <%end%>/>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local pppoeNailedup = uci:get("network","wan1","pppoeNailedup")%>
+                <li class="left_table"><%:PPP_Auto_Connect%> : </li>
+                <li class="right_table">
+                  <input type="checkbox" name="pppoeNailedup" value="1" <%if pppoeNailedup == "1" then%>checked="CHECKED"<%end%> onclick="pppoe_nailup_switch()"  />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local pppoeIdleTime = uci:get("network","wan1","demand")%>
+                <li class="left_table"><%:IDLE_Timeout_second%>: </li>
+                <li class="right_table">
+                  <input name="pppoeIdleTime" type="text" size="15" maxlength="15" <%if pppoeIdleTime then%>value="<%=pppoeIdleTime%>"<%else%>value="300"<%end%>  <%if pppoeNailedup == "1" then%> disabled <%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local pppoeServiceName = uci:get("network","wan1","service")%>
+                <li class="left_table"><%:PPPoE_Service_Name%> : </li>
+                <li class="right_table">
+                  <input name="pppoeServiceName" type="text" size="15" maxlength="15" <%if pppoeServiceName then%>value="<%=pppoeServiceName%>"<%else%>value=""<%end%> />
+                </li>
+              </ul>
+            </div>
+			<!-- 
+            <div class="w_text">
+              <ul><% local pppoePassthrough = uci:get("network","wan1","pppoePassthrough")%>
+                <li class="left_table">PPPoE Passthrough : </li>
+                <li class="right_table">
+                  <input name="pppoePassthrough" type="checkbox" value="1" <%if pppoePassthrough == "1" then%>checked="CHECKED"<%end%> />
+                </li>
+              </ul>
+            </div>
+			-->
+			<%
+				local pppoeWanIpAddr = uci:get("network","wan1","pppoeWanIpAddr")
+				local pppoe_ip=string.match(luci.sys.exec("ifconfig pppoe-wan1"),"inet addr:(%d+.%d+.%d+.%d+)")
+				local pppoe_status
+				if pppoe_ip == "10.64.64.64" then
+					pppoe_ip = ""
+					pppoeWanIpAddr = ""
+				elseif pppoeWanIpAddr then
+					pppoe_status="static"
+				end
+			-%>	
+			<div class="space"></div>
+            <div class="title"><b><%:WAN_IP_Address_Assignment%></b></div>
+			<div class="w_text">
+				<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="1%"><input type="radio" value="1" onclick="pppoe_wanIP_mode_switch()" name="pppoeWanIPMode" <%if pppoe_status~="static" then%>checked<%end%>/><%:Get_automatically_from_ISP%> </td> 
+                    </tr>
+                </table>
+			</div>
+			<div class="w_text">
+				<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="1%"><input type="radio" value="0" onclick="pppoe_wanIP_mode_switch()" name="pppoeWanIPMode" <%if pppoe_status=="static" then%>checked<%end%>/><%:Use_Fixed_IP_Address%> </td>
+                    </tr>
+                </table>
+			</div>
+			<div class="w_text">
+                <table width="92%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="40%" ><%:My_WAN_IP_Address%> : </td>
+                      <td><input name="pppoeWanIpAddr" maxlength=15 size=15 <%if pppoeWanIpAddr then%>value="<%=pppoeWanIpAddr%>"<%else%>value=""<%end%> <%if pppoe_status~="static" then%>disabled<%end%>></td>
+                    </tr>  
+                </table>
+			</div>
+		</span>	
+		
+		<span id = "PPTP_setting1" class = "off" >	
+            <div class="space"></div>
+            <div class="title"><b><%:PPTP_Information%></b></div>
+            <div class="w_text">
+              <ul><% local UserName_pptpUser = uci:get("network","vpn","pptp_username") %>
+                <li class="left_table"><%:PPTP_Username%> : </li>
+                <li class="right_table">
+                  <input name="pptpUser" type="text" size="32" maxlength="50" <% if UserName_pptpUser then %>value="<%=UserName_pptpUser%>"<% else %>value=""<% end %> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local Password_pptpPass = uci:get("network","vpn","pptp_password") %>
+                <li class="left_table"><%:PPTP_Password%> : </li>
+                <li class="right_table">
+                  <input type="password" name="pptpPass" size="32" maxlength="50"<% if Password_pptpPass then %>value="<%=Password_pptpPass%>"<% else %>value=""<% end %> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local pptp_mtu = uci:get("network","wan1","pptp_mtu") %>
+                <li class="left_table"><%:MTU%> : </li>
+                <li class="right_table">
+                  <input name="pptpMTU" maxlength="15" size="15" <%if pptp_mtu then%>value="<%=pptp_mtu%>"<%else%>value="" <%end%>/>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local pptpNailedup = uci:get("network","vpn","pptp_Nailedup")%>
+                <li class="left_table"><%:PPTP_Auto_Connect%> : </li>
+                <li class="right_table">
+                  <input type="checkbox" name="pptpNailedup" value="1" <%if pptpNailedup == "1" then%>checked="CHECKED"<%end%> onclick="pptp_nailup_switch()"  />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local pptpIdleTime = uci:get("network","vpn","pptp_demand")%>
+                <li class="left_table"><%:IDLE_Timeout_second%>: </li>
+                <li class="right_table">
+                  <input name="pptpIdleTime" type="text" size="15" maxlength="15" <%if pptpIdleTime then%>value="<%=pptpIdleTime%>"<%else%>value="300"<%end%>  <%if pptpNailedup == "1" then%> disabled <%end%> />
+                </li>
+              </ul>
+            </div>
+			 <div class="space"></div>
+            <div class="title"><%:PPTP_Configuration%></div>
+			<div class="w_text">
+              <ul><% local pptp_serverip = uci:get("network","vpn","pptp_serverip") %>
+                <li class="left_table"><%:PPTP_SER_IP%> : </li>
+                <li class="right_table">
+                  <input name="pptp_serverIp" maxlength="15" size="15" <% if pptp_serverip then %>value="<%=pptp_serverip%>"<% else %>value="" <% end %>/>
+                </li>
+              </ul>
+            </div>
+			<% local pptp_proto = uci:get("network","vpn","proto") %>
+            <div class="w_text"><input type="radio" value="1" onclick="pptp_wanIP_mode_switch()" name="pptp_config_ip" <% if pptp_proto ~= "static" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Obtain_an_IP_Address_Automatically%></div>
+            <div class="w_text"><input type="radio" value="0" onclick="pptp_wanIP_mode_switch()" name="pptp_config_ip" <% if pptp_proto == "static" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Static_IP_Address%>  </div>
+            <div class="w_text">
+			 <table width="94%" border="0" align="center" cellpadding="0" cellspacing="0">
+              <ul><% local pptp_ipaddr = uci:get("network","wan1","ipaddr") %>
+                <li class="left_table"><%:IP_Address%> : </li>
+                <li class="right_table">
+                  <input name="pptp_staticIp" maxlength="15" size="15" <% if pptp_ipaddr then %>value="<%=pptp_ipaddr%>"<% else %>value="" <% end %> <% if pptp_proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+			 </table>
+            </div>
+            <div class="w_text">
+			 <table width="94%" border="0" align="center" cellpadding="0" cellspacing="0">
+              <ul><% local pptp_netmask = uci:get("network","wan1","netmask") %>
+                <li class="left_table"><%:Subnet_Mask%>  : </li>
+                <li class="right_table">
+                  <input name="pptp_staticNetmask" maxlength="15" size="15" <%if pptp_netmask then%>value="<%=pptp_netmask%>"<%else%>value="" <%end%> <% if pptp_proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+			 </table>
+            </div>
+            <div class="w_text">
+			 <table width="94%" border="0" align="center" cellpadding="0" cellspacing="0">
+              <ul><% local pptp_gateway = uci:get("network","wan1","gateway") %>
+                <li class="left_table"><%:Gateway_IP_address%> : </li>
+                <li class="right_table">
+                  <input name="pptp_staticGateway" maxlength="15" size="15" <%if pptp_gateway then%>value="<%=pptp_gateway%>"<%else%>value="" <%end%> <% if pptp_proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+			 </table>
+            </div>
+			<%
+				local pptpWanIpAddr = uci:get("network","vpn","pptpWanIpAddr")
+				local pptp_ip=string.match(luci.sys.exec("ifconfig pptp-wan"),"inet addr:(%d+.%d+.%d+.%d+)")
+				if pptp_ip == "10.64.64.64" then
+					pptp_ip = ""
+				end
+				local pptp_status
+				if pptpWanIpAddr and pptp_ip and pptpWanIpAddr==pptp_ip then pptp_status="static" end
+			-%>		
+			<div class="space"></div>
+            <div class="title"><b><%:WAN_IP_Address_Assignment%></b></div>
+			<div class="w_text">
+				<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="1%"><input type="radio" value="1" onclick="pptp_wanIP_mode_switch()" name="pptpWanIPMode" <%if pptp_status~="static" then%>checked<%end%>/><%:Get_automatically_from_ISP%> </td> 
+                    </tr>
+                </table>
+			</div>
+			<div class="w_text">
+				<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="1%"><input type="radio" value="0" onclick="pptp_wanIP_mode_switch()" name="pptpWanIPMode" <%if pptp_status=="static" then%>checked<%end%>/><%:Use_Fixed_IP_Address%> </td>
+                    </tr>
+                </table>
+			</div>
+			<div class="w_text">
+                <table width="92%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="40%" ><%:My_WAN_IP_Address%> : </td>
+                      <td><input name="pptpWanIpAddr" maxlength=15 size=15 <%if pptpWanIpAddr and pptp_ip and pptpWanIpAddr==pptp_ip then%>value="<%=pptpWanIpAddr%>"<%elseif pptp_ip then%>value="<%=pptp_ip%>"<%else%>value=""<%end%> <%if pptp_status~="static" then%>disabled<%end%>></td>
+                    </tr>  
+                </table>
+			</div>
+		</span>
+		
+		<span id = "Ethernet_setting1" class = "off" >	
+            <div class="space"></div>
+            <div class="title"><%:IP_Address%></div>
+            <div class="w_text"><input type="radio" value="1" onclick="ethernet_mode_switch()" name="WAN_IP_Auto" <% if proto ~= "static" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Obtain_an_IP_Address_Automatically%></div>
+            <div class="w_text"><input type="radio" value="0" onclick="ethernet_mode_switch()" name="WAN_IP_Auto" <% if proto == "static" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Static_IP_Address%>  </div>
+            <div class="w_text">
+              <ul><% local ipaddr = uci:get("network","wan1","ipaddr") %>
+                <li class="left_table"><%:IP_Address%> : </li>
+                <li class="right_table">
+                  <input id="staticIp" name="staticIp" maxlength="15" size="15" <% if ipaddr then %>value="<%=ipaddr%>"<% else %>value="" <% end %> <% if proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local netmask = uci:get("network","wan1","netmask") %>
+                <li class="left_table"><%:Subnet_Mask%>  : </li>
+                <li class="right_table">
+                  <input name="staticNetmask" maxlength="15" size="15" <%if netmask then%>value="<%=netmask%>"<%else%>value="" <%end%> <% if proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul><% local gateway = uci:get("network","wan1","gateway") %>
+                <li class="left_table"><%:Gateway_IP_address%> : </li>
+                <li class="right_table">
+                  <input name="staticGateway" maxlength="15" size="15" <%if gateway then%>value="<%=gateway%>"<%else%>value="" <%end%> <% if proto ~= "static" then %> disabled <% end %>/>
+                </li>
+              </ul>
+            </div>
+			<div class="w_text">
+              <ul><% local eth_mtu = uci:get("network","wan1","eth_mtu") %>
+                <li class="left_table"><%:MTU%> : </li>
+                <li class="right_table">
+                  <input name="ethMTU" maxlength="15" size="15" <%if eth_mtu then%>value="<%=eth_mtu%>"<%else%>value="" <%end%>/>
+                </li>
+              </ul>
+            </div>
+
+            
+        </span>
+
+		<span id = "DHCP_option_setting" class = "off" >
+		
+			<div class="space"></div>
+            <ul>
+              <div class="title"><%:dhcp_option%> :</div>
+                <div class="w_text">
+					<ul>
+						<%local dhcp121Enable = uci:get("network","wan1","dhcp121")%>
+						<li class="left_table"><input type="checkbox" name="dhcp121Enable" value=0 <%if dhcp121Enable == "1" then%>checked<%end%> ><font id="WolOverWAN"><%:enable_dhcp_121%></font></li>
+						<li class="right_table"></li>      
+					</ul>
+				</div>
+				<div class="w_text">
+                 <ul>
+                    <%local dhcp125Enable = uci:get("network","wan1","dhcp125")%>
+                    <li class="left_table"><input type="checkbox" name="dhcp125Enable" value=0 <%if dhcp125Enable == "1" then%>checked<%end%> ><font id="WolOverWAN"><%:enable_dhcp_125%></font></li>
+            	    <li class="right_table"></li>      
+                 </ul>
+				</div>  
+                <div class="w_text">
+                  <ul>
+                    <%local enable_flag = uci:get("network","wan1","dhcp60")%>
+                    <%local vendor_id = uci:get("network","wan1","vendorid")%>
+                    <li class="all_table"><input type="checkbox" name="dhcp60Enable" value=0 onchange="changeControl()" <%if enable_flag == "1" then%>checked<%end%> ><font id="WolOverWAN"><%:enable_dhcp_60%></font></li>
+                    <li class="left_table"><%:vender_id%> : </li>
+            	    <li class="right_table"><input name="vendor_id" size="20" maxlength="9" <% if vendor_id then%>value="<%=vendor_id%>"<%else%>value="" disabled="false"<%end%> type="text" /></li>       
+                  </ul>            
+                </div>    
+                
+                <div class="w_text">
+                 <ul>
+                    <%local dhcp43Enable = uci:get("network","wan1","dhcp43")%>
+                    <li class="left_table"><input type="checkbox" name="dhcp43Enable" value=0 <%if dhcp43Enable == "1" then%>checked<%end%> ><font id="WolOverWAN"><%:enable_dhcp_43%></font></li>
+            	    <li class="right_table"></li>      
+                 </ul>
+                </div> 
+                
+            </ul>
+			
+		</span>
+
+
+<span id="igmpproxy" class="off">
+        <div class="space"></div>        
+          <ul>
+            <div class="title"><%:Multicast_Setup%></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"> <%:Multicast_Setup%> :</li>
+                <li class="right_table">
+                  <select name="igmpEnabled" size="1" >
+                    <option value="disable" <% if igmpEnabled1 == "disable" then %>SELECTED<% end %>><%:None%> </option>
+                    <option value="enable" <% if igmpEnabled1 == "enable" then %>SELECTED<% end %>><%:IGMP_v1_v2%> </option>
+                  </select>
+                </li>
+              </ul>
+            </div>           
+       
+          </ul>
+</span>	
+		
+<span id="6RD" class="off">
+       <div class="space"></div>
+              <div class="title">6RD</div>
+	      <div class="w_text">
+                 <ul>
+		    <% 
+			local ck6rdEnable = uci:get("network","general","wan6rd_enable")
+			local auto_6rd = uci:get("network","wan1","iface6rd") 
+		        local prefix_6rd = uci:get("network","wan6rd","ip6prefix")
+			local ipv4_6rd = uci:get("network","wan6rd","peeraddr")
+			local ck6rdauto
+			if auto_6rd or not prefix_6rd or not ipv4_6rd then
+				ck6rdauto = 1;
+			else
+				ck6rdauto = 0;
+			end
+			local prefix_6rdleng = uci:get("network","wan6rd","ip6prefixlen")
+			local prefix_6rdv4leng = uci:get("network","wan6rd","ip4prefixlen")
+			
+		    -%>
+                    <li class="left_table"><input type="checkbox" name="zy6rdEnable" onclick="do6RDenableck(this)" <%if ck6rdEnable == "1" then%>checked<%end%> >&nbsp;<%:enable_6rd%></li>
+            	    <li class="right_table"></li>      
+                 </ul>
+               </div>
+	<span id="6RD_enable" <% if ck6rdEnable == "1" then %> class="on" <% else %> class="off" <% end %>>
+              <div class="w_text">
+              	<ul>
+		<span id="div_auto_6rd" class="true">
+                  <li>		              
+                    <input name="auto_6rd" id="radio" type="radio" value="auto" checked="checked" onclick="do6RDConfig(this)"   
+     			<% if ck6rdauto == 1 then %>checked="CHECKED"<% end %> /> &nbsp;<%:auto_config_dhcp%>
+                  </li>
+		</span>
+                  <li>
+                     <input name="auto_6rd" id="radio2" type="radio" value="static"  onclick="do6RDConfig(this)"              
+                     	<% if ck6rdauto == 0 then %>checked="CHECKED"<% end %> /> &nbsp;<%:manual_config%>                                            
+                    </li>
+        	<span id="div_static_6rd" <% if ck6rdauto == 0 then %> class="on" <% else %> class="off" <% end %>>  
+		    <li class="left_table"><%:boader_relay_ipv4_addr%>: </li>
+                    <li class="right_table">
+                    	<input name="zy6rd4ip" id="zy6rd4ipId" maxlength="15" size="10" type="text" <% if ipv4_6rd then %> value="<%=ipv4_6rd%>" <% else %>value=""<% end %>/>
+                    </li>                                   
+                    <li class="left_table"> <%:service_provider_ipv6_prefix%>: </li>
+                    <li class="right_table"> 
+                      <input name="zy6rd6prefix" id="zy6rd6prefixId" maxlength="40" size="32" type="text" <% if prefix_6rd then %> value="<%=prefix_6rd%>" <% else %>value=""<% end %>/> &nbsp;
+                    </li>
+		    <li class="left_table"> <%:service_provider_ipv4_prefix_len%>: </li>
+                    <li class="right_table"> 
+                      <input name="zy6rd6prefixleng" id="zy6rd6prefixlengId" maxlength="2" size="2" type="text" <% if prefix_6rdleng then %> value="<%=prefix_6rdleng%>" <% else %>value="32"<% end %>/> &nbsp;32~64
+                    </li>
+		    <li class="left_table"> <%:ipv4_mask_len%>: </li>
+                    <li class="right_table"> 
+                      <input name="zy6rd4prefixleng" id="zy6rd4prefixlengId" maxlength="2" size="2" type="text" <% if prefix_6rdv4leng then %> value="<%=prefix_6rdv4leng%>" <% else %>value="0"<% end %>/> &nbsp;0~32
+                    </li>
+               </span>
+                </ul>
+              </div>
+	</span> 
+</span>   
+
+        
+<span id="v4Dns" class="off">
+
+            <div class="space"></div>
+            <div class="title"><b><font class="NaviText"><%:DNS_Server%></font></b></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:First_DNS_Server%> :</li>
+                <li class="right_table">
+                  <select name="dns1Type" size="1" onChange="DNS1TypeSwitch();" >
+                    <option value="ISP" id="wanDNSISP"<%if dns1Type=="ISP" then%>selected<%end%> ><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="wanDNSUSER"<%if dns1Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="wanDNSNONE"<%if dns1Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticPriDns" id="staticPriDns" type="text"  size="15" maxlength="15" <% if dns1Type == "NONE" then offset=offset+1 %> value="0.0.0.0" <%elseif dns1Type == "ISP" then  %>value="<%=isp_dns1%>"<%else dns1=string.gsub(dns1,"USER,","")%> value="<%=dns1%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Second_DNS_Server%>  :</li>
+                <li class="right_table">
+                  <select name="dns2Type" size="1" onChange="DNS2TypeSwitch();" >
+                    <option value="ISP" id="wanDNS2ISP"<%if dns2Type=="ISP" then%>selected<%end%>><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="wanDNS2USER"<%if dns2Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="wanDNS2NONE"<%if dns2Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticSecDns" id="staticSecDns" type="text" size="15" maxlength="15" <% if dns2Type == "NONE" then offset=offset+1%> value="0.0.0.0" <%elseif dns2Type == "ISP" then %>value="<%=isp_dns2%>"<%else dns2=string.gsub(dns2,"USER,","")%> value="<%=dns2%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Third_DNS_Server%> :</li>
+                <li class="right_table">
+                  <select name="dns3Type" size="1" onChange="DNS3TypeSwitch();" >
+                    <option value="ISP" id="wanDNS3ISP"<%if dns3Type=="ISP" then%>selected<%end%>><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="wanDNS3USER"<%if dns3Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="wanDNS3NONE"<%if dns3Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticThiDns" id="staticThiDns" type="text" size="15" maxlength="15" <% if dns3Type == "NONE" then%> value="0.0.0.0" <%elseif dns3Type == "ISP" then%>value="<%=isp_dns3%>"<%else dns3=string.gsub(dns3,"USER,","")%> value="<%=dns3%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+</span>
+
+<span id="macDns" class="off">
+			<%
+				local wan_mac_status = uci:get("network","wan1","wan_mac_status")
+				if not wan_mac_status then wan_mac_status="0" end
+				local wan_clone_ip = uci:get("network","wan1","wan_clone_ip")				
+				local wan_set_mac = uci:get("network","wan1","wan_set_mac")
+				local grouped = uci:get("network","wan1","grouped")
+			%>
+            <div class="space"></div>
+            <div class="title"><b><font class="NaviText"><%:WAN_MAC_Address%></font></b></div>
+			
+            <div class="w_text">			
+                <table >
+                  <tbody><tr>
+                    <td width="1%"><input onclick="mac_clone_switch()" value="0" name="WAN_MAC_Clone" type="radio" <% if wan_mac_status == "0" then %>checked="CHECKED"<% end %>>
+                        <a id="wanmacop1"><%:Factory_default%> </a></td>
+                  </tr>
+                </tbody></table>
+            </div>
+			
+			<span id="mac_clone_ipmac" <% if ( grouped == "1" ) or ( wan_mac_status == "1" and wan_clone_ip ) then %> class="on" <% else %> class="off" <% end %>>
+            <div class="w_text">
+                <table >
+                  <tbody><tr>
+                    <td width="1%"><input onclick="mac_clone_switch()" value="1" name="WAN_MAC_Clone" type="radio" <% if wan_mac_status == "1" then %>checked="CHECKED"<% end %>></td>
+                      <td id="wanmacop2" width="38%"><%:Clone_the_computer_MAC_address%></td>   
+                     <!--<td> <input maxlength="17" size="17" name="spoofIPAddr" <%if wan_clone_ip then%> value="<%=wan_clone_ip%>" <%end%> <% if wan_mac_status ~= "1" then %>disabled="disabled" <% end %>></td>-->
+					<td>
+					<select onchange="" size="1" name="spoofIPAddr" <%if wan_mac_status ~= "1" then%> disabled <%end%> >
+					<% if not wan_clone_ip then %><option value="na" id="spoofIPAddr" SELECTED> </option><% end %> 
+					<%
+						for line in io.lines("/tmp/dhcp.leases") do
+							mac,ip = string.match(line,'(%S+) %S+ (%S+) %S+ %S+ %S-')
+						%>
+						<option value=<%=ip%> id="spoofIPAddr" <% if  wan_clone_ip == ip then %>SELECTED<% end %> ><%=ip%></option>
+
+						<%						
+						end		
+					 %>
+
+					</select>
+					</td>
+					
+                  </tr>
+                </tbody></table>
+            </div>
+			</span>
+            <div class="w_text">
+                <table >
+                  <tbody><tr>
+                    <td width="1%"><input onclick="mac_clone_switch()" value="2" name="WAN_MAC_Clone" type="radio" <% if wan_mac_status == "2" then %>checked="CHECKED"<% end %>></td>
+                       <td id="wanmacop3" width="38%"><%:Set_WAN_MAC_Address%></td>
+                      <td><input maxlength="17" size="17" name="macCloneMac" <%if wan_set_mac then%> value="<%=wan_set_mac%>" <%end%> <% if wan_mac_status ~= "2" then %>disabled="disabled" <% end %>></td>
+                  </tr>
+                </tbody></table>
+            </div>
+</span>
+ 
+<span id="div_dhcp6_option" class="off">
+       <div class="space"></div>
+              <div class="title"><%:IPv6_Address%></div>
+              <div class="w_text">
+              	<ul>
+                    <ul>
+                       <% local proto = uci:get("network","wan1","v6_proto") %>                   
+                        <input name="auto_address" id="radio" type="radio" value="auto" checked="checked" onclick="doAddrConfig(this)"   
+                       <% if proto ~= "static" then %>checked="CHECKED"<% end %> /> &nbsp;           
+                       <%:Obtain_an_IP_Address_Automatically%>
+                    </ul>
+ 
+                   <!--<span id="div_auto_addr" class="off">
+                    <% local duid_mode = uci:get("dhcp6c","basic","duid_mode") %> 
+                    <ul> 
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                      <input name="dhcpv6_autoaddr_duidmode" id="radio11" type="radio" value="DUID-LL"
+                      <% if duid_mode ~= "DUID-LLT" then %> value="DUID-LL" checked="CHECKED"<% else %> value="DUID-LLT"<% end %> />
+                      <%:Static_IP_DUID_LL%>  (<%:Default%>)
+                      </ul>
+                    <ul>
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                      <input name="dhcpv6_autoaddr_duidmode" id="radio12" type="radio" value="DUID-LLT"
+                      <% if duid_mode ~= "DUID-LLT" then %> value="DUID-LL"<% else %> value="DUID-LLT" checked="CHECKED"<% end %> />
+                      <%:Static_IP_DUID_LLT%>
+                      </ul>
+                    </span>-->
+ 
+                    <ul> 
+                       <% local proto = uci:get("network","wan1","v6_proto") %> 
+                         <input name="auto_address" id="radio2" type="radio" value="static"  onclick="doAddrConfig(this)"              
+                       <% if proto == "static" then %>checked="CHECKED"<% end %> /> &nbsp;
+						  <%:Static_IP_Address%>                      
+                    </ul>
+                  <span id="div_static_addr" class="off">
+                                        
+                    <li class="left_table">
+                      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:IPv6_Address%>
+                    </li>
+                    <li class="right_table">
+                      <% local v6_Fixed_StaticIp = uci:get("network","wan1","ip6addr") %>     
+                      <input name="ipv6_address" id="ipv6_address" maxlength="40" size="32" type="text" <% if v6_Fixed_StaticIp then %> value="<%=v6_Fixed_StaticIp%>" <% else %>value=""<% end %>/>
+                    </li>
+                    <li class="left_table">
+                     	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:Prefix_length%>
+                    </li>
+                    <li class="right_table">
+                     <% local v6_prefixlen = uci:get("network","wan1","prefixlen") %> 
+                    	<input name="prefix_length" id="prefix_length" maxlength="40" size="10" type="text" <% if v6_prefixlen then %> value="<%=v6_prefixlen%>" <% else %>value=""<% end %>/>
+                    </li>
+                    <li class="left_table">
+                    	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<%:IPv6_Default_Gateway%>
+                    </li>
+                    <li class="right_table">
+                       <% local v6_gateway = uci:get("network","wan1","ip6gw") %> 
+                  	  <input name="ipv6_gateway" id="ipv6_gateway" maxlength="40" size="32" type="text"<% if v6_gateway then %> value="<%=v6_gateway%>" <% else %>value=""<% end %>/>
+                    </li> 
+                  </span>
+                </ul>
+              </div>
+			  
+              <div class="space"></div>
+              <div class="title"><%:IPv6_DNS_server%></div>
+              <div class="w_text">
+                <ul>
+                  <li> 
+                    <% local request_dns = uci:get("dhcp6c","basic", "domain_name_servers")%> 
+                    <% local v6_dns_static = uci:get("network","wan1", "IPv6_dns")%> 
+                    <input name="auto_dns" id="radio" type="radio" value="enable" <%if not v6_dns_static then%> checked="checked" <%end%>onclick="doDNSConfig(this)" 
+                    <% if request_dns == "1" then %>checked="CHECKED"<% end %> /> &nbsp;               
+                    <%:IPv6_DNS_info%> 
+                  </li>
+                  <li>
+                  	<input name="auto_dns" id="radio2" type="radio" value="disable" <%if v6_dns_static then%>checked="checked"<%end%>onclick="doDNSConfig(this)"/> &nbsp;
+                  	<%:DNS_IPv6_Address%>
+                  </li>
+                  <span id="div_static_dns" class="off">
+                    <% local v6_dns = uci:get("network","wan1","IPv6_dns")%> 
+                    <li class="left_table">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <%:IPv6_DNS_server%>:</li>
+                    <li class="right_table">
+                      <input name="ipv6_dns" id="ipv6_dns" maxlength="40" size="32" type="text"<% if v6_dns then %> value="<%=v6_dns%>" <% else %>value=""<% end %>/>
+                    </li>
+                  </span> 
+           </ul>
+           </div>	
+</span>
+
+<span id="PPPoE_v6DNS" class="off">
+			<%
+				local offset = 0
+				local t={}
+				t=luci.sys.net.getv6DNS()
+				local dnsv6_1Type, dnsv6_2Type, dnsv6_3Type
+				if uci:get("network","wan1","dnsv6_1") then	dnsv6_1Type=string.match(uci:get("network","wan1","dnsv6_1"),"%a+") end
+				if uci:get("network","wan1","dnsv6_2") then dnsv6_2Type=string.match(uci:get("network","wan1","dnsv6_2"),"%a+") end
+				if uci:get("network","wan1","dnsv6_3") then dnsv6_3Type=string.match(uci:get("network","wan1","dnsv6_3"),"%a+") end					
+				
+			-%>
+            <div class="space"></div>
+            <div class="title"><b><font class="NaviText"><%:IPv6_DNS_Server%></font></b></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:First_DNS_Server%> :</li>
+                <li class="right_table">
+                  <select name="dnsv6_1Type" size="1" onChange="DNSv6_1TypeSwitch();" >
+                    <option value="ISP" id="wanDNSv6ISP"<%if dnsv6_1Type=="ISP" then%>selected<%end%> ><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="wanDNSv6USER"<%if dnsv6_1Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="wanDNSv6NONE"<%if dnsv6_1Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticPriDnsv6" id="staticPriDnsv6" type="text"  size="40" maxlength="40" <% if dnsv6_1Type == "NONE" then offset=offset+1 %> value="::/0" <%else%> value="<%=t[1]%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Second_DNS_Server%>  :</li>
+                <li class="right_table">
+                  <select name="dnsv6_2Type" size="1" onChange="DNSv6_2TypeSwitch();" >
+                    <option value="ISP" id="wanDNSv6_2ISP"<%if dnsv6_2Type=="ISP" then%>selected<%end%>><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="wanDNSv6_2USER"<%if dnsv6_2Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="wanDNSv6_2NONE"<%if dnsv6_2Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticSecDnsv6" id="staticSecDnsv6" type="text" size="40" maxlength="40" <% if dnsv6_2Type == "NONE" then offset=offset+1%> value="::/0" <%else%> value="<%=t[2 - offset]%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Third_DNS_Server%> :</li>
+                <li class="right_table">
+                  <select name="dnsv6_3Type" size="1" onChange="DNSv6_3TypeSwitch();" >
+                    <option value="ISP" id="wanDNSv6_3ISP"<%if dnsv6_3Type=="ISP" then%>selected<%end%>><%:Obtained_From_ISP%> </option>
+                    <option value="USER" id="wanDNSv6_3USER"<%if dnsv6_3Type=="USER" then%>selected<%end%>><%:User_Defined%> </option>
+                    <option value="NONE" id="wanDNSv6_3NONE"<%if dnsv6_3Type=="NONE" then%>selected<%end%>><%:None%> </option>
+                  </select>
+                  <input name="staticThiDnsv6" id="staticThiDnsv6" type="text" size="40" maxlength="40" <% if dnsv6_3Type == "NONE" then%> value="::/0" <%else%> value="<%=t[3 - offset]%>"<%end%> />
+                </li>
+              </ul>
+            </div>
+</span>
+	
+            <div class="spaceair"></div>
+<!--
+	  <span id = "Bridge_setting1" class = "off" >
+	  <div class="space"></div>
+	  <ul>
+	      <li class="left_table"><%local ignore = uci:get("network","wan1","untag")%>
+		  <input type=checkbox name="ignore_vid" value="1" <%if ignore == "1" then%> checked="CHECKED" <%end%>> Ignore WAN Vlan ID when tag frame receive from LAN site
+	      </li>
+	  </ul>
+	  <div class="space"></div>    
+	  </span>
+--><span id="Bridge_setting1" class="off"></span>
+
+    </ul>
+</div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="apply" value="<%:Apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+   arp_error = '<%=luci.http.formvalue("arp_error")%>'
+   error_addr = '<%=luci.http.formvalue("error_addr")%>'
+   if (arp_error==1)
+   alert("<%:Cannot_get_the_WAN_MAC_Address%>");
+   showFullPath(' <%:Network%> > <%:Broadband%> ');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>

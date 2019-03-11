@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>CellCom</DisplayName>
+		<HttpRecognition>
+			<HttpText>V/013Netvision</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

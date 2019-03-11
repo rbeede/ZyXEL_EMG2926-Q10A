@@ -1,0 +1,314 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Untitled Document</title>
+<script type="text/javascript" src="<%=media%>/easy/js/jquery-1.2.6.js"></script>
+<script type="text/javascript" src="<%=media%>/easy/js/power-saving.js"></script>
+<link href="<%=media%>/easy/images/popup.css" rel="stylesheet" type="text/css" />
+<script language="JavaScript" type="text/javascript">
+var radio = "<%=wifi_radio%>";
+var wifi_status = new Array(8);
+var wifi_enabled = new Array(8);
+var wifi_startHour = new Array(8);
+var wifi_startMin = new Array(8);
+var wifi_endHour = new Array(8);
+var wifi_endMin = new Array(8);
+
+var wifi5G_status = new Array(8);
+var wifi5G_enabled = new Array(8);
+var wifi5G_startHour = new Array(8);
+var wifi5G_startMin = new Array(8);
+var wifi5G_endHour = new Array(8);
+var wifi5G_endMin = new Array(8);
+
+<% for i=0,7 do %>
+	wifi_status[<%=i%>] = '<%=wifi_sch[i+1].status%>';
+	wifi_enabled[<%=i%>] = '<%=wifi_sch[i+1].enabled%>';
+	wifi_startHour[<%=i%>] = <%=wifi_sch[i+1].start_hour%>;
+	wifi_startMin[<%=i%>] = <%=wifi_sch[i+1].start_min%>;
+	wifi_endHour[<%=i%>] = <%=wifi_sch[i+1].end_hour%>;
+	wifi_endMin[<%=i%>] = <%=wifi_sch[i+1].end_min%>;
+	
+	wifi5G_status[<%=i%>] = '<%=wifi5G_sch[i+1].status%>';
+	wifi5G_enabled[<%=i%>] = '<%=wifi5G_sch[i+1].enabled%>';
+	wifi5G_startHour[<%=i%>] = <%=wifi5G_sch[i+1].start_hour%>;
+	wifi5G_startMin[<%=i%>] = <%=wifi5G_sch[i+1].start_min%>;
+	wifi5G_endHour[<%=i%>] = <%=wifi5G_sch[i+1].end_hour%>;
+	wifi5G_endMin[<%=i%>] = <%=wifi5G_sch[i+1].end_min%>;
+<% end %>
+
+function changeRadio()
+{ 
+	var i;
+	var tmp;
+	with ( document.forms[0] ){
+		if(wlanRadio.options[wlanRadio.selectedIndex].value == "2.4G"){
+			for(i=0;i<8;i++){
+				/* status */
+				if(wifi_status[i] == '1'){
+					document.getElementById('WLanSch' + i + 'StatusOn').checked = true;
+				}
+				else{
+					document.getElementById('WLanSch' + i + 'StatusOff').checked = true;
+				}
+				
+				/* enabled */
+				if(wifi_enabled[i] == '1'){
+					document.getElementById('WLanSch' + i + 'Enabled').checked = true;
+				}
+				else{
+					document.getElementById('WLanSch' + i + 'Enabled').checked = false;
+				}
+				
+				/* start hour */
+				document.getElementById('WLanSch' + i + 'StartHour').selectedIndex = wifi_startHour[i];
+				
+				/* start hour */
+				document.getElementById('WLanSch' + i + 'StartMin').selectedIndex = wifi_startMin[i]/30;
+				
+				/* end hour */
+				document.getElementById('WLanSch' + i + 'EndHour').selectedIndex = wifi_endHour[i];
+				
+				/* end hour */
+				document.getElementById('WLanSch' + i + 'EndMin').selectedIndex = wifi_endMin[i]/30;	
+			}
+		}
+		else{
+			for(i=0;i<8;i++){
+				/* status */
+				if(wifi5G_status[i] == '1'){
+					document.getElementById('WLanSch' + i + 'StatusOn').checked = true;
+				}
+				else{
+					document.getElementById('WLanSch' + i + 'StatusOff').checked = true;
+				}
+				
+				/* enabled */
+				if(wifi5G_enabled[i] == '1'){
+					document.getElementById('WLanSch' + i + 'Enabled').checked = true;
+				}
+				else{
+					document.getElementById('WLanSch' + i + 'Enabled').checked = false;
+				}
+				
+				/* start hour */
+				document.getElementById('WLanSch' + i + 'StartHour').selectedIndex = wifi5G_startHour[i];
+				
+				/* start hour */
+				document.getElementById('WLanSch' + i + 'StartMin').selectedIndex = wifi5G_startMin[i]/30;
+				
+				/* end hour */
+				document.getElementById('WLanSch' + i + 'EndHour').selectedIndex = wifi5G_endHour[i];
+				
+				/* end hour */
+				document.getElementById('WLanSch' + i + 'EndMin').selectedIndex = wifi5G_endMin[i]/30;	
+			}
+		}
+	}
+	clickEveryday();
+}
+
+function clickEveryday()
+{
+	with ( document.forms[0] ){
+		if(WLanSch0Enabled.checked == true){
+			for(i=1;i<8;i++){
+				document.getElementById('WLanSch' + i + 'Enabled').disabled = true;
+			}
+		}
+		else{
+			for(i=1;i<8;i++){
+				document.getElementById('WLanSch' + i + 'Enabled').disabled = false;
+			}
+		}
+	}
+}
+
+function formLoad()
+{
+	with ( document.forms[0] ){
+		if(radio == "2.4G"){
+			wlanRadio.selectedIndex = 0;
+		}
+		else{
+			wlanRadio.selectedIndex = 1;
+		}
+		changeRadio();
+		clickEveryday();
+	}
+}
+
+function btnApplyCheck()
+{
+/*
+	with ( document.forms[0] ){
+		if(WLanSch0Enabled.checked == true){
+			for(i=1;i<8;i++){
+				if(document.getElementById('WLanSch' + i + 'Enabled').checked == true){
+					alert("Confilict due to Everyday is configured !!");
+					return;
+				}
+			}
+		}
+	}
+*/
+	document.wlanScheduling.submit();
+}
+
+</script>
+</head>
+<body class="bandwidth_bg" onload="formLoad()">
+<form name="wlanScheduling" action="<%=controller%>/easy/pwsaving">
+<div class="wrapper">
+  <div class="bandwidth_d">
+    <ul>
+      <li><%:easy_pwsave_remind1%>
+      </li>
+    </ul>
+  </div>
+<!-- 07/01 modify-->
+  <div class = "schedule" id= "schedule">
+    <table width="100%" border="0" cellpadding="0" cellspacing="0" style="border: 2px solid #b7c1c6;" >
+      <tr>
+        <td height="36" class="ws1"><%:easy_wireless_radio%> :</td>
+        <td>
+          <label>
+            <select name="wlanRadio" class="ws" onChange="changeRadio()">
+              <option value="2.4G" selected="selected"><%:easy_wlan_24G%></option>
+              <option value="5G"><%:easy_wlan_5G%></option>
+            </select>
+          </label>
+        </td>
+      </tr>
+      <tr>
+        <td valign="top" class="top_font"><%:wlan_status%> </td>
+        <td valign="top" class="top_font"><%:sch_day%> </td>
+        <td class="top_font"><%:sch_time%></td>
+      </tr>
+<%
+local schedulingNames = { "Everyday", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }
+for i=0,7 do
+%>
+      <tr>
+        <td class="table_font">
+          <input id="WLanSch<%=i%>StatusOn" name="WLanSch<%=i%>Radio" value="1" type="radio" /><%:sch_on%>
+          <input id="WLanSch<%=i%>StatusOff" name="WLanSch<%=i%>Radio" value="0" checked="checked" type="radio" /><%:sch_off%>
+        </td>
+        <td class="table_font">
+          <input id="WLanSch<%=i%>Enabled" name="WLanSch<%=i%>Enabled" type="checkbox" value="1" <%if schedulingNames[i+1] == "Everyday" then%>onClick="clickEveryday()"<%end%>/>
+          <%if schedulingNames[i+1] == "Everyday" then%><%:sch_everyday%>
+          <%elseif schedulingNames[i+1] == "Mon" then%><%:sch_mon%>
+          <%elseif schedulingNames[i+1] == "Tue" then%><%:sch_tue%>
+          <%elseif schedulingNames[i+1] == "Wed" then%><%:sch_wed%>
+          <%elseif schedulingNames[i+1] == "Thu" then%><%:sch_thu%>
+          <%elseif schedulingNames[i+1] == "Fri" then%><%:sch_fri%>
+          <%elseif schedulingNames[i+1] == "Sat" then%><%:sch_sat%>
+          <%elseif schedulingNames[i+1] == "Sun" then%><%:sch_sun%>
+          <%end%>
+        </td>
+        <td class="table_font">
+          <select id="WLanSch<%=i%>StartHour" name="WLanSch<%=i%>StartHour" size="1">
+            <option value="0" selected="selected">00</option>
+            <option value="1">01 </option>
+            <option value="2">02 </option>
+            <option value="3">03 </option>
+            <option value="4">04 </option>
+            <option value="5">05 </option>
+            <option value="6">06 </option>
+            <option value="7">07 </option>
+            <option value="8">08 </option>
+            <option value="9">09 </option>
+            <option value="10">10 </option>
+            <option value="11">11 </option>
+            <option value="12">12 </option>
+            <option value="13">13 </option>
+            <option value="14">14 </option>
+            <option value="15">15 </option>
+            <option value="16">16 </option>
+            <option value="17">17 </option>
+            <option value="18">18 </option>
+            <option value="19">19 </option>
+            <option value="20">20 </option>
+            <option value="21">21 </option>
+            <option value="22">22 </option>
+            <option value="23">23 </option>
+          </select>
+          (<%:sch_hour%>) &nbsp;
+          <select id="WLanSch<%=i%>StartMin" name="WLanSch<%=i%>StartMin" size="1">
+            <option value="0" selected="selected">00</option>
+            <option value="30">30 </option>
+          </select>
+          (<%:sch_min%>)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+          <select id="WLanSch<%=i%>EndHour" name="WLanSch<%=i%>EndHour" size="1">
+            <option value="0" selected="selected">00</option>
+            <option value="1">01 </option>
+            <option value="2">02 </option>
+            <option value="3">03 </option>
+            <option value="4">04 </option>
+            <option value="5">05 </option>
+            <option value="6">06 </option>
+            <option value="7">07 </option>
+            <option value="8">08 </option>
+            <option value="9">09 </option>
+            <option value="10">10 </option>
+            <option value="11">11 </option>
+            <option value="12">12 </option>
+            <option value="13">13 </option>
+            <option value="14">14 </option>
+            <option value="15">15 </option>
+            <option value="16">16 </option>
+            <option value="17">17 </option>
+            <option value="18">18 </option>
+            <option value="19">19 </option>
+            <option value="20">20 </option>
+            <option value="21">21 </option>
+            <option value="22">22 </option>
+            <option value="23">23 </option>
+          </select>
+          (<%:sch_hour%>)
+          <select id="WLanSch<%=i%>EndMin" name="WLanSch<%=i%>EndMin" size="1">
+            <option value="0" selected="selected">00</option>
+            <option value="30">30 </option>
+          </select>
+          (<%:sch_min%>)
+        </td>
+      </tr>
+<% end %>
+      <input type="hidden" name="apply" value="Apply" />
+    </table>
+  </div>	
+<!-- 07/01 modify-->
+  <div class="button">
+    <ul>
+      <li><a href="<%=controller%>/easy/networkmap"target="_parent" title="<%:cancel%>"><span><%:cancel%></span></a></li>
+      <li><a href="javascript:btnApplyCheck()" name="apply" value="Apply" title="<%:apply%>"><span><%:apply%></span></a></li>
+    </ul>
+  </div>
+</div>
+</form>
+</body>
+</html>

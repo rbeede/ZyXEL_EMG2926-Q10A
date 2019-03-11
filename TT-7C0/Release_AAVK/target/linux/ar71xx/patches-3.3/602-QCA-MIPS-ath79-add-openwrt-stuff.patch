@@ -1,0 +1,42 @@
+Index: linux-3.3.8/arch/mips/ath79/Kconfig
+===================================================================
+--- linux-3.3.8.orig/arch/mips/ath79/Kconfig	2013-03-11 17:29:39.000000000 +0800
++++ linux-3.3.8/arch/mips/ath79/Kconfig	2013-03-11 17:51:57.035555728 +0800
+@@ -114,6 +114,9 @@
+ 	select ATH79_PCI_ATH9K_FIXUP
+ 	def_bool n
+ 
++config ATH79_DEV_AUDIO
++	def_bool n
++
+ config ATH79_DEV_DSA
+ 	def_bool n
+ 
+@@ -133,6 +136,9 @@
+ 	depends on (SOC_AR934X)
+ 	def_bool n
+ 
++config ATH79_DEV_NAND
++	def_bool n
++
+ config ATH79_DEV_SPI
+ 	def_bool n
+ 
+Index: linux-3.3.8/arch/mips/ath79/Makefile
+===================================================================
+--- linux-3.3.8.orig/arch/mips/ath79/Makefile	2013-03-11 17:29:39.000000000 +0800
++++ linux-3.3.8/arch/mips/ath79/Makefile	2013-03-11 17:53:28.942400302 +0800
+@@ -18,11 +18,13 @@
+ #
+ obj-y					+= dev-common.o
+ obj-$(CONFIG_ATH79_DEV_AP9X_PCI)	+= dev-ap9x-pci.o
++obj-$(CONFIG_ATH79_DEV_AUDIO)		+= dev-audio.o
+ obj-$(CONFIG_ATH79_DEV_DSA)		+= dev-dsa.o
+ obj-$(CONFIG_ATH79_DEV_ETH)		+= dev-eth.o
+ obj-$(CONFIG_ATH79_DEV_GPIO_BUTTONS)	+= dev-gpio-buttons.o
+ obj-$(CONFIG_ATH79_DEV_LEDS_GPIO)	+= dev-leds-gpio.o
+ obj-$(CONFIG_ATH79_DEV_M25P80)		+= dev-m25p80.o
++obj-$(CONFIG_ATH79_DEV_NAND)		+= dev-nand.o
+ obj-$(CONFIG_ATH79_DEV_NFC)		+= dev-nfc.o
+ obj-$(CONFIG_ATH79_DEV_SPI)		+= dev-spi.o
+ obj-$(CONFIG_ATH79_DEV_USB)		+= dev-usb.o

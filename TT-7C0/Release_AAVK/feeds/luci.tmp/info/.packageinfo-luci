@@ -1,0 +1,1361 @@
+Source-Makefile: feeds/luci/luci/Makefile
+Package: luci-core
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +lua +luci-nixio
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI core libraries
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI core libraries
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+Config:
+       choice
+               prompt "Build Target"
+               default PACKAGE_luci-core_compile
+
+       config PACKAGE_luci-core_compile
+               bool "Precompiled"
+
+       config PACKAGE_luci-core_stripped
+               bool "Stripped"
+
+       config PACKAGE_luci-core_source
+               bool "Full Source"
+
+       endchoice
+@@
+
+Package: luci-cbi
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-web +luci-uvl +luci-uci
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Configuration Binding Interface
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Configuration Binding Interface
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-fastindex
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Fastindex indexing module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Fastindex indexing module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-http
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: HTTP Protocol implementation
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: HTTP Protocol implementation
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-httpclient
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-http +luci-nixio
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: HTTP(S) client library
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: HTTP(S) client library
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-ipkg
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI IPKG/OPKG call abstraction library
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI IPKG/OPKG call abstraction library
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-json
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI JSON Library
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI JSON Library
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-lmo
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: lmo
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: lmo
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-lucid
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-nixio +luci-http +luci-px5g
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCId Superserver
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCId Superserver
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-nixio
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +PACKAGE_luci-nixio_openssl:libopenssl +PACKAGE_luci-nixio_cyassl:libcyassl
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: NIXIO POSIX Library
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: NIXIO POSIX Library
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+Config:
+	choice
+		prompt "TLS Provider"
+		default PACKAGE_luci-nixio_notls
+
+		config PACKAGE_luci-nixio_notls
+			bool "Disabled"
+
+		config PACKAGE_luci-nixio_axtls
+			bool "Builtin (axTLS)"
+
+		config PACKAGE_luci-nixio_cyassl
+			bool "CyaSSL"
+			select PACKAGE_libcyassl
+
+		config PACKAGE_luci-nixio_openssl
+			bool "OpenSSL"
+			select PACKAGE_libopenssl
+	endchoice
+@@
+
+Package: luci-px5g
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-nixio
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: PX5G RSA Keymaster
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: PX5G RSA Keymaster
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-uci
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +libuci-lua
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: High-Level UCI API
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: High-Level UCI API
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-sys
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Linux/POSIX system library
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Linux/POSIX system library
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-web
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-http +luci-sys +luci-nixio +luci-uci +luci-sgi-cgi +luci-lmo
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: MVC Webframework
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: MVC Webframework
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Preconfig: luci.main.lang
+Preconfig-Type: string
+Preconfig-Default: en
+Preconfig-Label: Default Language
+
+Package: luci-uvl
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-sys +luci-uci +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: UVL - UCI Validation Layer
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: UVL - UCI Validation Layer
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-admin-core
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-web +luci-cbi +luci-i18n-english
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Web UI Core Module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Web UI Core Module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-admin-mini
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Essentials - stripped down and user-friendly
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Essentials - stripped down and user-friendly
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-admin-full
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +luci-ipkg
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Administration - full-featured for full control
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Administration - full-featured for full control
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-admin-rpc
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-json
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI RPC - JSON-RPC API
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI RPC - JSON-RPC API
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-mod-freifunk
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-admin-full +luci-json +PACKAGE_luci-mod-freifunk:freifunk-firewall
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Freifunk module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Freifunk module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-admin-expert
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +luci-ipkg
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: ZyXEL expert mode
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: ZyXEL expert mode
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-admin-easy
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +luci-ipkg
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: ZyXEL easy mode
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: ZyXEL easy mode
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-freifunk-community
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-mod-freifunk +luci-web +luci-app-splash +luci-app-ffwizard-leipzig +luci-i18n-german +PACKAGE_luci-freifunk-community:olsrd-luci +PACKAGE_luci-freifunk-community:olsrd-luci-mod-dyn-gw-plain +PACKAGE_luci-freifunk-community:olsrd-luci-mod-txtinfo +PACKAGE_luci-freifunk-community:olsrd-luci-mod-nameservice +PACKAGE_luci-freifunk-community:olsrd-luci-mod-watchdog +PACKAGE_luci-freifunk-community:kmod-tun +PACKAGE_luci-freifunk-community:ip +PACKAGE_luci-freifunk-community:freifunk-watchdog +luci-app-olsr
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Freifunk Community Meta-Package
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Freifunk Community Meta-Package
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-ffwizard-leipzig
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-mod-freifunk
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Freifunk Leipzig configuration wizard
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Freifunk Leipzig configuration wizard
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-siitwizard
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-admin-core +PACKAGE_luci-app-siitwizard:kmod-siit
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: SIIT IPv4-over-IPv6 configuration wizard
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: SIIT IPv4-over-IPv6 configuration wizard
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-firewall
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-firewall:firewall
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Firewall and Portforwarding application
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Firewall and Portforwarding application
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-olsr
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-olsr:olsrd-luci +PACKAGE_luci-app-olsr:olsrd-luci-mod-txtinfo
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: OLSR configuration and status module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: OLSR configuration and status module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-qos
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-qos:qos-scripts
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Quality of Service configuration module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Quality of Service configuration module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-splash
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-mod-freifunk +PACKAGE_luci-app-splash:luci-nixio +PACKAGE_luci-app-splash:tc +PACKAGE_luci-app-splash:kmod-sched +PACKAGE_luci-app-splash:iptables-mod-nat-extra +PACKAGE_luci-app-splash:iptables-mod-ipopt
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Freifunk DHCP-Splash application
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Freifunk DHCP-Splash application
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-statistics
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-statistics:collectd +PACKAGE_luci-app-statistics:rrdtool1 +PACKAGE_luci-app-statistics:collectd-mod-rrdtool +PACKAGE_luci-app-statistics:collectd-mod-wireless +PACKAGE_luci-app-statistics:collectd-mod-interface +PACKAGE_luci-app-statistics:collectd-mod-load
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Statistics Application
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Statistics Application
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-upnp
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-upnp:miniupnpd
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Universal Plug & Play configuration module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Universal Plug & Play configuration module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-ntpc
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-ntpc:ntpclient
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: NTP time synchronisation client configuration module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: NTP time synchronisation client configuration module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-ddns
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-ddns:ddns-scripts
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Dynamic DNS configuration module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Dynamic DNS configuration module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-portfw
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-portfw:portfw-scripts
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Port Forwarding configuration module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Port Forwarding configuration module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-samba
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-samba:samba3
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Network Shares - Samba SMB/CIFS module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Network Shares - Samba SMB/CIFS module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-mmc-over-gpio
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-mmc-over-gpio:kmod-mmc-over-gpio
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: mmc_over_gpio
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: mmc_over_gpio
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-p910nd
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-p910nd:p910nd
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: p910nd - Printer server module
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: p910nd - Printer server module
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-ushare
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-ushare:ushare
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: ushare - UPnP A/V & DLNA Media Server
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: ushare - UPnP A/V & DLNA Media Server
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-hd-idle
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-hd-idle:hd-idle
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: hd-idle
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: hd-idle
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-tinyproxy
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-full +PACKAGE_luci-app-tinyproxy:tinyproxy
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Tinyproxy - HTTP(S)-Proxy
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Tinyproxy - HTTP(S)-Proxy
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-initmgr
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Initscript Management
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Initscript Management
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-livestats
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +luci-admin-rpc
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Realtime Statistics
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Realtime Statistics
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-polipo
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-polipo:polipo
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Support for the Polipo Proxy
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Support for the Polipo Proxy
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-openvpn
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +PACKAGE_luci-app-openvpn:openvpn
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Support for OpenVPN
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Support for OpenVPN
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-app-p2pblock
+Submenu: Components
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +luci-admin-core +luci-app-firewall +PACKAGE_luci-app-p2pblock:freifunk-p2pblock
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: LuCI Support for the Freifunk P2P-Block addon
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: LuCI Support for the Freifunk P2P-Block addon
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-sgi-cgi
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: SGI for CGI
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: SGI for CGI
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-sgi-uhttpd
+Submenu: Libraries
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-core +uhttpd +uhttpd-mod-lua
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Binding for the uHTTPd server
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Binding for the uHTTPd server
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-theme-base
+Submenu: Themes
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Common base for all themes
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Common base for all themes
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-theme-fledermaus
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Fledermaus Theme
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Fledermaus Theme
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-theme-freifunk
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: alternative Freifunk Theme
+Maintainer: Stefan Pirwitz <stefan-at-freifunk-bno-dot-de>
+Source: -luci-
+Type: ipkg
+Description: alternative Freifunk Theme
+http://luci.freifunk-halle.net/
+Stefan Pirwitz <stefan-at-freifunk-bno-dot-de>
+@@
+
+Package: luci-theme-freifunk-bno
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Freifunk Berlin Nordost Theme
+Maintainer: Stefan Pirwitz <stefan-at-freifunk-bno-dot-de>
+Source: -luci-
+Type: ipkg
+Description: Freifunk Berlin Nordost Theme
+http://luci.freifunk-halle.net/
+Stefan Pirwitz <stefan-at-freifunk-bno-dot-de>
+@@
+
+Package: luci-theme-freifunk-hannover
+Submenu: Freifunk
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Freifunk Hannover Theme
+Maintainer: Mikolas Bingemer <mickey-at-freifunk-hannover-dot-de>
+Source: -luci-
+Type: ipkg
+Description: Freifunk Hannover Theme
+http://luci.freifunk-halle.net/
+Mikolas Bingemer <mickey-at-freifunk-hannover-dot-de>
+@@
+
+Package: luci-theme-openwrt
+Submenu: Themes
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-theme-base luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: OpenWrt.org (default)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: OpenWrt.org (default)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-theme-openwrtlight
+Submenu: Themes
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-theme-base
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: OpenWrt.org - light variant without images
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: OpenWrt.org - light variant without images
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-theme-zyxel
+Submenu: Themes
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-theme-base luci-core
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: ZyXEL proprietary web page design
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: ZyXEL proprietary web page design
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-german
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: German
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: German
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-chinese_traditional
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Chinese Traditional
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Chinese Traditional
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-english
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: English
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: English
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-french
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: French (by Florian Fainelli)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: French (by Florian Fainelli)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-italian
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Italian (by Matteo Croce)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Italian (by Matteo Croce)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-russian
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Russian (by Skryabin Dmitry)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Russian (by Skryabin Dmitry)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-portuguese_brazilian
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Portuguese (Brazilian) (by Carlos Cesario)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Portuguese (Brazilian) (by Carlos Cesario)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-japanese
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Japanese (by Tsukasa Hamano)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Japanese (by Tsukasa Hamano)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-greek
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Greek (by Vasilis Tsiligiannis)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Greek (by Vasilis Tsiligiannis)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-catalan
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Catalan (by Eduard Duran)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Catalan (by Eduard Duran)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-portuguese
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Portuguese (by Jose Monteiro)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Portuguese (by Jose Monteiro)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-i18n-spanish
+Submenu: Translations
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +luci-web
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Spanish (by Guillermo Javier Nardoni)
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Spanish (by Guillermo Javier Nardoni)
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci
+Submenu: Collections
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +uhttpd +luci-app-initmgr
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Standard OpenWrt set including full and mini admin and the standard theme
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Standard OpenWrt set including full and mini admin and the standard theme
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-ssl
+Submenu: Collections
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +uhttpd +uhttpd-mod-tls +px5g +luci-admin-full +luci-admin-mini +luci-theme-openwrt +luci-app-firewall +luci-app-initmgr
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Standard OpenWrt set with https support
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Standard OpenWrt set with https support
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-medium
+Submenu: Collections
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +uhttpd +luci-admin-full +luci-theme-openwrtlight
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Medium package set using only admin full and a theme without graphics
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Medium package set using only admin full and a theme without graphics
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: luci-light
+Submenu: Collections
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +uhttpd +luci-admin-mini +luci-theme-openwrtlight
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Minimum package set using only admin mini and a theme without graphics
+Maintainer: Steven Barth <steven-at-midlink-dot-org>
+Source: -luci-
+Type: ipkg
+Description: Minimum package set using only admin mini and a theme without graphics
+http://luci.freifunk-halle.net/
+Steven Barth <steven-at-midlink-dot-org>
+@@
+
+Package: ZyXEL-Projects
+Submenu: ZyXEL-Projects
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Build-Depends: lua/host
+Section: luci
+Category: LuCI
+Title: Select Project for GUI design
+Maintainer: 
+Source: -luci-
+Type: ipkg
+Description: Select Project for GUI design
+
+@@
+Config:
+	depends on Package/ZyXEL-Projects
+	choice
+		prompt  "Select Project"
+		default PACKAGE_project_ar934x
+
+		config PACKAGE_project_NBG4615v2
+			bool "NBG4615v2"
+
+		config PACKAGE_project_NBG5615
+			bool "NBG5615"
+
+		config PACKAGE_project_NBG6716
+			bool "NBG6716"
+
+		config PACKAGE_project_PLA4231
+			bool "PLA4231"
+
+		config PACKAGE_project_WAP5806
+			bool "WAP5806"
+
+	endchoice
+@@
+
+

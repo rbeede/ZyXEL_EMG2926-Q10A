@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+
+##check mode,if AP/UR,exit	
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && return 0
+
+boot() {
+	## Enable IGMP Snooping
+        #/bin/IGMP_snooping
+
+	### applying after WAN connection up ###
+        return 0
+}
+
+start() {	
+
+	for i in "" 1 2 3 4
+	do
+		igmpEnabled=$(uci get igmpproxy.wan$i.igmpEnabled)
+		if [ "$igmpEnabled" == "enable" ];then
+			defaultwan=wan$i
+			break
+		fi
+	done
+
+	ETH_WAN=$(uci get network.$defaultwan.ifname)
+	PPPOE_WAN="pppoe"-"$defaultwan"
+	wan_proto=$(uci get network.$defaultwan.proto)
+
+
+	ETH_WANIP=$(ifconfig $ETH_WAN | grep "inet addr")
+	PPPOE_WANIP=$(ifconfig $PPPOE_WAN | grep "inet addr")
+	
+	if [ "$ETH_WANIP" == "" ] && [ "$PPPOE_WANIP" == "" ]; then
+	        reutrn 0
+	fi
+
+	/sbin/act_igmp
+	echo "Init igmpproxy"
+}

@@ -1,0 +1,57 @@
+#!/bin/sh
+
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/rc.appflow
+
+JSONSOCK=${RUNDIR}/${jsonsock:="events.json"}
+
+NAME="relay_client"
+BINARY=$NAME
+DISPLAY_NAME=relay_client
+PIDFILE="$RUNDIR/${NAME}.pid"
+LOCKFILE="$RUNDIR/${NAME}.lock"
+
+# if the debug file exists, drflocs is not started at boot
+KROUTER_DEBUG_FILE=${KROUTER_DEBUG_FILE:-"/etc/krouter_debug"}
+
+# Format the command line parameters
+<<<<<<< HEAD
+# cloud url, client cert, client private key, server cert, 
+OPTIONS_RUN="/usr/lib"
+=======
+OPTIONS_RUN="--src=${JSONSOCK}"
+>>>>>>> 799298e332b6f1f0e6e89687fb436b335a7a7694
+
+start() {
+	echo -n "Starting ${NAME}: "
+	start-stop-daemon -S -b -m -p $PIDFILE -x ${BINDIR}/${BINARY} -- \
+		$OPTIONS_RUN "$@"
+	retval=$?
+	echo
+	return ${retval}
+
+}
+
+boot() {
+	if [ -n "${KROUTER_DEBUG_FILE}" ] && [ -e "${KROUTER_DEBUG_FILE}" ]
+	then
+		# If the debug file is present, don't start
+		echo "debug mode requested, relay_client refusing to start"
+	else
+		start "$@"
+	fi
+}
+
+stop() {
+	[ -f "${PIDFILE}" ] && {
+		echo -n "Stopping ${NAME}: "
+		start-stop-daemon -K -q -p $PIDFILE
+		retval=$?
+		echo
+		[ ${retval} -eq 0 ] && rm -f ${PIDFILE}
+		return ${retval}
+	}
+	return 0
+}
+
+action "$@"
+exit $?

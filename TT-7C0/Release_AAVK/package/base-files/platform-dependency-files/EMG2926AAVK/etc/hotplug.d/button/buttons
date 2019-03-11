@@ -1,0 +1,482 @@
+#!/bin/sh
+
+# $BUTTON should be BTN_0 ... BTN_9, $ACTION should be 'pressed' or 'released'
+
+# Reset button for reset board
+BTN_0="RESET"
+# WPS button for trigger WPS functionality
+BTN_2="WPS"
+# WiFi button for trigger WiFi functionality
+BTN_5="WiFi"
+# USB1 button for trigger USB1 functionality
+BTN_4="USB01"
+# USB2 button for trigger USB2 functionality
+BTN_3="USB02"
+
+eval REAL_BUTTON=\$$BUTTON
+
+path=/sys/bus/usb/devices
+
+dev_usb1=$( ls $path | grep -v "2-1:" | grep -i "2-1")
+dev_usb2=$( ls $path | grep -v "1-1:" | grep -i "1-1")
+
+if [ -f /tmp/usb1 ]; then
+	usb1=$(cat /tmp/usb1)
+else
+	usb1=0
+fi
+
+if [ -f /tmp/usb2 ]; then
+	usb2=$(cat /tmp/usb2)
+else
+	usb2=0
+fi
+
+do_fun_Reset()
+{
+	echo "You $1 the Reset button!"
+	/sbin/button_count Reset
+	
+	if [ "$ACTION" = "pressed" ]; then
+		START=$(date +%s)
+		echo $START > /tmp/timeout
+               	
+	fi
+        
+	if [ "$ACTION" = "released" ]; then
+       	END=$(date +%s)
+		START=$(cat /tmp/timeout)
+		DIFF=$(( $END - $START ))
+		#echo "DIFF=$DIFF" >>/overlay/etc/aaa
+		
+		if [ "$DIFF" -lt 1 ]; then
+			break
+		elif [ "$DIFF" -le 5 ]; then
+			reboot
+		elif [ "$DIFF" -gt 5 ]; then
+			led_ctrl POWER blink 50 50
+			
+			setconfig reset_default
+			sleep 3
+			reboot
+			break			
+		fi
+	fi
+	
+}
+do_fun_WiFi()
+{
+	if [ "$ACTION" = "pressed" ]; then		
+		echo 1 > /tmp/wlan_on	
+	else
+		echo 0 > /tmp/wlan_on
+	fi
+	wifi_button=$(uci get wireless.wifi.button_useful)
+	[ "$wifi_button" == "0" ] && exit 0
+
+	echo "You $1 the WiFi button!"
+	/sbin/button_count WiFi
+
+	##if HTP Mode enabled,leave it.
+	[ -n "$HTP_ENABLE" ] && exit 0
+
+	wifi_disable=$(uci get wireless.wifi0.disabled)
+	wifi5G_disable=$(uci get wireless.wifi1.disabled)
+
+        if [ "$ACTION" = "pressed" ]; then		
+		
+		echo "WLAN HW button on"
+		echo 1 > /tmp/wlan_on	
+
+		##Check WiFi
+		if [ "$wifi_disable" == "0" ] || [ "$wifi5G_disable" == "0" ]; then
+		
+        	#echo "WLAN radio on"
+			#echo 1 > /tmp/wlan_on
+		
+			##setting wifi2.4G on
+			#uci_set wireless ra0 disabled 0
+			#uci_commit wireless
+
+			wifi0_up=$(ifconfig | grep ath0)
+			wifi1_up=$(ifconfig | grep ath10)
+			if [ "$wifi0_up" == "" ] || [ "$wifi1_up" == "" ]; then
+				/sbin/wifi up
+			fi
+
+			/etc/init.d/wifi_scheduling start		
+			/etc/init.d/wifi_scheduling5G start
+			/etc/init.d/wireless_macfilter restart
+			/etc/init.d/wireless5G_macfilter restart
+			
+		fi
+		 
+		if [ "$wifi_disable" == "0" ] || [ "$wifi5G_disable" == "0" ]; then
+		
+			##check WPS LED		
+			local wps_enable=$(uci get wps.wps.enabled)
+			local wps5G_enable=$(uci get wps5G.wps.enabled)
+		
+			if [ "$wps_enable" == "1" ] || [ "$wps5G_enable" == "1" ]; then
+				led_ctrl WPS on
+			else 
+				led_ctrl WPS off			
+			fi
+		fi
+
+		##reload Qos
+		local qos_enable=$(uci get qos.general.enable)
+		if [ "$qos_enable" = "1" ] ; then
+			/sbin/configure_qos restart
+		fi
+ 
+		/etc/init.d/intfGrp restart
+	fi
+
+        if [ "$ACTION" = "released" ]; then
+        	echo "WLAN HW button off"
+			echo 0 > /tmp/wlan_on
+
+			##setting wifi2.4G off
+			wifi0_up=$(ifconfig | grep ath0)
+			wifi1_up=$(ifconfig | grep ath10)
+			
+			if [ "$wifi0_up" != "" ] || [ "$wifi1_up" != "" ] ; then
+				/sbin/wifi down
+			fi
+			
+			led_ctrl WPS off
+		
+		##reload Qos
+		local qos_enable=$(uci get qos.general.enable)
+		if [ "$qos_enable" = "1" ] ; then
+			/sbin/configure_qos restart
+		fi
+	fi
+
+}
+
+do_fun_WPS()
+{
+	echo "You $1 the WPS button!" >> /tmp/BUTTON
+	/sbin/button_count WPS
+	wlan_disable=$(uci get wireless.ath0.disabled)
+	wps_enabled=$(uci get wps.wps.enabled)
+
+	if [ "$ACTION" = "pressed" ]; then
+		echo "You execute 2.4G WPS function"
+		START=$(date +%s)
+                echo $START > /tmp/wps_timeout
+		wps_presstime=
+		wps_btn_info=$(cat /tmp/sum_wps_button)
+		wps_btn_release=$(($wps_btn_info % 2))
+                { while [ "$wps_btn_release" != "0" ];
+                  do
+                	sleep 1
+                        wps_presstime=$(($wps_presstime+1))
+			##get button status on real time
+			wps_btn_info_now=$(cat /tmp/sum_wps_button)
+
+			[ "$wps_btn_info" != "$wps_btn_info_now" ] && break
+
+			if [ "$wps_presstime" -gt 3 ]; then
+				led_ctrl WiFi blink 150 150
+
+			elif [ "$wps_presstime" -gt 10 ]; then
+				led_ctrl WiFi on
+                        fi
+
+			wps_btn_release=$(($wps_btn_info_now % 2))
+
+                  done } & 
+	fi
+	if [ "$ACTION" = "released" ]; then
+        	END=$(date +%s)
+                START=$(cat /tmp/wps_timeout)
+                DIFF=$(( $END - $START ))
+
+                if [ "$DIFF" -gt 3 ]; then
+			echo "WPS Client"
+			led_ctrl WiFi blink 150 150
+
+			wifi client up
+			sleep 1
+			wpa_cli -p /tmp/hostapd/wpa_supplicant-ath1 -i ath1 wps_pbc
+
+			local count=0
+			while [ "$count" -le 120 ];
+		 	do
+			  	count=$(($count+1))
+				sleep 1
+				wps_cli_ssid=$(cat /tmp/hostapd/wpa_supplicant-ath1.conf |grep ssid |awk -F'=' '{print $2}' |sed 's/\"//g')
+				wps_cli_pw=$(cat /tmp/hostapd/wpa_supplicant-ath1.conf |grep psk | awk -F'=' '{print $2}' |sed 's/\"//g')
+			        wps_cli_proto=$(cat /tmp/hostapd/wpa_supplicant-ath1.conf |grep proto |awk -F'=' '{print $2}' |sed 's/\"//g')
+			        wps_cli_key_mgmt=$(cat /tmp/hostapd/wpa_supplicant-ath1.conf |grep key_mgmt |awk -F'=' '{print $2}' |sed 's/\"//g')
+				wps_cli_key_pairwise=$(cat /tmp/hostapd/wpa_supplicant-ath1.conf |grep pairwise |awk -F'=' '{print $2}' |sed 's/\"//g')
+				[ -n "$wps_cli_ssid" ] && {
+					uci set wireless.ath0.ssid="$wps_cli_ssid"					
+					
+					[ "$wps_cli_key_mgmt" == "WPA-PSK" ] && {
+						
+						[ "$wps_cli_proto" == "RSN" ] && {
+							uci set wireless.ath0.auth="WPA2PSK"
+
+							wpa_cli -p /tmp/hostapd/wpa_supplicant-ath1 -i ath1 scan
+							sleep 3
+							chk_wpa_compatible=$(wpa_cli -p /tmp/hostapd/wpa_supplicant-ath1 -i ath1 scan_results | grep "$wps_cli_ssid" |grep "WPA2-PSK" |grep "WPA-PSK")
+							[ -n "$chk_wpa_compatible" ] && {
+								uci set wireless.ath0.WPAPSKCompatible="1"
+							} || {
+								uci set wireless.ath0.WPAPSKCompatible="0"
+							}
+					
+						} || {							
+							uci set wireless.ath0.auth="WPAPSK"
+						}
+						uci set wireless.ath0.WPAPSKkey="$wps_cli_pw"
+
+						if [ "$wps_cli_key_pairwise" == "TKIP " ];then
+							uci set wireless.ath0.encryption="TKIP"	
+						elif [ "$wps_cli_key_pairwise" == "CCMP " ];then
+							uci set wireless.ath0.encryption="AES"
+						else
+							uci set wireless.ath0.encryption="TKIPAES"
+						fi
+
+						uci_commit wireless
+
+						##always wps configured
+						uci set wps.wps.conf="1"
+						uci_commit wps
+
+						led_ctrl WiFi on 
+						break						
+					}
+					
+					[ "$wps_cli_key_mgmt" == "NONE" ] && {
+						uci set wireless.ath0.encryption="NONE"
+						uci set wireless.ath0.auth="OPEN"
+
+						uci_commit wireless
+						led_ctrl WiFi on 
+						break
+					}				
+				}
+				# [ "$wps_cli_proto" == "RSN" ] && {
+				# 	uci set wireless.ath0.auth="WPA2"							
+				# } || {							
+				# 	uci set wireless.ath0.auth="WPA"
+				# }
+				#wps_status=$(wpa_cli -p /tmp/hostapd/wpa_supplicant -ath1 -i ath1 status|grep COMPLETED)
+				#[ -n $wps_status ] && {
+				#	led_ctrl WiFi off 
+				#	break					  
+				#} 	
+
+			done 
+
+			if [ "$count" -ge 120 ]; then
+				wifi client down
+				led_ctrl WiFi off && sleep 10 && led_ctrl WiFi on &		
+			else
+				wifi client down	
+				wifi up	
+			fi		
+			
+							
+		else
+			wlan_btn=$(cat /tmp/wlan_on | sed 's/"//g' )
+			[ "$wlan_btn" == "1" ] && {
+				echo "WPS Trigger" 
+				local Enable_24G=$(uci get wps.wps.enabled)
+				echo "You execute 2.4G WPS function"
+				if [ "$Enable_24G" == "1" ]; then
+					wps ath0 on wps_btn 
+				else
+					echo "Wifi 2.4G WPS config is disabled"
+				fi
+
+				local Enable_5G=$(uci get wps5G.wps.enabled)
+				echo "You execute 5G WPS function"
+				if [ "$Enable_5G" == "1" ]; then
+					wps5G ath10 on wps_btn 
+				else
+					echo "Wifi 5G WPS config is disabled"
+				fi
+			} || {
+				echo "WiFi button is disable"
+			}
+		fi
+		
+	fi	
+}
+
+do_fun_USB01()
+{
+	echo "You $1 the USB1 button!"
+	/sbin/button_count USB01
+
+	chk_init=$(cat /tmp/initial_process)
+	dlna_db=$(cat /tmp/twonky/TwonkyServer/twonkyserver.ini|grep dbdir)
+	dlna_enabled=$(uci get dlna.main.enabled)
+	samba_enable=$(uci get system.general.enable)
+	ftp_enable=$(uci get proftpd.global.enable)
+	isusb1=$(echo $dlna_db|grep usb1)
+	isusb2=$(echo $dlna_db|grep usb2)	    	
+	
+    if [ "$usb1" -eq 1 ] && [ "$dev_usb1" != "" ]; then
+
+		mountDir1=$(ls /tmp/storage/usb1/)				
+
+		##check SAMBA
+		if [ "$samba_enable" -eq "1" ];then
+			/etc/init.d/samba stop
+		fi
+		##check FTP
+		if [ "$ftp_enable" -eq "1" ];then
+			/etc/init.d/proftpd stop
+		fi				
+		##check DLNA
+		if [ "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -z "$isusb1" ];then
+			[ -z "$isusb1" ] && /etc/init.d/dlna stop	
+			sleep 1
+		fi		
+		
+		for device in $mountDir1 
+		do
+			fuser -k /tmp/storage/usb1/$device		
+			umount -f /tmp/storage/usb1/$device	
+			[ $? = 0 ] || {
+				fuser -k /tmp/storage/usb1/$device			
+				umount -f /tmp/storage/usb1/$device
+			}
+			
+			sleep 1
+			
+			fuser -k /tmp/storage/usb1/$device		
+			umount -f /tmp/storage/usb1/$device				
+			
+			if [ $( du /tmp/storage/usb1/$device/ | awk '{print $1}') -eq 0 ]; then
+				rm -fr /tmp/storage/usb1/$device
+			fi
+			
+		done
+
+		if [ $( du /tmp/storage/usb1/ | awk '{print $1}') -eq 0 ]; then
+			rm -fr /tmp/storage/usb1
+		fi		
+		
+		sleep 2
+		led_ctrl USB0 off
+		echo 0 > /tmp/usb1
+
+		if [  "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -z "$isusb1"  ];then
+			 /etc/init.d/dlna start								
+		fi
+
+		if [ "$samba_enable" -eq "1" ];then
+			/etc/init.d/samba start			
+		fi
+
+		if [ "$ftp_enable" -eq "1" ];then
+			/etc/init.d/proftpd start			
+		fi		
+		
+    fi
+
+}
+
+do_fun_USB02()
+{
+	echo "You $1 the USB02 button!"
+	/sbin/button_count USB02
+
+	chk_init=$(cat /tmp/initial_process)
+	dlna_db=$(cat /tmp/twonky/TwonkyServer/twonkyserver.ini|grep dbdir)
+	dlna_enabled=$(uci get dlna.main.enabled)
+	samba_enable=$(uci get system.general.enable)
+	ftp_enable=$(uci get proftpd.global.enable)
+	isusb1=$(echo $dlna_db|grep usb1)
+	isusb2=$(echo $dlna_db|grep usb2)	    	
+	
+    if [ "$usb2" -eq 1 ] && [ "$dev_usb2" != "" ]; then
+						
+		mountDir2=$(ls /tmp/storage/usb2/)				
+
+		##check SAMBA
+		if [ "$samba_enable" -eq "1" ];then
+			/etc/init.d/samba stop
+		fi
+		##check FTP
+		if [ "$ftp_enable" -eq "1" ];then
+			/etc/init.d/proftpd stop
+		fi				
+		##check DLNA
+		if [ "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -z "$isusb1" ];then
+			[ -z "$isusb1" ] && /etc/init.d/dlna stop	
+			sleep 1
+		fi				
+		
+		for device in $mountDir2
+		do
+			fuser -k /tmp/storage/usb2/$device		
+			umount -f /tmp/storage/usb2/$device						
+			[ $? = 0 ] || {
+				fuser -k /tmp/storage/usb2/$device
+				umount -f /tmp/storage/usb2/$device
+			}
+			
+			sleep 1
+			
+			fuser -k /tmp/storage/usb2/$device		
+			umount -f /tmp/storage/usb2/$device					
+			
+			if [ $( du /tmp/storage/usb2/$device/ | awk '{print $1}') -eq 0 ]; then
+				rm -fr /tmp/storage/usb2/$device
+			fi		
+			
+		done
+
+		if [ $( du /tmp/storage/usb2/ | awk '{print $1}') -eq 0 ]; then
+			rm -fr /tmp/storage/usb2
+		fi		
+		
+		sleep 2
+		led_ctrl USB1 off
+		echo 0 > /tmp/usb2		
+
+		if [  "$dlna_enabled" == "1" -a "$chk_init" == "0" -a -z "$isusb2"  ];then
+			 /etc/init.d/dlna start								
+		fi
+				
+		if [ "$samba_enable" -eq "1" ];then
+			/etc/init.d/samba start			
+		fi				
+
+		if [ "$ftp_enable" -eq "1" ];then
+			/etc/init.d/proftpd start			
+		fi		
+		
+	fi
+}
+
+case $REAL_BUTTON in
+	WiFi)
+		do_fun_WiFi $ACTION
+		;;
+	RESET)
+		do_fun_Reset $ACTION
+		;;
+	WPS)
+		do_fun_WPS $ACTION
+		;;
+	USB01)
+		do_fun_USB01 $ACTION
+		;;		
+	USB02)
+		do_fun_USB02 $ACTION
+		;;		
+	*)
+		# should not be happen
+		echo "Unknown button $BUTTON!"
+esac	

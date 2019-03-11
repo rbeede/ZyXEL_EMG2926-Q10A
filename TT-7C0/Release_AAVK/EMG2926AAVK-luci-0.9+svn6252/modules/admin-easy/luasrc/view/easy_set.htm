@@ -1,0 +1,61 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("text/html")
+uci = require("luci.model.uci").cursor()  
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<meta http-equiv="Pragma" content="no-cache">
+<head><link href="<%=media%>/images/css.css" rel="stylesheet" type="text/css" />
+<script type="text/JavaScript">
+var button_status=new Array(6);
+
+button_status[0]=<%=uci:get("easyconfig","active","game_enable")%>;
+button_status[1]=<%=uci:get("easyconfig","active","wlan_sche_enable")%>;
+button_status[2]=<%=uci:get("easyconfig","active","ct_filter_enable")%>;
+button_status[3]=<%=uci:get("easyconfig","active","qos_enable")%>;
+button_status[4]=<%=uci:get("easyconfig","active","firewall_enable")%>;
+button_status[5]=<%=uci:get("easyconfig","active","wlan_sec_enable")%>;
+alert("john 45 easy_set easy_job_setting[" + parent.easy_job_setting +"]");
+</script>
+<body>
+<form method="post" name="easy_set_info" action="<%=controller%>/easy/easysetapply">
+<input type="hidden" name="easy_set_button_job" value="0" />
+<input type="hidden" name="easy_set_button_mode" value="0" />
+</form>
+</body>
+<script type="text/JavaScript">
+parent.easy_job_setting=0;
+alert("john 45 easy_set");
+function easy_set_option(job, mode)
+{
+//job - 1:Game Engine 2:Power Saving 3:Parental Control 4:Bandwidth MGMT 5:Firewall 6:Wireless Security
+//mode - 0:OFF 1:ON
+alert("john 50 easy_set job[" + job + "] mode[" + mode + "]" );
+	if (button_status[job-1]!=mode)
+	{
+		alert("john 51");
+		parent.easy_job_setting=1;
+		document.easy_set_info.easy_set_button_job.value=job;
+		document.easy_set_info.easy_set_button_mode.value=mode;
+		document.easy_set_info.submit();
+	}
+}
+</script>
+</html>

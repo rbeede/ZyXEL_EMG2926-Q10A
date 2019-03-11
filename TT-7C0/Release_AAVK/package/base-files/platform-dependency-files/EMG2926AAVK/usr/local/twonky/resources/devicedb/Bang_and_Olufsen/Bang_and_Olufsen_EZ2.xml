@@ -1,0 +1,25 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Bang &amp; Olufsen EZ2</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>BeoSound Essence</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<ExtraProtocolInfo>
+			http-get:*:audio/x-flac:*
+		</ExtraProtocolInfo>
+	</Adaptations>
+	<DeviceQuirks>
+		<!-- Next and set next confuse the device -->
+		<Quirk>BROKEN_NEXT</Quirk>
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<!-- Events are unreliable, so poll state -->
+		<Quirk>POLL_AVT_STATE</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,43 @@
+[ ifup = "$ACTION" ] && {
+
+	/sbin/configure_qos wan_cos_setup
+	
+	uci_toggle_state network "$INTERFACE" up 1
+	uci_toggle_state network "$INTERFACE" connect_time $(sed -ne 's![^0-9].*$!!p' /proc/uptime)
+	[ -n "$DEVICE" ] && {
+		uci_toggle_state network "$INTERFACE" device "$(uci -q get network.$INTERFACE.ifname)"
+		uci_toggle_state network "$INTERFACE" ifname "$DEVICE"
+		
+		local wan_ip
+		local proto
+		local check_connect
+		
+		defaultwan=$(uci get network.general.defaultWan)
+		proto=$(uci_get network $defaultwan proto)
+		
+		if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ]; then		
+			WAN=$proto-$defaultwan
+		else
+			WAN=$(uci_get network $defaultwan ifname)
+		fi
+
+		sleep 2		
+		
+		wan_ip=$(ifconfig $WAN | grep "inet addr" | awk '{print $2}' | awk -F":" '{print $2}')
+		
+		if [ "$wan_ip" != "" ]; then
+		
+			#check_connect=$(ping 8.8.8.8 -c 1 | grep -r "8.8.8.8:" | awk '{print $4}')
+			
+			#if [ "$check_connect" == "8.8.8.8:" ]; then
+				WAN_interface=$(uci_get network $defaultwan ifname)
+				echo "netdev" > /sys/devices/platform/leds-gpio/leds/INTERNET/trigger
+				echo "$WAN_interface" > /sys/devices/platform/leds-gpio/leds/INTERNET/device_name
+				echo "50" > /sys/devices/platform/leds-gpio/leds/INTERNET/interval
+				echo "rx link" > /sys/devices/platform/leds-gpio/leds/INTERNET/mode
+			
+			#fi
+		fi
+		
+	}
+}

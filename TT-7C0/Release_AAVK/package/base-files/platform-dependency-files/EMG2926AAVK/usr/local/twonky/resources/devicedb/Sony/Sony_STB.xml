@@ -1,0 +1,27 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony STB</DisplayName>
+		<HttpRecognition>
+			<HttpText>DST-HD1</HttpText>
+		</HttpRecognition>
+		<BrowseRecognition>
+			<BrowseHttpHeaders>UPnP/1.0 DLNADOC/1.50</BrowseHttpHeaders>
+		</BrowseRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NO_KEYFRAME_SEEK</Quirk>
+	</DeviceQuirks>
+</Client>

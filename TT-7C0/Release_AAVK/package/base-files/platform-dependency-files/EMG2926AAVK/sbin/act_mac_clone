@@ -1,0 +1,50 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+##need to check dependcy with fast-forward
+
+. /etc/functions.sh
+include /lib/config
+
+#config_load network
+#config_get mac_status wan wan_mac_status
+#config_get wan_ifname wan ifname
+
+local mac_status=$(uci_get network wan wan_mac_status)
+local wan_ifname=$(uci_get network wan ifname)
+
+
+##for device boot
+#[ -e "/tmp/default_wan_mac" ] || (echo `ifconfig $wan_ifname | grep 'HWaddr' | awk '{print $5}'` > /tmp/default_wan_mac)
+#################
+
+cur_mac=`ifconfig $wan_ifname | grep 'HWaddr' | awk '{print $5}'` 
+
+if [ "$mac_status" == "0" ] || [ -z "$mac_status" ];then
+
+	default_mac=`cat /tmp/default_wan_mac`
+	if [ $default_mac != $cur_mac ];then
+		ifconfig $wan_ifname down
+		ifconfig $wan_ifname hw ether "$default_mac"
+		ifconfig $wan_ifname up
+		
+	fi
+elif [ "$mac_status" == "1" ];then
+	
+	local clone_ip_mac=$(uci_get network wan wan_clone_ip_mac)
+	if [ $clone_ip_mac != $cur_mac ];then
+		ifconfig $wan_ifname down
+		ifconfig $wan_ifname hw ether "$clone_ip_mac"
+		ifconfig $wan_ifname up
+	fi
+elif [ "$mac_status" == "2" ];then
+
+	local set_mac=$(uci_get network wan wan_set_mac)
+	if [ $set_mac != $cur_mac ];then
+		ifconfig $wan_ifname down	
+		ifconfig $wan_ifname hw ether "$set_mac"
+		ifconfig $wan_ifname up
+	fi
+fi
+
+

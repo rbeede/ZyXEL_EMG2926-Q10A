@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>LinkSys Media Link for Music</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Linksys WML11B</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCERES</Quirk>
+	</DeviceQuirks>
+</Client>

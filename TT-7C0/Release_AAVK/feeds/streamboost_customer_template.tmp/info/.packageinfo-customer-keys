@@ -1,0 +1,18 @@
+Source-Makefile: feeds/streamboost_customer_template/customer-keys/Makefile
+Package: customer-keys
+Submenu: Utilities
+Version: 1-qualcomm-ap135-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Callhome Client Keys
+Maintainer: Earl Manning <earl.manning@qca.qualcomm.com>
+Source: 
+Type: ipkg-prebuilt
+Description: SSL keys and certificates for a specific customer
+Earl Manning <earl.manning@qca.qualcomm.com>
+@@
+
+

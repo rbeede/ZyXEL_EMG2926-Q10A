@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/cape/Makefile
+Package: cape
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Class Arbiter/Policy Engine
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: cape-.tar.gz
+Type: ipkg
+Description: CAPE chooses a policy for a given flow, given classification tags.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_cape
+	config cape_USE_CUSTOM_VERSION
+		depends on PACKAGE_cape
+		bool "Use custom package version"
+		default n
+	config cape_CUSTOM_VERSION
+		depends on cape_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_cape
+	config cape_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_cape
+		bool "Use custom source directory"
+		default n
+	config cape_CUSTOM_SOURCE_DIR
+		depends on cape_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

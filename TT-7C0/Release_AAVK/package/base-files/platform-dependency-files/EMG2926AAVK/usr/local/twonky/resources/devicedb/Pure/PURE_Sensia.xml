@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>PURE Sensia</DisplayName>
+		<HttpRecognition>
+			<HttpText>PURE Sensia D3R</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG640x480</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG640x480</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+</Client>

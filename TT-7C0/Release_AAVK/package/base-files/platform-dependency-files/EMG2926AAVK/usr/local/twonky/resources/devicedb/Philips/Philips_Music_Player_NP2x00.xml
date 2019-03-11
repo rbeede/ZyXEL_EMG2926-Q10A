@@ -1,0 +1,29 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips Music Player NP2x00</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>NP2x00</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG42x42</Target>
+			<Target>JPEG320x240</Target>
+			<Target>JPEG640x480</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG320x320</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>PHILIPSSEARCH</Quirk>
+		<Quirk>NOARTISTROLECOMPOSER</Quirk>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

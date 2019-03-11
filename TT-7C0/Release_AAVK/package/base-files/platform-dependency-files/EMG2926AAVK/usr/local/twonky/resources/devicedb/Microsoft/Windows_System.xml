@@ -1,0 +1,25 @@
+<Client>
+	<DeviceId>
+		<!-- This entry is used for Win7 and Win8 system discovery -->
+		<DisplayName>Windows 7/8</DisplayName>
+		<HttpRecognition>
+			<HttpText>DAFUPnP</HttpText>
+			<HttpText>FDSSDP</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC3</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-win7.xml</DescriptionFile>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+		<Quirk>UNLIMITED</Quirk>
+		<Quirk>FILTER_BAD_CHARS</Quirk>
+	</DeviceQuirks>
+</Client>

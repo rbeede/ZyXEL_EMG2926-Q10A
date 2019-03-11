@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/flowmark/Makefile
+Package: flowmark
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2-core +libnetfilter-conntrack +libpthread
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: StreamBoost to Conntrack interface
+Maintainer: Nic Costa <ncosta@qca.qualcomm.com>
+Source: flowmark-.tar.gz
+Type: ipkg
+Description: Flowmark receives a 5-tuple and a flow ID and marks the appropriate conntrack entry with the flow ID.
+Nic Costa <ncosta@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flowmark
+	config flowmark_USE_CUSTOM_VERSION
+		depends on PACKAGE_flowmark
+		bool "Use custom package version"
+		default n
+	config flowmark_CUSTOM_VERSION
+		depends on flowmark_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flowmark
+	config flowmark_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flowmark
+		bool "Use custom source directory"
+		default n
+	config flowmark_CUSTOM_SOURCE_DIR
+		depends on flowmark_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

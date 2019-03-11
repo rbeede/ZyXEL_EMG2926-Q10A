@@ -1,0 +1,13 @@
+<view name='flat' path='flat.view'>
+	<navtree>
+		<container id='music'>
+			<link id='music/all' />
+		</container>
+		<container id='picture' >
+			<link id='picture/all' />	
+		</container>
+		<container id='video' >
+			<link id='video/all' />
+		</container>
+	</navtree>
+</view>

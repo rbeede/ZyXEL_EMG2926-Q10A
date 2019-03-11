@@ -1,0 +1,24 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Lacie LaCinema HD</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>LaCinema_HD</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-wd-live.xml</DescriptionFile>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>TV4IDS</Quirk>
+	</DeviceQuirks>
+</Client>

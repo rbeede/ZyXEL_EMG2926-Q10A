@@ -1,0 +1,1702 @@
+c<!DOCTYPE>
+<html>
+<head>
+<title>NMC Web API Testpage</title>
+
+
+<script type="text/javascript">
+// util get datat from backend
+var currentServer = "";				// header server list
+var serverFirstItemOnPage = 0;		// first item on the page
+var serverItemCount = 0;			// total number of items
+var serverItemsOnPage = 25;			// items on the page
+var defaultItemsOnPage = 25;		//    ... default 25 items
+var musicItemsOnPage = 7;			//    ... music 7 items
+var photoItemsOnPage = 9;			//    ... photo 9 items
+var videoItemsOnPage = 7;			//    ... video 7 items
+var mediaItemsOnPage = false;
+var mediaItem = "";
+var urlHistory = new Array();		// url history server list
+var titleHistory = new Array();		// title history server list
+
+var currentRenderer = "";			// header renderer list
+var currentRendererBookmark = "";	// bookmark of renderer
+var currentRendererItem = "";		// selected item bookmark in renderer queue
+var currentRendererItemTitle = "";	// selected item title in renderer queue
+var currentRendererItemUrl = "";	// selected item url in renderer queue
+var currentRendererItemIndex = -1;	// selected item index in renderer queue
+
+// upload
+var uploadServer = "";
+var uploadServerName = "";
+var uploadTimer;
+
+// DTCP Move
+var serverVersion = "";				// show dctp server, if version is 6.0
+var dtcpServer = "";
+var dtcpServerName;
+var dtcpLocalServer = "";			// true or false
+var dtcpItem = "";
+var dtcpItemTitle;
+var dtcpTimer;
+var traverseServer = "";
+var traverseServerName;
+var traverseLocalServer = "";		// true or false
+var traverseServerVersion = "";		// DTCP Move: with server version 6.0
+var traverseIsDTCPCapable = "";		// DTCP Move: if server is DTCP capable
+var dtcpNMCVersion = "";			// navigates to different image locations
+
+var statusTimer, statusTimerPlay, detailTimer, statusTimerEvents;
+
+var eventIndex = 0;
+
+var jsonString = "";
+var detailIsVisible = false;
+
+
+
+function httpGet(url) 
+{
+	var req;
+	req = false;
+	// branch for native XMLHttpRequest object
+	if(window.XMLHttpRequest) {
+		try {
+			req = new XMLHttpRequest();
+		} catch(e) {
+			req = false;
+		}
+		// branch for IE/Windows ActiveX version
+	} 
+	else if(window.ActiveXObject) {
+		try {
+			req = new ActiveXObject("Msxml2.XMLHTTP");
+		} catch(e) {
+			try {
+				req = new ActiveXObject("Microsoft.XMLHTTP");
+			} catch(e) {
+				req = false;
+			}
+		}
+	}
+	if(req) {
+		req.open("GET", url, false);
+		try {
+			req.send("");
+		} catch(e) {
+			req = false;
+		}
+		return req.responseText;
+	}
+	return "";
+}
+function httpPost(url) 
+{
+// not implemented
+	return "";
+}
+
+// l = item, p = property key
+function checkItemProperty(l, p) {
+	var prop = p.split(".");
+	var n = "";
+	for (var key in l) { 
+		if (key == prop[0]) {
+			if (prop.length == 1) return true;
+			var pnew = prop[1];
+			for (var i=2;i<prop.length;i++) {
+				pnew = pnew+"."+prop[i];
+			}
+			return checkItemProperty(l[key], pnew);
+		}
+	}
+	return false;
+}
+
+
+// ------------- list buttons ----------------
+function buttonRendererBack() {
+	currentRenderer = "";
+	currentRendererBookmark = "";
+	currentRendererUrl = "";
+	// parameter: url, title, refresh renderer list
+	rendererlist("/nmc/rss/renderer", "");
+}
+function buttonServerBack() {
+	var i = urlHistory.length;
+	if (i < 2) {
+		serverlist("/nmc/rss/server", "", "");
+		return;
+	}
+	serverFirstItemOnPage = 0;
+	serverItemsOnPage = defaultItemsOnPage;
+	var url = urlHistory[i-2];
+	var title = titleHistory[i-2];
+	urlHistory.pop();
+	titleHistory.pop();
+	urlHistory.pop();
+	titleHistory.pop();
+	serverlist(url, escape(title));
+}
+function buttonServerHome() {
+	var historyLength = titleHistory.length;
+	for (var i=0; i < historyLength; i++) {
+		urlHistory.pop();
+		titleHistory.pop();		
+	}
+	serverlist("/nmc/rss/server", "", "");
+}
+function buttonServerPrev() {
+	if (serverFirstItemOnPage+1 < serverItemsOnPage) return;
+	serverFirstItemOnPage = serverFirstItemOnPage - serverItemsOnPage+1;
+	var i = urlHistory.length;
+	var url = urlHistory[i-1];
+	var title = titleHistory[i-1];
+	serverlist(url, escape(title));
+}
+function buttonServerNext() {
+	serverFirstItemOnPage = serverFirstItemOnPage + serverItemsOnPage-1;
+	var i = urlHistory.length;
+	var url = urlHistory[i-1];
+	var title = titleHistory[i-1];
+	serverlist(url, escape(title));
+}
+function buttonServerFirstPage() {
+	serverFirstItemOnPage = 0;
+	var i = urlHistory.length;
+	var url = urlHistory[i-1];
+	var title = titleHistory[i-1];
+	serverlist(url, escape(title));
+}
+function buttonServerLastPage() {
+	serverFirstItemOnPage = (serverItemCount - (serverItemCount % (serverItemsOnPage-1)));
+	if (serverFirstItemOnPage < 0) serverFirstItemOnPage = 0;
+	if (serverFirstItemOnPage >= (serverItemCount-1)) serverFirstItemOnPage = serverFirstItemOnPage - (serverItemsOnPage-1);
+	var i = urlHistory.length;
+	var url = urlHistory[i-1];
+	var title = titleHistory[i-1];
+	serverlist(url, escape(title));
+}
+function setPageButtons() {
+	// enable page buttons
+	// enable/disable prev button and first page button
+	var b = document.getElementById("prevButton");
+	var b1 = document.getElementById("firstPageButton");	
+	if (serverFirstItemOnPage == 0) {
+		b.disabled = true;
+		b1.disabled = true;
+	} else {
+		b.disabled = false;
+		b1.disabled = false;
+	}
+	// enable/disable next button
+	b = document.getElementById("nextButton");
+	if (serverFirstItemOnPage + serverItemsOnPage < serverItemCount) {
+		b.disabled = false;
+	} else {
+		b.disabled = true;
+	}
+	// enable/disable last button
+	var b = document.getElementById("lastPageButton");
+	if (serverItemCount - serverFirstItemOnPage > serverItemsOnPage) {
+		b.disabled = false;
+	} else {
+		b.disabled = true;
+	}
+}
+
+// ----------------  server and renderer list -----------------
+function serverlist(url, etitle, bookmark)
+{
+	var title = unescape(etitle);
+	// call the NMC
+	var r=httpGet(url+"?start="+serverFirstItemOnPage+"&count="+serverItemsOnPage+"&classified=1&fmt=json");
+	if (!r) {
+		alert("Server list: "+r);
+		return;
+	}
+
+	var l=eval('(' + r + ')');
+	if (r.length > 4) {
+		jsonString = l;
+		if (detailIsVisible) buildDetaillist(jsonString);
+	}
+
+	// add item to the renderer queue, if the renderer tab is currently visible
+	var e = document.getElementById("rendererlist");
+	if (checkItemProperty(l, "upnp:class")) {
+		if (l["upnp:class"].indexOf("item") > 0) {
+			if (e.style.visibility != "hidden") {
+				// get item count and add item at the end of the renderer queue
+				r = httpGet("/nmc/rpc/can_play?renderer="+currentRendererBookmark+"&item="+bookmark);
+				//alert(r);
+				if (r == '1') {
+					alert("'"+replaceSpecialChars(currentRenderer)+"' doesn't know the MIME type.");
+					return;
+				}
+				var itemCount = rendererItemCount(currentRendererUrl);
+				var r1 = httpGet("/nmc/rpc/add_bookmark?renderer="+currentRendererBookmark+"&item="+bookmark+"&index="+itemCount);
+				rendererlist(currentRendererUrl, currentRenderer);
+			}
+			e = document.getElementById("details");
+			if (e.style.visibility != "hidden") traverseJsonItem(url);
+			return;
+		}
+	}
+	// check for items and set the max number of items on the page
+	mediaItemsOnPage = false;
+	mediaItem = "";
+	serverItemCount = 0;
+	serverItemsOnPage = defaultItemsOnPage;			// default
+	if (!l.item) {
+		serverHead(url, title);
+	    return;
+	}
+	var itemCountStr = l.description;		// number of items
+	serverItemCount = parseInt(itemCountStr.substring(0, itemCountStr.indexOf(" ")));
+	var pageCountStr = l.returneditems;		// number of returned items
+	var serverReturnedItems = parseInt(pageCountStr.substring(0, pageCountStr.indexOf(" ")));
+	// get the item class
+	var upnpClass = checkItemProperty(l.item[0], "meta.upnp:class");
+	if (upnpClass) {
+		// audio items
+		if (l.item[0].meta['upnp:class'].indexOf("audioItem") >= 0) {
+			serverItemsOnPage = musicItemsOnPage;	// audio items 
+			mediaItemsOnPage = true;
+			mediaItem = "music";
+			if (serverReturnedItems > serverItemsOnPage) serverReturnedItems = musicItemsOnPage;
+		}
+		// photo items
+		if (l.item[0].meta['upnp:class'].indexOf("imageItem") >= 0) {
+			serverItemsOnPage = photoItemsOnPage;	// photo items 
+			mediaItemsOnPage = true;
+			mediaItem = "photo";
+			if (serverReturnedItems > serverItemsOnPage) serverReturnedItems = photoItemsOnPage;
+		}
+		// video items
+		if (l.item[0].meta['upnp:class'].indexOf("videoItem") >= 0) {
+			serverItemsOnPage = musicItemsOnPage;	// video items 
+			mediaItemsOnPage = true;
+			mediaItem = "video";
+			if (serverReturnedItems > serverItemsOnPage) serverReturnedItems = videoItemsOnPage;
+		}
+	}
+	if (serverReturnedItems < 0) serverReturnedItems = serverItemsOnPage+serverReturnedItems;
+	// save current url (for back-button)
+	var i = urlHistory.length;
+	if (urlHistory[i-1] != url) {
+		urlHistory[i] = url;
+		titleHistory[i] = title;
+	}
+	serverHead(url, title);
+	// clear table
+	var itemlist = document.getElementById("serveritemlist");
+	itemlist.innerHTML="<table id=\"serveritemtab\" style=\"margin:10px\"></table>";
+	// items
+	var list = document.getElementById("serveritemtab");
+	var cell;
+	var s_index = url.indexOf("/server");
+	for(var i=0;i<serverReturnedItems;i++) {
+		var row = list.insertRow(i);
+		cell = row.insertCell(0);
+		var itemPropertyAlbumArtUri = checkItemProperty(l.item[i], "meta.upnp:albumArtURI");
+		var itemPropertyThumbNailUri = checkItemProperty(l.item[i], "meta.pv:thumbnailURI");
+		if (itemPropertyAlbumArtUri) cell.innerHTML = "<img src='"+l.item[i].meta['upnp:albumArtURI'].value+"' height='80' width='80' >";
+		if (itemPropertyThumbNailUri) cell.innerHTML = "<img src='"+l.item[i].meta['pv:thumbnailURI']+"' height='60' width='80' >";
+		if (mediaItemsOnPage) 
+			if (!itemPropertyThumbNailUri && !itemPropertyAlbumArtUri) {
+				if (mediaItem == "music") cell.innerHTML = "<div style='height=80px; width=80px'></div>";
+				if (mediaItem == "photo") cell.innerHTML = "<div style='height=60px; width=80px'></div>";
+				if (mediaItem == "video") cell.innerHTML = "<div style='height=80px; width=80px'></div>";
+			}
+		var cellIndex = 1;
+		if (s_index + 7 >= url.length) {
+			// server - cell(0) = DTCP move
+			serverVersion = l.item[i].server.modelNumber.substring(0,3);
+			if (parseFloat(serverVersion) >= 6.0) {
+				var url1 = l.item[i].enclosure.url;
+				url2 = url1.substring(url1.indexOf("/RB")+3);
+				// currently only support MOVE-UPLOAD (from local server to other server)
+				if (isDTCPCapable(url1) && (l.item[i].server.isLocalDevice.toLowerCase() != "true")) {
+					if (dtcpServer == unescape(url2)) {
+						// color the selected DTCP server
+						cell.innerHTML = "<a style='color:#FF8040' href='javascript:selectDtcpServer(\""+url1+"\","+i+",\""+l.item[i].server.isLocalDevice+"\",\""+escape(l.item[i].title)+"\")' id='href"+i+"'>M</a>";
+					} else {
+						cell.innerHTML = "<a style='color:#738CB5' href='javascript:selectDtcpServer(\""+url1+"\","+i+",\""+l.item[i].server.isLocalDevice+"\",\""+escape(l.item[i].title)+"\")' id='href"+i+"'>M</a>";
+					}
+				}
+			}
+			cell = row.insertCell(1);
+			cellIndex = 2;
+			// server - cell(1)=Upload
+			cell.innerHTML = "<a style='color:#738CB5' href='javascript:uploadFile(\""+l.item[i].enclosure.url+"\",\""+escape(l.item[i].title)+"\")' id='href_"+i+"'>U</a>";
+			cell = row.insertCell(cellIndex);
+			cell.innerHTML = cell.innerHTML+"<a href='javascript:traverseThisServer(\""+l.item[i].enclosure.url+"\",\""+escape(l.item[i].title)+"\",\""+l.item[i].bookmark+"\",\""+l.item[i].server.isLocalDevice+"\",\""+serverVersion+"\")'>"+l.item[i].title+"</a>";
+		} else {
+			// server items
+			if ((parseFloat(traverseServerVersion) >= 6.0) && (traverseIsDTCPCapable)) {
+				if (mediaItemsOnPage) {
+					if (dtcpServer != "") {
+						// move content from local server to an external server OR 
+						// move content from an external server to the local server
+						if (((dtcpLocalServer=="true") && (traverseLocalServer=="false")) || ((dtcpLocalServer=="false") && (traverseLocalServer=="true"))) {
+							// item - cell(0)=DTCP move content
+							cell.innerHTML = "<a style='color:#738CB5' href='javascript:selectDtcpItem(\""+l.item[i].enclosure.url+"\","+i+",\""+escape(l.item[i].title)+"\")' id='hrefitem"+i+"'>M</a>";
+							cell = row.insertCell(1);
+						}
+					}
+				}
+			}
+			cell.innerHTML = "<a href='javascript:serverlist(\""+l.item[i].enclosure.url+"\",\""+escape(l.item[i].title)+"\",\""+l.item[i].bookmark+"\")'>"+l.item[i].title+"</a>";
+		}
+		if (mediaItem == "music") {
+			// the item is a song, show the duration
+			cell.innerHTML = cell.innerHTML + " <a style='color:#606; font-size:9px'> (" + l.item[i].meta['pv:duration'] + ")</a>";
+		}
+		if (s_index + 7 >= url.length) {
+			// the items are the server detected by the NMC, show the server model name and number
+			cell = row.insertCell(cellIndex+1);
+			cell.innerHTML = cell.innerHTML + l.item[i].server.modelName;
+			cell = row.insertCell(cellIndex+2);
+			cell.innerHTML = cell.innerHTML + l.item[i].server.modelNumber;
+		}
+	}
+	setPageButtons();
+}
+
+
+// --------------- Upload file -------------------------
+// select upload server
+function uploadFile(url, title)
+{
+	// disable serverlist
+	e = document.getElementById("serverlist");
+	e.style.visibility = "hidden";
+	// enable upload
+	e = document.getElementById("uploadDiv");
+	e.style.visibility = "visible";
+	var e = document.getElementById("uploadScene1");
+	e.style.visibility = "visible";
+	var e = document.getElementById("uploadScene2");
+	e.style.visibility = "hidden";
+	uploadServer = url.substring(url.indexOf("/RB")+3);
+	uploadServerName = title;
+}
+function buttonUpload()
+{
+	e = document.getElementById("uploadScene1");
+	e.style.visibility = "hidden";	
+	var e = document.getElementById("uploadScene2");
+	e.style.visibility = "visible";
+
+	var e = document.getElementById("uploadFile");
+	if (e.value == "") {
+		alert("No upload file selected.");
+		buttonCancelUpload1();
+	} else {
+		// start timer to refresh status page and upload content		
+		startUploadTimer(1000);
+		var r = httpPost("/nmc/rpc/upload?operation=start&server="+uploadServer+"&file="+e.value);
+		if (r) {
+			alert("Upload error: "+r);
+		}		
+	}
+}
+// cancel file selection for upload
+function buttonCancelUpload1() {
+	uploadServer = "";
+	// refresh page
+	changeToServerList();
+}
+// cancel processing upload
+function buttonCancelUpload2() {
+	stopUploadTimer();
+	var r = httpGet("/nmc/rpc/upload?operation=stop");
+	if (r) {
+		alert("Cancel upload error: "+r);
+	}		
+	// clear upload server
+	uploadServer = "";
+	// refresh page
+	changeToServerList();
+}
+function startUploadTimer(etime) {
+	uploadTimer = setInterval("checkUploadTimer()", etime);
+	e = document.getElementById("uploadTable");
+	// delete all rows from table
+	for(var i=e.rows.length;i>0;i--) {
+		e.deleteRow(i-1);
+	}
+	// file
+	var row = e.insertRow(0);
+	var cell = row.insertCell(0);
+	cell.innerHTML="upload:";
+	cell = row.insertCell(1);
+	var ef = document.getElementById("uploadFile");
+	cell.innerHTML=ef.value;
+	// empty
+	var row = e.insertRow(1);
+	var cell = row.insertCell(0);
+	cell.innerHTML="&nbsp;";
+	cell = row.insertCell(1);
+	cell.innerHTML="&nbsp;";
+	// to server
+	row = e.insertRow(2);
+	cell = row.insertCell(0);
+	cell.innerHTML="to:";
+	cell = row.insertCell(1);
+	cell.innerHTML=uploadServerName;
+	row = e.insertRow(3);
+	cell = row.insertCell(0);
+	cell.innerHTML="";
+	cell = row.insertCell(1);
+	cell.innerHTML=uploadServer;
+}
+function stopUploadTimer() {
+	clearInterval(uploadTimer);
+}
+function checkUploadTimer() {
+	var uploadCompleted = false;
+	// get dtcp move status
+	var r = httpGet("/nmc/rpc/upload?operation=getstatus");
+	if (r.length > 0) {
+		var a = r.split("/");
+		if (a.length == 2)		
+			if (a[0] == a[1]) uploadCompleted = true;
+	}
+	// if upload completed, stop timer
+	if (uploadCompleted) {
+		stopUploadTimer();
+		// clear selection
+		uploadServer = "";
+		// refresh page
+		changeToServerList();
+	} else {
+		// update status
+		e = document.getElementById("uploadStatus");
+		e.innerHTML = "Status: "+r;
+	}
+}
+
+// --------------- DTCP Move -------------------------
+
+function isDTCPCapable(url) {
+	var url2 = url.substring(url.indexOf("/RB")+3);
+	isC = httpGet("/nmc/rpc/dtcp_get_capabilities?src="+url2);
+	var i1 = isC.indexOf("dtcp-copy");
+	var i2 = isC.indexOf("dtcp-move");
+	if ((i1 >= 0) || (i2 >= 0)) return true;
+	return false;
+}
+function traverseThisServer(url, title, bookmark, localDevice, serverVersion) {
+	traverseServer = url.substring(url.indexOf("/RB")+3);
+	traverseServerName = title;
+	traverseLocalServer = localDevice;
+	traverseServerVersion = serverVersion;
+	traverseIsDTCPCapable = isDTCPCapable(url);
+	serverlist(url, title, bookmark);
+}
+
+function selectDtcpServer(url, rowIndex, localDevice, title)
+{
+	// deselect server
+	var ref = document.getElementById("href"+rowIndex);
+	var c = ref.style.color;
+	if (ref.style.color.toUpperCase() == "#FF8040") {
+		ref.style.color = "#738CB5";
+		dtcpServer = "";
+		return;
+	}
+	// select server
+	var list = document.getElementById("serveritemtab");
+	// set all cells to the initial text color
+	for (var i = 0; i<list.rows.length; i++) {
+		var ref = document.getElementById("href"+i);
+		if (ref != null)
+			ref.style.color = "#738CB5";
+	}
+	// color the selected server
+	var ref = document.getElementById("href"+rowIndex);
+	ref.style.color = "#FF8040";
+	dtcpServer = url.substring(url.indexOf("/RB")+3);
+	dtcpServerName = title;
+	dtcpLocalServer = localDevice;
+	if (localDevice.toLowerCase() == "true") {
+		alert("Select an item to move it to the local server.");
+	} else {
+		alert("Select an item from the local server to move it to this server.");
+	}
+}
+// start DTCP-Move
+function selectDtcpItem(url, rowIndex, title)
+{
+	dtcpItem = url.substring(url.indexOf("/IB")+3);
+	dtcpItemTitle = title;
+	if ((dtcpItem != "") && (dtcpServer != "")) {
+		// disable serverlist
+		e = document.getElementById("serverlist");
+		e.style.visibility = "hidden";
+		// enable dtcp move status
+		e = document.getElementById("dtcpMove");
+		e.style.visibility = "visible";
+		// start timer to refresh status page and move content		
+		startDtcpTimer(1000);
+		var r = httpGet("/nmc/rpc/dtcp_content_upload?operation=start&dst="+dtcpServer+"&src="+dtcpItem);
+		if (r) {
+			alert("Start DTCP-Move error: "+r);
+		}		
+	}
+}
+function refreshServerItemPage() {
+	var i = urlHistory.length;
+	var url = urlHistory[serverFirstItemOnPage];
+	var title = titleHistory[serverFirstItemOnPage];
+	serverlist(url, escape(title));
+}
+// Cancel DTCP Move
+function dtcpCancelMove() {
+	stopDtcpTimer();
+	var r = httpGet("/nmc/rpc/dtcp_content_upload?operation=stop");
+	if (r) {
+		alert("Cancel DTCP-Move error: "+r);
+	}		
+	// clear server and item selection
+	dtcpServer = "";
+	dtcpItem = "";
+	// refresh page
+	changeToServerList();
+	refreshServerItemPage();
+}
+function changeToServerList() {
+	// disable upload status
+	e = document.getElementById("uploadDiv");
+	e.style.visibility = "hidden";
+	var e = document.getElementById("uploadScene1");
+	e.style.visibility = "hidden";
+	var e = document.getElementById("uploadScene2");
+	e.style.visibility = "hidden";
+	// disable dtcp move status
+	e = document.getElementById("dtcpMove");
+	e.style.visibility = "hidden";
+	// serverlist
+	e = document.getElementById("serverlist");
+	e.style.visibility = "visible";
+}
+function startDtcpTimer(etime) {
+	dtcpTimer = setInterval("checkDtcpTimer()", etime);
+	e = document.getElementById("dtcpTable");
+	// delete all rows from table
+	for(var i=e.rows.length;i>0;i--) {
+		e.deleteRow(i-1);
+	}
+
+	var toServer=traverseServerName;
+	var fromServer=dtcpServerName;
+	if (traverseLocalServer == "true") {
+		toServer=dtcpServerName;
+		fromServer=traverseServerName;
+	}
+	// from server
+	var row = e.insertRow(0);
+	var cell = row.insertCell(0);
+	cell.innerHTML="from:";
+	cell = row.insertCell(1);
+	cell.innerHTML=fromServer;
+	row = e.insertRow(1);
+	cell = row.insertCell(0);
+	cell.innerHTML="";
+	cell = row.insertCell(1);
+	cell.innerHTML=dtcpServer;
+	// to server
+	row = e.insertRow(2);
+	cell = row.insertCell(0);
+	cell.innerHTML="to:";
+	cell = row.insertCell(1);
+	cell.innerHTML=toServer;
+	row = e.insertRow(3);
+	cell = row.insertCell(0);
+	cell.innerHTML="";
+	cell = row.insertCell(1);
+	cell.innerHTML=traverseServer;
+	// title
+	row = e.insertRow(4);
+	cell = row.insertCell(0);
+	cell.innerHTML="title:";
+	cell = row.insertCell(1);
+	cell.innerHTML=dtcpItemTitle;
+	row = e.insertRow(5);
+	cell = row.insertCell(0);
+	cell.innerHTML="";
+	cell = row.insertCell(1);
+	cell.innerHTML=dtcpItem;
+}
+function stopDtcpTimer() {
+	clearInterval(dtcpTimer);
+}
+function checkDtcpTimer() {
+	var moveCompleted = false;
+	// get dtcp move status
+	var r = httpGet("/nmc/rpc/dtcp_content_upload?operation=getstatus");
+	if (r.length > 0) {
+		var a = r.split("/");
+		if (a.length == 3) 
+			if (a[2] == "0") moveCompleted = true;
+			if ((a[2] != "0") && (a[2] != "1")) {
+				alert("Error during DTCP-Transfer: "+r);
+				moveCompleted = true;
+			}
+	}
+	// if DTCP move completed, stop timer
+	if (moveCompleted) {
+		stopDtcpTimer();
+		// clear selection
+		dtcpServer = "";
+		dtcpItem = "";
+		// refresh page
+		changeToServerList();
+		refreshServerItemPage();
+	} else {
+		// update status
+		e = document.getElementById("dtcpStatus");
+		e.innerHTML = "Status: "+r;
+	}
+}
+
+
+
+
+function rendererlist(url, etitle)
+{
+	var title = unescape(etitle);
+	var indexRB = url.indexOf("/RB");
+	var indexIB = url.indexOf("/IB");
+	// set selected renderer as current renderer
+	if ((indexRB > 0) && (indexIB == -1)) {
+		currentRenderer = etitle;
+		currentRendererBookmark = url.substring(indexRB+3);
+		currentRendererUrl = url;
+	}
+	// call the NMC
+	var url1 = url;
+	if ((indexRB > 0) && (indexIB > 0)) url1 = currentRendererUrl;
+	var r=httpGet(url1+"?fmt=json");
+	if (!r) {
+		alert("Renderer list: "+r);
+		return;
+	}
+
+	var l=eval('(' + r + ')');
+	// clear renderer list
+	var itemlist = document.getElementById("rendereritemlist");
+	itemlist.innerHTML="<table id=\"rendereritemtab\" style=\"margin:10px\"></table>";
+	// check for items
+	if (!l.item) {
+		rendererHead(indexRB, indexIB);
+		return;
+	}
+	// items
+	var list = document.getElementById("rendereritemtab");
+	var cell;
+	// set default renderer
+	if ((indexRB == -1) && (indexIB == -1) && (l.item.length > 0)) {
+		currentRendererBookmark = l.item[0].bookmark;
+		currentRenderer = l.item[0].title;
+		currentRendererUrl = l.item[0].enclosure.url;
+	}
+	for(var j=0;j<l.item.length;j++) {
+	    if (typeof l.item[j] == 'object') {
+		    var row = list.insertRow(j);
+		    cell = row.insertCell(0);
+		    if ((indexRB > 0) && (indexIB > 0)) {
+			    // mark the selected item
+			    if (l.item[j].title == title) {
+				    cell.innerHTML = cell.innerHTML + "O";
+				    currentRendererItem = l.item[j].bookmark;
+				    currentRendererItemTitle = l.item[j].title;
+				    currentRendererItemUrl = l.item[j].enclosure.url;
+				    currentRendererItemIndex = j;
+				    //var r = httpGet("/nmc/rpc/set_playindex?renderer="+currentRendererBookmark+"&item="+currentRendererItemIndex);
+			    } else cell.innerHTML = cell.innerHTML + "&nbsp;";
+			    cell = row.insertCell(1);
+			    cell.innerHTML = "<a href='javascript:rendererlist(\""+l.item[j].enclosure.url+"\",\""+escape(l.item[j].title)+"\")'>"+l.item[j].title+"</a>";
+		    } else {
+			    cell.innerHTML = cell.innerHTML + "&nbsp;";
+			    cell = row.insertCell(1);
+			    cell.innerHTML = "<a href='javascript:rendererlist(\""+l.item[j].enclosure.url+"\",\""+escape(l.item[j].title)+"\")'>"+l.item[j].title+"</a>";
+		    }
+		    // only for the renderer list
+		    if (url.indexOf("/renderer") + 9 >= url.length) {
+			    cell = row.insertCell(2);
+			    cell.innerHTML = cell.innerHTML + l.item[j].renderer.modelName;
+		    }
+		}
+	}
+	rendererHead(indexRB, indexIB);
+}
+
+
+// build detail list
+function buildDetaillist(l) {
+	var d = document.getElementById("detaillist");
+	d.innerHTML="<table id=\"detailtab\" style=\"margin:0px\" ></table>";
+	traverseJsonObject(l, 0);
+}
+function traverseJsonObject(l, textColorIndex) {
+    if (typeof l != 'object') return;
+	var textColor = new Array('blue', 'purple', 'green', 'olive', 'lime', 'purple');
+	if (textColorIndex > 4) textColorIndex = 5;
+	var dtab = document.getElementById("detailtab");
+	var i = dtab.rows.length;
+	for (var key in l) { 
+		var row = dtab.insertRow(i);
+		var cell = row.insertCell(0);
+		cell.style.color = textColor[textColorIndex];
+		for (var i=0; i < textColorIndex;i++) {
+			cell.innerHTML = cell.innerHTML + "&nbsp;&nbsp;&nbsp;";	
+		}
+		cell.innerHTML = cell.innerHTML + key;
+		cell = row.insertCell(1);
+		var value = l[key];
+		var mt = "";
+		if (!(typeof value === 'object')) 		
+			if (value.indexOf("http:") >= 0) {
+				if (value.substring(value.length-3) == 'mp3') mt = "p";
+				if (value.substring(value.length-3) == 'wmv') mt = "p";
+				if (key == 'value' && mt == 'p')
+					cell.innerHTML = cell.innerHTML + "<a href=\""+l[key]+"\">"+l[key]+"</a>";
+				else
+					cell.innerHTML = cell.innerHTML + "<a href=\""+l[key]+"\" target=\"_blank\">"+l[key]+"</a>";
+			} else
+				cell.innerHTML = cell.innerHTML + l[key];
+		traverseJsonObject(l[key], textColorIndex+1)
+		dtab = document.getElementById("detailtab");
+		i = dtab.rows.length;
+		var row = dtab.insertRow(i);
+	}
+}
+function traverseJsonItem(url) {
+	var d = document.getElementById("detaillist");
+	d.innerHTML="<table id=\"detailtab\" style=\"margin:0px\" ></table>";
+	var surl = urlHistory[urlHistory.length-1];
+	var r=httpGet(surl+"?start="+serverFirstItemOnPage+"&count="+serverItemsOnPage+"&classified=1&fmt=json");
+	var l=eval('(' + r + ')');
+	for (var i=0;i<l.item.length-1;i++) {
+		if (l.item[i].enclosure.url == url) 
+			traverseJsonObject(l.item[i], 0);
+	}
+}
+
+// build event list
+function getCurrentTime() {
+	var d = new Date();
+	var h = d.getHours();
+	var m = d.getMinutes();
+	var s = d.getSeconds();
+	var hh = h < 10 ? "0" + h : h;
+	var mm = m < 10 ? "0" + m : m;
+	var ss = s < 10 ? "0" + s : s;
+	return hh+":"+mm+":"+ss;
+}
+function updateEvents() {
+	var etab = document.getElementById("eventtab");
+	var r=httpGet("/nmc/rpc/get_events?eventid="+eventIndex);
+	if (!r) return;
+
+	var aEvents = r.split("\r\n");
+	if (aEvents.length < 1) return;
+	if (aEvents[0] == eventIndex) return;	// if there are no new events, the rpc call returns the event ID
+	for(var j=0; j<aEvents.length-1;j++) {
+		var aEvent = aEvents[j].split(" ");
+		if (aEvent.length > 0) eventIndex = aEvent[0];
+		var row = etab.insertRow(0);
+		var cell = row.insertCell(0);
+		//cell.innerHTML = getCurrentTime(); 
+		for(var i=0; i<aEvent.length;i++) {	
+			cell = row.insertCell(i+1);
+			if (i == 0) cell.innerHTML = "Event "+aEvent[i]+":&nbsp;";
+			if (i == 1) cell.innerHTML = "&nbsp;"+aEvent[i]+"&nbsp;";
+			if (i == 2) {
+				switch (aEvent[i]) {
+				  case "1":
+				    cell.innerHTML = "&nbsp;"+"updated"+"&nbsp;";
+					break;
+				  case "2":
+				  case parseInt("4001",16).toString():
+				    cell.innerHTML = "&nbsp;"+"contact lost"+"&nbsp;";
+					break;
+				  case "4":
+				  case parseInt("4002",16).toString():
+				    cell.innerHTML = "&nbsp;"+"detected"+"&nbsp;";
+					break;
+				  default:
+				    cell.innerHTML = "&nbsp;"+"Code:"+aEvent[i]+"&nbsp;";
+					break;
+				}
+			}
+			if (i == 3) {
+				var ev = aEvent[i].split("=");
+				if (ev.length > 0) cell.innerHTML = ev[1];
+			}
+		}
+	}
+}
+
+function serverHead(url, title) {
+	// head: initial=server list, else current selected server
+	var head = document.getElementById("serverhead");
+	var p = document.getElementById("serverpath");
+	var s = "";
+	if ((url.indexOf("/RB") > 0) && (url.indexOf("/IB") == -1)) {
+		currentServer = title;
+	}
+	if ((url.indexOf("/RB") == -1) && (url.indexOf("/IB") == -1)) {
+		// root
+		head.innerHTML = "Server list";
+	} else {
+		// all other pages
+		head.innerHTML = "Server: "+currentServer;
+		// path
+		if (urlHistory.length > 2) {
+			for (var i=2;i<urlHistory.length;i++) {
+				s = s+"/"+titleHistory[i];
+			}
+		}
+	}
+	p.innerHTML = s;
+}
+
+function rendererHead(indexRB, indexIB) {
+	// head: initial=renderer list, else=current selected renderer
+	var head = document.getElementById("rendererhead");
+	if ((indexRB == -1) && (indexIB == -1)) {
+		// root
+		head.innerHTML = "Renderer list";
+	} else {
+		// all other pages
+		head.innerHTML = "Renderer: "+unescape(currentRenderer);
+	}
+	var chead = document.getElementById("controlhead");
+	chead.innerHTML = "Control "+unescape(currentRenderer);
+}
+function rendererItemCount(url)
+{
+	// call the url
+	var r=httpGet(url+"?fmt=json");
+	var l=eval('(' + r + ')');
+	if (!l.item) {
+		return 0;
+	}
+	return l.item.length;
+}
+
+function getState() {
+	// returns playState|position|duration
+	return httpGet("/nmc/rpc/get_state?renderer="+currentRendererBookmark);
+}
+
+// --------------- timer -------------------------
+// First timer is starting with the website and is running until the status changes from 0 to 1. Then
+// the "play timer" is started and displays the current playing item.
+function startTimer(etime) {
+	statusTimer = setInterval("checkTimer()", etime);
+}
+function stopTimer() {
+	clearInterval(statusTimer);
+	setQueueButtons();
+	startTimerPlay(1000);
+}
+function startTimerPlay(etime) {
+	statusTimerPlay = setInterval("showCurrentItem()", etime);
+}
+function stopTimerPlay() {
+	clearInterval(statusTimerPlay);
+	var p = document.getElementById("playing");	
+	p.innerHTML = "";
+	setQueueButtons();
+	startTimer(2000);
+}
+// The detail list is build if the detail screen is shown. It takes some time to build the detail list. 
+function startTimerDetail(etime) {
+	statusTimerDetail = setTimeout("buildDetaillist(jsonString)", etime);
+}
+// Update the events every 3 seconds.
+function startTimerEvent(etime) {
+	var e = document.getElementById("eventlist");
+	e.innerHTML="<table id=\"eventtab\" style=\"margin:0px\" ></table>";
+	statusTimerEvents = setInterval("updateEvents()", etime);
+}
+
+function checkTimer() {
+	var r = getState();
+	if (r.length > 0) {
+		var a = r.split("|");
+		if (a.length == 3) 
+			if (a[0] == 1) stopTimer();
+	}
+}
+
+function showCurrentItem() {
+	// returns itemIndex|remaining
+	var playing = httpGet("/nmc/rpc/get_playindex?renderer="+currentRendererBookmark);
+	var a = playing.split("|");
+	if (a.length == 2) {
+		var itemIndex = a[0];
+		var remaining = a[1];		// remaining items to play
+		// returns state|position|duration
+		var r=httpGet(currentRendererUrl+"?fmt=json");
+		var l=eval('(' + r + ')');
+		if (l.item) {
+			r = getState();
+			if (r.length > 0) {
+				a = r.split("|");
+				if (a.length == 3) {
+					var p = document.getElementById("playing");	
+					// refresh the display (title, position, duration, remaining items)
+					if (a[0] > 0) p.innerHTML = l.item[itemIndex].title+" "+a[2]+" / "+a[1]+" Item: "+itemIndex+" Remaining items:"+remaining+" Status:"+a[0];	
+					else {
+						if (remaining > 0) {
+							var r = httpGet("/nmc/rpc/play?renderer="+currentRendererBookmark+"&mode=0");
+						} else stopTimerPlay();
+					}
+				}
+			}
+		}
+	}
+}
+function setQueueButtons() {
+	var s = getState();
+	var status = s.split("|");	// state|position|duration
+	if (status.length == 0) return;
+	// status = 1 : renderer is playing
+	if (status[0] == 1) {
+		var button_play = document.getElementById("play");
+		button_play.disabled = true;
+		var button_consume = document.getElementById("consume");
+		button_consume.disabled = true;
+		var button_shuffle = document.getElementById("shuffle");
+		button_shuffle.disabled = true;
+		var button_repeat = document.getElementById("repeat");
+		button_repeat.disabled = true;
+		var button_stop = document.getElementById("stop");
+		button_stop.disabled = false;
+		var button_pause = document.getElementById("pause");
+		button_pause.disabled = false;
+		var button_seek0 = document.getElementById("seek0");
+		button_seek0.disabled = false;
+		var button_seek100 = document.getElementById("seek100");
+		button_seek100.disabled = false;
+	} else {
+		// status <> 1 : renderer is not playing
+		var button_play = document.getElementById("play");
+		button_play.disabled = false;
+		var button_consume = document.getElementById("consume");
+		button_consume.disabled = false;
+		var button_shuffle = document.getElementById("shuffle");
+		button_shuffle.disabled = false;
+		var button_repeat = document.getElementById("repeat");
+		button_repeat.disabled = false;
+		var button_stop = document.getElementById("stop");
+		button_stop.disabled = true;
+		var button_pause = document.getElementById("pause");
+		button_pause.disabled = true;
+		var button_seek0 = document.getElementById("seek0");
+		button_seek0.disabled = true;
+		var button_seek100 = document.getElementById("seek100");
+		button_seek100.disabled = true;
+	}
+}
+
+
+// ---------- control functions --------------------------
+// --- queue control
+function playNormalControl() {
+	var s = getState();
+	var status = s.split("|");	// state|position|duration
+	if (status.length == 0) return;
+	// resume playing if status = 3
+	if (status[0] == 3) {
+		var r = httpGet("/nmc/rpc/pause?renderer="+currentRendererBookmark+"&resume=1");
+	} else {	
+		// start playing
+		var r = httpGet("/nmc/rpc/play?renderer="+currentRendererBookmark+"&mode=0");
+	}
+	if (! callSucceeded(r, true,"Control play")) return; 
+	showVolume();
+	setQueueButtons();
+}
+function playConsumeControl() {
+	var s = getState();
+	var status = s.split("|");	// state|position|duration
+	if (status.length == 0) return;
+	// resume playing if status = 3
+	if (status[0] == 3) {
+		var r = httpGet("/nmc/rpc/pause?renderer="+currentRendererBookmark+"&resume=1");
+	} else {	
+		// start playing
+		var r = httpGet("/nmc/rpc/play?renderer="+currentRendererBookmark+"&mode=0x100");
+	}
+	if (! callSucceeded(r, true,"Control consume")) return; 
+	showVolume();
+	setQueueButtons();
+}
+function playShuffleControl() {
+	var s = getState();
+	var status = s.split("|");	// state|position|duration
+	if (status.length == 0) return;
+	// resume playing if status = 3
+	if (status[0] == 3) {
+		var r = httpGet("/nmc/rpc/pause?renderer="+currentRendererBookmark+"&resume=1");
+	} else {	
+		// start playing
+		var r = httpGet("/nmc/rpc/play?renderer="+currentRendererBookmark+"&mode=1");
+	}
+	if (! callSucceeded(r, true,"Control shuffle")) return; 
+	showVolume();
+	setQueueButtons();
+}
+function playRepeatControl() {
+	var s = getState();
+	var status = s.split("|");	// state|position|duration
+	if (status.length == 0) return;
+	// resume playing if status = 3
+	if (status[0] == 3) {
+		var r = httpGet("/nmc/rpc/pause?renderer="+currentRendererBookmark+"&resume=1");
+	} else {	
+		// start playing
+		var r = httpGet("/nmc/rpc/play?renderer="+currentRendererBookmark+"&mode=0x200");
+	}
+	if (! callSucceeded(r, true,"Control repeat")) return; 
+	showVolume();
+	setQueueButtons();
+}
+function stopControl() {
+	var r = httpGet("/nmc/rpc/stop?renderer="+currentRendererBookmark);
+	if (! callSucceeded(r, true,"Control stop")) return; 
+	showVolume();
+	stopTimerPlay();
+}
+function pauseControl() {
+	var r = httpGet("/nmc/rpc/pause?renderer="+currentRendererBookmark+"&resume=0");
+	if (! callSucceeded(r, true,"Control pause")) return; 
+	showVolume();
+	setQueueButtons();
+}
+function skipBack() {
+	var playing = httpGet("/nmc/rpc/get_playindex?renderer="+currentRendererBookmark);
+	var a = playing.split("|");
+	if (a.length != 2) return;
+	var itemIndex = parseInt(a[0]);       // current item
+	var remaining = parseInt(a[1]);		// remaining items to play
+	if (itemIndex > 0) itemIndex = itemIndex-1;
+	var r = httpGet("/nmc/rpc/set_playindex?renderer="+currentRendererBookmark+"&index="+itemIndex);
+	if (! callSucceeded(r, true,"Control skip back")) return; 
+}
+function skip() {
+	var playing = httpGet("/nmc/rpc/get_playindex?renderer="+currentRendererBookmark);
+	var a = playing.split("|");
+	if (a.length != 2) return;
+	var itemIndex = parseInt(a[0]);     // current item
+	var remaining = parseInt(a[1]);		// remaining items to play
+	if (remaining > 0) itemIndex = itemIndex+1;
+	var r = httpGet("/nmc/rpc/set_playindex?renderer="+currentRendererBookmark+"&index="+itemIndex);
+	if (! callSucceeded(r, true,"Control skip")) return; 
+}
+/*
+function seek0Control() {
+	var r = httpGet("/nmc/rpc/seek_percent?renderer="+currentRendererBookmark+"&seek=0");
+	if (r) {
+		alert("Control seek: "+r);
+		return;
+	}
+	showVolume();
+	setQueueButtons();
+}
+function seek100Control() {
+	var r = httpGet("/nmc/rpc/seek_percent?renderer="+currentRendererBookmark+"&seek=100");
+	if (r) {
+		alert("Control seek: "+r);
+		return;
+	}
+	showVolume();
+	setQueueButtons();
+}
+*/
+function replaceSpecialChars(stringIn) {
+    var str1 = stringIn.replace(/&apos;/g, "'");
+    str1 = str1.replace(/&amp;/g, "&");
+    str1 = str1.replace(/&lt;/g, "<");
+    str1 = str1.replace(/&gt;/g, ">");
+	return str1;
+}
+
+function clearControl() {
+	if (currentRendererBookmark == "") alert("Please select a renderer.");
+	else {
+		alert("Clear "+replaceSpecialChars(currentRenderer)+" queue.");
+		var r = httpGet("/nmc/rpc/clear?renderer="+currentRendererBookmark);
+		if (! callSucceeded(r, true,"Control clear queue")) return; 
+		rendererlist(currentRendererUrl, currentRenderer);
+	}
+}
+
+
+function callSucceeded(response, showError, message) {
+    try {
+		if (!response) return false;
+		if (response.length > 0) {
+			if (response.substring(0,6) == "<HTML>") return false;
+			if (!(response.substring(0,1) == "{")) return true;
+			var r = eval('(' + response + ')');				// transform json item to object
+		} else return true;
+    } catch (e) {
+		return true;
+	}
+	if (! checkItemProperty(r, "success")) return true;
+	
+	if (!r.success) {
+		if (showError) {
+			alert(message + ": " + response);
+		}
+		return false;
+	}
+	return true;
+}
+
+// --- item control
+function deleteItemControl() {
+	if (currentRendererItem == "") alert("Please select an item.");
+	else {
+		r = httpGet("/nmc/rpc/delete_item?renderer="+currentRendererBookmark+"&index="+currentRendererItemIndex);
+		if (! callSucceeded(r, true,"Control delete item")) return; 
+		currentRendererItem = "";
+		currentRendererItemUrl = "";
+		currentRendererItemTitle = "";
+		currentRendererItemIndex = -1;
+		rendererlist(currentRendererUrl, currentRenderer);
+	}
+}
+function moveItemUpControl() {
+	if (currentRendererItem == "") alert("Please select an item.");
+	else {
+		var index = currentRendererItemIndex;
+		if (currentRendererItemIndex > 0) index = currentRendererItemIndex-1;
+		r = httpGet("/nmc/rpc/move_to?renderer="+currentRendererBookmark+"&index="+currentRendererItemIndex+"&toindex="+index);
+		if (! callSucceeded(r, true,"Control move item up")) return; 
+		currentRendererItemIndex = index;
+		rendererlist(currentRendererItemUrl, currentRendererItemTitle);
+	}
+}
+function moveItemDownControl() {
+	if (currentRendererItem == "") alert("Please select an item.");
+	else {
+		var index = currentRendererItemIndex;
+		var itemCount = rendererItemCount(currentRendererUrl);
+		if (currentRendererItemIndex < itemCount-1) index = currentRendererItemIndex+1;
+		r = httpGet("/nmc/rpc/move_to?renderer="+currentRendererBookmark+"&index="+currentRendererItemIndex+"&toindex="+index);
+		if (! callSucceeded(r, true,"Control move item down")) return; 
+		currentRendererItemIndex = index;
+		rendererlist(currentRendererItemUrl, currentRendererItemTitle);
+	}
+}
+
+// --- volume control
+function setVolume(vol, roundUp) {
+	var ctl = document.getElementById("volumeRange");
+	var v = vol;
+	var v5 = v % 5;
+	if (v5 != 0) {
+		if (roundUp) v = v + 5;
+		v = parseInt(v / 5) * 5;
+	}
+	if (v > 100) v = 100;
+	if (v < 0) v = 0;
+	ctl.innerHTML = v;
+	var r = httpGet("/nmc/rpc/set_volume_percent?renderer="+currentRendererBookmark+"&volume="+v);
+	if (! callSucceeded(r, true,"Control set volume")) return; 
+}
+function showVolume() {
+	if (currentRendererBookmark == "") return;
+	var r = httpGet("/nmc/rpc/get_volume_percent?renderer="+currentRendererBookmark);
+	if (callSucceeded(r, false,"Control volume"))  
+		setVolume(parseInt(r), true);
+	else
+		setVolume(0, true);		
+}
+function volumePlusControl() {
+	if (currentRendererBookmark == "") return;
+	var ctl = document.getElementById("volumeRange");
+	var v = parseInt(ctl.innerHTML) + 5;
+	setVolume(v, false);
+}
+function volumeMinusControl() {
+	if (currentRendererBookmark == "") return;
+	var ctl = document.getElementById("volumeRange");
+	var v = parseInt(ctl.innerHTML) - 5;
+	setVolume(v, true);
+}
+function muteControl() {
+	var r = getMute();
+	if (r == 0) var mute = 1;
+	else var mute = 0;
+	var r = httpGet("/nmc/rpc/set_mute?renderer="+currentRendererBookmark+"&mute="+mute);
+	setMute(mute);
+}
+function getMute() {
+	if (currentRendererBookmark == "") return 0;
+	var r = httpGet("/nmc/rpc/get_mute?renderer="+currentRendererBookmark);
+	if (callSucceeded(r, true,"Control mute")) 
+		return r;
+	else
+		return 0;
+}
+function setMute(m) {
+	var ctl = document.getElementById("mute");
+	if (m == 0) {
+		ctl.value = "mute"
+	} else {
+		ctl.value = "mute off"
+	}
+}
+
+
+// ---------- Tab control of the right side - show renderer control and list OR details --------------------------
+function disableRendererTab() {
+	// tab renderer
+	var e = document.getElementById("tabs1");
+	e.onmousemove = highlightRenderer;
+	e.onmouseout = defaultRenderer;
+	e.onclick = changeToRendererTab;
+	e.style.backgroundColor = "#EEE";
+	e.style.cursor = "pointer";
+	e = document.getElementById("buttons");
+	e.style.visibility = "hidden";
+	e = document.getElementById("rendererlist");
+	e.style.visibility = "hidden";
+}
+function disableDetailsTab() {
+	// tab details
+	var e = document.getElementById("tabs2");
+	e.onmousemove = highlightDetails;
+	e.onmouseout = defaultDetails;
+	e.onclick = changeToDetailsTab;
+	e.style.backgroundColor = "#EEE";
+	e.style.cursor = "pointer";
+	e = document.getElementById("details");
+	e.style.visibility = "hidden";
+	e = document.getElementById("detaillist");
+	e.style.visibility = "hidden";
+	detailIsVisible = false;
+}
+function disableEventsTab() {
+	// tab events
+	var e = document.getElementById("tabs3");
+	e.onmousemove = highlightEvents;
+	e.onmouseout = defaultEvents;
+	e.onclick = changeToEventsTab;
+	e.style.backgroundColor = "#EEE";
+	e.style.cursor = "pointer";
+	e = document.getElementById("events");
+	e.style.visibility = "hidden";
+	e = document.getElementById("eventlist");
+	e.style.visibility = "hidden";
+}
+function disableLoggingTab() {
+	// tab logging
+	var e = document.getElementById("tabs4");
+	e.onmousemove = highlightLog;
+	e.onmouseout = defaultLog;
+	e.onclick = changeToLogTab;
+	e.style.backgroundColor = "#EEE";
+	e.style.cursor = "pointer";
+	e = document.getElementById("logging");
+	e.style.visibility = "hidden";
+}
+function changeToDetailsTab() {
+	// tab renderer
+	disableRendererTab();
+	// tab details
+	var e = document.getElementById("tabs2");
+	e.onmousemove = null;
+	e.onmouseout = null;
+	e.onclick = null;
+	e.style.backgroundColor = "#CCC";
+	e.style.cursor = "default";
+	e = document.getElementById("details");
+	e.style.visibility = "visible";
+	e = document.getElementById("detaillist");
+	e.style.visibility = "visible";
+	detailIsVisible = true;
+	//
+	e = document.getElementById("detaillist");
+	e.innerHTML = "... waiting ...";
+	startTimerDetail(500);
+	// tab events
+	disableEventsTab();
+	// tab logging
+	disableLoggingTab();
+}
+function changeToEventsTab() {
+	// tab renderer
+	disableRendererTab();
+	// tab details
+	disableDetailsTab();
+	// tab events
+	e = document.getElementById("tabs3");
+	e.onmousemove = null;
+	e.onmouseout = null;
+	e.onclick = null;
+	e.style.backgroundColor = "#CCC";
+	e.style.cursor = "default";
+	e = document.getElementById("events");
+	e.style.visibility = "visible";
+	e = document.getElementById("eventlist");
+	e.style.visibility = "visible";
+	// tab logging
+	disableLoggingTab();
+}
+function changeToLogTab() {
+	// tab renderer
+	disableRendererTab();
+	// tab details
+	disableDetailsTab();
+	// tab events
+	disableEventsTab();
+	// tab logging
+	e = document.getElementById("tabs4");
+	e.onmousemove = null;
+	e.onmouseout = null;
+	e.onclick = null;
+	e.style.backgroundColor = "#CCC";
+	e.style.cursor = "default";
+	e = document.getElementById("logging");
+	e.style.visibility = "visible";
+}
+function changeToRendererTab() {
+	// tab renderer
+	var e = document.getElementById("tabs1");
+	e.onmousemove = null;
+	e.onmouseout = null;
+	e.onclick = null;
+	e.style.backgroundColor = "#CCC";
+	e.style.cursor = "default";
+	e = document.getElementById("buttons");
+	e.style.visibility = "visible";
+	e = document.getElementById("rendererlist");
+	e.style.visibility = "visible";
+	// tab details
+	disableDetailsTab();
+	// tab events
+	disableEventsTab();
+	// tab logging
+	disableLoggingTab();
+}
+function highlightRenderer() {
+	var e = document.getElementById("tabhead1");
+	e.style.left = "10px";
+	e.style.top = "2px";
+}
+function defaultRenderer() {
+	var e = document.getElementById("tabhead1");
+	e.style.left = "11px";
+	e.style.top = "1px";
+}
+function highlightDetails() {
+	var e = document.getElementById("tabhead2");
+	e.style.left = "10px";
+	e.style.top = "2px";
+}
+function defaultDetails() {
+	var e = document.getElementById("tabhead2");
+	e.style.left = "11px";
+	e.style.top = "1px";
+}
+function highlightEvents() {
+	var e = document.getElementById("tabhead3");
+	e.style.left = "10px";
+	e.style.top = "2px";
+}
+function defaultEvents() {
+	var e = document.getElementById("tabhead3");
+	e.style.left = "11px";
+	e.style.top = "1px";
+}
+function highlightLog() {
+	var e = document.getElementById("tabhead4");
+	e.style.left = "10px";
+	e.style.top = "2px";
+}
+function defaultLog() {
+	var e = document.getElementById("tabhead4");
+	e.style.left = "11px";
+	e.style.top = "1px";
+}
+
+// logging
+function logShowFileControl() {
+	//<a href="http://aktuell.de.selfhtml.org/" target="_blank">SELFHTML aktuell</a>
+	//var r = httpGet("/nmc/rpc/log_getfile");
+	window.open("/nmc/rpc/log_getfile", "Logging");
+}
+function logDisableControl() {
+	var e = document.getElementById("logdisable");
+	if (e.value == "logging off") {
+		var r = httpGet("/nmc/rpc/log_disable?mode=1");	
+		alert(r);
+		e.value = "logging on";
+	} else {
+		var r = httpGet("/nmc/rpc/log_disable?mode=0");	
+		alert(r);
+		e.value = "logging off";
+	}
+}
+function logClearControl() {
+	var r = httpGet("/nmc/rpc/log_clear");	
+	alert(r);
+}
+function logSetLevelSourceControl() {
+	// level
+	var l = 1;
+	for (var i=0; i<6;i++) {
+		if (document.loggingForm.loglevel[i].checked) l = i+1;
+	}
+	var s = 0;
+	for (var i=0; i<13;i++) {
+		if (document.loggingForm.logsource[i].checked) s = s + Math.pow(2,i);
+	}
+	var r = httpGet("/nmc/rpc/log_set?sources="+s+"&level="+l);	
+	alert(r);
+}
+
+function setNMCstate() {
+	var e = document.getElementById("nmc_state");
+	var r = httpGet("/nmc/rpc/get_nmc_version");
+	if (! callSucceeded(r, false,"NMC state")) return; 
+	e.innerHTML = "Version: "+r;
+	dtcpNMCVersion = r.substring(0,2);
+}
+function init() {
+	setNMCstate();
+	// parameter: url, title, bookmark
+	serverlist("/nmc/rss/server", "", "");
+	// parameter: url, title
+	rendererlist("/nmc/rss/renderer", "");
+	showVolume();
+	var mute = getMute();
+	setMute(mute);
+	setQueueButtons();
+	changeToRendererTab();
+	changeToServerList();
+	startTimer(2000);
+	startTimerEvent(3000);
+}
+
+</script>
+</head>
+
+<body onLoad="init()" >
+<! >
+<! ------- on the ***left*** side of the page are two layouts >
+<! ------- 1. server list >
+<! ------- 2. DTCP move status page >
+<! ------- 3. upload status page >
+<! ------- server list >
+<div id="serverlist" style="position:absolute; margin:0px; padding:0px; top:10px; left:10px; height:705px; width:490px; background-color:#CCC">
+	<p style="position:absolute; margin:0px; padding:0px; top:10px; left:10px; width:460px" id="serverhead"></p>
+	<p style="position:absolute; margin:0px; padding:0px; top:30px; left:60px; width:410px; color:#666; font-size:12px" id="serverpath"></p>
+	<div id="serveritemlist" style="position:absolute; top:50px; left:10px; height:610px; width:460px; background-color:#FFE; overflow:auto">
+    </div>
+    <input type="button" style="position:absolute; top:670px; left:10px" value="home" onClick="javascript:buttonServerHome()">
+    <input type="button" style="position:absolute; top:670px; left:70px" value="back" onClick="javascript:buttonServerBack()">
+    <input type="button" id="firstPageButton" disabled=true style="position:absolute; top:670px; left:160px" value="<<" onClick="javascript:buttonServerFirstPage()">
+    <input type="button" id="prevButton" disabled=true style="position:absolute; top:670px; left:200px" value="&nbsp;<&nbsp;" onClick="javascript:buttonServerPrev()">
+    <p style="position:absolute; top:655px; left:242px">page</p>
+    <input type="button" id="nextButton" disabled=true style="position:absolute; top:670px; left:275px" value="&nbsp;>&nbsp;" onClick="javascript:buttonServerNext()">
+    <input type="button" id="lastPageButton" disabled=true style="position:absolute; top:670px; left:314px" value=">>" onClick="javascript:buttonServerLastPage()">
+</div>
+<! ------- DTCP move status page >
+<form id="dtcpForm" name="dtcpForm">
+<div id="dtcpMove" style="position:absolute; margin:0px; padding:0px; top:10px; left:10px; height:705px; width:490px; background-color:#CCC">
+	<p style="position:absolute; margin:0px; padding:0px; top:20px; left:20px; height:30px; width:120px">DTCP Move</p>
+    <div style="position:absolute; margin:0px; padding:0px; top:80px; left:20px; height:400px; width:450px; background-color:#EEE; border-color: #999; border-style: outset; border-width:thin">
+		<div id="dtcpStatus" style="position:absolute; top:30px; left:20px">Status: </div>
+		<div id="dtcpInfo" style="position:absolute; top:90px; left:20px">
+			<table id="dtcpTable"></table>
+		</div>
+	</div>
+   	<input type="button" style="position:absolute; margin:0px; padding:0px; top:500px; left:20px; width:120px; height:50px" value="cancel move" onClick="javascript:dtcpCancelMove()">
+</div>
+</form>
+<! ------- upload status page >
+<form id="uploadForm" name="uploadForm">
+<div id="uploadDiv" style="position:absolute; margin:0px; padding:0px; top:10px; left:10px; height:705px; width:490px; background-color:#CCC">
+	<p style="position:absolute; margin:0px; padding:0px; top:20px; left:20px; height:30px; width:120px">Upload</p>
+    <div style="position:absolute; margin:0px; padding:0px; top:80px; left:20px; height:400px; width:450px; background-color:#EEE; border-color: #999; border-style: outset; border-width:thin">
+		<div id="uploadScene1" style="position:absolute; top:30px; left:20px">
+			<p style="position:absolute; top:20px; left:20px; height:30px; width:120px">File:</p>
+			<input type="file" style="position:absolute; margin:0px; padding:0px; top:50px; left:20px; width:400px; color:#666; font-size:14px" id="uploadfile"></input>
+			<input type="button" style="position:absolute; margin:0px; padding:0px; top:140px; left:80px; width:120px; height:50px" value="upload" onClick="javascript:buttonUpload()" id="uploadbutton"></input>
+			<input type="button" style="position:absolute; margin:0px; padding:0px; top:140px; left:220px; width:120px; height:50px" value="cancel" onClick="javascript:buttonCancelUpload1()" id="uploadcancelbutton"></input>
+		</div>
+		<div id="uploadScene2" style="position:absolute; top:30px; left:20px">
+			<div id="uploadStatus" style="position:absolute; top:20px; left:20px">Status: </div>
+			<div id="uploadInfo" style="position:absolute; top:90px; left:20px">
+				<table id="uploadTable"></table>
+			</div>
+			<input type="button" style="position:absolute; top:300px; left:20px; width:120px; height:50px" value="cancel upload" onClick="javascript:buttonCancelUpload2()">
+		</div>
+	</div>
+</div>
+</form>
+<! >
+<! ------- NMC state >
+<div id="nmcstate" style="position:absolute; top:715px; left:12px; height:30px; width:490px; background-color:#FFF">
+	<p id="nmc_state" style="font-size:12px"></p>
+</div>
+<! >
+<! >
+<! ------- on the ***right*** side of the page are three tabs >
+<! ------- 1. renderer controls and renderer list >
+<! ------- 2. item details >
+<! ------- 3. server and renderer events >
+<! ------- 4. logging >
+<div id="tabs1" style="position:absolute; margin:0px; padding:0px; top:10px; left:510px; height:20px; width:100px" >
+	<p style="position:absolute; margin:0px; padding:0px; top:0px; left:10px; height:20px; width:90px" id="tabhead1">Renderer</p>
+</div>
+<div id="tabs2" style="position:absolute; margin:0px; padding:0px; top:10px; left:613px; height:20px; width:100px" >
+	<p style="position:absolute; margin:0px; padding:0px; top:0px; left:10px; height:20px; width:90px" id="tabhead2">Details</p>
+</div>
+<div id="tabs3" style="position:absolute; margin:0px; padding:0px; top:10px; left:716px; height:20px; width:100px" >
+	<p style="position:absolute; margin:0px; padding:0px; top:0px; left:10px; height:20px; width:90px" id="tabhead3">Events</p>
+</div>
+<div id="tabs4" style="position:absolute; margin:0px; padding:0px; top:10px; left:819px; height:20px; width:100px" >
+	<p style="position:absolute; margin:0px; padding:0px; top:0px; left:10px; height:20px; width:90px" id="tabhead4">Logging</p>
+</div>
+<! >
+<! ------- 1.1. renderer controls >
+<div id="buttons" style="position:absolute; margin:0px; padding:0px; top:30px; left:510px; height:195px; width:490px; background-color:#CCC">
+	<p style="position:absolute; margin:0px; padding:0px; top:10px; left:10px; height:30px; width:460px" id="controlhead" ></p>
+    <! -- Queue >
+	<div id="playbuttons" style="position:absolute; margin:0px; padding:0px; top:35px; left:10px; height:67px; width:470px; border-color: #999; border-style: outset; border-width:thin">
+		<p style="position:absolute; margin:0px; padding:0px; top:0px; left:2px; height:15px; width:50px; font-size:10px">Queue</p>
+    	<input type="button" id="play" style="position:absolute; margin:0px; padding:0px; top:15px; left:5px; width:50px; height:30px" value="play" onClick="javascript:playNormalControl()">
+    	<input type="button" id="consume" style="position:absolute; margin:0px; padding:0px; top:15px; left:55px; width:50px; height:30px; font-size:11px" value="consume" onClick="javascript:playConsumeControl()">
+    	<input type="button" id="shuffle" style="position:absolute; margin:0px; padding:0px; top:15px; left:105px; width:50px; height:30px" value="shuffle" onClick="javascript:playShuffleControl()">
+    	<input type="button" id="repeat" style="position:absolute; margin:0px; padding:0px; top:15px; left:155px; width:50px; height:30px" value="repeat" onClick="javascript:playRepeatControl()">
+    	<input type="button" id="stop" disabled=true style="position:absolute; margin:0px; padding:0px; top:15px; left:210px; width:50px; height:30px" value="stop" onClick="javascript:stopControl()">
+    	<input type="button" id="pause" disabled=true style="position:absolute; margin:0px; padding:0px; top:15px; left:260px; width:50px; height:30px" value="pause" onClick="javascript:pauseControl()">
+    	<input type="button" id="seek0" disabled=true style="position:absolute; margin:0px; padding:0px; top:15px; left:310px; width:50px; height:30px" value="|<<" onClick="javascript:skipBack()">
+    	<input type="button" id="seek100" disabled=true style="position:absolute; margin:0px; padding:0px; top:15px; left:360px; width:50px; height:30px" value=">>|" onClick="javascript:skip()">
+	    <input type="button" id="clear" style="position:absolute; margin:0px; padding:0px; top:15px; left:420px; height:30px" value="clear" onClick="javascript:clearControl()">
+		<p id="playing" style="position:absolute; margin:0px; padding:0px; top:50px; left:7px; height:10px; width:400px; font-size:10px"></p>
+    </div>
+    <! -- Item >
+	<div id="mediaitem" style="position:absolute; margin:0px; padding:0px; top:120px; left:10px; height:63px; width:300px; border-color: #999; border-style: outset; border-width:thin">
+		<p style="position:absolute; margin:0px; padding:0px; top:0px; left:2px; height:15px; width:50px; font-size:10px">Item</p>
+	    <input type="button" id="moveitemup" style="position:absolute; margin:0px; padding:0px; top:15px; left:5px; width:55px; height:30px" value="move &uarr;" onClick="javascript:moveItemUpControl()">
+	    <input type="button" id="moveitemdown" style="position:absolute; margin:0px; padding:0px; top:15px; left:60px; width:55px; height:30px" value="move &darr;" onClick="javascript:moveItemDownControl()">
+	    <input type="button" id="deleteitem" style="position:absolute; margin:0px; padding:0px; top:15px; left:125px; width:55px; height:30px" value="remove" onClick="javascript:deleteItemControl()">
+    </div>
+    <! -- Volume >
+	<div id="volume" style="position:absolute; margin:0px; padding:0px; top:120px; left:320px; height:63px; width:160px; border-color: #999; border-style: outset; border-width:thin">
+		<p style="position:absolute; margin:0px; padding:0px; top:0px; left:2px; height:15px; width:50px; font-size:10px">Volume</p>
+    	<input type="button" id="volumeMinus" style="position:absolute; margin:0px; padding:0px; top:15px; left:5px; width:25px; height:30px" value="-" onClick="javascript:volumeMinusControl()">
+        <p style="position:absolute; margin:0px; padding:0px; top:20px; left:30px; height:30px; width:25px; text-align:right" id="volumeRange">100</p>
+    	<input type="button" id="volumePlus" style="position:absolute; margin:0px; padding:0px; top:15px; left:60px; width:25px; height:30px" value="+" onClick="javascript:volumePlusControl()">
+    	<input type="button" id="mute" style="position:absolute; margin:0px; padding:0px; top:15px; left:90px; width:60px; height:30px" value="mute" onClick="javascript:muteControl()">
+	</div>
+</div>
+<! >
+<! ------- 1.2. renderer list >
+<div id="rendererlist" style="position:absolute; margin:0px; padding:0px; top:230px; left:510px; height:485px; width:490px; border: thin; background-color:#CCC">
+	<p style="position:absolute; margin:0px; padding:0px; top:10px; left:10px; height:30px; width:460px" id="rendererhead"></p>
+	<div id="rendereritemlist" style="position:absolute; margin:0px; padding:0px; top:50px; left:10px; height:390px; width:460px; overflow:auto; background-color:#FFE">
+    </div>
+    <input type="button" style="position:absolute; margin:0px; padding:0px; top:450px; left:10px" value="back" onClick="javascript:buttonRendererBack()">
+</div>
+<! >
+<! ------- 2. item details >
+<div id="details" style="position:absolute; margin:0px; padding:0px; top:30px; left:510px; height:685px; width:730px; background-color:#CCC">
+	<div id="detaillist" style="position:absolute; margin:0px; padding:0px; top:30px; left:10px; height:640px; width:710px; background-color:#FFE; overflow:auto">
+    <p>... waiting ...</p>
+    </div>
+</div>
+<! >
+<! ------- 3. server and renderer events >
+<div id="events" style="position:absolute; margin:0px; padding:0px; top:30px; left:510px; height:685px; width:730px; background-color:#CCC">
+	<div id="eventlist" style="position:absolute; margin:0px; padding:0px; top:30px; left:10px; height:640px; width:710px; background-color:#FFE; overflow:auto">
+    </div>
+</div>
+<! ------- 4. logging >
+<form id="loggingForm" name="loggingForm">
+<div id="logging" style="position:absolute; margin:0px; padding:0px; top:30px; left:510px; height:685px; width:490px; background-color:#CCC">
+   	<input type="button" id="logfile" style="position:absolute; margin:0px; padding:0px; top:25px; left:20px; width:120px; height:50px" value="show log file" onClick="javascript:logShowFileControl()">
+   	<input type="button" id="logclear" style="position:absolute; margin:0px; padding:0px; top:35px; left:250px; width:100px; height:30px" value="clear log file" onClick="javascript:logClearControl()">
+   	<input type="button" id="logdisable" style="position:absolute; margin:0px; padding:0px; top:35px; left:360px; width:100px; height:30px" value="logging off" onClick="javascript:logDisableControl()">
+    <div style="position:absolute; margin:0px; padding:0px; top:130px; left:20px; height:270px; width:135px; background-color:#EEE; border-color: #999; border-style: outset; border-width:thin">
+        <p style="position:absolute; margin:0px; padding:0px; top:10px; left:10px">Level:</p>
+        <div style="position:absolute; margin:0px; padding:0px; top:50px; left:10px">
+            <input type="radio" name="loglevel" value="leveldebug" checked >Debug<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:80px; left:10px">
+            <input type="radio" name="loglevel" value="leveltrace">Trace<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:110px; left:10px">
+            <input type="radio" name="loglevel" value="levelinfo">Info<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:140px; left:10px">
+            <input type="radio" name="loglevel" value="levelwarning">Warning<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:170px; left:10px">
+            <input type="radio" name="loglevel" value="levelerror">Error<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:200px; left:10px">
+            <input type="radio" name="loglevel" value="levelcritical">Critical<br>
+        </div>
+        <input type="button" id="logset" style="position:absolute; margin:0px; padding:0px; top:290px; left:70px; width:150px; height:30px" value="set level and source" onClick="javascript:logSetLevelSourceControl()">
+    </div>
+    <div style="position:absolute; margin:0px; padding:0px; top:130px; left:185px; height:270px; width:280px; background-color:#EEE; border-color: #999; border-style: outset; border-width:thin">
+        <p style="position:absolute; margin:0px; padding:0px; top:10px; left:10px">Source:</p>
+        <div style="position:absolute; margin:0px; padding:0px; top:50px; left:10px">
+            <input type="checkbox" name="logsource" value="levelsystem" checked>System<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:80px; left:10px">
+            <input type="checkbox" name="logsource" value="levelssdp" checked>SSDP<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:110px; left:10px">
+            <input type="checkbox" name="logsource" value="leveldb" checked>DB<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:140px; left:10px">
+            <input type="checkbox" name="logsource" value="levelhttp" checked>HTTP<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:170px; left:10px">
+            <input type="checkbox" name="logsource" value="levelclientdb" checked>Client DB<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:200px; left:10px">
+            <input type="checkbox" name="logsource" value="leveleventing" checked>Eventing<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:230px; left:10px">
+            <input type="checkbox" name="logsource" value="levelxml" checked>XML<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:50px; left:130px">
+            <input type="checkbox" name="logsource" value="levelplugin" checked>Plugin<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:80px; left:130px">
+            <input type="checkbox" name="logsource" value="levelscan" checked>Scan<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:110px; left:130px">
+            <input type="checkbox" name="logsource" value="levelrmedia" checked>RMedia<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:140px; left:130px">
+            <input type="checkbox" name="logsource" value="levelmf" checked>MediaFusion<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:170px; left:130px">
+            <input type="checkbox" name="logsource" value="levelcgi" checked>CGI<br>
+        </div>
+        <div style="position:absolute; margin:0px; padding:0px; top:200px; left:130px">
+            <input type="checkbox" name="logsource" value="levellp" checked>LinkProt<br>
+        </div>
+    </div>
+</div>
+</form>
+</body>
+</html>

@@ -1,0 +1,18 @@
+<Client>
+    <DeviceId>
+        <DisplayName>Roku</DisplayName>
+        <DeviceDescriptionRecognition>
+            <DescriptionText>&lt;manufacturer&gt;Roku&lt;/manufacturer&gt;</DescriptionText>
+            <DescriptionText>&lt;modelName&gt;Roku&lt;/modelName&gt;</DescriptionText>
+            <DescriptionText>&lt;modelDescription&gt;Roku&lt;/modelDescription&gt;</DescriptionText>
+        </DeviceDescriptionRecognition>
+        <HttpRecognition>
+            <HttpText>Roku/DVP</HttpText>
+        </HttpRecognition>
+        <MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+    </DeviceId>
+    <DeviceQuirks>
+        <Quirk>USEDIRECTURL</Quirk>
+		<Quirk>SUPPORTS_HTTPS</Quirk>
+    </DeviceQuirks>
+</Client>

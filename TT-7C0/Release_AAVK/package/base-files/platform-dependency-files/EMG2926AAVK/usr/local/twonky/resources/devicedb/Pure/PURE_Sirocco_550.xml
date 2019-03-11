@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>PURE Sirocco 550</DisplayName>
+		<HttpRecognition>
+			<HttpText>PURE Sirocco 550 D1R</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

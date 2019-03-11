@@ -1,0 +1,68 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+reload_time(){
+	config_load time
+	config_get TZ main timezone
+
+	config_get mtenNew_Year main manual_year
+	config_get mtenNew_Mon main manual_mon
+	config_get mtenNew_Day main manual_day
+	config_get mtenNew_Hour main manual_hour
+	config_get mtenNew_Min main manual_min
+	config_get mtenNew_Sec main manual_sec
+	config_get mten_ServiceType main mode
+	config_get ntp_name main ntpName
+
+	echo $TZ > /tmp/TZ
+
+	ntp_process=$(ps | grep ntpclient | grep -v grep)
+	if [ "$ntp_process" != "" ]; then
+		killall ntpclient
+	fi
+
+        if [ "$mten_ServiceType" == "manual" ]; then
+
+		/bin/date $mtenNew_Year.$mtenNew_Mon.$mtenNew_Day-$mtenNew_Hour:$mtenNew_Min:$mtenNew_Sec
+
+		#fix Timezone issue.
+		/bin/date -k
+
+        elif [ "$mten_ServiceType" == "NTP" ]; then
+		
+		NTPC=$(which ntpclient)
+		COUNT=$(uci_get ntpclient ntpclient count)
+		INTERVAL=$(uci_get ntpclient ntpclient interval)
+		PORT=$(uci_get ntpclient ntpserver port)
+		$NTPC ${COUNT:+-c $COUNT} ${INTERVAL:+-i $INTERVAL} -s -l -D -p $PORT -h $ntp_name 2>/dev/null
+
+		#fix Timezone issue.
+		/bin/date -k
+			
+	fi
+
+	wifi_scheduling24G=$(uci_get wifi_schedule wlan enabled)
+	wifi_scheduling5G=$(uci_get wifi_schedule5G wlan enabled)
+	
+	if [ "$wifi_scheduling24G" == "enable" ]; then
+		/etc/init.d/wifi_scheduling start
+	fi
+	
+	if [ "$wifi_scheduling5G" == "enable" ]; then
+        	/etc/init.d/wifi_scheduling5G start
+	fi
+}
+
+
+cmd=$1
+shift
+case "$cmd" in
+        --help|help) usage ;;
+                start|stop|reload|restart|init)
+			reload_time
+                exit $?
+        ;;
+esac
+ 
+exit $?

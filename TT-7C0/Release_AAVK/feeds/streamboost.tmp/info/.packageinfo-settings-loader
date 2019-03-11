@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/settings-loader/Makefile
+Package: settings-loader
+Submenu: Utilities
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Settings Loader
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Settings loader (wait for it) loads settings into Redis.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_settings-loader
+	config settings-loader_USE_CUSTOM_VERSION
+		depends on PACKAGE_settings-loader
+		bool "Use custom package version"
+		default n
+	config settings-loader_CUSTOM_VERSION
+		depends on settings-loader_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_settings-loader
+	config settings-loader_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_settings-loader
+		bool "Use custom source directory"
+		default n
+	config settings-loader_CUSTOM_SOURCE_DIR
+		depends on settings-loader_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

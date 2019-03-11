@@ -1,0 +1,35 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips Streamium NP2500</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Philips Streamium HiFi Link</DescriptionText>
+			<DescriptionText>NP</DescriptionText>
+			<DescriptionText>2500</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG42x42</Target>
+			<Target>JPEG320x240</Target>
+			<Target>JPEG640x480</Target>
+		</Scaling>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+			<MediaType>PHOTO</MediaType>
+		</MediaTypeList>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG320x320</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>PHILIPSSEARCH</Quirk>
+		<Quirk>NOARTISTROLECOMPOSER</Quirk>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

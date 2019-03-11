@@ -1,0 +1,15 @@
+--- linux-3.3.8/net/ipv6/ndisc.c	2016-01-07 10:38:56.953673928 +0800
++++ linux-3.3.8/net/ipv6/ndisc.c	2016-01-07 11:29:00.523839679 +0800
+@@ -1041,6 +1041,12 @@
+ 	if (ipv6_addr_any(saddr))
+ 		goto out;
+ 
++	/*
++	 *Ignored RS from wan port
++	 */
++	if(skb->skb_iif==4)
++		goto out;
++
+ 	/* Parse ND options */
+ 	if (!ndisc_parse_options(rs_msg->opt, ndoptlen, &ndopts)) {
+ 		if (net_ratelimit())

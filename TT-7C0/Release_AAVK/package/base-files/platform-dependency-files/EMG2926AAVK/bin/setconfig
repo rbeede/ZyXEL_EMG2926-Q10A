@@ -1,0 +1,376 @@
+#!/bin/sh
+
+localPath="/tmp/"
+localName="RomDConfig"
+
+usage(){
+	echo upgrade RomD -- setconfig upgrade_RomD [remote ipaddress] [remote file name] 
+	echo erase RomD -- setconfig erase_RomD
+}
+
+download_RomD(){
+	local remoteIp=$1
+	local remoteName=$2
+	local chk_download
+
+	[ -z "$remoteIp" ] && {
+		echo "need remoteIp"
+		exit 1
+	}
+
+	[ -z "$remoteName" ] && {
+		echo "need remoteName"
+		exit 1
+	}
+
+	echo download config, please wait!
+
+	chk_download=$(tftp -l $localPath$localName -r $remoteName -g $remoteIp -b 2048)
+
+	if [ -n "$chk_download" ];then
+		echo download fail!
+		exit 1
+	else
+		echo download success!
+	fi
+}
+
+erase_RomD(){
+	local base="romd"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+	mtd erase /dev/$part
+}
+
+upgrade_RomD(){
+
+	download_RomD $1 $2
+
+	echo upgrade RomD!
+
+	local filename=$localPath$localName
+
+	local configFile=$filename
+	local uploadFile="$filename"Ck
+	local base="romd"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+
+	local chk=$(cat /tmp/logSetconfig_up)
+	[ -n "$chk" ] && {
+		echo $chk
+		exit 1
+	}
+
+	mtd unlock /dev/$part
+	mtd erase /dev/$part
+	#mtd write $uploadFile /dev/$part
+	local uploadFilelength=$(ls -l "$uploadFile"|awk '{print $5}')
+	part="${part##mtd}"		
+	mtd_debug write /dev/mtdblock$part 0x0 $uploadFilelength $uploadFile	
+
+	echo "config upload successful"
+
+	##sleep 1	
+	##reboot	
+}
+
+upgrade_RomD_by_Ftp(){
+
+	localPath="/tmp/FWwatcher_romd/"
+	localName="RomDConfig"
+
+	echo "Upgrade RomD Via FTP!"
+
+	local filename=$localPath$localName
+	local dencodeName=dencode_$localName
+
+	local configFile=$filename
+	local uploadFile="$filename"Ck
+	local dencodeFile=$localPath$dencodeName
+	local base="romd"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+
+	#openssl enc -d -des3 -pass pass:zyxel -in $configFile -out $dencodeFile 
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+
+	local chk=$(cat /tmp/logSetconfig_up)
+	[ -n "$chk" ] && {
+		echo $chk
+		exit 1
+	}
+
+	#mtd unlock /dev/$part
+	#mtd erase /dev/$part
+	#mtd write $uploadFile /dev/$part
+	flash_eraseall /dev/$part 
+	nandwrite -mp /dev/$part $uploadFile
+	
+
+	echo "config upload successful"
+}
+
+upload_ROMD(){
+	local filename=$1
+	local configFile=/tmp/$filename
+	local uploadFile=/tmp/"$filename"Ck
+	local dencodeFile=/tmp/dencode_$filename
+	local base="romd"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+	part="${part##mtd}"	
+	
+	
+	sync;sync;sync
+	
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+	
+	local chk=$(cat /tmp/logSetconfig_up)
+	[ -n "$chk" ] && {
+		echo $chk
+		exit 1
+	}
+
+	#mtd unlock /dev/$part
+	#mtd erase /dev/$part
+	#mtd write $uploadFile /dev/$part
+	flash_eraseall /dev/mtd$part 
+	nandwrite -mp /dev/mtd$part $uploadFile
+	
+	rm $uploadFile
+	rm $configFile
+	
+	echo "config upload successful" 
+
+}
+upload_check(){
+	local filename=$1
+	local configFile=/tmp/$filename		
+	local uploadFile=/tmp/"$filename"Ck
+	local dencodeFile=/tmp/dencode_$filename
+	local base="$(echo $filename | cut -f1 -d'.')"
+	local Romd_base=$2
+
+	if [ -z "$Romd_base" ] ;then
+		local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+		part="${part##mtd}"	
+	else
+		local part="$(grep $Romd_base /proc/mtd | awk -F: '{print $1}')"
+		part="${part##mtd}"	
+	fi
+	
+	sync;sync;sync
+	
+	#openssl enc -d -des3 -pass pass:zyxel -in $configFile -out $dencodeFile 
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+}
+
+upload_ramfs(){
+	local filename=$1
+	local configFile=/tmp/$filename
+	local uploadFile=/tmp/"$filename"Ck
+	local dencodeFile=/tmp/dencode_$filename
+	local base="$(echo $filename | cut -f1 -d'.')"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+	part="${part##mtd}"	
+
+	sync;sync;sync
+	
+	#openssl enc -d -des3 -pass pass:zyxel -in $configFile -out $dencodeFile 
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+	
+	local chk_file=$(cat /tmp/logSetconfig_up)
+        [ -n "$chk_file" ] || {
+		/bin/do_config_update.sh
+        }
+}
+
+upload_tr069(){
+	local filename=$1
+	local configFile=/tmp/$filename
+	local uploadFile=/tmp/"$filename"Ck
+	local dencodeFile=/tmp/dencode_$filename
+	local base="$(echo $filename | cut -f1 -d'.')"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+	part="${part##mtd}"	
+
+	sync;sync;sync
+	
+	#openssl enc -d -des3 -pass pass:zyxel -in $configFile -out $dencodeFile 
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+	
+	local chk_file=$(cat /tmp/logSetconfig_up)
+        [ -n "$chk_file" ] || {
+
+		cat /dev/mtd5 > /tmp/romd_part
+		flash_eraseall /dev/mtd5
+		nandwrite -mp /dev/mtd5  $uploadFile
+
+		cp -rf  /overlay/etc/tr69  /tmp/tmptr69
+		
+		mkdir /overlay2
+		mount /dev/mtdblock5  /overlay2  -t jffs2
+		rm -rf /overlay/*
+		cp -rf /overlay2/* /overlay/
+		
+		rm -rf /overlay/etc/tr69
+		cp -rf  /tmp/tmptr69  /overlay/etc/tr69
+
+		local uploadFilelength=$(ls -l "$uploadFile"|awk '{print $5}')
+		#mtd_debug write /dev/mtdblock$part 0x0 $uploadFilelength $uploadFile
+		sleep 1
+		sync;sync;sync
+		sleep 1
+		
+		flash_eraseall /dev/mtd5
+		nandwrite -mp /dev/mtd5  /tmp/romd_part
+
+        }
+}
+
+reset_default(){
+		cp /sbin/reboot /tmp
+		echo 'finish to restore default !' > /dev/console
+		mkdir /overlay2
+		mount /dev/mtdblock5  /overlay2  -t jffs2
+		
+		rm -rf /overlay/* 
+		sleep 2
+		cp -rf /overlay2/etc  /overlay/etc
+		sleep 3
+		rm -rf /overlay/etc/tr69
+		/tmp/reboot &
+}
+
+
+
+upload(){
+	local filename=$1
+	local configFile=/tmp/$filename
+	local uploadFile=/tmp/"$filename"Ck
+	local dencodeFile=/tmp/dencode_$filename
+	local base="$(echo $filename | cut -f1 -d'.')"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+	part="${part##mtd}"	
+
+	sync;sync;sync
+	
+	#openssl enc -d -des3 -pass pass:zyxel -in $configFile -out $dencodeFile 
+	ckCgHdr -c -p $configFile -o $uploadFile >> /tmp/logSetconfig_up
+	
+	local chk_file=$(cat /tmp/logSetconfig_up)
+        [ -n "$chk_file" ] || {
+                umount -l /dev/mtdblock$part
+                umount -l /
+                sleep 2
+		#mtd unlock /dev/$part
+		#mtd erase /dev/$part
+		#mtd write $uploadFile /dev/$part
+		flash_eraseall /dev/mtd$part 
+		nandwrite -mp /dev/mtd$part $uploadFile
+
+		local uploadFilelength=$(ls -l "$uploadFile"|awk '{print $5}')
+		#mtd_debug write /dev/mtdblock$part 0x0 $uploadFilelength $uploadFile
+		sleep 1
+		sync;sync;sync
+		sleep 1
+        }
+}
+
+backup(){
+	local filename=$1
+	local base="$(echo $filename | cut -f1 -d'.')"
+	local part="$(grep $base /proc/mtd | awk -F: '{print $1}')"
+	local size="$(grep $base /proc/mtd | awk '{print $2}')"
+	part="${part##mtd}"
+	local block=/dev/mtdblock$part
+	local host=$(fw_printenv |grep hostname=| awk -F'=' '{print $2}')
+	local configFile=/tmp/backup_"$filename"Tmp
+	local backupFile=/tmp/backup_$filename
+	local encodeFile=/tmp/encode_$filename
+	
+	#Encrypt username and password on account file
+	for i in 0 1 2 3 4
+	do
+		local username=$(uci get account.@account[$i].username)
+		local password=$(uci get account.@account[$i].password)
+
+		user1_enc=$(echo "$username" | openssl bf -a -pass pass:EMG3425AAYJ1234)
+		user1_pw_enc=$(echo "$password" | openssl bf -a -pass pass:EMG3425AAYJ5678)
+		uci set account.@account[$i].username="$user1_enc"
+		uci set account.@account[$i].password="$user1_pw_enc"
+		
+		uci set account.general.encrypt="1"
+		uci commit account
+	done
+
+	sleep 1
+	sync;sync;sync
+
+	#mtd_debug read $block 0x0 0x80000 $configFile
+	local blockSize="$(grep $base /proc/mtd | awk '{print $3}')"
+	mkfs.jffs2 -r /overlay/ -p -x zlib -o $configFile -e 0x$blockSize -n
+
+	ckCgHdr -a -n $host -p $configFile -o $backupFile >> /tmp/logSetconfig_bk
+	#openssl enc -e -des3 -pass pass:zyxel -in $encodeFile -out $backupFile 
+	sleep 1
+	
+	#deEncrypt username and password on account file
+	for i in 0 1 2 3 4
+	do
+		local username=$(uci get account.@account[$i].username)
+		local password=$(uci get account.@account[$i].password)
+
+		user1_enc=$(echo "$username" | openssl bf -a -d -pass pass:EMG3425AAYJ1234)
+		user1_pw_enc=$(echo "$password" | openssl bf -a -d -pass pass:EMG3425AAYJ5678)
+		uci set account.@account[$i].username="$user1_enc"
+		uci set account.@account[$i].password="$user1_pw_enc"
+		
+		uci set account.general.encrypt="0"
+		uci commit account
+	done
+}
+
+cmd=$1
+shift
+case $cmd in
+	"upload_check")
+			upload_check $1 $2
+        ;;
+	"upload_ramfs")
+			upload_ramfs $1
+        ;;
+	"upload")
+			upload $1
+        ;;
+	"upload_tr069")
+			upload_tr069 $1
+        ;;
+	"reset_default")
+			reset_default
+        ;;
+	"backup")
+			backup $1
+        ;;
+	"upgrade_RomD")
+        	upgrade_RomD $1 $2
+        ;;
+	"upgrade_RomD_by_Ftp")
+        	upgrade_RomD_by_Ftp
+        ;;
+	"download_RomD")
+        	download_RomD $1 $2
+        ;;
+	"erase_RomD")
+        	erase_RomD
+        ;;
+	"upload_ROMD")
+			upload_ROMD $1
+		;;	
+	"-h")
+        	usage
+        ;;
+        *)
+			echo "Wrong parameter!!"
+			usage
+        ;;
+esac

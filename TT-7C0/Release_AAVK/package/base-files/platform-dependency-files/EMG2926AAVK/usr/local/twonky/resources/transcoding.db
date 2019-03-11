@@ -1,0 +1,47 @@
+# This file controls which additional res elements are created.
+# Each line consists of file-extension and mime-type used for this target (transcoded) media.
+# The optional third parameter indicates the a DLNA profile, if available.
+# 
+# This file is read a startup once.
+# 
+# Additional res elements are created if an appropriate transcoder is found, i.e.
+# "from"- and "to"-parameter and (optional) "dlnaprofile"-parameter of a desc-file match,
+# or a specific client needs a special resolution or format.
+# 
+# the format is a comma separated list of
+# name,extension,mime type,DLNA Profile,width,height
+# audio: DLNA mandatory 
+MP3,mp3,audio/mpeg,MP3
+
+# additional audio res elements
+LPCM,lpcm,audio/L16,LPCM
+WAV,wav,audio/x-wav
+
+# video: DLNA mandatory
+PAL,mpg,video/mpeg,MPEG_PS_PAL,720,576
+NTSC,mpg,video/mpeg,MPEG_PS_NTSC,720,480
+MPEG,ts,video/vnd.dlna.mpeg-tts,MPEG_TS_HD_NA_MPEG1_L2_ISO
+CIF15,mp4,video/mp4,AVC_MP4_BL_CIF15_AAC_520
+MP4,mp4,video/mp4,AVC_MP4_BL_CIF15_AAC_520
+WMV,wmv,video/x-ms-wmv,WMVMED_BASE
+
+# additional video res elements
+FLV,flv,video/flv,FLV
+3GP,3gp,video/3gpp
+
+# name,extension,mime type
+HLS,m3u,application/vnd.apple.mpegurl
+RTSP,rtsp,application/x-rtsp
+
+
+# image: DLNA mandatory
+# removed image transcoding definitions - as this is about scaling only
+
+# the following lines defines output formats for background transcoding
+# the format is NAME=comma separated list of profiles
+# background-transcoding-group:JPEG=JPEG1920x1080
+# background-transcoding-group:MP3=MP3
+# background-transcoding-group:MPEG2=MPEG
+# background-transcoding-group:WMV=WMV
+# background-transcoding-group:MPEG4=MP4
+# background-transcoding-group:Flash=FLV

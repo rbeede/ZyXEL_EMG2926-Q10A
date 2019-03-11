@@ -1,0 +1,13 @@
+<Client>
+    <DeviceId>
+        <DisplayName>Google ChromeCast</DisplayName>
+        <DeviceDescriptionRecognition>
+            <DescriptionText>GoogleCast</DescriptionText>
+        </DeviceDescriptionRecognition>
+        <MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+    </DeviceId>
+    <DeviceQuirks>
+        <Quirk>USEDIRECTURL</Quirk>
+        <Quirk>SUPPORTS_HTTPS</Quirk>
+    </DeviceQuirks>
+</Client>

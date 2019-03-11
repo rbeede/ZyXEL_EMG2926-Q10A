@@ -1,0 +1,14 @@
+#!/bin/sh
+
+INTERFACE=$1
+RUN_CMD=rtdot1xd
+
+len=${#INTERFACE}
+INTERFACE=$(echo $INTERFACE | cut -c 1-$(($len-1)))
+
+TEMP=$(ps | grep "$RUN_CMD -i $INTERFACE" | grep "grep" -v -c)
+if [  $TEMP -gt 0 ] ; then
+        killall  $RUN_CMD
+fi
+
+/usr/sbin/$RUN_CMD -i $INTERFACE

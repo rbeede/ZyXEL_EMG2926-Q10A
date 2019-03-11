@@ -1,0 +1,12 @@
+--- b/json_object.h	2012-09-19 15:46:36.297063513 +0800
++++ a/json_object.h	2012-09-19 15:45:24.181063513 +0800
+@@ -124,6 +124,9 @@
+ extern void json_object_object_add(struct json_object* obj, const char *key,
+ 				   struct json_object *val);
+ 
++extern void json_object_object_replace(struct json_object* obj, const char *key,
++				       struct json_object *val);
++
+ /** Get the json_object associate with a given object field
+  * @param obj the json_object instance
+  * @param key the object field name

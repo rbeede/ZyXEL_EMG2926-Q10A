@@ -1,0 +1,454 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+ckVpn_conn() {
+	local rules=$1
+	local remotePublicIP
+	local PeerIP
+	local status
+	local localIP=$(uci_get network lan ipaddr)
+	config_get remotePublicIP $rules remoteGwIP
+	config_get PeerIP $rules peerIP
+	config_get status $rules statusEnable
+	[ "$remotePublicIP" != "0.0.0.0" ] && [ "$PeerIP" != "0.0.0.0" ] && [ "$status" == "enable" ] && ping "$PeerIP" -c 3 -I "$localIP" >/dev/null &
+}
+
+ipv4format() {
+	local IP=$1
+	echo "$IP" | egrep -q '^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+	if [ $? -ne 0 ]; then
+		echo "0"
+	else
+		echo "1"
+	fi
+}
+
+mask2length(){
+	LD2=$(echo $1|awk -F. '{print $2}')
+	LD3=$(echo $1|awk -F. '{print $3}')
+	LD4=$(echo $1|awk -F. '{print $4}')
+
+	if [ "$LD4" != "0" ]; then
+		LD=$(echo $1|awk -F. '{print $4}')
+		case $LD in 255) LD=32;; 254) LD=31;; 252) LD=30;; 248) LD=29;; 240) LD=28;; 224) LD=27;; 192) LD=26;; 128) LD=25;;  *) LD=;; esac
+	elif [ "$LD3" != "0" ]; then
+		LD=$(echo $1|awk -F. '{print $3}')
+		case $LD in 255) LD=24;; 254) LD=23;; 252) LD=22;; 248) LD=21;; 240) LD=20;; 224) LD=19;; 192) LD=18;; 128) LD=17;;  *) LD=;; esac
+	elif [ "$LD2" != "0" ]; then
+		LD=$(echo $1|awk -F. '{print $2}')
+		case $LD in 255) LD=16;; 254) LD=15;; 252) LD=14;; 248) LD=13;; 240) LD=12;; 224) LD=11;; 192) LD=10;; 128) LD=9;;  *) LD=;; esac
+	else
+		LD=$(echo $1|awk -F. '{print $1}')
+		case $LD in 255) LD=8;; 254) LD=7;; 252) LD=6;; 248) LD=5;; 240) LD=4;; 224) LD=3;; 192) LD=2;; 128) LD=1;; 0) LD=0;; *) LD=;; esac
+	fi
+	echo $LD
+}
+
+ed_setkey_manual(){
+	rules=$1
+	config_load ipsec
+	
+	config_get localPublicIP $rules localGwIP
+	config_get remotePublicIP $rules remoteGwIP
+	config_get protocolSelect $rules protocol
+	config_get IPSecSPI $rules spi
+	config_get encapModeSelect $rules enMode
+	config_get encapAlgSelect $rules enAlgo
+	config_get encrypKey $rules enKey
+	config_get authAlgSelect $rules authAlgo
+	config_get authKey $rules authKey
+	config_get IPSecSourceAddrStart $rules localIP
+	config_get IPSecSourceAddrMask $rules localNetMask
+	config_get IPSecDestAddrStart $rules peerIP
+	config_get IPSecDestAddrMask $rules peerNetMask
+	config_get remote_gw_ip $rules remote_gw_ip
+	config_get local_gw_ip $rules local_gw_ip
+
+	localMask=`mask2length $IPSecSourceAddrMask`
+	peerMask=`mask2length $IPSecDestAddrMask`
+
+	echo "add $local_gw_ip $remote_gw_ip $protocolSelect 0x$IPSecSPI -m $encapModeSelect -E $encapAlgSelect 0x$encrypKey -A $authAlgSelect 0x$authKey;" >> /var/setkey.conf
+	echo "add $remote_gw_ip $local_gw_ip $protocolSelect 0x$IPSecSPI -m $encapModeSelect -E $encapAlgSelect 0x$encrypKey -A $authAlgSelect 0x$authKey;" >> /var/setkey.conf
+	echo "spdadd $IPSecSourceAddrStart/$localMask $IPSecDestAddrStart/$peerMask any -P out ipsec $protocolSelect/$encapModeSelect/$local_gw_ip-$remote_gw_ip/require;" >> /var/setkey.conf
+	echo "spdadd $IPSecDestAddrStart/$peerMask $IPSecSourceAddrStart/$localMask any -P in ipsec $protocolSelect/$encapModeSelect/$remote_gw_ip-$local_gw_ip/require;" >> /var/setkey.conf
+}
+
+ed_gre_tunnel(){
+	cfg=$1
+	config_load $cfg
+	config_get remote_greGW_ip gre remote_greGW_ip
+	config_get gre_peer_ip gre gre_peer_ip
+	local_gre_ip=$(ifconfig eth0 | grep "inet addr" | awk '{print $2}' | awk -F ':' '{print $2}')
+	config_get gre_IP gre gre_IP
+	config_get grePeerNetMask gre grePeerNetMask
+	config_get remote_LAN_ip gre remote_LAN_ip
+	
+	config_get athL2Support gre athL2Support
+	
+	ip link del gre1
+	ip tunnel del gre1
+	if [ "$athL2Support" == "1" ]; then		
+		ip link add gre1 type gretap local $local_gre_ip remote $remote_greGW_ip dev eth0
+		ip link set gre1 up
+		brctl addif br-lan-homespot gre1
+	else
+		ip tunnel add gre1 mode gre local $local_gre_ip remote $remote_greGW_ip dev eth0
+		ip addr add $gre_IP peer $gre_peer_ip dev gre1
+		ip link set gre1 up
+        fi
+	
+	iptables -F GRETunnel
+	iptables -I GRETunnel -i gre1 -j ACCEPT
+	iptables -I GRETunnel -i br-lan-homespot -j ACCEPT
+	## Prevent large amount of small packet to engage the EMG CPU usage.
+        iptables -I GRETunnel -o br-lan-homespot -m length --length 0:512 -j DROP
+        iptables -I GRETunnel -o br-lan-homespot -m length --length 0:512 -m limit --limit 1000/s --limit-burst 1200 -j ACCEPT
+        iptables -I GRETunnel -i br-lan-homespot -m length --length 0:400 -j DROP
+        iptables -I GRETunnel -i br-lan-homespot -m length --length 0:400 -m limit --limit 1000/s --limit-burst 1200 -j ACCEPT
+}
+
+ed_setkey_ike(){
+	rules=$1
+	cfg=$2
+	config_load $cfg
+	config_get localPublicIP $rules localGwIP
+	config_get remotePublicIP $rules remoteGwIP
+	config_get protocolSelect $rules protocol
+	config_get encapModeSelect $rules enMode
+	config_get IPSecSourceAddrStart $rules localIP
+	config_get IPSecSourceAddrMask $rules localNetMask
+	config_get IPSecDestAddrStart $rules peerIP
+	config_get IPSecDestAddrMask $rules peerNetMask
+	config_get remote_gw_ip $rules remote_gw_ip
+	config_get local_gw_ip $rules local_gw_ip
+	config_get gre_enable $rules GREEnable
+	config_get remote_gre_ip $rules remote_gre_ip
+	config_get local_gre_ip $rules local_gre_ip
+
+	localMask=`mask2length $IPSecSourceAddrMask`
+	peerMask=`mask2length $IPSecDestAddrMask`
+
+	if [ "$gre_enable" == "enable" ]; then
+		echo "spdadd $local_gw_ip/32[0] $remote_gw_ip/32[0] gre -P out ipsec esp/transport//require;" >> /var/setkey.conf
+		echo "spdadd $remote_gw_ip/32[0] $local_gw_ip/32[0] gre -P in ipsec esp/transport//require;" >> /var/setkey.conf
+	else
+		if [ "$remotePublicIP" != "0.0.0.0" ]; then	
+			echo "spdadd $IPSecSourceAddrStart/$localMask $IPSecDestAddrStart/$peerMask any -P out ipsec $protocolSelect/$encapModeSelect/$local_gw_ip-$remote_gw_ip/require;" >> /var/setkey.conf
+			echo "spdadd $IPSecDestAddrStart/$peerMask $IPSecSourceAddrStart/$localMask any -P in ipsec $protocolSelect/$encapModeSelect/$remote_gw_ip-$local_gw_ip/require;" >> /var/setkey.conf
+		fi
+	fi
+}
+
+ed_racoon(){
+	rules=$1
+	cfg=$2
+	config_load $cfg
+	config_get IPSecKeepAlive $rules KeepAlive
+	config_get localPublicIP $rules localGwIP
+	config_get remotePublicIP $rules remoteGwIP
+	config_get protocolSelect $rules protocol
+	config_get IPSecSPI $rules spi
+	config_get encapAlgSelect $rules enAlgo
+	config_get encrypKey $rules enKey
+	config_get authAlgSelect $rules authAlgo
+	config_get authKey $rules authKey
+	config_get IPSecSourceAddrStart $rules localIP
+	config_get IPSecSourceAddrMask $rules localNetMask
+	config_get IPSecDestAddrStart $rules peerIP
+	config_get IPSecDestAddrMask $rules peerNetMask
+	config_get remote_gw_ip $rules remote_gw_ip
+	config_get local_gw_ip $rules local_gw_ip
+
+	localMask=`mask2length $IPSecSourceAddrMask`
+	peerMask=`mask2length $IPSecDestAddrMask`
+
+	config_get modeSelect $rules mode
+	config_get saLifeTime $rules lifeTime
+	config_get IPSecNatTraversal $rules NatTraversal
+	config_get localContentSelect $rules my_identifier_type
+	config_get localContent $rules my_identifier
+	config_get remoteContentSelect $rules peers_identifier_type
+	config_get remoteContent $rules peers_identifier
+	config_get keyGroup $rules keyGroup
+	
+	## Sainfo
+	config_get encapAlgSelect2 $rules enAlgo2
+	config_get authAlgSelect2 $rules authAlgo2
+	config_get keyGroup2 $rules keyGroup2
+	config_get saLifeTime2 $rules lifeTime2
+	config_get gre_enable $rules GREEnable
+
+	if [ "$IPSecKeepAlive" == "on" ]; then
+		echo "timer {" >> /var/racoon.conf
+		echo -e "\tnatt_keepalive 10 sec;" >> /var/racoon.conf
+		echo "}" >> /var/racoon.conf
+	fi
+
+	echo "listen {" >> /var/racoon.conf
+	echo -e "\tisakmp $local_gw_ip[500];" >> /var/racoon.conf
+	echo -e "\tisakmp_natt $local_gw_ip[4500];" >> /var/racoon.conf
+	echo "}" >> /var/racoon.conf
+
+
+	if [ "$remote_gw_ip" == "0.0.0.0" ]; then
+		echo "remote anonymous {" >> /var/racoon.conf
+		echo -e "\texchange_mode main, aggressive;" >> /var/racoon.conf
+		echo -e "\tgenerate_policy on;" >> /var/racoon.conf
+		echo -e "\tpassive on;" >> /var/racoon.conf
+	else
+		echo "remote $remote_gw_ip {" >> /var/racoon.conf
+		echo -e "\texchange_mode $modeSelect;" >> /var/racoon.conf
+		echo -e "\tpassive off;" >> /var/racoon.conf
+	fi
+
+	if [ "$IPSecNatTraversal" == "on" ]; then
+		echo -e "\tnat_traversal on;" >> /var/racoon.conf
+	fi
+
+	echo -e "\tdpd_delay 10;" >> /var/racoon.conf
+	echo -e "\tlifetime time $saLifeTime sec;" >> /var/racoon.conf
+	echo -e "\tproposal_check obey;" >> /var/racoon.conf
+
+#	if [ "$localContentSelect" == "fqdn" ] || [ "$localContentSelect" == "user_fqdn" ]; then
+#		echo -e "\tmy_identifier $localContentSelect \"$localContent\";" >> /var/racoon.conf
+#	else
+#		echo -e "\tmy_identifier $localContentSelect $localContent;" >> /var/racoon.conf
+#	fi	
+
+#	if [ "$remoteContentSelect" == "fqdn" ] || [ "$remoteContentSelect" == "user_fqdn" ]; then
+#		echo -e "\tpeers_identifier $remoteContentSelect \"$remoteContent\";" >> /var/racoon.conf
+#	else
+#		echo -e "\tpeers_identifier $remoteContentSelect $remoteContent;" >> /var/racoon.conf
+#	fi
+
+#	echo -e "\tverify_identifier on;" >> /var/racoon.conf
+	echo -e "\tproposal {" >> /var/racoon.conf
+	echo -e "\t\tencryption_algorithm $encapAlgSelect;" >> /var/racoon.conf
+	echo -e "\t\thash_algorithm $authAlgSelect;" >> /var/racoon.conf
+	echo -e "\t\tauthentication_method pre_shared_key;" >> /var/racoon.conf
+	echo -e "\t\tdh_group $keyGroup;" >> /var/racoon.conf
+	echo -e "\t}" >> /var/racoon.conf
+	echo "}" >> /var/racoon.conf
+	echo "" >> /var/racoon.conf
+	
+	if [ "$gre_enable" == "enable" ] ; then
+		echo "sainfo anonymous {" >> /var/racoon.conf
+	else
+		if [ "$remotePublicIP" == "0.0.0.0" ]; then
+			echo "sainfo anonymous {" >> /var/racoon.conf
+		else
+			echo "sainfo address $IPSecSourceAddrStart/$localMask  any address $IPSecDestAddrStart/$peerMask any {" >> /var/racoon.conf
+		fi
+	fi
+
+	echo -e "\tpfs_group $keyGroup2;" >> /var/racoon.conf
+	echo -e "\tlifetime time $saLifeTime2 sec;" >> /var/racoon.conf
+	echo -e "\tencryption_algorithm $encapAlgSelect2;" >> /var/racoon.conf
+	echo -e "\tauthentication_algorithm $authAlgSelect2;" >> /var/racoon.conf
+	echo -e "\tcompression_algorithm deflate;" >> /var/racoon.conf
+	echo "}" >> /var/racoon.conf
+}
+
+ed_psk(){
+	rules=$1
+	cfg=$2
+	config_load $cfg
+	config_get IPSecPreSharedKey $rules preSharedKey
+	config_get remote_gw_ip $rules remote_gw_ip
+	
+	if [ "$remote_gw_ip" == "0.0.0.0" ]; then
+		config_get remoteContent $rules peers_identifier
+		echo "$remoteContent $IPSecPreSharedKey" >> /var/psk.txt
+	else
+		echo "$remoteContent $IPSecPreSharedKey" >> /var/psk.txt
+		echo "$remote_gw_ip $IPSecPreSharedKey" >> /var/psk.txt
+	fi
+}
+
+vpn_enable=0
+
+reload_ipsec (){
+	local rules=$1
+	echo $rules
+ 
+	local statusEnable
+	local localIP
+	local localNetMask
+	local peerIP
+	local peerNetMask
+	local keyMode
+	local remotePublicIP
+	
+	config_get statusEnable $rules statusEnable
+	config_get localIP $rules localIP
+	config_get localNetMask $rules localNetMask
+	echo $localNetMask
+	config_get peerIP $rules peerIP
+	config_get peerNetMask $rules peerNetMask
+	config_get keyMode $rules keyMode
+	config_get remotePublicIP $rules remoteGwIP
+
+	echo "enable IPSec VPN..."
+	if [ "$statusEnable" == "enable" ]; then
+		vpn_enable=1
+		
+		iptables -t nat -N vpn_rule
+		iptables -t nat -I POSTROUTING -j vpn_rule
+		iptables -N forward_vpn		
+
+		if [ "$remotePublicIP" != "0.0.0.0" ]; then	
+			iptables -t nat -I vpn_rule -s $localIP/$localNetMask -d $peerIP/$peerNetMask  -j ACCEPT
+			iptables -A forward_vpn -s $peerIP/$peerNetMask -d $localIP/$localNetMask -j ACCEPT
+			setkey -f /var/setkey.conf
+		fi
+
+		if [ "$keyMode" == "IKE"  ]; then
+			chmod 600 /var/psk.txt
+			killall racoon
+			sleep 3
+			racoon -l /var/log/racoon.log -f /var/racoon.conf
+		fi
+	fi
+	return 0
+}
+
+dns_to_ip () {
+	local rules=$1
+	local remotePublicAddr
+	local localPublicAddr
+	local i
+	local remote_gw_ip
+
+	remotePublicAddr=$(uci_get ipsec $rules remoteGwIP)
+	#ipaddress or domain name
+	i=$(ipv4format $remotePublicAddr)
+	if [ "$i" == "1" ]; then
+		remote_gw_ip=$remotePublicAddr
+	else
+		dns_resolve=$(nslookup $remotePublicAddr | grep Address | grep -v localhost)
+		if [ "$dns_resolve" != "" ]; then
+			remote_gw_ip=$(echo $dns_resolve | awk '{print $2}')
+		else
+			remote_gw_ip="0.0.0.0"
+		fi
+	fi
+
+	localPublicAddr=$(uci_get ipsec $rules localGwIP)
+	#ipaddress or domain name
+	i=$(ipv4format $localPublicAddr)
+	if [ "$i" == "1" ]; then
+		if [ "$localPublicAddr" == "0.0.0.0" ]; then
+			local_gw_ip=$(ifconfig eth0 | grep "inet addr" | awk '{print $2}' | awk -F":" '{print $2}')
+			if [ "$local_gw_ip" == "" ]; then
+				local_gw_ip="0.0.0.0"
+			fi
+		else
+			local_gw_ip=$localPublicAddr
+		fi
+	else
+		dns_resolve=$(nslookup $localPublicAddr | grep Address | grep -v localhost)
+		if [ "$dns_resolve" != "" ]; then
+			local_gw_ip=$(echo $dns_resolve | awk '{print $2}')
+		else
+			local_gw_ip="0.0.0.0"
+		fi
+	fi
+
+	uci_set ipsec $rules remote_gw_ip $remote_gw_ip
+	uci_set ipsec $rules local_gw_ip $local_gw_ip
+	uci_commit ipsec
+}
+
+vpn_setkey () {
+	local rules=$1
+	local cfg=$2
+	local rule_enable
+	local key_mode
+
+	rule_enable=$(uci_get $cfg $rules statusEnable)
+	gre_enable=$(uci_get $cfg $rules GREEnable)
+	key_mode=$(uci_get $cfg $rules keyMode)
+
+	if [ "$rule_enable" == "enable" ]; then
+		dns_to_ip $rules
+
+		if [ "$key_mode" == "manual" ]; then
+			ed_setkey_manual $rules
+		fi
+
+		if [ "$key_mode" == "IKE" ]; then
+			ed_setkey_ike $rules $cfg
+			ed_racoon $rules $cfg
+			ed_psk $rules $cfg
+			[ "$gre_enable" == "enable" ] && ed_gre_tunnel $cfg
+		fi
+	fi
+}
+
+cmd=$1
+cnf=$2
+shift
+case "$cmd" in
+	--help|help) usage ;;
+	stop)
+		echo "IPsec VPN Stop"
+		killall racoon
+        ;;
+	start|reload|restart|init)
+        
+        ### reset bypass firewall
+        vpn_enable=0 
+        iptables -F input_vpn
+        iptables -F forward_vpn
+        iptables -D INPUT -j input_vpn
+        iptables -D FORWARD -j forward_vpn
+        iptables -X input_vpn
+        iptables -X forward_vpn
+        
+        setkey -F
+		setkey -FP
+        iptables -t nat -F vpn_rule
+        iptables -t nat -D POSTROUTING -j vpn_rule
+		iptables -t nat -X vpn_rule
+	
+        echo "flush;" > /var/setkey.conf
+		echo "spdflush;" >> /var/setkey.conf
+
+		test ! -e /var/psk.txt && touch /var/psk.txt
+		test -e /var/psk.txt && rm /var/psk.txt && touch /var/psk.txt
+
+		echo "path pre_shared_key \"/var/psk.txt\";" > /var/racoon.conf
+
+		for rules in rule1 rule2 rule3 rule4 rule5
+		do
+			vpn_setkey $rules $cnf
+		done
+
+		config_load $cnf
+		config_foreach reload_ipsec ipsec
+
+		## bypass firewall
+		if [ $vpn_enable -eq 1 ]; then
+			iptables -N input_vpn
+			iptables -A input_vpn -p esp -j ACCEPT
+			iptables -A input_vpn -p udp -m udp --dport 500 -j ACCEPT
+			iptables -A input_vpn -p udp -m udp --dport 4500 -j ACCEPT
+
+			/lib/firewall/iptables_app_order
+		fi
+		## check site-to-site vpn connection status
+		config_foreach ckVpn_conn ipsec
+		
+        exit $?
+        ;;
+
+	ck_status) 
+	
+	config_load $cnf
+	config_foreach ckVpn_conn $cnf
+
+	;;
+esac
+ 
+exit $?

@@ -1,0 +1,4 @@
+config wps wps
+	option enabled  1
+	option conf     1
+	option PinEnable        0

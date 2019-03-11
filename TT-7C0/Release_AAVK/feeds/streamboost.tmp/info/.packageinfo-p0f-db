@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/p0f-db/Makefile
+Package: p0f-db
+Submenu: Flow Detect
+Version: 20140626230340-g423dcb5-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: p0f fingerprint database.
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: p0f-db-20140626230340-g423dcb5-generic.tar.gz
+Type: ipkg-prebuilt
+Description: Database of fingerprints for p0f.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_p0f-db
+	config p0f-db_USE_CUSTOM_VERSION
+		depends on PACKAGE_p0f-db
+		bool "Use custom package version"
+		default n
+	config p0f-db_CUSTOM_VERSION
+		depends on p0f-db_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140626230340-g423dcb5-generic)"
+		default "20140626230340-g423dcb5-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_p0f-db
+	config p0f-db_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_p0f-db
+		bool "Use custom source directory"
+		default n
+	config p0f-db_CUSTOM_SOURCE_DIR
+		depends on p0f-db_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

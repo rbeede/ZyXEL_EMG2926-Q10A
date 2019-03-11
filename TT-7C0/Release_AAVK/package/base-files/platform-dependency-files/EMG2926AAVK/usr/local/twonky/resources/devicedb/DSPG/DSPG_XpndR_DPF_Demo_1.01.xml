@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DSPG XpndR DPF Demo/1.01</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>DSPG XpndR DPF Demo/1.01</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>DSPG XpndR DPF Demo/1.01</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG800x600</Target>
+		</Scaling>
+	</Capabilities>
+</Client>

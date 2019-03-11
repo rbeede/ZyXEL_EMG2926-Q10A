@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/spaceman/Makefile
+Package: spaceman
+Submenu: Flow Detect
+Version: 0.0.1-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +ngrep +redis-cli @BUSYBOX_CONFIG_AWK
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Spaceman
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Dr. Spaceman classifies generic flows.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_spaceman
+	config spaceman_USE_CUSTOM_VERSION
+		depends on PACKAGE_spaceman
+		bool "Use custom package version"
+		default n
+	config spaceman_CUSTOM_VERSION
+		depends on spaceman_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.0.1)"
+		default "0.0.1"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_spaceman
+	config spaceman_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_spaceman
+		bool "Use custom source directory"
+		default n
+	config spaceman_CUSTOM_SOURCE_DIR
+		depends on spaceman_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

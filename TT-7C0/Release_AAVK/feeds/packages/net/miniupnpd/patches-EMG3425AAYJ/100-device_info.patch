@@ -1,0 +1,34 @@
+--- a/upnpdescstrings.h
++++ b/upnpdescstrings.h
+@@ -10,12 +10,12 @@
+ #include "config.h"
+ 
+ /* strings used in the root device xml description */
+-#define ROOTDEV_FRIENDLYNAME		OS_NAME " router"
+-#define ROOTDEV_MANUFACTURER		OS_NAME
+-#define ROOTDEV_MANUFACTURERURL		OS_URL
+-#define ROOTDEV_MODELNAME			OS_NAME " router"
+-#define ROOTDEV_MODELDESCRIPTION	OS_NAME " router"
+-#define ROOTDEV_MODELURL			OS_URL
++#define ROOTDEV_FRIENDLYNAME		"Zyxel EMG3425-Q10A Router"
++#define ROOTDEV_MANUFACTURER		"Zyxel Communications Corp."
++#define ROOTDEV_MANUFACTURERURL		"http://www.zyxel.com"
++#define ROOTDEV_MODELNAME		"Zyxel EMG3425-Q10A Router"
++#define ROOTDEV_MODELDESCRIPTION	"Zyxel EMG3425-Q10A Router"
++#define ROOTDEV_MODELURL		""
+ 
+ #define WANDEV_FRIENDLYNAME			"WANDevice"
+ #define WANDEV_MANUFACTURER			"MiniUPnP"
+--- a/upnpglobalvars.h
++++ b/upnpglobalvars.h
+@@ -56,7 +56,9 @@ extern const char * pidfilename;
+ 
+ extern char uuidvalue[];
+ 
+-#define SERIALNUMBER_MAX_LEN (10)
++//#define SERIALNUMBER_MAX_LEN (10)
++//For EMG3425-Q10A serial number length
++#define SERIALNUMBER_MAX_LEN (15)
+ extern char serialnumber[];
+ 
+ #define MODELNUMBER_MAX_LEN (48)

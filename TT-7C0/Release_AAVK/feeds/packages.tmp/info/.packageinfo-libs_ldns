@@ -1,0 +1,19 @@
+Source-Makefile: feeds/packages/libs/ldns/Makefile
+Package: libldns
+Version: 1.6.11-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libopenssl
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: libs
+Category: Libraries
+Title: A library to simplify DNS programming
+Maintainer: 
+Source: ldns-1.6.11.tar.gz
+Type: ipkg
+Description: A library to simplify DNS programming
+http://www.nlnetlabs.nl/projects/ldns/
+
+@@
+
+

@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost_customer_template/wopr-db/Makefile
+Package: wopr-db
+Submenu: Flow Detect
+Version: 20140619165349-gba7dcd5-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: WOPR database
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: wopr-db-20140619165349-gba7dcd5-generic.tar.gz
+Type: ipkg-prebuilt
+Description: Flow definitions for drflocs
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_wopr-db
+	config wopr-db_USE_CUSTOM_VERSION
+		depends on PACKAGE_wopr-db
+		bool "Use custom package version"
+		default n
+	config wopr-db_CUSTOM_VERSION
+		depends on wopr-db_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140619165349-gba7dcd5-generic)"
+		default "20140619165349-gba7dcd5-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_wopr-db
+	config wopr-db_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_wopr-db
+		bool "Use custom source directory"
+		default n
+	config wopr-db_CUSTOM_SOURCE_DIR
+		depends on wopr-db_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

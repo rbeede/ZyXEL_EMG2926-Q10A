@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Acer Media Player</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Acer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

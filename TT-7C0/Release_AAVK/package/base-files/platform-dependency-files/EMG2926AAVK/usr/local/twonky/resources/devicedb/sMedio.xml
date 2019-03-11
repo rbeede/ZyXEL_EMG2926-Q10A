@@ -1,0 +1,12 @@
+<Client>
+    <DeviceId>
+        <DisplayName>sMedio CVP-1 client</DisplayName>
+	<HttpRecognition>
+		<HttpText>SmedioStack/1.0</HttpText>
+	</HttpRecognition>
+        <MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+    </DeviceId>
+    <DeviceQuirks>
+        <Quirk>exclude_cvp2_services</Quirk>
+    </DeviceQuirks>
+</Client>

@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Generic Media Receiver</DisplayName>
+		<HttpRecognition>
+			<HttpText>DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>AUTO</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

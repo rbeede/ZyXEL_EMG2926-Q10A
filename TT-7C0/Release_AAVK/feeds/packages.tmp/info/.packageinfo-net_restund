@@ -1,0 +1,18 @@
+Source-Makefile: feeds/packages/net/restund/Makefile
+Package: restund
+Version: 0.2.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libre @BROKEN
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: libre stun server
+Maintainer: 
+Source: restund-0.2.0.tar.gz
+Type: ipkg
+Description: libre stun server
+http://www.creytiv.com/
+
+@@
+
+

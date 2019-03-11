@@ -1,0 +1,325 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style>
+.on {display:on}
+.off {display:none}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<%
+   local schedulingNames = { "Everyday", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" }
+%>
+<script type="text/javascript">
+//<![CDATA[
+
+var schedulings = [
+   <%
+      for i, name in pairs(schedulingNames) do
+         local token = string.lower( name:sub( 1, 1 ) ) .. name:sub( 2, #name )
+         %>
+   { name : "<%= name %>",
+      status : <% if "1" == uci:get( "wifi_schedule5G", token, "status_onoff" ) then %> true <% else %> false <% end %>,
+      enabled : <% if "1" == uci:get( "wifi_schedule5G", token, "enabled" ) then %> true <% else %> false <% end %>,
+      startTime : { hour : "<%= uci:get( "wifi_schedule5G", token, "start_hour" ) %>", min : "<%= uci:get( "wifi_schedule5G", token, "start_min" ) %>" },
+      endTime : { hour : "<%= uci:get( "wifi_schedule5G", token, "end_hour" ) %>", min : "<%= uci:get( "wifi_schedule5G", token, "end_min" ) %>" } },
+         <%
+      end
+   %>
+];
+
+var schedulingsNumber = <%= #schedulingNames %>;
+
+function clickEveryday()
+{
+	with ( document.forms[0] ){
+		if(WLanSch5GEverydayEnabled.checked == true){
+			for( var i = 0; i < schedulingsNumber; i++ )
+			{
+				if ( schedulings[i].name != "Everyday" )
+					document.getElementsByName( "WLanSch5G" + schedulings[i].name + "Enabled" )[0].disabled = true;
+			}
+		}
+		else{
+			for( var i = 0; i < schedulingsNumber; i++ )
+			{
+				if ( schedulings[i].name != "Everyday" )
+					document.getElementsByName( "WLanSch5G" + schedulings[i].name + "Enabled" )[0].disabled = false;
+			}
+		}
+	}
+}
+
+function displayPage()
+{
+   var enabled = <% if "enable" == uci:get( "wifi_schedule5G", "wlan", "enabled" ) then %> true <% else %> false <% end %>;
+
+   document.getElementsByName( "WLanSch5GRadio" )[0].checked = enabled;
+   document.getElementsByName( "WLanSch5GRadio" )[1].checked = !enabled;
+
+	for ( var i = 0; i < schedulingsNumber; i++ )
+	{
+		var prefixStr = "WLanSch5G" + schedulings[i].name;
+
+		document.getElementsByName( prefixStr + "Radio" )[0].checked = schedulings[i].status;
+		document.getElementsByName( prefixStr + "Radio" )[1].checked = !schedulings[i].status;
+		document.getElementsByName( prefixStr + "Enabled" )[0].checked = schedulings[i].enabled;
+		document.getElementsByName( prefixStr + "StartHour" )[0].selectedIndex = schedulings[i].startTime.hour;
+		document.getElementsByName( prefixStr + "StartMin" )[0].selectedIndex = schedulings[i].startTime.min / 30;
+		document.getElementsByName( prefixStr + "EndHour" )[0].selectedIndex = schedulings[i].endTime.hour;
+		document.getElementsByName( prefixStr + "EndMin" )[0].selectedIndex = schedulings[i].endTime.min / 30;
+	}
+	clickEveryday();
+}
+
+/*
+function clickEveryday( obj )
+{
+   if ( obj.checked )
+   {
+      for( var i = 0; i < schedulingsNumber; i++ )
+      {
+         if ( schedulings[i].name != "Everyday" )
+            document.getElementsByName( "WLanSch5G" + schedulings[i].name + "Enabled" )[0].checked = false;
+      }
+   }
+}
+
+function clickWeekdays( obj )
+{
+   if ( obj.checked )
+   {
+      document.getElementsByName( "WLanSch5GEverydayEnabled" )[0].checked = false;
+   }
+}
+*/
+function init()
+{
+   displayPage();
+/*
+   for( var i = 0; i < schedulingsNumber; i++ )
+   {
+      if ( schedulings[i].name == "Everyday" )
+         document.getElementsByName( "WLanSch5GEverydayEnabled" )[0].setAttribute( "onclick", "clickEveryday( this )" );
+      else
+         document.getElementsByName( "WLanSch5G" + schedulings[i].name + "Enabled" )[0].setAttribute( "onclick", "clickWeekdays( this )" );
+   }
+*/
+}
+//]]>
+window.onload=init;
+
+function submitData()
+{
+	for ( var i = 0; i < schedulingsNumber; i++ )
+	{
+		var prefixStr = "WLanSch5G" + schedulings[i].name;
+		var sHourIdx = document.getElementsByName( prefixStr + "StartHour" )[0].selectedIndex;
+		var sMinIdx = document.getElementsByName( prefixStr + "StartMin" )[0].selectedIndex;
+		var eHourIdx = document.getElementsByName( prefixStr + "EndHour" )[0].selectedIndex;
+		var eMinIdx = document.getElementsByName( prefixStr + "EndMin" )[0].selectedIndex;
+
+      if ( sHourIdx > eHourIdx || ( sHourIdx == eHourIdx && sMinIdx > eMinIdx ) )
+      {
+         alert( name + " <%:sch_warn1%>" );
+         return false;
+      }
+
+   }
+   
+   showWebMessage( 1, '<%:Message%>', '<%:msg_config%>' );
+   return true;
+}
+
+</script>
+</head>
+<body>
+<% local sys_op_mode = uci:get("system","main","system_mode")%>
+<div id="tabs" style="word-break:break-all;(">
+  <ul>
+<% if sys_op_mode ~= "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan5G" title="<%:General%>"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_multissid5G" title="<%:more_ap%>"><span><%:more_ap%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanmacfilter5G" title="<%:mac_filter%>"><span><%:mac_filter%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanadvanced5G" title="<%:wireless_advance%>"><span><%:wireless_advance%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanqos5G" title="<%:wireless_qos%>"><span><%:wireless_qos%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwps5G" title="<%:wps%>"><span><%:wps%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwpsstation5G" title="<%:wps_station%>"><span><%:wps_station%></span></a></li>
+    <li class="hightline"><a title="Scheduling"><span><%:scheduling%></span></a></li>
+<% end %>
+<% if sys_op_mode ~= "1" and sys_op_mode ~= "2" then%>
+<% if sys_op_mode == "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp5G" title="<%:General%>"><span><%:General%></span></a></li>
+<% else %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp5G" title="<%:universal_repeater%>"><span><%:universal_repeater%></span></a></li>
+<% end %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp_ur_site_survey5G" title="<%:site_survey%>"><span><%:site_survey%></span></a></li>
+<% end %>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+<form name="WLanSch5GForm" onsubmit="return submitData()">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:wlan_scheduling%>  :</li>
+              <li class="right_table">
+                <input name="WLanSch5GRadio" type="radio" value="enable" />
+                <%:enable%>
+                <input name="WLanSch5GRadio" type="radio" value="disable" />
+                <%:disable%>
+              </li>
+            </ul>
+          </div>
+          <div class="tableframe">
+            <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0" class="table_frame">
+              <tr>
+                <td>
+                  <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <table width="100%" border="0" align="left" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <table id="WLanSch5GTable" width="100%" cellpadding="0" cellspacing="0" >
+                                <tr>
+                                  <td height="26" colspan="3">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                      <tr>
+                                        <td height="26" class="table_title"><%:scheduling%></td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                                <tr class="top_font" align="left">
+                                  <td><%:wlan_status%></td>
+                                  <td><%:sch_day%></td>
+                                  <td><%:sch_time%></td>
+                                </tr>
+                              <%
+                              for i, name in ipairs(schedulingNames) do
+                              %>
+                                <tr class="table_font" align="left">
+                                  <td>
+                                    <input name="WLanSch5G<%= name %>Radio" value="1" type="radio" />
+                                    <%:sch_on%>
+                                    <input name="WLanSch5G<%= name %>Radio" value="0" type="radio" />
+                                    <%:sch_off%>
+                                  </td>
+                                  <td>
+                                    <input name="WLanSch5G<%= name %>Enabled" type="checkbox" <%if name == "Everyday" then%>onClick="clickEveryday()"<%end%> />
+                                    <%if name == "Everyday" then%><%:sch_everyday%>
+                                    <%elseif name == "Mon" then%><%:sch_mon%>
+                                    <%elseif name == "Tue" then%><%:sch_tue%>
+                                    <%elseif name == "Wed" then%><%:sch_wed%>
+                                    <%elseif name == "Thu" then%><%:sch_thu%>
+                                    <%elseif name == "Fri" then%><%:sch_fri%>
+                                    <%elseif name == "Sat" then%><%:sch_sat%>
+                                    <%elseif name == "Sun" then%><%:sch_sun%>
+                                    <%end%>
+                                  </td>
+                                  <td>
+                                    <select name="WLanSch5G<%= name %>StartHour" size="1">
+                                      <%
+                                      for j = 0, 23 do
+                                      %>
+                                      <option value="<%= j %>"><%= string.format( "%02d", j ) %></option>   
+                                      <%
+                                      end
+                                      %>
+                                    </select>
+                                    (<%:sch_hour%>)&nbsp;
+                                    <select name="WLanSch5G<%= name %>StartMin" size="1">
+                                      <option value="0">00</option>
+                                      <option value="30">30</option>
+                                    </select>
+                                    (<%:sch_min%>)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                                    <select name="WLanSch5G<%= name %>EndHour" size="1">
+                                      <%
+                                      for j = 0, 23 do
+                                      %>
+                                      <option value="<%= j %>"><%= string.format( "%02d", j ) %></option>   
+                                      <%
+                                      end
+                                      %>
+                                    </select>
+                                    (<%:sch_hour%>)
+                                    <select name="WLanSch5G<%= name %>EndMin" size="1">
+                                      <option value="0">00</option>
+                                      <option value="30">30</option>
+                                    </select>
+                                    (<%:sch_min%>)
+                                  </td>
+                                </tr>
+                              <%
+                              end
+                              %>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </div>	
+          <div class="spaceair"></div>
+          <div class="w_text"><span class="i_note"><%:note%>:</span> </div>
+          <div class="w_text"><span class="i_note_a"><%:sch_note1%></span></div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"> 
+      <div class="button" align="center">
+        <input name="sysSubmit" value="<%:apply%>" type="submit" />
+        &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+        <input name="Cancel" value="<%:cancel%>" type="reset" onclick="disaplyPage()" /> 
+      </div> 
+    </li> 
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+   init();
+   showFullPath(' <%:Network%> > <%:Wireless_LAN_5_G%> > <%:scheduling%>');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

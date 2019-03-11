@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/celes/Makefile
+Package: celes
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libnetfilter-conntrack +libevent2
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Connection Event Logger Service
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: celes-.tar.gz
+Type: ipkg
+Description: SEA receives statistics and events from conntrack and maintains this data in an event db in Redis.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_celes
+	config celes_USE_CUSTOM_VERSION
+		depends on PACKAGE_celes
+		bool "Use custom package version"
+		default n
+	config celes_CUSTOM_VERSION
+		depends on celes_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_celes
+	config celes_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_celes
+		bool "Use custom source directory"
+		default n
+	config celes_CUSTOM_SOURCE_DIR
+		depends on celes_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

@@ -1,0 +1,38 @@
+<div id="requirementsCheck" class="popup large error centerContent" data-bind="slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="popup_header_line"></div>
+    <div id="closebutton" class="button close" data-bind="click: onCloseClick"></div>
+    <div id="wm" class="watermark"></div>
+    <div class="reqContent">
+        <div class="reqInfo">
+            <div class="reqInfoItem text NEWtitle" data-bind="html: title"></div>
+            <div class="reqInfoItem reqMessage text subTitle" data-bind="html: message"></div>
+            <div class="reqInfoItem reqButton">
+                <div class="boxButton largeButton svgGradient" data-bind="click: onDownloadClick, html: buttonText"></div>
+            </div>
+        </div>
+        <div class="reqCheck">
+            <div class="recCheckItem">
+                <div class="reqInfoItemImg thumNetworkCheck">
+                    <p data-bind="css: { checkmark: wifiCheck(), missing: !wifiCheck()}" />
+                </div>
+                <p class="text itemTitle marginBottom" data-bind="html: networkTitle"></p>
+                <p class="text itemMessage" data-bind="html: networkText"></p>
+            </div>
+            <div class="recCheckItem">
+                <div class="reqInfoItemImg thumTwonkyCheck">
+                    <p data-bind="css: { checkmark: twonkyCheck(), missing: !twonkyCheck()}" />
+                </div>
+                <p class="text itemTitle marginBottom" data-bind="html: serverTitle"></p>
+                <p class="text itemMessage marginBottom" data-bind="html: serverText"></p>
+            </div>
+            <div class="recCheckItem">
+                <div class="reqInfoItemImg thumPlayerCheck">
+                    <p data-bind="css: { checkmark: playerCheck(), missing: !playerCheck()}" />
+                </div>
+                <p class="text itemTitle marginBottom" data-bind="html: rendererTitle"></p>
+                <p class="text itemMessage marginBottom" data-bind="html: rendererText"></p>
+                <p class="text itemMessage linkbutton" data-bind="click: onMoreInfoClick, html: linkButtonMoreInfo"></p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,35 @@
+Index: clinkc/Makefile
+===================================================================
+--- clinkc.orig/Makefile	2015-05-11 14:14:38.857178046 +0800
++++ clinkc/Makefile	2015-05-11 14:15:11.388846000 +0800
+@@ -17,13 +17,13 @@
+ SOURCES += $(wildcard $(UTIL_SRC_PATH)/*.c)
+ SOURCES += $(wildcard $(NET_SRC_PATH)/*.c)
+ SOURCES += $(wildcard $(HTTP_SRC_PATH)/*.c)
+-SOURCES += $(wildcard $(SOAP_SRC_PATH)/*.c)
+-SOURCES += $(wildcard $(XML_SRC_PATH)/*.c)
+-SOURCES += $(wildcard $(UPNP_SRC_PATH)/*.c)
+-SOURCES += $(wildcard $(UPNP_SRC_PATH)/control/*.c)
+-SOURCES += $(wildcard $(UPNP_SRC_PATH)/event/*.c)
+-SOURCES += $(wildcard $(UPNP_SRC_PATH)/ssdp/*.c)
+-SOURCES += $(wildcard $(SSL_SRC_PATH)/*.c)
++#SOURCES += $(wildcard $(SOAP_SRC_PATH)/*.c)
++#SOURCES += $(wildcard $(XML_SRC_PATH)/*.c)
++#SOURCES += $(wildcard $(UPNP_SRC_PATH)/*.c)
++#SOURCES += $(wildcard $(UPNP_SRC_PATH)/control/*.c)
++#SOURCES += $(wildcard $(UPNP_SRC_PATH)/event/*.c)
++#SOURCES += $(wildcard $(UPNP_SRC_PATH)/ssdp/*.c)
++#SOURCES += $(wildcard $(SSL_SRC_PATH)/*.c)
+ 
+ 
+ OBJS = $(patsubst %.c, %.o, $(SOURCES))
+@@ -47,7 +47,8 @@
+ BUILD_DIR:=$(subst /userspace, /userspace,$(CURR_DIR))
+ BUILD_DIR:=$(word 1, $(BUILD_DIR))
+ 
+-CFLAGS += -DZYXEL_PATCH -DCG_USE_OPENSSL -DHAVE_LIBUUID -std=gnu99
++#CFLAGS += -DZYXEL_PATCH -DCG_USE_OPENSSL -DHAVE_LIBUUID -std=gnu99
++CFLAGS += -DZYXEL_PATCH -std=gnu99
+ 
+ #
+ # Public libs are only allowed to include header files from the

@@ -1,0 +1,21 @@
+<Client>
+	<DeviceId>
+		<DisplayName>XBOX One</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Xbox One</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<!-- Device sends invalid stop events. -->
+		<Quirk>STOP_WORKAROUND</Quirk>
+		<!-- Device sends invalid states together with metadata
+             update events. Use only those provided separately. -->
+		<Quirk>IGNORE_STATE_IN_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

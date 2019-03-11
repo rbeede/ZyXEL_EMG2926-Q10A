@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Audi Multimedia System</DisplayName>
+		<HttpRecognition>
+			<HttpText>Allegro-Software-WebClient-M0902/5.20 DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

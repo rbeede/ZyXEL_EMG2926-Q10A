@@ -1,0 +1,111 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("application/xhtml+xml")
+
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body>
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="Dynamic DNS"><span>3G Connection Setup</span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li><li class="table_content">
+        <div class="data">
+        <ul>
+          <div class="w_text">
+            <ul>
+              <li class="left_table">PIN Code : </li>
+              <li class="right_table">
+                <input type="text" name="textfield" id="textfield" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table">APN Code :</li>
+              <li class="right_table">
+                <input type="text" name="textfield" id="textfield" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table">Dial Number :</li>
+              <li class="right_table">
+                <input type="text" name="textfield" id="textfield" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table">Username :</li>
+              <li class="right_table">
+                <input type="text" name="textfield" id="textfield" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table">Password :</li>
+              <li class="right_table">
+                <input type="password" name="textfield" id="textfield" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text"> <input  type="checkbox" />
+                &nbsp;Nailed-Up Connection          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table">Idle Timeout :</li>
+              <li class="right_table">
+                <input type="text" name="textfield" id="textfield" />
+                minutes              </li>
+            </ul>
+          </div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="Apply" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="Cancel" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+  <br/>
+  <br/>
+</div>
+</body>
+<script language="JavaScript">showFullPath(' USB Service');</script>
+</html>

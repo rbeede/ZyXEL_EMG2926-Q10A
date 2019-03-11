@@ -1,0 +1,29 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Kodi</DisplayName>
+		<HttpRecognition>
+			<HttpText>Kodi</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Kodi - Media Renderer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<MimeTranslations>
+			<!-- DMR announces support for LPCM but fails to play it via pull and push -->
+			<MimeTypeSuppress>audio/L16</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOEMBEDDEDALBUMART</Quirk>
+		<!-- Before actually starting playing, the device sometimes first sends
+		     initially an error event leading to an abort of the playback. -->
+		<Quirk>SUPPRESS_ERROR_EVENT</Quirk>
+	</DeviceQuirks>
+</Client>

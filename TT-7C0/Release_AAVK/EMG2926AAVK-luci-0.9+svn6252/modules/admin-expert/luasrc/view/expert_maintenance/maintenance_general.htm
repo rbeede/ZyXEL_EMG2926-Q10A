@@ -1,0 +1,120 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"> 
+function CheckValue()
+{
+	if(document.GENERAL_APP.hostname.value=="") {
+		alert("Your <System Name> is empty!");
+		return false;
+	} 
+//	else if(document.GENERAL_APP.domain_name.value=="") {
+//		alert("Your <Domain Name> is empty!");
+//		return false;
+//	}
+	else if(document.GENERAL_APP.sessiontime.value=="") {
+		alert("Your <Administrator Inactivity Timer> is empty!");
+		return false;
+	}
+	else if(!(document.GENERAL_APP.sessiontime.value>=0)||(document.GENERAL_APP.sessiontime.value=="+0")||(document.GENERAL_APP.sessiontime.value=="-0")) {
+		alert("Your <Administrator Inactivity Timer> format is error!");
+		document.GENERAL_APP.sessiontime.value = "";
+		return false;
+	}
+	else 
+		return true; 
+}
+</script>
+</head>
+<body>
+<form method="post" name="GENERAL_APP" action="<%=controller%>/expert/maintenance/maingeneral" onSubmit="return CheckValue();">
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:main_general%>"><span><%:main_general%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:system_name%> : </li>
+              <li class="right_table">
+                <% local System_Name = uci:get("system","main","hostname") %>
+                <input name="hostname" ize="30" maxlength="127" value="<%=System_Name%>" type="text" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:domain_name%>  : </li>
+              <li class="right_table">
+                <% local Domain_Name = uci:get("system","main","domain_name") %>
+                <input name="domain_name" size="30" maxlength="127" value="<%=Domain_Name%>" type="text" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:admin_inactive_timer%> : </li>
+              <li class="right_table">
+              <% local Timer = uci:get("luci","sauth","sessiontime") %>
+                <input name="sessiontime" size="10" maxlength="127" <% if Timer then %>value="<%=Timer/60%>"<% else %>value="0"<% end %> type="text" />
+                (<%:main_remind1%>) 
+              </li>
+            </ul>
+          </div>
+        </ul>
+        <ul>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="apply" value="<%:apply%>" type="submit" />&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:cancel%>" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">    showFullPath(' <%:maintenance%> > <%:main_general%>');</script>
+</html>

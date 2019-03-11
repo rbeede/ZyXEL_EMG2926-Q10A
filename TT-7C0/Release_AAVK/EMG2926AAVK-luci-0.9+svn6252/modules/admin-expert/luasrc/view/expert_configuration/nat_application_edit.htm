@@ -1,0 +1,816 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+uci = require("luci.model.uci").cursor()
+local http = require("luci.http")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+Butterlate.setTextDomain("NAT_DOMAIN");
+<%
+	local http_port=uci:get("uhttpd", "main", "listen_http")
+	local telnet_port=uci:get("firewall", "remote_telnet", "port")
+	local https_port=uci:get("firewall", "remote_https", "port")
+	local host=http.getenv("HTTP_HOST")
+	local host_ip = host:match("(%d+.%d+.%d+.%d+)")
+%>
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+function checkSubnet(ip, mask, client)
+{ 
+  ip_d = atoi(ip, 1);
+  mask_d = atoi(mask, 1);
+  client_d = atoi(client, 1);
+  if ( (ip_d & mask_d) != (client_d & mask_d ) )
+	return false;
+
+  ip_d = atoi(ip, 2);
+  mask_d = atoi(mask, 2);
+  client_d = atoi(client, 2);
+  if ( (ip_d & mask_d) != (client_d & mask_d ) )
+	return false;
+
+  ip_d = atoi(ip, 3);
+  mask_d = atoi(mask, 3);
+  client_d = atoi(client, 3);
+  if ( (ip_d & mask_d) != (client_d & mask_d ) )
+	return false;
+
+  ip_d = atoi(ip, 4);
+  mask_d = atoi(mask, 4);
+  client_d = atoi(client, 4);
+  if ( (ip_d & mask_d) != (client_d & mask_d ) )
+	return false;
+
+  return true;
+}
+function doServiceChange(index){
+    
+	if((index == 12)){
+	    //document.NAT_APP_EDIT.srvName.disable = false;
+		document.NAT_APP_EDIT.protocol.disabled = false;
+		document.NAT_APP_EDIT.extPort.disabled = false;
+		document.NAT_APP_EDIT.srvName.disabled = false;
+		document.NAT_APP_EDIT.srvTrPort.disabled = false;
+		return;
+	}else{
+		//document.NAT_APP_EDIT.srvName.disable = true;
+		document.NAT_APP_EDIT.protocol.disabled = true;
+			document.NAT_APP_EDIT.extPort.disabled = true;
+			document.NAT_APP_EDIT.srvName.disabled = true;
+			document.NAT_APP_EDIT.srvTrPort.disabled = true;
+		if(index==0){	
+			document.NAT_APP_EDIT.srvName.value = "WWW";
+			document.NAT_APP_EDIT.extPort.value = "80";
+			document.NAT_APP_EDIT.protocol.selectedIndex = 2;
+			document.NAT_APP_EDIT.srvTrPort.value = "80";
+			
+		}else if(index==1){
+			document.NAT_APP_EDIT.srvName.value = "HTTPS";
+			document.NAT_APP_EDIT.extPort.value = "443";
+			document.NAT_APP_EDIT.protocol.selectedIndex=0;
+			document.NAT_APP_EDIT.srvTrPort.value = "443";
+		}
+		else if(index==2){
+			document.NAT_APP_EDIT.srvName.value = "FTP";
+			document.NAT_APP_EDIT.extPort.value = "21";
+			document.NAT_APP_EDIT.protocol.selectedIndex=0;
+			document.NAT_APP_EDIT.srvTrPort.value = "21";
+		}
+		else if(index==3){
+			document.NAT_APP_EDIT.srvName.value = "SMTP";
+			document.NAT_APP_EDIT.extPort.value = "25";
+			document.NAT_APP_EDIT.protocol.selectedIndex=0;
+			document.NAT_APP_EDIT.srvTrPort.value = "25";
+		}
+		else if(index==4){
+			document.NAT_APP_EDIT.srvName.value = "POP3";
+			document.NAT_APP_EDIT.extPort.value = "110";
+			document.NAT_APP_EDIT.protocol.selectedIndex=0;
+			document.NAT_APP_EDIT.srvTrPort.value = "110";
+		}
+		else if(index==5){
+			document.NAT_APP_EDIT.srvName.value = "TELNET";
+			document.NAT_APP_EDIT.extPort.value = "23";
+			document.NAT_APP_EDIT.protocol.selectedIndex=0;
+			document.NAT_APP_EDIT.srvTrPort.value = "23";
+		}
+		else if(index==6){
+			document.NAT_APP_EDIT.srvName.value = "NetMeeting";
+			document.NAT_APP_EDIT.extPort.value = "1720";
+			document.NAT_APP_EDIT.protocol.selectedIndex=0;
+			document.NAT_APP_EDIT.srvTrPort.value = "1720";
+		}
+		else if(index==7){
+			document.NAT_APP_EDIT.srvName.value = "PPTP";
+			document.NAT_APP_EDIT.extPort.value = "1723";
+			document.NAT_APP_EDIT.protocol.selectedIndex=2;
+			document.NAT_APP_EDIT.srvTrPort.value = "1723";
+		}
+		else if(index==8){
+			document.NAT_APP_EDIT.srvName.value = "IPSec";
+			document.NAT_APP_EDIT.extPort.value = "500";
+			document.NAT_APP_EDIT.protocol.selectedIndex=1;
+			document.NAT_APP_EDIT.srvTrPort.value = "500";
+		}
+		else if(index==9){
+			document.NAT_APP_EDIT.srvName.value = "SIP";
+			document.NAT_APP_EDIT.extPort.value = "5060";
+			document.NAT_APP_EDIT.protocol.selectedIndex=2;
+			document.NAT_APP_EDIT.srvTrPort.value = "5060";
+		}
+		else if(index==10){
+			document.NAT_APP_EDIT.srvName.value = "TFTP";
+			document.NAT_APP_EDIT.extPort.value = "69";
+			document.NAT_APP_EDIT.protocol.selectedIndex=1;
+			document.NAT_APP_EDIT.srvTrPort.value = "69";
+		}
+		else if(index==11){
+			document.NAT_APP_EDIT.srvName.value = "Real-Audio";
+			document.NAT_APP_EDIT.extPort.value = "554";
+			document.NAT_APP_EDIT.protocol.selectedIndex=2;
+			document.NAT_APP_EDIT.srvTrPort.value = "554";
+		}
+		else{
+			document.NAT_APP_EDIT.srvName.value = "";
+			document.NAT_APP_EDIT.extPort.value = "";
+			document.NAT_APP_EDIT.srvTrPort.value = "";
+		}				
+		return;
+	}
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function checkIpAddr(field, ismask)
+{
+	if (isAllNum(field.value) == 0) {
+		alert("<%:IP_Error_2%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	return true;
+}
+
+function checkTableNum()
+{
+	var nvr_str1= new Array(10);
+	var num=0;	
+	nvr_str1[0] = "";
+	nvr_str1[1] = "";
+	nvr_str1[2] = "";
+	nvr_str1[3] = "";
+	nvr_str1[4] = "";
+	nvr_str1[5] = "";
+	nvr_str1[6] = "";
+	nvr_str1[7] = "";
+	nvr_str1[8] = "";
+	nvr_str1[9] = "";	
+	
+	for(i=0;i<10;i++){
+		if(nvr_str1[i]!= ""){
+		   num++;   
+		}	
+	} 	
+	
+	if(num == 10){
+	   alert("<%:NAT_Error_4%>");
+	   return false;
+	}
+	else
+	   return true; 
+}
+//Steve add
+function isPortRule(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == ',' ) || (str.charAt(i) == '-' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+function getValueCount(str)
+{
+	var num=0;
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == ',' )  || (str.charAt(i) == '-' ))
+			num++;
+	}
+	return num;
+}
+function getValue2Count(str,char1)
+{
+	var num=0;
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == char1 ))
+			num++;
+	}
+	return num;
+}
+
+function getNthValue(str,index,char1)
+{
+	var num=0;
+	var s1=0;
+	var s2=0;
+	var max=0;
+
+	max=getValue2Count(str,char1);
+	
+if(index == 1){
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == char1 ))
+			num++;		
+		s1=0;		
+		if(num == index){
+		   		s2=i;
+		   		break;
+		   	}
+	}
+}else if(index == max+1){
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == char1 ))
+			num++;		
+		s2=str.length;		
+		if(num == max){
+		   		s1=i+1;
+		   		break;
+		   	}
+	}
+
+}else{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == char1 ))
+			num++;
+			
+		if(num == (index-1)){
+		   		s1=i+1;
+		   		break;
+		   	}
+	}
+	num=0;
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) == char1 ))
+			num++;
+			
+		if(num == index){
+		   		s2=i;
+		   		break;
+		   	}
+	}
+}
+	str1=str.substring(s1,s2);
+    return str1;
+}
+
+function checkPortRule(field)
+{
+    var len=0;
+    
+    //check port value if null
+	if(field.value == ""){
+		alert("<%:Port_Error_2%>");
+		return false;
+	}
+	
+	//Rule accept "0~9" & "," & "-"
+	if (isPortRule(field.value) == 0) {
+		alert("<%:NAT_Error_5%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	//The sum of "," and  "-" is less than 15
+	if (getValueCount(field.value) >= 15) {
+		alert("<%:NAT_Error_5%>");
+		field.value = field.defaultValue;
+		field.focus();
+		    return false;
+	}
+	
+	//check last char
+	len=field.value.length;
+	if ((field.value.charAt(len-1) == ',' )  || (field.value.charAt(len-1) == '-' )){
+		alert("<%:NAT_Error_5%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	
+	
+	//check port range
+	if (getValueCount(field.value) == 0) {
+		if(field.value != ""){
+		d1 = atoi(field.value, 1);
+		if(isAllNum( field.value ) == 0){
+			alert("<%:Port_Error_2%>");
+			field.focus();
+			return false;
+		}
+		if(d1 > 65535 || d1 < 1){
+			alert("<%:Port_Error_2%>");
+			field.focus();
+			return false;
+		}			
+	}
+	}else{
+	    var max=0;
+		max=getValue2Count(field.value,',');
+		if(max == 0){
+		    str1=field.value;
+			var num=0;
+		    len=str1.length;
+		    num=getValue2Count(str1,'-');
+		    if((num >= 2) || (len <= 2)){
+		    	alert("<%:NAT_Error_5%>");field.focus();return false;
+		    }else{
+		    	t1=str1;
+		    	t2=str1;
+		    	s1=getNthValue(t1,1,'-');
+		    	s2=getNthValue(t2,2,'-');
+		    	
+		    	d1 = atoi(s1, 1);
+		    	d2 = atoi(s2, 1);
+		    	if(d1 > 65535 || d1 < 1){
+		    		alert("<%:Port_Error_2%>");field.focus();return false;
+		    	}
+		    	if(d2 > 65535 || d2 < 1){
+		    		alert("<%:Port_Error_2%>");field.focus();return false;
+		    	}
+		    	if(d1 >= d2){
+		    		alert("<%:NAT_Error_5%>");field.focus();return false;
+		    	}
+		    }
+		}else{
+			for (var i=1; i < max+2; i++) {
+	   			str1=getNthValue(field.value,i,',');
+	   			if(str1 == ""){
+		    		alert("<%:Port_Error_2%>");field.focus();return false;
+		    	}
+		    	if(str1.indexOf("-",0) == -1){
+		    		d1 = atoi(str1, 1);
+		    		if(d1 > 65535 || d1 < 1){
+		    			alert("<%:Port_Error_2%>");field.focus();return false;
+		    		}
+		    	}else{
+		    		var num=0;
+		    		len=str1.length;
+		    		num=getValue2Count(str1,'-');
+		    		if((num >= 2) || (len <= 2)){
+		    			alert("<%:NAT_Error_5%>");field.focus();return false;
+		    		}else{
+		    		    t1=str1;
+		    		    t2=str1;
+		    			s1=getNthValue(t1,1,'-');
+		    			s2=getNthValue(t2,2,'-');
+		    			d1 = atoi(s1, 1);
+		    			d2 = atoi(s2, 1);
+		    			if(d1 > 65535 || d1 < 1){
+		    				alert("<%:Port_Error_2%>");field.focus();return false;
+		    			}
+		    			if(d2 > 65535 || d2 < 1){
+		    				alert("<%:Port_Error_2%>");field.focus();return false;
+		    			}
+		    			if(d1 >= d2){
+		    				alert("<%:NAT_Error_5%>");field.focus();return false;
+		    			}
+		    		}
+		    	}
+	   		}
+		}
+		
+	}
+	
+	return true;
+}
+
+function formCheck(){
+
+    //check rule num
+    var nat_flag= "0";
+	if(nat_flag == "0"){
+		if (!checkTableNum())
+      	return false;
+    }
+	  
+	//check Port value
+	if (!checkPortRule(document.NAT_APP_EDIT.extPort))
+		    return false;
+	if (!checkPortRule(document.NAT_APP_EDIT.srvTrPort))
+			return false;		
+	  
+	//check IP
+	if (!checkIpAddr(document.NAT_APP_EDIT.srvIp, false))
+		    return false;		    
+	if ( !checkSubnet(document.NAT_APP_EDIT.lanIP.value, document.NAT_APP_EDIT.lanMask.value, document.NAT_APP_EDIT.srvIp.value)) {
+        		alert("<%:NAT_Error_2%>");
+        		document.NAT_APP_EDIT.srvIp.value = document.NAT_APP_EDIT.srvIp.defaultValue;
+        		document.NAT_APP_EDIT.srvIp.focus();
+        		return false;
+    }
+	
+	var idx = document.NAT_APP_EDIT.srvIndex.selectedIndex;
+	if (document.NAT_APP_EDIT.srvIndex.options[idx].value == "0"){
+		if( <%=http_port%> == 80){
+			alert("<%:NAT_Msg_1%>")
+		}
+	}else if (document.NAT_APP_EDIT.srvIndex.options[idx].value == "1"){
+	
+		if(<%=https_port%> == 443){
+			alert("<%:NAT_Msg_5%>")
+		}
+	}else if (document.NAT_APP_EDIT.srvIndex.options[idx].value == "5"){
+	
+		if( <%=telnet_port%> == 23){
+			alert("<%:NAT_Msg_2%>")
+		}
+	}
+	
+	<%local ori_ser_idx = luci.http.formvalue("srvIdx")%>
+	if (document.NAT_APP_EDIT.srvIndex.options[idx].value != <%=ori_ser_idx%>){
+		if (<%=ori_ser_idx%> == "0"){
+				alert("<%:NAT_Msg_3%>")
+		}else if (<%=ori_ser_idx%> == "1"){
+				alert("<%:NAT_Msg_6%>")
+		}else if (<%=ori_ser_idx%> == "5"){
+				alert("<%:NAT_Msg_4%>")
+		}
+	}
+	
+	showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+	return true;
+}
+function doEditRule(){
+		document.NAT_APP_EDIT.PortFor_rtnFlag.value = "1";
+}
+function doDeleteRule(){
+		document.NAT_APP_EDIT.PortFor_rtnFlag.value = "2";
+		showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+}
+function doFindCurrentRule(CurrentIndex){
+		document.NAT_APP_EDIT.PortFor_rtnCurIndex.value = CurrentIndex;
+}
+function updateState(){
+	initTranslation();
+	
+	if (document.NAT_APP_EDIT.PortRule_Active.value == "1")
+		document.NAT_APP_EDIT.PortRule_Active.checked = true;
+}
+function checkValue(cstr){
+	var nvr_str= new Array(10);
+	var flag=0;	
+	nvr_str[0] = "";
+	nvr_str[1] = "";
+	nvr_str[2] = "";
+	nvr_str[3] = "";
+	nvr_str[4] = "";
+	nvr_str[5] = "";
+	nvr_str[6] = "";
+	nvr_str[7] = "";
+	nvr_str[8] = "";
+	nvr_str[9] = "";	
+	
+	var nat_fg= "0";
+	
+	if(nat_fg == "0"){//Normal
+		for(i=0;i<10;i++){
+			if(nvr_str[i]== cstr){
+		   flag=1;
+		   break;	   
+			}	
+		} 	
+	}else{//Edit
+		var s_nat_index = "";
+		var nat_index = parseInt(s_nat_index,10);
+		for(i=0;i<10;i++){
+			if(i!=(nat_index -1)){
+				if(nvr_str[i]== cstr){
+		     	flag=1;
+		     	break;	   
+				}
+			}	
+		} 	
+	}
+	
+	if(flag == 1)
+	   	return 1;
+	else
+    	return 0;
+}
+function frmLoad()
+{
+	document.getElementById("popup_wait").style.visibility='hidden';
+}
+function relogin(listen_port)
+{	
+	var submit_url = 'http://<%=host_ip%>:' + listen_port;
+	top.window.location.href = submit_url; 
+}
+function editRule()
+{
+	var ret=formCheck();
+	if(ret != true){
+		return ret;
+	}
+	with(document.NAT_APP_EDIT){
+		var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","network", "nat", "portfw", "portfw_edit")%>';
+		var loc = submit_url + '?apply=Apply';
+		
+		if(enabled0[1].checked == true){
+			loc += '&enabled=' + 0;
+		}
+		else{
+			loc += '&enabled=' + 1;
+		}
+		
+		loc += '&rules=' + rules.value;
+		loc += '&srvIndex=' + srvIndex.selectedIndex;
+		loc += '&srvIp=' + srvIp.value;
+		
+		if(srvIndex.selectedIndex == 12){
+			loc += '&srvName=' + srvName.value;
+			loc += '&protocol=' + protocol.options[protocol.selectedIndex].value;
+			loc += '&extPort=' + extPort.value;
+			loc += '&srvTrPort=' + srvTrPort.value;
+		}
+				
+		<%local ori_ser_idx = luci.http.formvalue("srvIdx")%>			
+		if((srvIndex.selectedIndex == 0 && <%=http_port%> == 80) || (<%=ori_ser_idx%>  == 0 && <%=http_port%> == 8080)){
+
+				document.getElementById("popup_wait").style.visibility='visible';
+				
+				var objXMLHTTP;
+				
+				if (window.XMLHttpRequest) {
+				     objXMLHTTP=new XMLHttpRequest();
+				}// code for IE
+				else if (window.ActiveXObject)  {
+				     objXMLHTTP=new ActiveXObject("Microsoft.XMLHTTP");
+				}
+				
+				objXMLHTTP.open("GET",loc,true);
+	
+			    /*let IE refresh page */
+			    //objXMLHTTP.setRequestHeader("If-Modified-Since",new Date(0)); /*It will fail in Chrome*/
+			    objXMLHTTP.setRequestHeader("Content-Type", "text/plain");
+			    
+			    objXMLHTTP.send(null);
+				
+
+				if((srvIndex.selectedIndex == 0 && <%=http_port%> == 80)){
+			    	setTimeout("relogin(8080)", 6000);
+
+				}
+				else{
+					setTimeout("relogin(80)", 6000);
+
+				}
+				
+		}else if((srvIndex.selectedIndex == 1 && <%=https_port%> == 443) || (<%=ori_ser_idx%>  == 1 && <%=https_port%> == 44343)){
+
+			
+				document.getElementById("popup_wait").style.visibility='visible';
+				
+				var objXMLHTTP;
+				
+				if (window.XMLHttpRequest) {
+				     objXMLHTTP=new XMLHttpRequest();
+				}// code for IE
+				else if (window.ActiveXObject)  {
+				     objXMLHTTP=new ActiveXObject("Microsoft.XMLHTTP");
+				}
+				
+				objXMLHTTP.open("GET",loc,true);
+	
+			    /*let IE refresh page */
+			    //objXMLHTTP.setRequestHeader("If-Modified-Since",new Date(0)); /*It will fail in Chrome*/
+			    objXMLHTTP.setRequestHeader("Content-Type", "text/plain");
+			    
+			    objXMLHTTP.send(null);
+				
+				if (<%=http_port%> == 80 ){
+			    	setTimeout("relogin(80)", 6000);
+				}
+				else{
+					setTimeout("relogin(8080)", 6000);
+				}
+		}else{
+			
+			var code = 'location="' + loc + '"';
+     		eval(code);
+		}
+	}
+}
+</script>
+</head>
+<body onLoad="frmLoad();doServiceChange(<%=luci.http.formvalue("srvIdx")%>)">
+<form method="post" name="NAT_APP_EDIT">
+<div id="table">
+  <ul>
+    <li class="table_top"></li><li class="table_content">
+        <div class="data">
+        <ul>
+		<div class="w_text">
+              <ul>
+				<% local enabled = luci.http.formvalue("enabled")%>
+                <li class="left_table"><%:Port_Forwarding%> :</li>
+                <li class="right_table"> <input name="enabled0" id="radio" type="radio" value="1" <%if enabled == "1" then%>  checked="checked" <%end%> /> <%:Enable%> <input name="enabled0" id="radio2" type="radio" value="0" <%if enabled == "0" then%> checked="checked" <%end%>/> <%:Disable%></li>
+              </ul>
+            </div>
+		<div class="w_text">
+            <ul>
+              <li class="left_table"><%:Service_Name%> :</li>
+              <li class="right_table">
+				<%local service_idx = luci.http.formvalue("srvIdx")%>
+				<%local service_name = luci.http.formvalue("service_name")%>
+                <input name="srvName" size="31" maxlength="31" <%if service_name then%>value="<%=service_name%>"<%end%> type="text" />
+                <select name="srvIndex" size="1" onchange="doServiceChange(this.selectedIndex);">
+                  <option value="0" <% if service_idx == "0" then %>selected="selected"<% end %>><%:WWW%> </option>
+                  <option value="1" <% if service_idx == "1" then %>selected="selected"<% end %>><%:HTTPS%> </option>
+                  <option value="2" <% if service_idx == "2" then %>selected="selected"<% end %>><%:FTP%> </option>
+                  <option value="3" <% if service_idx == "3" then %>selected="selected"<% end %>><%:E_mail_SMTP%> </option>
+                  <option value="4" <% if service_idx == "4" then %>selected="selected"<% end %>><%:E_mail_POP3%> </option>
+                  <option value="5" <% if service_idx == "5" then %>selected="selected"<% end %>><%:Telnet%> </option>
+                  <option value="6" <% if service_idx == "6" then %>selected="selected"<% end %>><%:NetMeeting%> </option>
+                  <option value="7" <% if service_idx == "7" then %>selected="selected"<% end %>><%:PPTP%> </option>
+                  <option value="8" <% if service_idx == "8" then %>selected="selected"<% end %>><%:IPSec%> </option>
+                  <option value="9" <% if service_idx == "9" then %>selected="selected"<% end %>><%:VoIP_SIP%> </option>
+                  <option value="10" <% if service_idx == "10" then %>selected="selected"<% end %>><%:TFTP%> </option>
+                  <option value="11" <% if service_idx == "11" then %>selected="selected"<% end %>><%:Real_Audio%> </option>
+                  <option value="12" <% if service_idx == "12" then %>selected="selected"<% end %>><%:User_define%> </option>
+                </select>
+              </li>
+            </ul>
+          </div>
+		  <div class="w_text">
+            <ul>
+				<%local protocol = luci.http.formvalue("protocol")%>
+              <li class="left_table"><%:Protocol%> : </li>
+              <li class="right_table"> 
+				<select name="protocol" size="1" <%if protocol then%>value="<%=protocol%>"<%end%> <%if service_idx~="12" then%> disabled=true <%end%> >
+                  <option value="tcp" <% if protocol == "tcp" then %>selected="selected"<% end %> ><%:TCP%> </option>
+                  <option value="udp" <% if protocol == "udp" then %>selected="selected"<% end %> ><%:UDP%> </option>
+                  <option value="tcpandudp" <% if protocol == "tcpandudp" then %>selected="selected"<% end %> ><%:TCP_UDP%> </option>
+                </select>
+            </ul>
+          </div>
+		  <div class="w_text">
+            <ul>
+				<%local external_port = luci.http.formvalue("external_port")%>
+              <li class="left_table"><%:Port%> : </li>
+              <li class="right_table"> <input name="extPort" size="31" maxlength="99" <%if external_port then%>value="<%=external_port%>"<%end%> <%if service_idx~="12" then%> disabled=true <%end%>type="text" /> (Ex: 10-20,30,40)</li>
+            </ul>
+          </div>
+		  <div class="w_text">
+            <ul>
+				<%local tr_port = luci.http.formvalue("tr_port")%>
+              <li class="left_table"><%:Translation_port%> : </li>
+              <li class="right_table"> <input name="srvTrPort" size="31" maxlength="99" <%if tr_port then%>value="<%=tr_port%>"<%end%> <%if service_idx~="12" then%> disabled=true <%end%>type="text" /> (Ex: 10-20,30,40)</li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+			  <%local server_ipaddr = luci.http.formvalue("server_ip")%>	
+              <li class="left_table"><%:Server_IP_Address%> : </li>
+              <li class="right_table">
+                <input name="srvIp" size="15" maxlength="15" <%if server_ipaddr then%>value="<%=server_ipaddr%>"<%end%> type="text" />
+              </li>
+            </ul>
+          </div>
+		  <!--
+		  <% local wake_up = luci.http.formvalue("wake_up")%>
+          <div class="w_text"> <input name="wake_up" type="checkbox" value="1" <%if wake_up == "1" then%> checked="CHECKED" <%end%>></input> &nbsp;Wake up this target by Wake On LAN
+          </div>
+		  -->
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="Back" type="submit" id="Back" onclick="MM_goToURL('parent.frames[\'mainFrame\']','<%=controller%>/expert/configuration/network/nat/portfw');return document.MM_returnValue"value="Back" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="apply" value="<%:Apply%>" onclick="editRule()" type="button" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+		  <input name="lanIP" value="<%=uci:get("network","lan","ipaddr")%>" type="hidden" />
+		  <input name="lanMask" value="<%=uci:get("network","lan","netmask")%>" type="hidden" />
+		  <% local rules = luci.http.formvalue("rules")%>
+		  <input name="rules" <%if rules then%> value="<%=rules%>"<%end%> type="hidden" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+<div id="popup_wait">
+	<table width="60%" border="0" cellspacing="0" cellpadding="0">
+	<tr>
+		<td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+			<tr>
+				<td width="19" height="37"><img src="<%=media%>/admin/images/popup_top_left.gif" width="19" height="45" /></td>
+				<td background="<%=media%>/admin/images/popup_top_center.gif" class="table_title2">EMG2926-Q10A</td>
+				<td width="15" background="<%=media%>/admin/images/popup_top_center.gif"></td>
+				<td width="19" height="45"><img src="<%=media%>/admin/images/popup_top_right.gif" width="19" height="45" /></td>
+			</tr>
+		</table></td>
+	</tr>
+	<tr>
+	<td><table width="100%" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+	<td width="19" background="<%=media%>/admin/images/popup_main_left.gif">&nbsp;</td>
+	<td bgcolor="#FFFFFF"><span class="popupcontent"> 
+	<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+	<tr>
+	<td width="27%"><center>
+	<img src="<%=media%>/easy/images/loading.gif" />
+	</center>
+	</td>
+	<td width="73%" id=id_ScanningyourNetwork>Relogin . . .</td>
+	</tr>
+	</table>
+	</span></td>
+	<td width="19" background="<%=media%>/admin/images/popup_main_right.gif">&nbsp;</td>
+	</tr>
+	</table></td>
+	</tr>
+	<tr>
+	<td><table width="100%" height="37" border="0" cellpadding="0" cellspacing="0">
+	<tr>
+	<td width="19" height="48"><img src="<%=media%>/admin/images/popup_down_left.gif" width="19" height="48" /></td>
+	<td background="<%=media%>/admin/images/popup_down_center.gif">
+	<div class="button2"><ul>   
+	<li></li>
+	<li></li>
+	</ul></div></td>
+	<td width="19" height="37"><img src="<%=media%>/admin/images/popup_down_right.gif" width="19" height="48" /></td>
+	</tr>
+	</table></td>
+	</tr>
+	</table>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+	showFullPath(' Network > NAT Application Edit');
+	showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>

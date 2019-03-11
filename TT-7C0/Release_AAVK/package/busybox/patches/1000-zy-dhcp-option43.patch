@@ -1,0 +1,20 @@
+Index: busybox-1.19.4/networking/udhcp/common.c
+===================================================================
+--- busybox-1.19.4.orig/networking/udhcp/common.c	2017-11-28 18:42:11.139528443 +0800
++++ busybox-1.19.4/networking/udhcp/common.c	2017-11-28 18:44:32.131530309 +0800
+@@ -41,6 +41,7 @@
+ 	{ OPTION_STRING_HOST                      , 0x28 }, /* DHCP_NIS_DOMAIN    */
+ 	{ OPTION_IP | OPTION_LIST                 , 0x29 }, /* DHCP_NIS_SERVER    */
+ 	{ OPTION_IP | OPTION_LIST     | OPTION_REQ, 0x2a }, /* DHCP_NTP_SERVER    */
++	{ OPTION_STRING               | OPTION_REQ, 0x2b }, /* DHCP_Vendor-Specific/DHCP_AC_ADDR */
+ 	{ OPTION_IP | OPTION_LIST                 , 0x2c }, /* DHCP_WINS_SERVER   */
+ 	{ OPTION_U32                              , 0x33 }, /* DHCP_LEASE_TIME    */
+ 	{ OPTION_IP                               , 0x36 }, /* DHCP_SERVER_ID     */
+@@ -108,6 +109,7 @@
+ 	"nisdomain" "\0"   /* DHCP_NIS_DOMAIN     */
+ 	"nissrv" "\0"      /* DHCP_NIS_SERVER     */
+ 	"ntpsrv" "\0"      /* DHCP_NTP_SERVER     */
++        "acaddr" "\0"      /* DHCP_Vendor-Specific/43.1 DHCP_AC_ADDR */
+ 	"wins" "\0"        /* DHCP_WINS_SERVER    */
+ 	"lease" "\0"       /* DHCP_LEASE_TIME     */
+ 	"serverid" "\0"    /* DHCP_SERVER_ID      */

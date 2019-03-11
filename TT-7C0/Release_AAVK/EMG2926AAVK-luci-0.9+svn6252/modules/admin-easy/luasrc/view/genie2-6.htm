@@ -1,0 +1,91 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+local sys = require("luci.sys")
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+local lanDev, wlanDev 
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<meta http-equiv="refresh" content="3; url='<%=controller%>/easy/eaZy123/genie3'">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/brick.css" rel="stylesheet" type="text/css" />
+<script language="javascript">
+function check_wan()
+{
+    var loc,code;
+	<% 
+	    --sys.exec("rm /var/lltd_num_lan")
+        --sys.exec("rm /var/lltd_num_wlan")
+	    --sys.exec("lltd.sh")
+		-- Check WAN status for eaZy123, EMG2926-Q10A, WenHsiang, 2012/02/03
+	    sys.exec("sleep 5;ping 168.95.1.1 -c 1 > /var/ping_internet") -- Wait for DHCP server, so the delay of 5 seconds is necessary!
+		statusInternetcheck = luci.sys.internet_check()
+		if statusInternetcheck then
+	-%>
+	    loc = '<%=luci.dispatcher.build_url("easy","eaZy123","genie3")%>';		 
+	    code = 'location="' + loc + '"';
+        eval(code);		 	
+	<%
+		else
+	-%>
+	    loc = '<%=luci.dispatcher.build_url("easy","eaZy123","genie2_error2")%>';
+        code = 'location="' + loc + '"';
+        eval(code);		
+	<%
+		end
+		-- Check WAN status for eaZy123, EMG2926-Q10A, WenHsiang, 2012/01/10
+	-%>
+	
+}
+</script>
+</head>
+<body onload="check_wan();">
+<div id="wrapper">
+<div class="top_image"></div>
+  <div class="unit_eazy"></div>
+  <div class="unit_title" id="g2-2easy123">eaZy 123</div>
+  <div class="genie_logo"></div>
+<div class="genie_color"></div>
+<div class="set"><ul>
+<li class="g_ing"><%:connect_to_internet%><div class="set_now">
+  <ul><li>1</li>
+</ul></div> </li> 
+<li class="g_arrow"></li><li class="g_default"><%:router_password%><div class="set_no2"><ul> <li>2</li> </ul></div></li> 
+<li class="g_arrow"></li><li class="g_default"><%:net_map_wireless_security%><div class="set_no3"><ul><li>3</li></ul></div></li>
+</ul></div>
+<div class="g_word"><%:eaZy123_2_6_note_1%></div>
+<div class="i_detecting2"><ul><li class="i_d2"></li><li class="d_word"><%:eaZy123_2_6_note_2%></li><li style="background-image:url(images/loading2.gif); width:27px; height:26px; display:block; margin-top:11px;"></li>
+</ul>
+</div>
+<div class="index_bg" id="index_bg"></div>
+<div class="in_line" id="topline" ></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_left.gif);width:9px;height:501px;z-index: 1;top: 0px;"></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_right.gif);width:9px;height:501px;right:-2px;z-index: 1;top: 0px;"></div>
+<div class="copyright" id="copyright"><%:copy_right%></div>
+</div>
+
+</body>
+</html>

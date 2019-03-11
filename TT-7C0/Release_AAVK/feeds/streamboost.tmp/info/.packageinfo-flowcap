@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/flowcap/Makefile
+Package: flowcap
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpcap
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Monitor and handle packet captures from drflocs
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: flowcap-.tar.gz
+Type: ipkg
+Description: Drflocs can save off packet captures.  flowcap manages those saved packet captures.
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_flowcap
+	config flowcap_USE_CUSTOM_VERSION
+		depends on PACKAGE_flowcap
+		bool "Use custom package version"
+		default n
+	config flowcap_CUSTOM_VERSION
+		depends on flowcap_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_flowcap
+	config flowcap_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_flowcap
+		bool "Use custom source directory"
+		default n
+	config flowcap_CUSTOM_SOURCE_DIR
+		depends on flowcap_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

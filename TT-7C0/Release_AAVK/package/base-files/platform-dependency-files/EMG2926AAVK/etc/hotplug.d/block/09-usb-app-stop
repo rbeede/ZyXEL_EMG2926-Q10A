@@ -1,0 +1,17 @@
+#!/bin/sh 
+# Copyright (C) 2009 OpenWrt.org
+
+. /bin/define-usb-slot "$DEVPATH"
+
+case "$ACTION" in
+	add)	
+		#/bin/usb-app "start"
+
+	;;
+	remove)	
+		if df | grep "${USB_SLOT}_${USB_NODE}"; then
+			/bin/usb-app "stop"
+		fi
+	;;
+esac	
+

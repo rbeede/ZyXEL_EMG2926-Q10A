@@ -1,0 +1,35 @@
+#!/bin/sh
+
+PROG=`basename $0`
+
+usage() {
+	echo "usage: $PROG appendRealtimeData(1/0)"
+}
+
+if [ $# -lt 1 ]; then
+	usage
+	exit 1
+fi
+
+appendRealtimeData=$1
+accumulateIndex=500
+
+# process_step return values
+FLAG_DONE=0
+FLAG_COMMA=1
+FLAG_NOTHING=2
+
+# "$(date +%s)"
+process_step() {
+	redis-cli -s /var/run/appflow/redis.sock --eval /bin/precalculateFlow.lua fetchNodeHistory logCalculation "$(date +%s)" $appendRealtimeData $accumulateIndex "$(date +%z)" | \
+	{
+		local setcomma=$FLAG_NOTHING
+		while read line; do
+			echo $line
+		done
+		return $setcomma
+	}
+}
+# echo "{\"preCalculatedTimestamp\":"
+process_step
+# echo "}"

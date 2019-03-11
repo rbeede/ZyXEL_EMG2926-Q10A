@@ -1,0 +1,188 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2010 OpenWrt.org
+START=40
+
+has_root_pwd() {
+	local pwd=$([ -f "$1" ] && cat "$1")
+	      pwd="${pwd#*root:}"
+	      pwd="${pwd%%:*}"
+
+	test -n "${pwd#!}"
+}
+
+ck_telnet() {
+	config_load firewall
+#check firewall config for upgrade firmware without "reset to default"	
+	cktelnetFlag=$(uci get firewall.remote_telnet_WAN)
+	[ -z "$cktelnetFlag" ] && {
+
+		interface_status=$(uci get firewall.remote_telnet.interface)
+		client_status=$(uci get firewall.remote_telnet.client_check)
+
+		uci set firewall.remote_telnet_WAN=firewall
+		uci set firewall.remote_telnet_LAN=firewall
+
+		if [ "$interface_status" == "1" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_telnet_LAN.client_check=0
+			uci set firewall.remote_telnet_WAN.client_check=0
+			uci set firewall.remote_telnet_LAN.client_count=0
+			uci set firewall.remote_telnet_WAN.client_count=0
+		elif [ "$interface_status" == "1" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_telnet.client_addr)
+			uci set firewall.remote_telnet_LAN.client_check=2
+			uci set firewall.remote_telnet_WAN.client_check=2
+			uci set firewall.remote_telnet_LAN.client_count=1
+			uci set firewall.remote_telnet_LAN.client_addr1=$ip_status
+			uci set firewall.remote_telnet_WAN.client_count=1
+			uci set firewall.remote_telnet_WAN.client_addr1=$ip_status
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_telnet_LAN.client_check=0
+			uci set firewall.remote_telnet_WAN.client_check=1
+			uci set firewall.remote_telnet_LAN.client_count=0
+			uci set firewall.remote_telnet_WAN.client_count=0
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_telnet.client_addr)
+			uci set firewall.remote_telnet_LAN.client_check=2
+			uci set firewall.remote_telnet_WAN.client_check=1
+			uci set firewall.remote_telnet_LAN.client_count=1
+			uci set firewall.remote_telnet_LAN.client_addr1=$ip_status
+			uci set firewall.remote_telnet_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_telnet_LAN.client_check=1
+			uci set firewall.remote_telnet_WAN.client_check=0
+			uci set firewall.remote_telnet_LAN.client_count=0
+			uci set firewall.remote_telnet_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_telnet.client_addr)
+			uci set firewall.remote_telnet_LAN.client_check=1
+			uci set firewall.remote_telnet_WAN.client_check=2
+			uci set firewall.remote_telnet_LAN.client_count=0
+			uci set firewall.remote_telnet_WAN.client_count=1
+			uci set firewall.remote_telnet_WAN.client_addr1=$ip_status
+		fi
+
+		uci set firewall.remote_telnet.interface=2
+		uci set firewall.remote_telnet.client_check=0
+		delete=$(uci get firewall.remote_telnet.client_addr)
+		if [ -z "$delete" ]; then
+			uci commit firewall
+		else
+			uci del firewall.remote_telnet.client_addr
+			uci commit firewall
+		fi
+		
+	}
+#end	
+}
+
+filter() {
+	config_load firewall
+	config_get telnet_port remote_telnet port
+	#config_get telnet_client_addr remote_telnet client_addr
+	config_get WAN_telnet_client_check remote_telnet_WAN client_check
+	config_get WAN_telnet_client_count remote_telnet_WAN client_count
+	config_get LAN_telnet_client_check remote_telnet_LAN client_check
+	config_get LAN_telnet_client_count remote_telnet_LAN client_count
+	
+	if [ "on" = "$1" ]; then
+		filter_type=" -I "
+	else
+		filter_type=" -D "
+	fi
+
+	## insert DROP rule
+	if [ "1" = "$WAN_telnet_client_check" ] || [ "2" = "$WAN_telnet_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT  ! -i br+  -p tcp --dport ${telnet_port:-23} -j DROP 2> /dev/null
+	fi
+
+	if [ "1" = "$LAN_telnet_client_check" ] || [ "2" = "$LAN_telnet_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT  -i br+  -p tcp --dport ${telnet_port:-23} -j DROP 2> /dev/null
+	fi
+
+	## insert ACCEPT rule
+	if [ "0" = "$WAN_telnet_client_check" ] && [ "0" = "$LAN_telnet_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT -p tcp --dport ${telnet_port:-23} -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" = "$WAN_telnet_client_check" ] && [ "0" != "$LAN_telnet_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT  ! -i br+  -p tcp --dport ${telnet_port:-23} -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" != "$WAN_telnet_client_check" ] && [ "0" = "$LAN_telnet_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT  -i br+  -p tcp --dport ${telnet_port:-23} -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "2" = "$WAN_telnet_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($WAN_telnet_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get WAN_telnet_client_addr remote_telnet_WAN $client_addr
+			addr_cmd=" -s $WAN_telnet_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT  ! -i br+  $addr_cmd -p tcp --dport ${telnet_port:-23} -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+	
+	if [ "2" = "$LAN_telnet_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($LAN_telnet_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get LAN_telnet_client_addr remote_telnet_LAN $client_addr
+			addr_cmd=" -s $LAN_telnet_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT  -i br+  $addr_cmd -p tcp --dport ${telnet_port:-23} -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+
+}
+
+start() {
+	#if ( ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
+	#   ( [ ! -x /usr/sbin/dropbear ] && [ ! -x /usr/sbin/sshd ] );
+	if [ -e /etc/passwd ];	
+	then
+		#config_load firewall
+		#config_get telnet_inf remote_telnet interface
+		#config_get check remote_telnet client_check
+		
+		#if [ "$telnet_inf" = "0" ] && [ "$check" = "0" ]; then
+			#no access
+			#echo disable telnet
+		#else
+			ck_telnet
+		
+			config_get telnet_port remote_telnet port
+			telnetd -l /bin/login -p ${telnet_port:-23}
+			
+			##check mode,if AP/UR,exit
+			local sys_mode=$(get_sys_mode)
+			[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+			insmod x_tables  2>&- >&-
+			insmod ip_tables  2>&- >&-
+			insmod ip6_tables  2>&- >&-
+			insmod iptable_filter  2>&- >&-
+			insmod xt_tcpudp  2>&- >&-
+			
+			/usr/sbin/iptables -D RMMG_TELNET_INPUT
+			/usr/sbin/iptables -X RMMG_TELNET_INPUT
+			/usr/sbin/iptables -F RMMG_TELNET_INPUT
+			/usr/sbin/iptables -N RMMG_TELNET_INPUT
+
+			filter "on"
+			local changeToSer=$(uci_get nat general changeToSer)
+			[ "$changeToSer" = "1" ] && /sbin/nat apply
+		#fi
+	fi
+}
+
+stop() {
+	killall telnetd 2>/dev/null
+	filter "off"
+}

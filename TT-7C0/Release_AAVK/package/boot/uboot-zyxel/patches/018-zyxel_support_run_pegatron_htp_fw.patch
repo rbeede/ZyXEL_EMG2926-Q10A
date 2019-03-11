@@ -1,0 +1,49 @@
+Index: u-boot-2009.11/common/cmd_jffs2.c
+===================================================================
+--- u-boot-2009.11.orig/common/cmd_jffs2.c	2015-03-24 17:16:51.057195731 +0800
++++ u-boot-2009.11/common/cmd_jffs2.c	2015-03-24 17:33:10.765229434 +0800
+@@ -527,6 +527,15 @@
+ 		load_addr = offset;
+ 		filename = argv[2];
+ 	}
++  #ifdef PEGATRON_FACTORY_ENABLE
++	if (argc == 5) {
++                offset = simple_strtoul(argv[1], NULL, 16);
++                load_addr = offset;
++                filename = argv[2];
++	//	part->offset = simple_strtoul(argv[3], NULL, 16);
++	//	part->size = simple_strtoul(argv[4], NULL, 16);
++        }
++  #endif
+ 
+ 	/* make sure we are in sync with env variables */
+ 	if (mtdparts_init() !=0)
+@@ -534,6 +543,15 @@
+ 
+ 	if ((part = jffs2_part_info(current_mtd_dev, current_mtd_partnum))){
+ 
++  #ifdef PEGATRON_FACTORY_ENABLE
++             if (argc == 5) {
++                 //offset = simple_strtoul(argv[1], NULL, 16);
++                 //load_addr = offset;
++                 //filename = argv[2];
++                 part->offset = simple_strtoul(argv[3], NULL, 16);
++                 part->size = simple_strtoul(argv[4], NULL, 16);
++             }
++  #endif
+ 		/* check partition type for cramfs */
+ 		fsname = (cramfs_check(part) ? "CRAMFS" : "JFFS2");
+ 		printf("### %s loading '%s' to 0x%lx\n", fsname, filename, offset);
+@@ -649,7 +667,11 @@
+ #endif
+ /***************************************************/
+ U_BOOT_CMD(
+-	fsload,	3,	0,	do_jffs2_fsload,
++ #ifdef PEGATRON_FACTORY_ENABLE
++	fsload,	5,	0,	do_jffs2_fsload,
++ #else
++        fsload, 3,      0,      do_jffs2_fsload,
++ #endif
+ 	"load binary file from a filesystem image",
+ 	"[ off ] [ filename ]\n"
+ 	"    - load binary file from flash bank\n"

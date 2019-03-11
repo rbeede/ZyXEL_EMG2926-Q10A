@@ -1,0 +1,143 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+uci=require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta http-equiv="Pragma" content="no-cache">
+<title>Untitled Document</title>
+<script type="text/javascript" src="<%=media%>/easy/js/jquery-1.2.6.js"></script>
+<script type="text/javascript" src="<%=media%>/easy/js/parental_control.js"></script>
+<link href="<%=media%>/easy/images/popup.css" rel="stylesheet" type="text/css" />
+
+
+<%
+   local luaSRules = {}
+   
+   uci:foreach( "parental", "parental_rule", function( section )
+      if not ( nil == section.name ) then
+         local tmp = section
+         
+         tmp.id = section[ '.name' ]
+         table.insert( luaSRules, tmp )
+      end
+   end )
+   
+%>
+</head>
+<body class="bandwidth_bg">
+<form method="post" name="parental_control" >
+<div class="wrapper">
+
+	<ul>
+      <div class="tableframe">
+                     <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+                        <tr>
+                           <td>
+                              <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                 <tr>
+                                    <td>
+                                       <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                                          <tr>
+                                             <td>
+                                                <table id="list_table" width="100%" cellpadding="0" cellspacing="0" >
+                                                   <tr>
+                                                      <td height="26" colspan="9">
+                                                         <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                            <tr>
+                                                               <td height="26" class="table_title">
+                                                                  <%:parental_control_rule%><span class="cTitle"></span>
+                                                               </td>
+                                                            </tr>
+                                                         </table>
+                                                      </td>
+                                                   </tr>
+                                                   <tr class="top_font" align="center">                                                      
+                                                      <td class="top_font" ><%:Status%></td>
+                                                     
+                                                      <td class="top_font" width="120" ><%:network_user%>(<%:mac%>)</td>
+                                                      <td class="top_font" ><%:internet_access_sche%> </td>													  
+                                                      <td class="top_font" width="100"><%:network_service%></td>
+													  <td class="top_font" width="100"><%:website_block%></td>                                                      
+                                                   </tr>
+                                                   <% 
+                                                      for i = 1, #luaSRules do
+                                                      %>
+                                                         <tr class="table_font" align="center">                                                          
+                                                            <td>
+                                                            <%
+															 local Parental_enable = uci:get("parental","general","enable")
+                                                            if not ( nil == luaSRules[i].enable ) and not ( "0" == luaSRules[i].enable ) and (  "1" == Parental_enable ) then
+                                                               %><img src="<%=media%>/admin/images/i_active_on.gif" width="18" height="18"  title="<%:On%>"/><%
+                                                            else
+                                                               %><img src="<%=media%>/admin/images/i_active_off.gif" width="18" height="18"  title="<%:Off%>"/><%
+                                                            end
+                                                            %>
+                                                            </td>
+                                                            
+															<%
+																local user_name=luci.sys.exec("cat /tmp/dhcp.leases |grep "..luaSRules[i].src_mac.." | awk -F ' ' '{print $4}'|sed 's/\"//g' | sed 's/://g'")
+																if ( luaSRules[i].src_type == "single" or luaSRules[i].src_type == "custom") then
+															%>
+															<td><%= user_name %>(<%= luaSRules[i].src_mac %>)</td>
+															<%  else %>
+															<td>All</td>
+															<%end%>
+                                                            <td><%= luaSRules[i].weekdays %>  <%= luaSRules[i].start_hour %>:<%= luaSRules[i].start_min%>-<%= luaSRules[i].stop_hour %>:<%= luaSRules[i].stop_min %></td>
+															<%																												
+															if ( "0" == luaSRules[i].service_count ) then 
+																%><td> NONE </td><%
+															else
+																%><td> Configured </td><%
+															end
+															%>
+															<%
+															if ( nil == luaSRules[i].keyword ) then 
+																%><td> NONE </td><%
+															else
+																%><td> Configured </td><%
+															end
+															%>                                                            
+                                                         </tr>
+                                                      <%
+                                                      end
+                                                   %>
+                                                </table>
+                                             </td>
+                                          </tr>
+                                       </table>
+                                    </td>
+                                 </tr>
+                              </table>
+                           </td>
+                        </tr>
+                     </table>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+</div>
+</form>
+</body>
+</html>

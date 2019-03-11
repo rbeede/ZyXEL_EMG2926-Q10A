@@ -1,0 +1,80 @@
+@charset "utf-8";
+
+
+body {
+   background:#405966;
+   color: #89959a;
+   font: .75em Arial, sans-serif;
+}
+
+
+
+/* Begin Footer */
+
+#twFooter {
+   background-color: #405966;
+   color: #99aebb;
+   padding: 85px 0 130px;
+}
+#twFooterNav {
+   float: left;
+   font-family: "MavenPro", Arial, Helvetica, sans-serif;
+   font-size: 16px;
+   line-height: 30px;
+   text-transform: lowercase;
+}
+#twFooterNav li {
+   float: left;
+   margin: 0 30px 0 0;
+   min-width: 120px;
+}
+#twFooterNav a, #twFooterLegal a {
+   color: #99aebb;
+}
+#twFooterNav a:hover, #twFooterLegal a:hover {
+   color: #fff;
+}
+#twFooterSocial {
+   float: right;
+   font-family: "MavenPro", Arial, Helvetica, sans-serif;
+   font-size: 12px;
+   text-transform: lowercase;
+}
+#twFooterSocial li {
+   float: left;
+   margin: 0 0 0 30px;
+   padding: 7px 0 0;
+}
+#twFooterCopy {
+   font-size: 10px;
+   padding: 20px 0 0;
+   text-align: right;
+}
+li#twSocBeam {
+   padding: 0;
+}
+#twSocBeam span {
+   float: left;
+   line-height: 30px;
+   margin: 0 10px 0 0;
+}
+#twSoctw img {
+   background: url("ico_social.png") no-repeat -1px -1px;
+   width: 19px;
+   height: 19px;
+}
+#twSocfb img {
+   background: url("ico_social.png") no-repeat -21px -1px;
+   width: 18px;
+   height: 19px;
+}
+#twSocyt img {
+   background: url("ico_social.png") no-repeat -41px -1px;
+   width: 42px;
+   height: 19px;
+}
+#twSoctw:hover img { background-position: -1px -22px }
+#twSocfb:hover img { background-position: -21px -22px }
+#twSocyt:hover img { background-position: -41px -22px }
+
+/* End Footer */

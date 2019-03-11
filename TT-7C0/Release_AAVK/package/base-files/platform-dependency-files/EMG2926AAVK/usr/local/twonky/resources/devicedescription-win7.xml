@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<root xmlns="urn:schemas-upnp-org:device-1-0"
+      xmlns:pnpx="http://schemas.microsoft.com/windows/pnpx/2005/11"
+      xmlns:df="http://schemas.microsoft.com/windows/2008/09/devicefoundation">
+	<specVersion>
+		<major>1</major>
+		<minor>0</minor>
+	</specVersion>
+	<device>
+		<dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">DMS-1.50</dlna:X_DLNADOC>
+		<dlna:X_DLNADOC xmlns:dlna="urn:schemas-dlna-org:device-1-0">M-DMS-1.50</dlna:X_DLNADOC>
+		#UPLOADCAPABILITIES##AGGREGATION##DTCPIP##HDRL##PVEXTENSION#<deviceType>urn:schemas-upnp-org:device:MediaServer:1</deviceType>
+		<UDN>#UDN#</UDN>
+		<friendlyName>#FRIENDLYNAME#</friendlyName>
+		<manufacturer>#MANUFACTURER#</manufacturer>
+		<manufacturerURL>#MANUFACTURERURL#</manufacturerURL>
+		<modelName>#MODELNAME#</modelName>
+		<modelURL>#MODELURL#</modelURL>
+		<modelDescription>#MODELDESCRIPTION#</modelDescription>
+		<modelNumber>#MODELNUMBER#</modelNumber>
+		<serialNumber>#SERIALNUMBER#</serialNumber>
+		<UPC></UPC>
+		<presentationURL>#BASE-URL#</presentationURL>
+		<iconList>
+			<icon>
+				<mimetype>image/jpeg</mimetype>
+				<height>48</height>
+				<width>48</width>
+				<depth>24</depth>
+				<url>/images/twonkyicon-48x48.jpg</url>
+			</icon>
+			<icon>
+				<mimetype>image/jpeg</mimetype>
+				<height>120</height>
+				<width>120</width>
+				<depth>24</depth>
+				<url>/images/twonkyicon-120x120.jpg</url>
+			</icon>
+			<icon>
+				<mimetype>image/png</mimetype>
+				<height>48</height>
+				<width>48</width>
+				<depth>24</depth>
+				<url>/images/twonkyicon-48x48.png</url>
+			</icon>
+			<icon>
+				<mimetype>image/png</mimetype>
+				<height>120</height>
+				<width>120</width>
+				<depth>24</depth>
+				<url>/images/twonkyicon-120x120.png</url>
+			</icon>
+		</iconList>
+		<serviceList>
+		#SERVICE-LIST#
+		</serviceList>
+		<pnpx:X_hardwareId>#TMS_PNPX_X_HARDWAREWID#</pnpx:X_hardwareId>
+		<pnpx:X_compatibleId>#TMS_PNPX_X_COMPATIBLEID#</pnpx:X_compatibleId>
+		<pnpx:X_deviceCategory>#TMS_PNPX_X_DEVICECATEGORY#</pnpx:X_deviceCategory>
+		<df:X_deviceCategory>#TMS_DFX_X_DEVICECATEGORY#</df:X_deviceCategory>
+		<df:X_containerId>#TMS_PNPX_X_CONTAINERID#</df:X_containerId>
+		<df:X_modelId>#TMS_DFX_MODELID#</df:X_modelId>
+		<microsoft:magicPacketWakeSupported xmlns:microsoft="urn:schemas-microsoft-com:WMPNSS-1-0">0</microsoft:magicPacketWakeSupported>
+	</device>
+</root>

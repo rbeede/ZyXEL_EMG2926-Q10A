@@ -1,0 +1,46 @@
+Source-Makefile: feeds/streamboost/raphael/Makefile
+Package: raphael
+Submenu: JavaScript
+Version: 2.1.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: JavaScript library that should simplify your work with vector graphics on the web
+Maintainer: 
+Source: v2.1.0.tar.gz
+Type: ipkg
+Description:   Raphaël is a small JavaScript library that should simplify your
+  work with vector graphics on the web. If you want to create your own
+  specific chart or image crop and rotate widget, for example, you can
+  achieve it simply and easily with this library.
+http://raphaeljs.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_raphael
+	config raphael_USE_CUSTOM_VERSION
+		depends on PACKAGE_raphael
+		bool "Use custom package version"
+		default n
+	config raphael_CUSTOM_VERSION
+		depends on raphael_USE_CUSTOM_VERSION
+		string " version as string (default version: 2.1.0)"
+		default "2.1.0"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_raphael
+	config raphael_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_raphael
+		bool "Use custom source directory"
+		default n
+	config raphael_CUSTOM_SOURCE_DIR
+		depends on raphael_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

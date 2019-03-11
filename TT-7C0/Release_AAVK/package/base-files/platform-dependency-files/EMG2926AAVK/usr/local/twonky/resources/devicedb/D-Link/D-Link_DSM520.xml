@@ -1,0 +1,38 @@
+<Client>
+	<DeviceId>
+		<DisplayName>D-Link DSM520</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>DSM-520</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>REDSONIC</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+			<Target>JPEG120x90</Target>
+		</Scaling>
+		<AudioTranscoding>
+			<Target>MP3</Target>
+			<Target>WAV</Target>
+		</AudioTranscoding>
+		<VideoTranscoding>
+			<Target>WMV</Target>
+		</VideoTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<PretendServer>REDSONIC</PretendServer>
+			<Version>DLNANO</Version>
+			<DescriptionFile>devicedescription-redsonic.xml</DescriptionFile>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>1.0RESPONSE</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCERES</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,173 @@
+config network
+	option init network
+	list affects intfGrp	
+	list affects dhcp
+#	list affects radvd
+	list affects RA_dhcp6c
+
+config wireless
+	option init wireless
+	list affects wireless_macfilter
+	list affects wireless5G_macfilter
+        list affects wifi_schedule
+        list affects wifi_schedule5G
+
+config wireless5G
+	option init wireless5G
+	list affects wireless5G_macfilter	
+	
+config wireless_macfilter
+	option init wireless_macfilter
+
+config wireless5G_macfilter
+	option init wireless5G_macfilter	
+
+config firewall
+	option init firewall
+	list affects luci-splash
+	list affects qos
+	list affects miniupnpd
+
+config olsr
+	option init olsrd
+
+config dhcp
+	option init dnsmasq
+	list affects miniupnpd
+
+config dropbear
+	option init dropbear
+
+config uhttpd
+	option init uhttpd
+
+config fstab
+	option init fstab
+
+config qos
+	option init qos
+
+config system
+	option init led
+	option init password	
+	option init gwclient
+	list affects luci_statistics
+
+config luci_splash
+	option init luci_splash
+
+config upnpd
+	option init miniupnpd
+
+config ntpclient
+	option init ntpclient
+
+config samba
+	option init samba
+
+config tinyproxy
+	option init tinyproxy
+	
+config nat
+	option init nat
+	
+config portTrigger
+	option init portTrigger
+
+config updatedd
+	option init updatedd
+
+config route
+	option init route
+	list affects firewall
+	list affects nat
+config parental
+	option init webstr_filter
+
+config syslogd
+	option init syslogd
+
+config wifi_schedule
+	option init wifi_scheduling
+
+config wifi_schedule5G
+	option init wifi_scheduling5G
+
+config ipsec
+	option init vpn_daemon
+
+config time
+        option init time_daemon
+
+config ipsec_new
+	option init netbios_daemon
+
+config igmpproxy
+	option init igmpproxy
+
+config wol
+	option init wol
+
+config gw6c
+	option init gw6c
+
+config wireless_client
+	option init wireless_client
+
+config port_status
+        option init port_config
+
+config dlna
+	option init dlna
+
+config proftpd
+	option init proftpd
+
+config appflow
+	option exec '/usr/local/bin/check_apply_appflow'
+
+config tr069
+	option init ztr69
+
+config snmpd
+        option init 'snmpd'
+
+config dhcp6c
+	option init 'dhcp6c'
+
+config RA_status
+	option init 'RA_status'
+
+config RA_dhcp6c
+	option init 'RA_dhcp6c'
+
+config intfGrp_v6
+	option init 'intfGrp_v6'
+
+config firewall6
+	option init 'firewall6'
+
+config default_lan_radvd
+	option init 'default_lan_radvd'
+
+config account
+	option init password
+
+config p910nd
+	option init p910nd
+
+config radvd
+	option init 'radvd'
+
+config intfGrp
+	option init intfGrp
+	list affects dhcp
+	list affects firewall
+	list affects nat
+	list affects route
+config mcproxy
+	option init mcproxy
+
+config tr143
+	option init 'tr143'
+

@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Orange ODMS WebUI</DisplayName>
+		<HttpRecognition>
+			<HttpText>/resources/odms.html</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC2</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG90x90</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

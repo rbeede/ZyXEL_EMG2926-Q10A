@@ -1,0 +1,9 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Archos 605 wifi</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>A605F</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+</Client>

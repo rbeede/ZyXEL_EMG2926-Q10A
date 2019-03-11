@@ -1,0 +1,109 @@
+#!/bin/sh
+
+## wan: port 4
+
+wan_link_status=$(/sbin/swconfig dev eth0 port 5 get link | grep down)
+wan_link_ckeck=$(cat /tmp/wan_link_status)
+wan_proto=$(uci get network.wan.proto)
+
+[ "$wan_proto" == "static" ] && exit 1
+
+if [ -z "$wan_link_status" -a "$wan_link_ckeck" == "0" ] ;then
+
+	##restart wan interface
+	ifup wan
+        #internet_led
+	echo 1 > /tmp/wan_link_status
+
+	local ath13_disabled_5G=$(iwconfig ath13| grep ESSID)
+	local guest_wlan_5G_enabled=$(uci get wireless.ath13.enable_guest_wlan)
+	local ath3_disabled_24G=$(iwconfig ath3| grep ESSID)
+	local guest_wlan_24G_enabled=$(uci get wireless.ath3.enable_guest_wlan)
+	#Guest WLAN 2.4G enable.
+	if [ -n "$ath3_disabled_24G" ] && [ "$guest_wlan_24G_enabled" == "1" ]; then
+		echo 1 >/tmp/Guest_WLAN_24G
+	fi
+	#Guest WLAN 5G enable.
+	if [ -n "$ath13_disabled_5G" ] && [ "$guest_wlan_5G_enabled" == "1" ]; then
+		echo 1 >/tmp/Guest_WLAN_5G
+        fi
+
+
+elif [ -n "$wan_link_status" -a "$wan_link_ckeck" == "1"  ] ;then
+
+##	ifconfig vlan10 0.0.0.0	
+	echo 0 > /tmp/wan_link_status
+
+fi
+
+local guest_wlan_24G_enabled=$(cat /tmp/Guest_WLAN_24G)
+local guest_wlan_5G_enabled=$(cat /tmp/Guest_WLAN_5G)
+#Guest WLAN 2.4G enable.
+if [ -n "$guest_wlan_24G_enabled" ]; then
+	Guest24G_pid=$(cat /tmp/run/dnsmasq.pid.ath3)
+	dnsmasqExist=$(cat /proc/$Guest24G_pid/cmdline)
+	[ -z "$dnsmasqExist" ] && {
+		ipaddr_24G=$(uci get wireless.ath3.guest_ip)
+		args_24G=$(cat /tmp/Guest_dnsmasq24G)
+		dnsmasq $args_24G
+		dnsmasq_pid_24G=$(ps | grep "dnsmasq -C /tmp/dnsmasq.conf -z -a $ipaddr_24G" | grep -v "grep" | awk '{print $1}')
+		echo $dnsmasq_pid_24G > /var/run/dnsmasq.pid.ath3
+		rm /tmp/Guest_WLAN_24G
+	}
+fi
+
+#Guest WLAN 5G enable.
+if [ -n "$guest_wlan_5G_enabled" ]; then
+	Guest5G_pid=$(cat /tmp/run/dnsmasq.pid.ath13)
+	dnsmasq5GExist=$(cat /proc/$Guest5G_pid/cmdline)
+	[ -z "$dnsmasq5GExist" ] && {
+		ipaddr_5G=$(uci get wireless.ath13.guest_ip)
+		args_5G=$(cat /tmp/Guest_dnsmasq5G)
+		dnsmasq $args_5G
+		dnsmasq_pid_5G=$(ps | grep "dnsmasq -C /tmp/dnsmasq.conf -z -a $ipaddr_5G" | grep -v "grep" | awk '{print $1}')
+		echo $dnsmasq_pid_5G > /var/run/dnsmasq.pid.ath13
+		rm /tmp/Guest_WLAN_5G
+	}
+fi
+
+#check uhttpd daemon
+system_min_time=$(date +%M)
+time=$(($system_min_time%10))
+
+if [ "$time" == "0" ] ;then
+
+	if [ ! -f /tmp/uhttpd_restart ] ;then
+		
+		touch /tmp/uhttpd_restart
+			
+		top > /tmp/top_log &
+		sleep 1
+
+		parser_words=$( cat /tmp/top_log | grep "/usr/sbin/uhttpd" | sed '2,100d' | awk '{print $7}' | awk '{FS="%"} {print $1}' )
+			
+		if [ $parser_words -ge 40 ] ;then
+
+			echo "$parser_words" >> /tmp/uhttpd_logs		
+			echo "1" > /tmp/uhttpd_restart
+			/etc/init.d/uhttpd restart
+				
+		fi
+
+		top_pid=$(ps | grep "top" | grep -v "grep" | awk '{print $1}')
+
+		kill -9 $top_pid
+		rm /tmp/top_log
+			
+	fi
+	
+fi
+	
+if [ "$time" == "1" ] ;then
+
+	if [ -f /tmp/uhttpd_restart ] ;then
+		
+		rm /tmp/uhttpd_restart
+			
+	fi
+	
+fi

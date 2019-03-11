@@ -1,0 +1,4 @@
+#!/bin/sh
+PIDFILE=/var/run/appflow/spaceman.pid
+
+(ngrep -ilpd ${LAN_IFACE} -W single "content-type:" 'tcp and src port 80 and (((ip[2:2] - ((ip[0]&0xf)<<2)) - ((tcp[12]&0xf0)>>2)) != 0) and tcp[((tcp[12:1] & 0xf0) >> 2):4] = 0x48545450' & echo $! >&3 ) 3>$PIDFILE | spaceman.awk | xargs -n 1 redis-cli publish classifications > /dev/null 2>&1 &

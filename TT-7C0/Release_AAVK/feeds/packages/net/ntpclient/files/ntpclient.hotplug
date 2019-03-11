@@ -1,0 +1,13 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+##check mode,if AP/UR,exit
+local sys_mode=$(get_sys_mode)
+local chk_if
+
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && chk_if="lan" || chk_if="wan"
+
+if [ "$ACTION" = "ifup" -a "$INTERFACE" = "$chk_if" ]; then
+	/sbin/time_daemon start
+	echo "Init ntpclient"
+fi

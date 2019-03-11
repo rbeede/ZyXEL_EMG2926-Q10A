@@ -1,0 +1,35 @@
+Index: json-c-0.9/arraylist.c
+===================================================================
+--- json-c-0.9.orig/arraylist.c	2017-09-20 17:47:28.032253938 +0800
++++ json-c-0.9/arraylist.c	2017-09-20 17:55:43.360254608 +0800
+@@ -98,22 +98,23 @@
+ }
+ 
+ #if 1 /* zyxel, john */
++#include "json_object.h"
+ int array_list_delete_idx(struct array_list *arr, int idx)
+ {
+-	int i;
+ 
+ 	if(idx > arr->length) return -1;
+ 
+ 	if(arr->array[idx]) arr->free_fn(arr->array[idx]);
+ 
+-	for(i=idx+1; i<arr->length; i++){
+-		arr->array[i-1] = arr->array[i];
++	if((idx+1) == arr->length){
++		arr->array[idx] = NULL;
++		arr->length--;
+ 	}
++	else{
++		arr->array[idx] = json_object_new_object();
++		json_object_object_add(arr->array[idx], "emptyIns", json_object_new_boolean(1));
+ 
+-	arr->array[i-1] = NULL; 
+-
+-	arr->length--;
+-
++	}
+ 	return 0;
+ 	
+ }

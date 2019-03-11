@@ -1,0 +1,58 @@
+Source-Makefile: feeds/streamboost/app-flow-scripts/Makefile
+Package: app-flow-scripts
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +drflocs +checkpcap +p0f
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Bigfoot Networks App Detect Scripts
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: app-flow-scripts-.tar.gz
+Type: ipkg
+Description: Bigfoot Networks App Detect Scripts
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_app-flow-scripts
+	config app-flow-scripts_USE_CUSTOM_VERSION
+		depends on PACKAGE_app-flow-scripts
+		bool "Use custom package version"
+		default n
+	config app-flow-scripts_CUSTOM_VERSION
+		depends on app-flow-scripts_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_app-flow-scripts
+	config app-flow-scripts_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_app-flow-scripts
+		bool "Use custom source directory"
+		default n
+	config app-flow-scripts_CUSTOM_SOURCE_DIR
+		depends on app-flow-scripts_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+Package: app-flow-scripts-noload
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +drflocs +checkpcap +p0f
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Bigfoot Networks App Detect Scripts
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: app-flow-scripts-.tar.gz
+Type: ipkg
+Description: Bigfoot Networks App Detect Scripts
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+
+

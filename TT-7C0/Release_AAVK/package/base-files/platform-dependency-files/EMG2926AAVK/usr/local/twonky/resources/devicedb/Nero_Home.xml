@@ -1,0 +1,9 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Nero Home</DisplayName>
+		<HttpRecognition>
+			<HttpText>Nero Home</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+</Client>

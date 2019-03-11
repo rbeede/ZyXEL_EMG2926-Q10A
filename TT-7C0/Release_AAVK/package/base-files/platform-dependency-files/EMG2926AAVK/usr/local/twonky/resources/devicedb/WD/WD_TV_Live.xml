@@ -1,0 +1,31 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WD TV Live</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WD TV Live</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG160x160</Profile>
+			<!-- AASCALE different to 160x160 breaks duration when PUSHing mp3 files -->
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-wd-live.xml</DescriptionFile>
+		</DLNA>
+		<ExtraProtocolInfo>http-get:*:audio/x-aac:*,http-get:*:audio/x-ac3:*,http-get:*:audio/ogg:*,http-get:*:video/3gpp:*,http-get:*:audio/x-flac:*,http-get:*:audio/x-matroska:*,http-get:*:video/x-matroska:*,http-get:*:video/quicktime:*</ExtraProtocolInfo>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+		<Quirk>NEEDS_THUMBNAIL_CI_FLAG</Quirk>
+		<Quirk>TV4IDS</Quirk>
+		<Quirk>NOARTISTROLECOMPOSER</Quirk>
+		<Quirk>POLL_AVT_STATE</Quirk>
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<Quirk>UNKNOWNSIZE_BYTESEEK</Quirk>
+	</DeviceQuirks>
+</Client>

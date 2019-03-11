@@ -1,0 +1,36 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Golden DMC</DisplayName>
+		<HttpRecognition>
+			<HttpText>UPnP/1.0 DLNADOC/1.50 AwoX/1.1</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC1</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEGORG</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>RESTRICTEDUPLOAD</Quirk>
+		<Quirk>VALIDATEDSEARCHCRITERIA</Quirk>
+		<Quirk>VALIDATEDSORT</Quirk>
+		<Quirk>NOEMBEDDEDALBUMART</Quirk>
+		<Quirk>HTTPCONTINUEWITHOUTLENGTH</Quirk>
+		<Quirk>STRICTTIMESEEKRANGEANDDURATION</Quirk>
+		<Quirk>STRICTJPEGPROFILES</Quirk>
+		<Quirk>SUPPRESS_VIDEO_THUMBNAIL</Quirk>
+		<Quirk>NOT_PERSISTENT</Quirk>
+		<Quirk>DLNASTRICT</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,660 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("application/xhtml+xml")
+
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body>
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="Scheduling"><span>Power Saving</span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li> <li class="table_content">
+        <div class="data">
+          <ul><div class="w_text">
+            <ul>
+              <li class="left_table">Wireless LAN Scheduling : </li>
+              <li class="right_table">
+                <input name="radio" type="radio" id="radio" value="radio" checked="checked" /> Enable
+                <input type="radio" name="radio" id="radio" value="radio" /> Disable</li>
+            </ul>
+            </div>
+            <div class="tableframe">
+   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+     <tr>
+       <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+         <tr>
+           <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+             <tr>
+               <td><table width="100%" cellpadding="0" cellspacing="0" >
+                 <tr>
+                   <td height="26" colspan="3"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                       <tr>
+                         <td height="26" class="table_title"> Scheduling </td>
+                       </tr>
+                   </table></td>
+                 </tr>
+                 <tr class="top_font">
+                   <td >WLAN status </td>
+                   <td>Day </td>
+                   <td>Except for the following times   (24-Hour Format) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td >
+                       <input value="0" type="radio" />  On
+                        <input value="1" checked="checked" type="radio" /> Off </td>
+                   <td><input type="checkbox" /> Everyday </td>
+                   <td>
+                       <select size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>
+                         (hour) &nbsp;
+                         <select size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select>
+                         (hour)
+                         <select size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td ><input value="0" type="radio" /> On
+                         <input value="1" checked="checked" type="radio" />
+                         Off </td>
+                   <td>                       <div align="left"><span class="table_font">
+                           <input   type="checkbox" />
+                         Mon</span>
+                           </div></td>
+                   <td>
+                       <select name="WLAN_scheduling_start_hour_8" size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>
+                         (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select>
+                         (hour)
+                         <select name="WLAN_scheduling_end_min_8" size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td >
+                       <input value="0" type="radio" /> On
+                         <input value="1" checked="checked" type="radio" /> Off </td>
+                   <td><input  type="checkbox" />
+                         Tue </td>
+                   <td>
+                       <select  size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>
+                         (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select>
+                         (hour)
+                         <select size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td > <input value="0" type="radio" /> On
+                         <input value="1" checked="checked" type="radio" />  Off </td>
+                   <td> <input type="checkbox" /> Wed</td>
+                   <td>
+                       <select  size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select> (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>  (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select>
+                         (hour)
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td >
+                       <input value="0" type="radio" /> On
+                         <input value="1" checked="checked" type="radio" /> Off </td>
+                   <td>    <input  type="checkbox" /> Thu  </td>
+                   <td>
+                       <select size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>
+                         (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select> (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select> (hour)
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select> (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td >
+                       <input value="0" type="radio" />
+                         On
+                         <input value="1" checked="checked" type="radio" />
+                         Off </td>
+                   <td>  <input   type="checkbox" /> Fri </td>
+                   <td>
+                       <select  size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>  (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>   (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select> (hour)
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>  (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td >
+                       <input value="0" type="radio" /> On
+                         <input value="1" checked="checked" type="radio" /> Off </td>
+                   <td>  <input   type="checkbox" /> Sat<td>
+                       <select size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>  (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select> (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select>  (hour)
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select> (min) </td>
+                 </tr>
+                 <tr class="table_font" >
+                   <td >
+                       <input value="0" type="radio" /> On
+                         <input value="1" checked="checked" type="radio" /> Off </td>
+                   <td> <input   type="checkbox" />  Sun</td>
+                   <td>
+                       <select size="1">
+                         <option value="00000000" selected="selected">00</option>
+                         <option value="00000001">01 </option>
+                         <option value="00000002">02 </option>
+                         <option value="00000003">03 </option>
+                         <option value="00000004">04 </option>
+                         <option value="00000005">05 </option>
+                         <option value="00000006">06 </option>
+                         <option value="00000007">07 </option>
+                         <option value="00000008">08 </option>
+                         <option value="00000009">09 </option>
+                         <option value="0000000a">10 </option>
+                         <option value="0000000b">11 </option>
+                         <option value="0000000c">12 </option>
+                         <option value="0000000d">13 </option>
+                         <option value="0000000e">14 </option>
+                         <option value="0000000f">15 </option>
+                         <option value="00000010">16 </option>
+                         <option value="00000011">17 </option>
+                         <option value="00000012">18 </option>
+                         <option value="00000013">19 </option>
+                         <option value="00000014">20 </option>
+                         <option value="00000015">21 </option>
+                         <option value="00000016">22 </option>
+                         <option value="00000017">23 </option>
+                       </select>
+                         (hour) &nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>
+                         (min)&nbsp;&nbsp;&nbsp;~&nbsp;&nbsp;&nbsp;
+                         <select  size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">01 </option>
+                           <option value="00000002">02 </option>
+                           <option value="00000003">03 </option>
+                           <option value="00000004">04 </option>
+                           <option value="00000005">05 </option>
+                           <option value="00000006">06 </option>
+                           <option value="00000007">07 </option>
+                           <option value="00000008">08 </option>
+                           <option value="00000009">09 </option>
+                           <option value="0000000a">10 </option>
+                           <option value="0000000b">11 </option>
+                           <option value="0000000c">12 </option>
+                           <option value="0000000d">13 </option>
+                           <option value="0000000e">14 </option>
+                           <option value="0000000f">15 </option>
+                           <option value="00000010">16 </option>
+                           <option value="00000011">17 </option>
+                           <option value="00000012">18 </option>
+                           <option value="00000013">19 </option>
+                           <option value="00000014">20 </option>
+                           <option value="00000015">21 </option>
+                           <option value="00000016">22 </option>
+                           <option value="00000017">23 </option>
+                         </select> (hour)
+                         <select size="1">
+                           <option value="00000000" selected="selected">00</option>
+                           <option value="00000001">30 </option>
+                         </select>  (min) </td>
+                 </tr>
+               </table></td>
+             </tr>
+           </table></td>
+         </tr>
+       </table></td>
+     </tr>
+   </table>
+ </div>	
+   	        <div class="spaceair"></div>
+            <div class="w_text"><span class="i_note">Note:</span> </div>
+            <div class="w_text"><span class="i_note_a">Specify the same begin time and end time means the whole day schedule. </span></div>
+   	        <div class="spaceair"></div>
+          </ul>
+      </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="Apply" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="Cancel" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+
+</body>
+<script language="JavaScript">    
+<!--
+showFullPath(' Power Saving');
+//-->
+</script>
+</html>

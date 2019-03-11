@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+
+boot(){
+	##check mode,if AP/UR,exit
+	local sys_mode=$(get_sys_mode)
+	[ "$sys_mode" != "1" ] && exit 0
+
+	##check wan_link_status
+	wan_link_status=$(/sbin/swconfig dev eth0 port 5 get link | grep down)
+	wan_proto=$(uci get network.wan.proto)
+	
+	[ -z "$wan_link_status" ] && echo 1 > /tmp/wan_link_status || {
+	
+		case $wan_proto	in
+			dhcp)
+				killall dhcpc
+			;;
+			pppoe|pptp)			
+				killall pppd
+			;;
+		esac
+
+		echo 0 > /tmp/wan_link_status
+
+	}
+
+	watch -tn 2 /bin/link_monitor 1>/dev/null 2>&1 &
+}

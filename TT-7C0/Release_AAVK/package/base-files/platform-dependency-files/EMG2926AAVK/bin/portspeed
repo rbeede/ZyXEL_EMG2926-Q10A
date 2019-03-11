@@ -1,0 +1,122 @@
+#!/bin/sh
+
+PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/lib
+export PATH
+export RTL8367RB_MDIO_IF=eth2
+
+. /etc/functions.sh
+include /lib/config
+
+portnum=$1
+
+
+if [ "$portnum" == "a" ]; then
+   port=0
+   while [ "$port" -le "4" ]
+   do
+        sh /bin/portspeed $port
+        port=$(($port+1))
+   done
+else
+	##wan
+	if [ "$portnum" == "4" ]; then 
+		local up_5=$(swconfig dev eth0 port 5 get link | grep 'up')
+		if [ "$up_5" != "" ]; then
+			local speed_5=$(swconfig dev eth0 port 5 get link | grep 'up' | sed 's/^.*speed://g' | sed 's/baseT.*$//g')
+			if [ "$speed_5" == "10" ]; then
+				echo "Port $portnum: 10M" 
+				return 0
+			elif [ "$speed_5" == "100" ]; then
+				echo "Port $portnum: 100M" 
+				return 0
+			else
+				echo "Port $portnum: 1000M" 
+				return 0	
+			fi
+		else
+		    echo "port $portnum is off-link"
+            exit 1
+		fi
+	fi
+		##wan
+	if [ "$portnum" == "3" ]; then 
+		local up_4=$(swconfig dev eth0 port 4 get link | grep 'up')
+		if [ "$up_4" != "" ]; then
+			local speed_4=$(swconfig dev eth0 port 4 get link | grep 'up' | sed 's/^.*speed://g' | sed 's/baseT.*$//g')
+			if [ "$speed_4" == "10" ]; then
+				echo "Port $portnum: 10M" 
+				return 0
+			elif [ "$speed_4" == "100" ]; then
+				echo "Port $portnum: 100M" 
+				return 0
+			else
+				echo "Port $portnum: 1000M" 
+				return 0	
+			fi
+		else
+		    echo "port $portnum is off-link"
+            exit 1
+		fi
+	fi
+		##wan
+	if [ "$portnum" == "2" ]; then 
+		local up_3=$(swconfig dev eth0 port 3 get link | grep 'up')
+		if [ "$up_3" != "" ]; then
+			local speed_3=$(swconfig dev eth0 port 3 get link | grep 'up' | sed 's/^.*speed://g' | sed 's/baseT.*$//g')
+			if [ "$speed_3" == "10" ]; then
+				echo "Port $portnum: 10M" 
+				return 0
+			elif [ "$speed_3" == "100" ]; then
+				echo "Port $portnum: 100M" 
+				return 0
+			else
+				echo "Port $portnum: 1000M" 
+				return 0	
+			fi
+		else
+		    echo "port $portnum is off-link"
+            exit 1
+		fi
+	fi
+		##wan
+	if [ "$portnum" == "1" ]; then 
+		local up_2=$(swconfig dev eth0 port 2 get link | grep 'up')
+		if [ "$up_2" != "" ]; then
+			local speed_2=$(swconfig dev eth0 port 2 get link | grep 'up' | sed 's/^.*speed://g' | sed 's/baseT.*$//g')
+			if [ "$speed_2" == "10" ]; then
+				echo "Port $portnum: 10M" 
+				return 0
+			elif [ "$speed_2" == "100" ]; then
+				echo "Port $portnum: 100M" 
+				return 0
+			else
+				echo "Port $portnum: 1000M" 
+				return 0	
+			fi
+		else
+		    echo "port $portnum is off-link"
+            exit 1
+		fi
+	fi
+		##wan
+	if [ "$portnum" == "0" ]; then 
+		local up_1=$(swconfig dev eth0 port 1 get link | grep 'up')
+		if [ "$up_1" != "" ]; then
+			local speed_1=$(swconfig dev eth0 port 1 get link | grep 'up' | sed 's/^.*speed://g' | sed 's/baseT.*$//g')
+			if [ "$speed_1" == "10" ]; then
+				echo "Port $portnum: 10M" 
+				return 0
+			elif [ "$speed_1" == "100" ]; then
+				echo "Port $portnum: 100M" 
+				return 0
+			else
+				echo "Port $portnum: 1000M" 
+				return 0	
+			fi
+		else
+		    echo "port $portnum is off-link"
+            exit 1
+		fi
+	fi
+   
+fi

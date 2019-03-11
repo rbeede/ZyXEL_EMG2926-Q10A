@@ -1,0 +1,13 @@
+<Server>
+	<DeviceId>
+		<DisplayName>Sharp BD</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>&lt;manufacturer&gt;Sharp Corporation&lt;/manufacturer&gt;</DescriptionText>
+			<DescriptionText>&lt;modelName&gt;BD-</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>INVALID_CHILD_COUNT</Quirk>
+	</DeviceQuirks>
+</Server>

@@ -1,0 +1,239 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+local nixio = require("nixio")
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+
+<script language="JavaScript" type="text/javascript">
+
+function redirect()
+{
+	top.location.href="/";
+}
+
+function CountDown()
+{
+      	CountDownSecond = document.theForm.timer.value;	
+      	if ( CountDownSecond !=0 ) {
+         	document.theForm.timer.value = CountDownSecond - 1;
+         	setTimeout('CountDown()',1000);
+      	}
+      	else {
+         	redirect();
+     	}
+}
+
+function clickCallback(){
+	if (document.FW.mtenFWUpload.value == "") {
+		alert("Please specify the file name.");
+		return false;
+	}
+
+	showWebMessage( 2, '<%:Message%>', '<%:fw_upgrading_message%>' );
+	setTimeout('submit_operation_1()',100);  //Delay
+}
+
+function Link2ReleaseNote(release_note){
+	var url_str="ftp://ftp2.zyxel.com/EMG2926-Q10A/firmware/"+release_note;
+	//var url_str="ftp://zyus2504:zyus2504@ftp2.zyxel.com.tw/EMG2926-Q10A/firmware"+release_note;
+	window.open(url_str);
+}
+
+function fw_upgrade()
+{
+	showWebMessage( 2, '<%:Message%>', '<%:fw_upgrading_message%>' );
+	setTimeout('submit_operation_3()',100);  //Delay
+}
+
+function submit_operation_1()
+{
+    document.FW.sysSubmit.value = "1";
+	document.FW.submit();
+}
+/*
+function submit_operation_2()
+{
+	document.FW.check_fw.value = "1";
+	document.FW.submit();
+}
+*/
+function submit_operation_3()
+{
+	document.FW.Do_Firmware_Upgrade.value = "1";
+	document.FW.submit();
+}
+</script>
+
+</head>
+<body>
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:fw_upgrade%>"><span><%:fw_upgrade%> </span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+<% if fileupload == 1 then %>
+<form name="theForm">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:fw_upgrading%></div>
+          <div class="w_text">
+		  <%:fw_remind1%>
+          </div>
+          <div class="w_text"><%:fw_remind2%>
+            <input name="timer"  size="3" type="text" value=150 style="border:0;background:transparent" readonly=true />
+            <%:seconds%>.
+          </div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<script language="JavaScript" type="text/javascript">
+	 CountDown();
+</script>
+<% elseif fileupload == 2 then %>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:fw_remind3%></div>
+          <div class="w_text">
+            <%:fw_remind4%><br>
+	    <%=errmsg%>	
+          </div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+<% else %>
+<form method="post" name="FW" action="<%=controller%>/expert/maintenance/fw" enctype="multipart/form-data">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+      <div class="title"><%:fw_upgrade%></div>
+      <div class="w_text">
+        <table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+          <tr>
+            <td height="40" id="uploadIntroduction1"><%:fw_remind5%></td>
+          </tr>
+        </table>
+      </div>
+      <div class="w_text">
+        <table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+          <tr>
+            <td width="10%" id="uploadFWPath" nowrap><%:file_path%>:</td>
+            <td><input name="mtenFWUpload" size="20" maxlength="128" type="file" />
+          </tr>
+        </table>
+        <table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+          <tr>
+            <input value="<%:file_upload%>" type="button" onClick="clickCallback()"/>
+			<input id="sysSubmit" name="sysSubmit" type="hidden">
+          </tr>
+        </table>
+        </div>
+        <div class="space"></div>
+        <!--<div class="title"><%:online_fw_upgrade%></div>
+        <div class="w_text">
+			<input value="<%:check_latest_fw%>" type="button" onClick="submit_operation_2()"/>
+			<input name="check_fw" id="check_fw" type="hidden"/>
+		</div> -->
+        <% if on_line_check_fw == 1 then %>
+        <div class="w_text">
+          <table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+            <tr>
+              <td height="40"><font id="uploadCurrentFwVer"><%:current_ver%></font><%=firmware_version_now%></td>
+            </tr>
+          </table>
+          <table width="90%" border="2" align="center" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="10%"><span class="top_left"><font id ="uploadLatestFwVer"><%:latest_ver%></font></span></td>
+              <td width="10%"><span class="top_font"><font id =""><%=FW_version%></font></span></td>
+            </tr>
+            <tr>
+              <td width="10%"><span class="top_left"><font id ="uploadReleaseDate"><%:release_date%></font></span></td>
+              <td width="10%"><span class="top_font"><font id =""><%=FW_date%></font></span></td>
+            </tr>
+            <tr>
+              <td width="10%"><span class="top_left"><font id ="uploadReleaseNote"><%:release_note%></font></span></td>
+              <td width="10%"><span class="top_font"><font id =""><a href="javascript:Link2ReleaseNote('<%=FW_note%>');"><%:click_open%></a></font></span></td> 
+            </tr>
+            <tr>
+              <td width="10%"><span class="top_left"><font id ="uploadSize"><%:size%></font></span></td>
+              <td width="10%"><span class="top_font"><font id =""><%=FW_size%></font></span></td>
+            </tr>
+          </table>
+          <br>
+          <table width="90%" border="0" align="center" cellpadding="0" cellspacing="0">
+            <tr>
+				<td><input value="<%:do_fw_upgrade%>" type="button" onClick="fw_upgrade();"></td>
+				<input id="Do_Firmware_Upgrade" name="Do_Firmware_Upgrade" type="hidden">
+            </tr>
+          </table>
+        </div>
+	<% end %>
+        <div class="spaceair"></div>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<script language="JavaScript" type="text/javascript">
+<% if on_line_check_fw == 0 then %>
+	alert("<%:fw_warn1%>");
+<% elseif on_line_fw_dl == 0 then %>
+alert("<%:fw_warn2%>"); 
+<%=nixio.syslog("err","Network has interrupted! Firmware download has stopped!.")%> <!-- wen-hsiang 2011.9.16. -->
+<% elseif has_newer_fw == 0 then %>
+	alert("<%:fw_warn3%>");
+<% end %>	
+</script>
+<% end %>
+</body>
+<script language="JavaScript" type="text/javascript">
+    showFullPath(' <%:maintenance%> > <%:fw_upgrade%>');
+</script>
+</html>

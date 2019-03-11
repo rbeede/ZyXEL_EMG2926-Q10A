@@ -1,0 +1,126 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /etc/functions.sh
+include /lib/config
+
+local sys_mode=$(get_sys_mode)
+
+print_log()
+{
+        echo "========= print log ==========>  $1 " 1> /dev/null
+	#echo "========= print log ==========>  $1 " 
+}
+
+chk_wan(){
+	print_log "chk_wan"
+	local WAN
+	for i in "" 1 2 3 4
+	do
+		wanEable=$(uci get network.wan$i.enable)
+		igmpEable=$(uci get igmpproxy.wan$i.igmpEnabled)
+		if [ "$wanEable" == "1" ];then
+
+			wanProto=$(uci get network.wan$i.proto)
+			if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+				WAN="$proto"-wan$i
+#				DISABLED_IF=`uci get network.wan$i.ifname`
+			else
+				WAN=`uci get network.wan$i.ifname`
+#				DISABLED_IF="'$proto'-wan$i"
+			fi
+			
+			print_log "WAN = $WAN"
+
+			if [ "$igmpEable" == "enable" ];then
+				echo "phyint $WAN upstream  ratelimit 0  threshold 1" >> $CONF_FILE
+				print_log "phyint $WAN upstream  ratelimit 0  threshold 1"
+			#else
+			#	echo "phyint $WAN disabled" >> $CONF_FILE
+			#	print_log  "phyint $WAN disabled"
+			fi
+		fi
+	done
+}
+
+chk_lan(){
+	print_log "chk_lan"
+	local LAN
+	LAN=$(brctl show|grep br-|awk '{print $1}' | grep br-)
+	print_log "LAN=$LAN"
+	for i in $LAN
+	do
+		echo "phyint $i downstream  ratelimit 0  threshold 1" >> $CONF_FILE
+		print_log "phyint $i downstream  ratelimit 0  threshold 1"
+	done	
+}
+
+#sleep 3
+
+CONF_FILE=/tmp/igmpproxy.conf
+IGMP_OPTS="-d -v -v"
+## force IGMP version to v2
+
+	
+for i in "" 1 2 3 4
+do
+	igmpEnabled=$(uci get igmpproxy.wan$i.igmpEnabled)
+	if [ "$igmpEnabled" == "enable" ];then
+		defaultwan=wan$i
+		break
+	fi
+done
+
+ETH_WAN=$(uci get network.$defaultwan.ifname)
+
+echo "2" > /proc/sys/net/ipv4/conf/$ETH_WAN/force_igmp_version
+echo "2" > /proc/sys/net/ipv4/conf/br-lan/force_igmp_version
+echo "2" > /proc/sys/net/ipv4/conf/br-vlanth4/force_igmp_version
+echo "2" > /proc/sys/net/ipv4/conf/br-vlanth5/force_igmp_version
+echo "2" > /proc/sys/net/ipv4/conf/br-vlanth6/force_igmp_version
+echo "2" > /proc/sys/net/ipv4/conf/br-vlanth7/force_igmp_version
+
+config_load network
+config_get proto $defaultwan proto
+
+
+echo "igmpEnabled= $igmpEnabled" >> /tmp/debug_log
+print_log "igmpEnabled = $igmpEnabled   "
+
+if [ "$igmpEnabled" = "enable" ]; then
+    igmp_exist=$(ps | grep 'igmpproxy' | grep -v 'grep' | awk '{print $1}')
+        if [ -n "$igmp_exist" ]; then
+            start-stop-daemon -K -x /usr/sbin/igmpproxy -q
+	fi
+	
+	echo "##------------------------------------------------------"  > $CONF_FILE
+	echo "## Enable Quickleave mode (Sends Leave instantly)" >> $CONF_FILE
+	echo "##------------------------------------------------------" >> $CONF_FILE
+	echo "quickleave" >> $CONF_FILE
+
+	echo "##------------------------------------------------------" >> $CONF_FILE
+	echo "## Configuration for eth0 (Upstream Interface)"  >> $CONF_FILE
+	echo "##------------------------------------------------------" >> $CONF_FILE
+	chk_wan
+#	echo "phyint $WAN upstream  ratelimit 0  threshold 1" >> $CONF_FILE
+	echo "altnet 0.0.0.0/0" >> $CONF_FILE
+	##echo "altnet 192.168.100.0/24" >> $CONF_FILE
+
+	echo "##------------------------------------------------------"  >> $CONF_FILE
+	echo "## Configuration for eth1 (Downstream Interface)" >> $CONF_FILE
+	echo "##------------------------------------------------------" >> $CONF_FILE
+#	echo "phyint br-lan downstream  ratelimit 0  threshold 1" >> $CONF_FILE
+	chk_lan
+	echo "##------------------------------------------------------" >> $CONF_FILE
+	echo "## Configuration for eth2 (Disabled Interface)" >> $CONF_FILE
+	echo "##------------------------------------------------------" >> $CONF_FILE
+#	echo "phyint $DISABLED_IF disabled" >> $CONF_FILE
+		
+	#start-stop-daemon -S -x /usr/sbin/igmpproxy -b /tmp/igmpproxy.conf
+	/usr/sbin/igmpproxy /tmp/igmpproxy.conf -v &
+elif [ "$igmpEnabled" = "disable" ]; then
+	start-stop-daemon -K -x /usr/sbin/igmpproxy -q
+fi
+
+## iptables app reorder (need to bypass multicast stream on DoS)
+/lib/firewall/iptables_app_order

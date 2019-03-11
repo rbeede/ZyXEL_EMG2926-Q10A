@@ -1,0 +1,125 @@
+****************************
+* TwonkyServer Linux HowTo *
+****************************
+This document was last modified June 16th, 2015.
+
+The Twonky UPnP server for Linux is available for different
+machine architectures:
+
+-  Standard PC (x86)
+-  ARM (Advanced Risc Machine) big and little endian
+-  MIPS (Microprocessor without interlocked pipeline stages)
+   big and little endian
+-  PowerPC (Performance optimization with enhanced RISC Performance Chip)
+-  SH3 (Hitachi SH)
+-  SH4 (Hitachi SH)
+-  SPARC (Scalable Processor ARChitecture)
+
+*****************
+* Package Content
+
+Your package will consist of the following files:
+
+twonkystarter       Twonky UPnP server starter
+twonkyserver        Twonky UPnP server
+cgi-bin/*           cgi scripts for twonky
+plugins/*           plugins for twonky
+resources/*         resources for twonky
+radio.m3u           Sample playlist
+Linux-HowTo.txt     This file
+NOTICES.txt         Licenses and notices for open source used for Twonky Server
+TwonkyServer-Readme.html    Release notes
+Terms of Use*.pdf           Licence Agreement
+twonky.license/twonky.dat   License file required to run Twonky Server
+twonky.sh                   Sample autostart script
+twonkyserver-default.ini    Default configuration for Twonky Server
+
+*********
+* Install
+
+Copy all files (keeping the directory structure) into your most
+favourite installation directory, e.g. /usr/local/twonky.
+
+Make sure that the server file, plugins and the cgi scripts have the exe bit set.
+If not, try:
+"chmod 700 twonkys* twonkyproxy cgi-bin/* plugins/*"
+
+Twonky needs an "appdata" folder to store its database and other runtime generated
+files. The default location for this depends on the user running the server. For
+the user root (id = 0) this is
+/var/twonky
+
+For all other users this is
+$HOME/.twonky
+
+To specify an alternate location for the "appdata" use the command line switch
+-appdata "/<PATH TO APPDATA FOLDER>"
+
+The specified path needs to be full qualified, do not use relative paths here.
+
+In any case make sure that this folder exists and is writable before starting the 
+server.
+
+Now start the server with a full qualified path (never just "./twonkystarter"),
+but "/usr/local/twonky/twonkystarter" . The server will display a startup
+message. The server is running now and you can find and use it with
+your UPnP client device. Before you continue, you should point the
+server to one or more content directories via the configuration
+web-page.
+
+To open the server's configuration web-page, open the following url in a web 
+browser:
+http://127.0.0.1:9000/webconfig
+
+If the server can not be found by any client device check your
+network firewall settings (see below).
+
+To enable autostart of the server, you need to be a Linux expert,
+because all Linux flavours differ and no general procedure can be
+suggested. In many cases "twonky.sh" could be adapted to your
+needs and linked into an appropriate location to enable autostart. 
+The script is intended to work on SUSE, OpenSUSE, Fedora Core and other
+Linux Standard Base (LSB) compliant systems when installed into
+/etc/init.d and linked to rc3.d and rc5.d as S99twonkyserver and
+K99twonkyserver:
+"ln s ../twonky.sh S99twonkyserver"
+"ln s ../twonky.sh K99twonkyserver"
+
+The installer script (twonky*.sh) is not working for modern ubuntu linux
+systems due to incompatibitlities with some system config tools (chkconfig 
+vs. update-rc.d). The manual installation however is unaffected.
+
+*********
+* Network
+
+Eventually it is necessary to have a multicast route set for the
+server by issuinge, e.g.:
+"route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0"
+
+If Iptables is enabled on the linux system, some rules shall be added for Twonkyserver
+A standard configuration would be the following.
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+target     prot opt in     out     source        destination
+ACCEPT     all  --  lo     *       0.0.0.0/0     0.0.0.0/0
+ACCEPT     all  --  *      *       0.0.0.0/0     0.0.0.0/0    state RELATED,ESTABLISHED
+ACCEPT     udp  --  *      *       0.0.0.0/0     0.0.0.0/0    udp dpt:1900  # BYEBYE/ALIVE MESSAGES
+ACCEPT     udp  --  *      *       0.0.0.0/0     0.0.0.0/0    udp dpt:1030  # MSEARCH
+ACCEPT     tcp  --  *      *       0.0.0.0/0     0.0.0.0/0    tcp dpt:9000  # TwonkyServer WebUI
+ACCEPT     udp  --  *      *       0.0.0.0/0     0.0.0.0/0    udp dpt:5353  # Airplay discovery (mDNS) - polling to multicast
+ACCEPT     udp  --  *      *       0.0.0.0/0     0.0.0.0/0    udp spt:5353  # Airplay discovery (mDNS) - answers from client
+ACCEPT     tcp  --  *      *       0.0.0.0/0     0.0.0.0/0    tcp dpt:443   # https
+DROP       all  --  *      *       0.0.0.0/0     0.0.0.0/0
+
+***************
+* 64bits Debian
+
+If you are running a Debian distribution on a 64 bit architecture, it
+is possible that you need to install the 32 bit compatibility
+libraries. In this case invoke:
+"apt-get install ia32-libs"
+
+Contact
+-------
+Website: http://www.twonky.com
+mailto: support@twonky.com
+

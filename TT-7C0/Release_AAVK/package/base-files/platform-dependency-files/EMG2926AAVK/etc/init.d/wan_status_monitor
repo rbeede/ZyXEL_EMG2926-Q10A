@@ -1,0 +1,66 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=99
+
+boot(){
+	##check mode,if AP/UR,exit
+	local sys_mode=$(get_sys_mode)
+	[ "$sys_mode" != "1" ] && exit 0
+
+	##check wan_link_status
+	wan_link_status=$(/sbin/swconfig dev eth0 port 5 get link | grep down)
+	defaultwan=$(uci get network.general.defaultWan)
+	wan_proto=$(uci get network.$defaultwan.proto)
+	
+	[ -z "$wan_link_status" ] && echo 1 > /tmp/wan_link_status || {
+	
+		case $wan_proto	in
+			dhcp)
+				killall dhcpc
+			;;
+			pppoe|pptp)			
+				killall pppd
+			;;
+		esac
+
+		echo 0 > /tmp/wan_link_status
+
+	}
+	#killall -9 watch
+
+	rm /tmp/del_watch
+	ps | grep watch | grep link_monitor |  awk '{print $1}' > /tmp/del_watch
+	exec < /tmp/del_watch
+	while read line
+	do
+		kill -9 $line
+	done	
+
+	watch -tn 2 /bin/link_monitor 1>/dev/null 2>&1 &
+	watch -tn 300 /bin/wan_info_monitor 2>&1 &
+
+	if [ "$(uci get wps.wps.conf)" == "0" ] && [ "$(uci get wps.wps.PinEnable)" == "1" ];then
+		wps ath0 on
+	fi
+
+	if [ "$(uci get wps5G.wps.conf)" == "0" ] && [ "$(uci get wps5G.wps.PinEnable)" == "1" ];then
+		wps5G ath10 on
+	fi	
+
+	#####Move to init.d/streamboost
+#	config_load appflow	
+#	local enable_streamboost=$(uci_get appflow tccontroller enable_streamboost)
+#	
+#	if [ "$enable_streamboost" == "1" ] ; then
+#
+#		# start watch /bin/streamboost_monitor daemon
+#		streamboost_monitor_pid=$(ps | grep "/bin/streamboost_monitor" | grep "grep" -v | awk '{print $1}')
+#		if [ "$streamboost_monitor_pid" == "" ]; then
+#
+#			watch -tn 60 /bin/streamboost_monitor 1>/dev/null 2>&1 &
+#
+#		fi
+#	fi	
+	
+}

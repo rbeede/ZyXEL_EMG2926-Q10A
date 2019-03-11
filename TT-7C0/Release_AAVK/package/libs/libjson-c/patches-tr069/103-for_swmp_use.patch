@@ -1,0 +1,324 @@
+diff -Naur b/arraylist.c a/arraylist.c
+--- b/arraylist.c	2013-02-25 10:49:20.447781444 +0800
++++ a/arraylist.c	2013-02-25 10:47:51.527781443 +0800
+@@ -53,7 +53,7 @@
+ void*
+ array_list_get_idx(struct array_list *arr, int i)
+ {
+-  if(i >= arr->length) return NULL;
++  if(i >= arr->length || i < 0) return NULL;
+   return arr->array[i];
+ }
+ 
+@@ -78,7 +78,11 @@
+   if(arr->array[idx]) arr->free_fn(arr->array[idx]);
+   arr->array[idx] = data;
+   if(arr->length <= idx) arr->length = idx + 1;
++#if 0 /* ZyXEL, john */
+   return 0;
++#else
++  return idx + 1;
++#endif
+ }
+ 
+ int
+@@ -92,3 +96,25 @@
+ {
+   return arr->length;
+ }
++
++#if 1 /* zyxel, john */
++int array_list_delete_idx(struct array_list *arr, int idx)
++{
++	int i;
++
++	if(idx > arr->length) return -1;
++
++	if(arr->array[idx]) arr->free_fn(arr->array[idx]);
++
++	for(i=idx+1; i<arr->length; i++){
++		arr->array[i-1] = arr->array[i];
++	}
++
++	arr->array[i-1] = NULL; 
++
++	arr->length--;
++
++	return 0;
++	
++}
++#endif
+diff -Naur b/arraylist.h a/arraylist.h
+--- b/arraylist.h	2013-02-25 10:49:25.251781453 +0800
++++ a/arraylist.h	2013-02-25 10:47:53.223781445 +0800
+@@ -46,6 +46,8 @@
+ extern int
+ array_list_length(struct array_list *al);
+ 
++extern int
++array_list_delete_idx(struct array_list *arr, int idx);
+ #ifdef __cplusplus
+ }
+ #endif
+diff -Naur b/json_object.c a/json_object.c
+--- b/json_object.c	2013-02-25 10:49:33.235781444 +0800
++++ a/json_object.c	2013-02-25 10:48:24.327781444 +0800
+@@ -226,6 +226,47 @@
+   return sprintbuf(pb, " }");
+ }
+ 
++#if 0 /* for indirect access, ZyXEL, john */
++/* json_object_object_parameters_to_json_string */
++
++const char* json_object_parameters_to_json_string(struct json_object *jso)
++{
++  if(!jso) return "null";
++  if(!jso->_pb) {
++    if(!(jso->_pb = printbuf_new())) return NULL;
++  } else {
++    printbuf_reset(jso->_pb);
++  }
++  if(jso->_parameters_to_json_string(jso, jso->_pb) < 0) return NULL;
++  return jso->_pb->buf;
++}
++
++static int json_object_object_parameters_to_json_string(struct json_object* jso,
++					     struct printbuf *pb)
++{
++  int i=0;
++  struct json_object_iter iter;
++  sprintbuf(pb, "{");
++
++  /* CAW: scope operator to make ANSI correctness */
++  /* CAW: switched to json_object_object_foreachC which uses an iterator struct */
++	json_object_object_foreachC(jso, iter) {
++			if(iter.val && json_object_is_type(iter.val,json_type_array)){
++				continue;
++			}
++			if(i) sprintbuf(pb, ",");
++			sprintbuf(pb, " \"");
++			json_escape_str(pb, iter.key);
++			sprintbuf(pb, "\": ");
++			if(iter.val == NULL) sprintbuf(pb, "null");
++			else iter.val->_to_json_string(iter.val, pb);
++			i++;
++	}
++
++  return sprintbuf(pb, " }");
++}
++
++#endif
+ static void json_object_lh_entry_free(struct lh_entry *ent)
+ {
+   free(ent->k);
+@@ -244,6 +285,9 @@
+   if(!jso) return NULL;
+   jso->_delete = &json_object_object_delete;
+   jso->_to_json_string = &json_object_object_to_json_string;
++#if 0 /* for indirect access, ZyXEL, john */
++  jso->_parameters_to_json_string = &json_object_object_parameters_to_json_string;
++#endif
+   jso->o.c_object = lh_kchar_table_new(JSON_OBJECT_DEF_HASH_ENTRIES,
+ 					NULL, &json_object_lh_entry_free);
+   return jso;
+@@ -304,8 +348,10 @@
+     return jso->o.c_boolean;
+   case json_type_int:
+     return (jso->o.c_int != 0);
++#if JSON_SUPPORT_DOUBLE
+   case json_type_double:
+     return (jso->o.c_double != 0);
++#endif
+   case json_type_string:
+     return (strlen(jso->o.c_string) != 0);
+   default:
+@@ -339,8 +385,10 @@
+   switch(jso->o_type) {
+   case json_type_int:
+     return jso->o.c_int;
++#if JSON_SUPPORT_DOUBLE
+   case json_type_double:
+     return (int)jso->o.c_double;
++#endif
+   case json_type_boolean:
+     return jso->o.c_boolean;
+   case json_type_string:
+@@ -352,22 +400,26 @@
+ 
+ 
+ /* json_object_double */
+-
++#if JSON_SUPPORT_DOUBLE
+ static int json_object_double_to_json_string(struct json_object* jso,
+ 					     struct printbuf *pb)
+ {
+   return sprintbuf(pb, "%lf", jso->o.c_double);
+ }
+-
++#endif
+ struct json_object* json_object_new_double(double d)
+ {
++#if JSON_SUPPORT_DOUBLE
+   struct json_object *jso = json_object_new(json_type_double);
+   if(!jso) return NULL;
+   jso->_to_json_string = &json_object_double_to_json_string;
+   jso->o.c_double = d;
+   return jso;
++#else
++  return NULL;
++#endif
+ }
+-
++#if JSON_SUPPORT_DOUBLE
+ double json_object_get_double(struct json_object *jso)
+ {
+   double cdouble;
+@@ -386,7 +438,7 @@
+     return 0.0;
+   }
+ }
+-
++#endif
+ 
+ /* json_object_string */
+ 
+@@ -456,6 +508,24 @@
+   return sprintbuf(pb, " ]");
+ }
+ 
++#if 0 /* for indirect access, ZyXEL, john */
++static int json_object_array_parameters_to_json_string(struct json_object* jso,
++					    struct printbuf *pb)
++{
++  int i;
++  sprintbuf(pb, "[");
++  for(i=0; i < json_object_array_length(jso); i++) {
++	  struct json_object *val;
++	  if(i) { sprintbuf(pb, ", "); }
++	  else { sprintbuf(pb, " "); }
++
++      val = json_object_array_get_idx(jso, i);
++	  if(val == NULL) { sprintbuf(pb, "null"); }
++	  else { val->_parameters_to_json_string(val, pb); }
++  }
++  return sprintbuf(pb, " ]");
++}
++#endif
+ static void json_object_array_entry_free(void *data)
+ {
+   json_object_put((struct json_object*)data);
+@@ -473,6 +543,9 @@
+   if(!jso) return NULL;
+   jso->_delete = &json_object_array_delete;
+   jso->_to_json_string = &json_object_array_to_json_string;
++#if 0 /* for indirect access, ZyXEL, john */
++  jso->_parameters_to_json_string = &json_object_array_parameters_to_json_string;
++#endif
+   jso->o.c_array = array_list_new(&json_object_array_entry_free);
+   return jso;
+ }
+@@ -510,3 +583,11 @@
+   return (struct json_object*)array_list_get_idx(jso->o.c_array, idx);
+ }
+ 
++#if 1 /* zyxel, john */
++int json_object_array_delete_idx(struct json_object *jso,
++					      int idx)
++{
++  return array_list_delete_idx(jso->o.c_array, idx);
++}
++#endif
++
+diff -Naur b/json_object.h a/json_object.h
+--- b/json_object.h	2013-02-25 10:49:34.939781445 +0800
++++ a/json_object.h	2013-02-25 10:48:26.075781444 +0800
+@@ -24,6 +24,8 @@
+ #undef TRUE
+ #define TRUE ((boolean)1)
+ 
++#define JSON_SUPPORT_DOUBLE 1
++
+ extern const char *json_number_chars;
+ extern const char *json_hex_chars;
+ 
+@@ -44,9 +46,16 @@
+   json_type_boolean,
+   json_type_double,
+   json_type_int,
++  json_type_uint8,
++  json_type_uint16,
++  json_type_uint32,
+   json_type_object,
+   json_type_array,
+-  json_type_string
++  json_type_string,
++  json_type_time,
++  json_type_base64,
++  json_type_hex,
++  json_type_ulong
+ } json_type;
+ 
+ /* reference counting functions */
+@@ -97,6 +106,13 @@
+  */
+ extern const char* json_object_to_json_string(struct json_object *obj);
+ 
++#if 0 /* ZyXEL, john */
++/** Stringify object parameters to json format
++ * @param obj the json_object instance
++ * @returns a string in JSON format
++ */
++extern const char* json_object_parameters_to_json_string(struct json_object *jso);
++#endif
+ 
+ /* object type methods */
+ 
+@@ -224,6 +240,18 @@
+ extern struct json_object* json_object_array_get_idx(struct json_object *obj,
+ 						     int idx);
+ 
++#if 1 /* zyxel, john */
++
++/** Delete the element at specificed index of the array (a json_object of type json_type_array)
++ * @param obj the json_object array
++ * @param idx the index of the deteled element
++ * @returns 0
++ */
++extern int json_object_array_delete_idx(struct json_object *jso,
++					      int idx);
++#endif
++
++
+ /* boolean type methods */
+ 
+ /** Create a new empty json_object of type json_type_boolean
+diff -Naur b/json_object_private.h a/json_object_private.h
+--- b/json_object_private.h	2013-02-25 10:49:39.951781692 +0800
++++ a/json_object_private.h	2013-02-25 10:48:37.919781736 +0800
+@@ -19,17 +19,26 @@
+ typedef void (json_object_delete_fn)(struct json_object *o);
+ typedef int (json_object_to_json_string_fn)(struct json_object *o,
+ 					    struct printbuf *pb);
++#if 0 /* zyxel, john */
++typedef int (json_object_parameters_to_json_string_fn)(struct json_object *o,
++					    struct printbuf *pb);
++#endif
+ 
+ struct json_object
+ {
+   enum json_type o_type;
+   json_object_delete_fn *_delete;
+   json_object_to_json_string_fn *_to_json_string;
++#if 0 /* zyxel, john */
++  json_object_parameters_to_json_string_fn *_parameters_to_json_string;
++#endif
+   int _ref_count;
+   struct printbuf *_pb;
+   union data {
+     boolean c_boolean;
++#if JSON_SUPPORT_DOUBLE
+     double c_double;
++#endif
+     int c_int;
+     struct lh_table *c_object;
+     struct array_list *c_array;

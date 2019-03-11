@@ -1,0 +1,28 @@
+<Client>
+	<DeviceId>
+		<DisplayName>TwonkyManager</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>TMMPlayer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>PVConnect Media Manager</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+			<Target>JPEG320x320</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-tmm.xml</DescriptionFile>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>GIVE_ALL_KNOWN_RES</Quirk>
+	</DeviceQuirks>
+</Client>

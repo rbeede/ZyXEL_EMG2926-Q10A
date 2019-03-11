@@ -1,0 +1,12 @@
+<Server>
+	<DeviceId>
+		<DisplayName>Plex Media Server</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>&lt;modelName&gt;Plex Media Server&lt;/modelName&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>NO_AGGREGATION</Quirk>
+	</DeviceQuirks>
+</Server>

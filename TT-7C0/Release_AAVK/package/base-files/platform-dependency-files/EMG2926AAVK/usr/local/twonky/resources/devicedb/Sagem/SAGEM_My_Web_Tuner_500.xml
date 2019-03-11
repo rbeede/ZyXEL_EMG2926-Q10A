@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>SAGEM My Web Tuner 500</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>My Web Tuner 500</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

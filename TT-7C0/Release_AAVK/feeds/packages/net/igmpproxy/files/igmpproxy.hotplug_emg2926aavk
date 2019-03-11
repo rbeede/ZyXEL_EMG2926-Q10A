@@ -1,0 +1,33 @@
+#!/bin/sh
+
+##check mode,if AP/UR,exit	
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+for i in "" 1 2 3 4
+do
+	igmpEnabled=$(uci get igmpproxy.wan$i.igmpEnabled)
+	if [ "$igmpEnabled" == "enable" ];then
+		defaultwan=wan$i
+		break
+	fi
+done
+
+	
+ETH_WAN=$(uci get network.$defaultwan.ifname)
+PPPOE_WAN="pppoe"-"$defaultwan"
+
+ETH_WANIP=$(ifconfig $ETH_WAN | grep "inet addr")
+PPPOE_WANIP=$(ifconfig $PPPOE_WAN | grep "inet addr")
+wan_proto=$(uci get network.$defaultwan.proto)
+
+##need to check hardware NAT.
+
+if [ "$ETH_WANIP" == "" ] && [ "$PPPOE_WANIP" == "" ];then
+	reutrn 0
+fi
+
+if [ -z "$DHCP_STATUS" -o "$DHCP_STATUS" != "renew" ];then
+	/sbin/act_igmp
+	echo "Init igmpproxy"
+fi

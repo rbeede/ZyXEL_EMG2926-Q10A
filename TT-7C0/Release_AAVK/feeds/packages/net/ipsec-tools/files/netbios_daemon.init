@@ -1,0 +1,16 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2008-2010 OpenWrt.org
+START=97
+start() {
+	### applying after WAN connection up NBG_5715/ZyXEL/john 2011/5/27 ###
+	exit 0
+}
+stop() {
+	netbios_daemon stop
+}
+restart() {
+	netbios_daemon restart
+}
+reload() {
+	netbios_daemon reload
+}

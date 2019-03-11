@@ -1,0 +1,192 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:sec_association%>"><span><%:sec_association%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="tableframe">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+              <tr>
+                <td>
+                  <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td>
+                        <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td>
+                              <table width="100%" cellpadding="0" cellspacing="0" >
+                                <tr>
+                                  <td height="26" colspan="8">
+                                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                      <tr>
+                                        <td height="26"class="table_title"><%:current_ipsec%></td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                                <tr class="top_font" align="center" >
+                                  <td><%:vpn_status%></td>
+	                          <td><%:vpn_connect_name%></td>
+	                          <td><%:vpn_remote_gw%></td>
+                                  <td><%:vpn_local_addr%></td>
+                                  <td><%:vpn_remote_addr%></td>
+                 		</tr>
+<script language="JavaScript">
+var r1_status=<%=status_r1%>;
+var r2_status=<%=status_r2%>;
+var r3_status=<%=status_r3%>;
+var r4_status=<%=status_r4%>;
+var r5_status=<%=status_r5%>;
+var tmp1_1="0";
+var tmp1_2="0";
+<%
+local rule_enable
+local rule_remoteGWIP
+local rule_localIP
+local rule_peerIP
+local rules
+local key_mode
+
+for i=1,5 do
+	rules="rule"..i
+
+	rule_enable = uci.get("ipsec", rules, "statusEnable")
+	rule_remoteGwIP = uci.get("ipsec", rules, "remote_gw_ip")
+	rule_localIP = uci.get("ipsec", rules, "localIP")
+	rule_peerIP = uci.get("ipsec", rules, "peerIP")
+	key_mode = uci.get("ipsec", rules, "keyMode")
+
+	if rule_enable== "enable" then
+%>
+		<%if key_mode == "manual" then%>
+			tmp1_1="0";
+			tmp1_2="0";
+			<%luci.sys.net.vpnStatus(function(rt) %>
+			if("<%=rt.addr2%>"=="<%=rule_remoteGwIP%>")tmp1_1="1";
+			if("<%=rt.addr1%>"=="<%=rule_remoteGwIP%>")tmp1_2="1";
+			<%end)%>
+			<%if i == 1 then%>
+				if (tmp1_1=="1" && tmp1_2=="1") r1_status="1";
+			<%elseif i == 2 then%>
+				if (tmp1_1=="1" && tmp1_2=="1") r2_status="1";
+			<%elseif i == 3 then%>
+				if (tmp1_1=="1" && tmp1_2=="1") r3_status="1";
+			<%elseif i == 4 then%>
+				if (tmp1_1=="1" && tmp1_2=="1") r4_status="1";
+			<%elseif i == 5 then%>
+				if (tmp1_1=="1" && tmp1_2=="1") r5_status="1";
+			<%end%>
+		<%end%>
+		
+		document.write('<tr class="top_font" align="center" >');
+		
+		<%if i == 1 then%>
+			if( r1_status != "0")
+				document.write('<td><img src="<%=media%>/admin/images/i_active_on.gif" title="On" width="18" height="18" /></td>');
+			else
+				document.write('<td><img src="<%=media%>/admin/images/i_active_off.gif" title="Off" width="18" height="18" /></td>');
+		<%elseif i == 2 then%>
+                        if( r2_status != "0")
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_on.gif" title="On" width="18" height="18" /></td>');
+                        else
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_off.gif" title="Off" width="18" height="18" /></td>');			
+		<%elseif i == 3 then%>
+                        if( r3_status != "0")
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_on.gif" title="On" width="18" height="18" /></td>');
+                        else
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_off.gif" title="Off" width="18" height="18" /></td>');
+		<%elseif i == 4 then%>
+                        if( r4_status != "0")
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_on.gif" title="On" width="18" height="18" /></td>');
+                        else
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_off.gif" title="Off" width="18" height="18" /></td>');
+		<%elseif i == 5 then%>
+                        if( r5_status != "0")
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_on.gif" title="On" width="18" height="18" /></td>');
+                        else
+                                document.write('<td><img src="<%=media%>/admin/images/i_active_off.gif" title="Off" width="18" height="18" /></td>');
+		<%end%>
+		document.write('<td><%=rules%></td>');
+		
+		if( "<%=rule_remoteGwIP%>" == "0.0.0.0" )
+			document.write('<td>Any</td>');
+		else
+			document.write('<td><%=rule_remoteGwIP%></td>');
+
+		document.write('<td><%=rule_localIP%></td>');
+		document.write('<td><%=rule_peerIP%></td>');
+		document.write('</tr>');
+	<%end%>
+<%end%>
+</script>                
+                          </table> 
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </div>	
+      <div class="spaceair"></div>	
+        </ul>
+      </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <div align="center">
+        &nbsp;<input name="sysSubmit" value="<%:vpn_status_refresh%>" type="submit" />&nbsp;
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+showFullPath(' <%:monitor%> > <%:vpn_monitor%>');</script>
+</html>

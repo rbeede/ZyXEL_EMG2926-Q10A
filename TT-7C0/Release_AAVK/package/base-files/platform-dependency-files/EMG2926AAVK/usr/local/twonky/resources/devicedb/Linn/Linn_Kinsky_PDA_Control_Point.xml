@@ -1,0 +1,16 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Linn Kinsky PDA Control Point</DisplayName>
+		<MappingUpdatePolicy>FIXPC2</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG300x300</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

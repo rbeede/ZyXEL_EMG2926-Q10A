@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>JVC</DisplayName>
+		<HttpRecognition>
+			<HttpText>JVC</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

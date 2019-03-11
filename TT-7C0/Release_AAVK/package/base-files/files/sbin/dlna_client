@@ -1,0 +1,18 @@
+#!/bin/sh
+
+. /etc/functions.sh
+
+#get some info from config file
+dlna_enable=$(uci_get dlna main enabled)
+lan_IP=$(uci_get network lan ipaddr)
+
+if [ $dlna_enable == 1 ]; then
+	netstat -n -p | grep two | awk '{printf $5 "\n"}' | cut -d ':' -f 1 > /tmp/DLNAclient
+	cat /proc/net/arp | grep 'br-lan'| awk  ' {printf $4" "$1 "\n"}' > /tmp/brlanip
+	cat /tmp/DLNAclient | sort -u > /tmp/DLNAclient_ip
+	while read line 
+	do 
+	     #echo $line
+		 cat /tmp/brlanip | grep "$line" | uniq>> /tmp/DLNAclient_barlan
+	done < /tmp/DLNAclient_ip
+fi

@@ -1,0 +1,44 @@
+Source-Makefile: feeds/streamboost/qdiscman/Makefile
+Package: qdiscman
+Submenu: Flow Detect
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2-core +libnl-bf +libpthread +tc +iptables-mod-conntrack-extra +iptables-mod-ipopt +kmod-sched +kmod-sched-connmark +kmod-ipt-ipopt +iptables-mod-mark2prio
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: StreamBoost to Netlink interface
+Maintainer: Nic Costa <ncosta@qca.qualcomm.com>
+Source: qdiscman-.tar.gz
+Type: ipkg
+Kernel-Config: CONFIG_BRIDGE_IGMP_SNOOPING=y CONFIG_NETFILTER=y CONFIG_NETFILTER_ADVANCED=y CONFIG_NETFILTER_NETLINK=m CONFIG_NETFILTER_XTABLES=m CONFIG_NETFILTER_XT_CONNMARK=m CONFIG_NETFILTER_XT_MARK=m CONFIG_NETFILTER_XT_MATCH_COMMENT=m CONFIG_NETFILTER_XT_MATCH_CONNMARK=m CONFIG_NETFILTER_XT_MATCH_MARK=m CONFIG_NETFILTER_XT_MATCH_MULTIPORT=m CONFIG_NETFILTER_XT_TARGET_CLASSIFY=m CONFIG_NETFILTER_XT_TARGET_CONNMARK=m CONFIG_NETFILTER_XT_TARGET_MARK=m CONFIG_NET_SCH_CODEL=m CONFIG_NET_SCH_FQ_CODEL=m CONFIG_NET_SCH_HFSC=m CONFIG_NET_SCH_PRIO=m CONFIG_NET_SCH_SFQ=m CONFIG_NF_CONNTRACK=m CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y CONFIG_NF_CONNTRACK_EVENTS=y CONFIG_NF_CONNTRACK_FTP=m CONFIG_NF_CONNTRACK_H323=m CONFIG_NF_CONNTRACK_IRC=m CONFIG_NF_CONNTRACK_MARK=y CONFIG_NF_CONNTRACK_PPTP=m CONFIG_NF_CONNTRACK_SIP=m CONFIG_NF_CT_NETLINK=m CONFIG_NF_CT_PROTO_GRE=m
+Description: Qdiscman receives flow policy information from the oversub pubsub channel and implements the policy into the appropriate network qdisc structures.
+Nic Costa <ncosta@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_qdiscman
+	config qdiscman_USE_CUSTOM_VERSION
+		depends on PACKAGE_qdiscman
+		bool "Use custom package version"
+		default n
+	config qdiscman_CUSTOM_VERSION
+		depends on qdiscman_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_qdiscman
+	config qdiscman_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_qdiscman
+		bool "Use custom source directory"
+		default n
+	config qdiscman_CUSTOM_SOURCE_DIR
+		depends on qdiscman_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

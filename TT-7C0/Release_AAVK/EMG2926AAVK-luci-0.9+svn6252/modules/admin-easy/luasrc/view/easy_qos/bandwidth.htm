@@ -1,0 +1,230 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+   <title>YUI Base Page</title>
+   <style type="text/css" media="all">
+
+</style>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" /></head>
+<script type="text/javascript" src="<%=media%>/easy/js/jquery.js"></script>
+<script type="text/javascript" src="<%=media%>/easy/js/interface.js"></script>
+<script language="JavaScript" src="<%=media%>/easy/js/bandwidth.js"></script>
+<script language="JavaScript">
+	function record_pos(){
+		for(i=0;i<6;i++){
+			e = document.getElementById("p"+(5-i));
+			e.value=document.bwForm.elements[i].value;
+			//alert(e.value);
+		}
+	}
+	function btnApply(){
+		var loc = '<%=luci.dispatcher.build_url("easy","qos")%>';
+		with ( document.forms[0] ){
+			loc += '?apply=Apply';
+			loc += '&p0=' + p0.value;
+			loc += '&p1=' + p1.value;
+			loc += '&p2=' + p2.value;
+			loc += '&p3=' + p3.value;
+			loc += '&p4=' + p4.value;
+			loc += '&p5=' + p5.value;
+			
+			var code = 'location="' + loc + '"';
+     		eval(code);
+		}
+		//window.close();
+	}
+</script>
+<link href="<%=media%>/easy/images/popup.css" rel="stylesheet" type="text/css" />
+
+<body class="bandwidth_bg" onload="record_pos()">
+<div class="wrapper">
+<div class="bandwidth_d"><ul><li><%:easy_qos_remind1%></li></ul></div>
+<div class="bandwidth_high_low"></div>
+<form method="post" name=bwForm >
+	<!-- YOUR NAVIGATION GOES HERE -->
+	<div id="sort1" class="groupWrapper">
+	<%
+		game_enable = uci:get("qos","general","game_enable")	
+		tbl = uci:get_all("qos", "priority")
+		local tmp_tbl = {}
+		tmp_tbl[tbl["game"]] = "game"
+		tmp_tbl[tbl["voip"]] = "voip"
+		tmp_tbl[tbl["media"]] = "media"
+		tmp_tbl[tbl["ftp"]] = "ftp"
+		tmp_tbl[tbl["web"]] = "web"
+		tmp_tbl[tbl["mail"]] = "mail"
+		
+		for i=6,1,-1 do
+			qos_name = tmp_tbl[tostring(i)]	
+	-%>
+		<% if qos_name=="game" and i==6 and game_enable == "1" then %>
+		<div  class="groupItemFixed">
+		<% else %>
+		<div  class="groupItem">
+		<% end %>
+		
+			<div id = "<%=qos_name%>" class="itemContent">
+				<input type=hidden name="<%=qos_name%>" value="<%=qos_name%>" >
+				<table width="100%" border="0" cellspacing="0" cellpadding="0" class="tab">
+				  <tr>
+					<td width="1" height="38px"><img src="<%=media%>/easy/images/air.gif" id="Image1"></td>
+					<td width="54" background="<%=media%>/easy/images/b_<%=qos_name%>.gif"></td>
+					<td background="<%=media%>/easy/images/b_right.gif" class="tabTitle" >
+						<% if qos_name == "web" then %>
+						<div align="left"><a href="#"><%:easy_qos_web%>
+							<span>
+							<%
+								i = 1
+								for k,v in pairs(web_srv) do
+									if i == 1 then
+							-%>
+										- <%=v%>
+							<%
+									else
+							-%>
+										<br />- <%=v%>
+							<%
+									end
+									i = i + 1
+								end
+							-%>
+							</span></a></div>
+						<% elseif qos_name == "game" then %>
+						<div align="left"><a href="#"><%:easy_qos_game%>
+							<span>
+							<%
+								i = 1
+								for k,v in pairs(game_srv) do
+									if i == 1 then
+							-%>
+										- <%=v%>
+							<%
+									else
+							-%>
+										<br />- <%=v%>
+							<%
+									end
+									i = i + 1
+								end
+							-%>
+							</span></a></div>
+						<% elseif qos_name == "mail" then %>
+						<div align="left"><a href="#"><%:easy_qos_email%>
+							<span>
+							<%
+								i = 1
+								for k,v in pairs(mail_srv) do
+									if i == 1 then
+							-%>
+										- <%=v%>
+							<%
+									else
+							-%>
+										<br />- <%=v%>
+							<%
+									end
+									i = i + 1
+								end
+							-%>  
+							</span></a></div>
+						<% elseif qos_name == "voip" then %>
+						<div align="left"><a href="#"><%:easy_qos_voip%>
+							<span>
+							<%
+								i = 1
+								for k,v in pairs(voip_srv) do
+									if i == 1 then
+							-%>
+										- <%=v%>
+							<%
+									else
+							-%>
+										<br />- <%=v%>
+							<%
+									end
+									i = i + 1
+								end
+							-%> 
+							</span></a></div>
+						<% elseif qos_name == "media" then %>
+						<div align="left"><a href="#"><%:easy_qos_msn%>
+							<span>
+							<%
+								i = 1
+								for k,v in pairs(media_srv) do
+									if i == 1 then
+							-%>
+										- <%=v%>
+							<%
+									else
+							-%>
+										<br />- <%=v%>
+							<%
+									end
+									i = i + 1
+								end
+							-%> 
+							</span></a></div>
+						<% elseif qos_name == "ftp" then %>
+						<div align="left"><a href="#"><%:easy_qos_ftp%>
+							<span>
+							<%
+								i = 1
+								for k,v in pairs(ftp_srv) do
+									if i == 1 then
+							-%>
+										- <%=v%>
+							<%
+									else
+							-%>
+										<br />- <%=v%>
+							<%
+									end
+									i = i + 1
+								end
+							-%> 
+							</span></a></div>
+						<% end %>
+					</td>
+				  </tr>
+				</table>
+			</div>
+		</div>
+		<%end%>
+  </div>
+  <input type=hidden name=p5 id=p5>
+  <input type=hidden name=p4 id=p4>
+  <input type=hidden name=p3 id=p3>
+  <input type=hidden name=p2 id=p2>
+  <input type=hidden name=p1 id=p1>
+  <input type=hidden name=p0 id=p0>
+<div class="button"><ul><li><a href="<%=controller%>/easy/networkmap"target="_parent" title="<%:cancel%>"><span><%:cancel%></span></a></li><li><a href="javascript:btnApply()" name="apply" value="Apply" title="<%:apply%>"><span><%:apply%></span></a></li>
+</ul></div>
+</form>
+</div>
+</body>
+</html>

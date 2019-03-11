@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>UPnP Inspector</DisplayName>
+		<HttpRecognition>
+			<HttpText>defunct -- Twisted PageGetter</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC1</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

@@ -1,0 +1,47 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WD TV Live Plus</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WD TV Live Plus</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+		<VideoTranscoding>
+			<Source>video/x-ms-wtv</Source>
+			<Source>video/webm</Source>
+			<Target>MPEG</Target>
+		</VideoTranscoding>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEG500x500</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<MimeTranslations>
+			<MimeTypeSuppress>video/x-ms-wtv</MimeTypeSuppress>
+			<MimeTypeSuppress>video/webm</MimeTypeSuppress>
+		</MimeTranslations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-wd-live.xml</DescriptionFile>
+		</DLNA>
+		<ExtraProtocolInfo>http-get:*:audio/mp4:*,http-get:*:audio/vnd.dlna.adts:*,http-get:*:audio/x-aac:*,http-get:*:audio/x-ac3:*,http-get:*:video/3gpp:*,http-get:*:audio/x-flac:*,http-get:*:audio/x-matroska:*,http-get:*:video/x-matroska:*,http-get:*:video/quicktime:*,http-get:*:audio/L16:*</ExtraProtocolInfo>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NEEDS_THUMBNAIL_CI_FLAG</Quirk>
+		<Quirk>TV4IDS</Quirk>
+		<Quirk>POLL_AVT_STATE</Quirk>
+		<Quirk>BROKEN_SEEKBYTE</Quirk>
+		<Quirk>NOARTISTROLECOMPOSER</Quirk>
+        <Quirk>RES_ADD_FLAG</Quirk>
+        <!-- Device picks thumbnail instead of HD image in push case.
+             So send only the HD image to the device. -->
+		<Quirk>REDUCED_METADATA</Quirk>
+		<Quirk>UNKNOWNSIZE_BYTESEEK</Quirk>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+	</DeviceQuirks>
+</Client>

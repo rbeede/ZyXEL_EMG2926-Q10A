@@ -1,0 +1,6 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+uci_set luci languages zh Chinese
+uci_commit luci

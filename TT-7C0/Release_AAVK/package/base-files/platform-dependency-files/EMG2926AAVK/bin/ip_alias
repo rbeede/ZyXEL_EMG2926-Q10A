@@ -1,0 +1,41 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+                                         
+local alias="alias1"
+local interface
+local ip_addr
+local mask
+local enabled
+
+alias="alias1"
+num=1
+interface=$(uci get network.$alias.interface_alias)
+enabled=$(uci get network.$alias.enabled)
+ip_addr=$(uci get network.$alias.ipaddr_alias)
+mask=$(uci get network.$alias.netmask_alias)
+
+if [ $enabled == "enabled" ]; then
+	if [ $ip_addr != "0.0.0.0" ]; then
+		ifconfig br-$interface:$num $ip_addr netmask $mask up
+	fi
+else	
+	ifconfig br-$interface:$num down
+fi
+
+alias="alias2"
+num=2
+interface=$(uci get network.$alias.interface_alias)
+enabled=$(uci get network.$alias.enabled)
+ip_addr=$(uci get network.$alias.ipaddr_alias)
+mask=$(uci get network.$alias.netmask_alias)
+
+if [ $enabled == "enabled" ]; then
+	if [ $ip_addr != "0.0.0.0" ]; then
+		ifconfig br-$interface:$num $ip_addr netmask $mask up
+	fi
+else	
+	ifconfig br-$interface:$num down
+fi
+

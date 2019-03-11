@@ -1,0 +1,100 @@
+#!/bin/sh
+
+##check mode,if AP/UR,exit	
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+. /etc/functions.sh
+include /lib/config
+
+wan_ifname=
+lan_ifname=
+wan_ip=
+nat_enable=$(uci_get nat general nat)
+usage() {
+	echo $0 "<command>"
+	exit 0
+}
+
+reload_portTrigger(){
+	
+	local trig=$1
+	local in_port_start
+	local in_port_end
+	local tr_port_start
+	local tr_port_end
+
+	config_get in_port_start $trig inComing_port_start
+	config_get in_port_end $trig inComing_port_end
+	config_get tr_port_start $trig trigger_port_start
+	config_get tr_port_end $trig trigger_port_end
+	
+	
+#	if [ -n "$wan_ip" ]; then
+	
+		if [ $in_port_start == $in_port_end ]&&[ $tr_port_start == $tr_port_end ] ; then
+			iptables -A forwarding_rule_porttrigger -i $lan_ifname -o $wan_ifname -j PORTTRIGGER --mode forward_out --trigger-ports $tr_port_start --forward-ports $in_port_start
+		elif [ $tr_port_start == $tr_port_end ] ; then
+			iptables -A forwarding_rule_porttrigger -i $lan_ifname -o $wan_ifname -j PORTTRIGGER --mode forward_out --trigger-ports $tr_port_start --forward-ports $in_port_start-$in_port_end
+		elif [ $in_port_start == $in_port_end ] ; then
+			iptables -A forwarding_rule_porttrigger -i $lan_ifname -o $wan_ifname -j PORTTRIGGER --mode forward_out --trigger-ports $tr_port_start-$tr_port_end --forward-ports $in_port_start
+		else
+			iptables -A forwarding_rule_porttrigger -i $lan_ifname -o $wan_ifname -j PORTTRIGGER --mode forward_out --trigger-ports $tr_port_start-$tr_port_end --forward-ports $in_port_start-$in_port_end
+		fi
+		
+		iptables -A forwarding_rule_porttrigger -i $wan_ifname -o $lan_ifname -j PORTTRIGGER --mode forward_in
+		iptables -t nat -A prerouting_rule_porttrigger -i $wan_ifname -j PORTTRIGGER --mode dnat
+#	fi
+	return 0 
+}
+
+cmd=$1
+shift
+case "$cmd" in
+	--help|help) usage ;;
+	start|stop|reload|restart|init)
+		
+		iptables -F forwarding_rule_porttrigger 2>/dev/null
+		iptables -D FORWARD -j forwarding_rule_porttrigger 2>/dev/null
+		iptables -t nat -F prerouting_rule_porttrigger 2>/dev/null
+		iptables -t nat -D PREROUTING -j prerouting_rule_porttrigger 2>/dev/null
+		iptables -X forwarding_rule_porttrigger 2>/dev/null
+		iptables -t nat -X prerouting_rule_porttrigger 2>/dev/null
+		
+		config_load network
+		config_get wan_proto wan proto
+		if [ "$wan_proto" == "pppoe" ] || [ "$wan_proto" == "pptp" ];then
+			wan_ifname="$wan_proto"-wan
+		else
+			config_get wan_ifname wan ifname
+		fi
+		
+		config_get lan_type lan type
+		if [ "$lan_type" == "bridge" ]; then
+			lan_ifname="br-lan"
+		else
+			config_get lan_ifname lan ifname	
+		fi
+		
+		wan_ip=$(ifconfig $wan_ifname | egrep -o 'inet addr:[0-9.]*' | grep -o "[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}")
+		
+		if [ "$nat_enable" == "enable" ];then
+			insmod ipt_PORTTRIGGER  2>&- >&-
+			
+			iptables -N forwarding_rule_porttrigger
+			iptables -t nat -N prerouting_rule_porttrigger
+			
+			config_load portTrigger
+			config_foreach reload_portTrigger trigger
+
+			iptables -t nat -I PREROUTING -j prerouting_rule_porttrigger
+		fi
+		
+		## iptables app reorder
+		/lib/firewall/iptables_app_order
+		
+		exit $?
+	;;
+esac
+
+exit $?

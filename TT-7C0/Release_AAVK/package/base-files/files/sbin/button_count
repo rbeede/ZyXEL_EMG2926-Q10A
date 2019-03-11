@@ -1,0 +1,65 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+count_button_WiFi()
+{
+        sum=$(cat /tmp/sum_wifi_button)
+        [ -z $sum ] && sum=0
+        sum=$((sum+1))
+        echo $sum
+        echo $sum > /tmp/sum_wifi_button
+}
+
+count_button_Reset()
+{
+        sum=$(cat /tmp/sum_reset_button)
+        [ -z $sum ] && sum=0
+        sum=$((sum+1))
+        echo $sum
+        echo $sum > /tmp/sum_reset_button
+}
+
+count_button_WPS()
+{
+        sum=$(cat /tmp/sum_wps_button)
+        [ -z $sum ] && sum=0
+        sum=$((sum+1))
+        echo $sum
+        echo $sum > /tmp/sum_wps_button
+}
+
+count_button_USB01()
+{
+        sum=$(cat /tmp/sum_usb01_button)
+        [ -z $sum ] && sum=0
+        sum=$((sum+1))
+        echo $sum
+        echo $sum > /tmp/sum_usb01_button
+}
+
+count_button_USB02()
+{
+        sum=$(cat /tmp/sum_usb02_button)
+        [ -z $sum ] && sum=0
+        sum=$((sum+1))
+        echo $sum
+        echo $sum > /tmp/sum_usb02_button
+}
+
+
+cmd=$1
+case "$cmd" in
+	Reset)
+		count_button_Reset
+		;;
+	  WPS)
+		count_button_WPS
+		;;		
+	USB01)
+		count_button_USB01
+		;;		
+	USB02)
+		count_button_USB02		
+		;;
+esac
+

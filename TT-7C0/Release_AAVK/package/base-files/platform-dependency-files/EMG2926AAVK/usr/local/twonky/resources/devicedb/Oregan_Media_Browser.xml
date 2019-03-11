@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Oregan Media Browser</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Oregan</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

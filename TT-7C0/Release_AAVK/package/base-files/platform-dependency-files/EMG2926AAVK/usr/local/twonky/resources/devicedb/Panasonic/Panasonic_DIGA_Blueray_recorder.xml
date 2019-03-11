@@ -1,0 +1,24 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Panasonic DIGA Blueray recorder</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Panasonic</DescriptionText>
+			<DescriptionText>BD/DVD Recorder</DescriptionText>
+		</DeviceDescriptionRecognition>		
+		<HttpRecognition>
+			<HttpText>Panasonic Media-Server</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<DTCP/>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<DTCP>
+			<AkeSocketScheme>ONE_SOCKET_SCHEME</AkeSocketScheme>
+		</DTCP>	
+	</Adaptations>
+</Client>

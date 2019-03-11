@@ -1,0 +1,28 @@
+config samba general
+	## Override if desired, defaults to hostname
+	option 'name'			'EMG2926-Q10A'
+	option 'workgroup'		'WORKGROUP'
+	option 'description'		'Samba on EMG2926-Q10A'
+
+	## Override character set, default is UTF-8
+	option 'charset'        	'UTF-8'
+
+# Declare a share on /tmp
+config sambashare usb1
+        option 'name'                   'USB1'
+        option 'path'                   '/tmp/storage/usb1/sda1'
+        option 'read_only'              'yes'
+        option 'guest_ok'               'no'
+        option 'create_mask'            '0777'
+        option 'dir_mask'               '0777'
+        option 'users'                  'ZyXEL'
+        
+config sambashare usb2
+        option 'name'                   'USB2'
+        option 'path'                   '/tmp/storage/usb2/sdb1'
+        option 'read_only'              'no'
+        option 'guest_ok'               'no'
+        option 'create_mask'            '0777'
+        option 'dir_mask'               '0777'
+        option 'users'                  'ZyXEL'
+                                                        

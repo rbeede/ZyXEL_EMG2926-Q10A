@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Medion IPTV Box</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>M-Port Connect XS</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

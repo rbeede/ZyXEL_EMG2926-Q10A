@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>PURE Contour</DisplayName>
+		<HttpRecognition>
+			<HttpText>PURE Contour D1R</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

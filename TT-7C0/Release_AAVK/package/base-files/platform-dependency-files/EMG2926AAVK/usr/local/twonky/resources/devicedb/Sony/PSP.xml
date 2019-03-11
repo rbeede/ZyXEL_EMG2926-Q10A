@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>PSP</DisplayName>
+		<HttpRecognition>
+			<HttpText>PlayStation Portable</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG480x272</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<HTTP>
+			<HttpSetting>LIVEPSPLENGTH</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

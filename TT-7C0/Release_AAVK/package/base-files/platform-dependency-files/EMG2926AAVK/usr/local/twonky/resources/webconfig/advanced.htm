@@ -1,0 +1,207 @@
+<div id="advancedContainer">
+    <div class="serverSettingsTitlebarWrapper">
+        <div class="subHeader nomargin">
+            <span class="subheaderTitle" string="advanced"></span>
+        </div>
+    </div>	
+	<div class="smallServerContentSpacer"></div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="securedserversettings" />
+		</span>
+		<div class="clear" />
+    </div>
+	<div class="paddingLeft">
+		<div>
+			<span string="securedcaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<table>
+		 <tr>	
+			<td><span string="username" />
+			</td>
+			<td><span string="password" />
+			</td>
+		 </tr>
+		 <tr>
+			<td>
+				<input id="username" type="text" key="accessuser" class="inputGap" onchange="clearPassword()" />
+			</td>
+			<td>
+				<input id="password" type="password" key="accesspwd" class="inputGap" />
+			</td>
+		 </tr>
+		</table>
+		<div class="smallServerContentSpacer"></div>
+		<div id="multiuserenabledsecure" class="hide">
+			<span string="multiuserenabledsecuretext" />
+		</div>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+	<div class="boxHeader" >
+		<span class="titleWrapper">
+			<span class="title" string="myexperience" />
+			<div id="twonkyad6" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+	</div>
+	<div id="subheader_twonkyad6" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span class="paddingLeft" key="myexperiencecheckbox" />
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="compilationdirs" />
+			<div id="twonkyad2" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad2" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="compilationcaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<input id="compilations" type="text" key="compilationsdir"/>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="ignoresharedfolders" />
+			<div id="twonkyad7" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad7" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="ignoresharedfolderscaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<input id="ignoredirs" type="text" key="ignoredir" style="width:600px"/>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="genretakenasaudiobooks" />
+			<div id="twonkyad9" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad9" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="genretakenasaudiobookscaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<div>
+			<span class="paddingLeft" key="audiobookgenres" />
+		</div>		
+        <div id="updatingmusicgenres" style="padding-top:10px">
+			<span string="updatingmusicgenrelist"/> - <span string="inprogress" />...
+        </div>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="usefilenameinfolderviewheader" />
+			<div id="twonkyad8" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad8" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="usefilenameinfolderviewcaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<input id="usefilenameinfolderviewCheckbox" type="checkbox" key="usefilenameinfolderview" onchange="useFilenameChanged()" /><span><span string="usefilenameinfolderview" /></span><br>
+		<input id="showfilenameextensionCheckbox" type="checkbox" disabled /><span><span string="showfilenameextensioninfolderview" /></span>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="rescaninterval" />
+			<div id="twonkyad3" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad3" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="rescancaption" />
+		</div>
+		<br/>
+		<input id="rescan" type="text" key="scantime" />
+		<div class="smallFont">
+			<span string="inminutes" />
+		</div>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="nicrestart" />
+			<div id="twonkyad4" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad4" class="hideSubheaderBody paddingLeft">
+		<div>
+			<span string="nicrestartcaption" />
+		</div>
+		<div class="smallServerContentSpacer">
+		</div>
+		<input id="nicRestartEnabledCheckbox" type="checkbox" key="nicrestart" /><span><span string="nicrestart" /></span>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="logging" />
+			<div id="twonkyad5" class="toggleButton hidden smallestFont"><div class="toggleText" string="show"></div></div><div class="toggleSpacer"></div>
+		</span>
+		<div class="clear" />
+    </div>
+	<div id="subheader_twonkyad5" class="hideSubheaderBody paddingLeft">
+		<input id="loggingEnabledCheckbox" type="checkbox" key="v" /><span><span string="enablelogging" /></span>
+		<div class="smallServerContentSpacer">
+		</div>
+		<a class="actionbtn floatL" onclick="viewLog()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="viewlogfile"></span><span class="actionbtn_r"></span></a>
+		<a class="actionbtn floatL" onclick="clearLog()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="clearlogfile"></span><span class="actionbtn_r"></span></a>
+		<div class="clear">
+		</div>
+		<div class="serverContentSpacer">
+		</div>
+	</div>
+    <div class="boxHeader">
+    	<span class="titleWrapper">
+        	<span class="title" string="servermaintenance" />
+		</span>
+		<div class="clear" />
+    </div>
+	<div class="paddingLeft">
+		<div class="maintenanceButtonWrapper">
+			<a class="actionbtn" onclick="restartServer()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="restartserver"></span><span class="actionbtn_r"></span></a>
+			<a class="actionbtn" onclick="rescanFolders()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="rescancontent"></span><span class="actionbtn_r"></span></a>
+			<a class="actionbtn" onclick="promptReset()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="resetdefaults"></span><span class="actionbtn_r"></span></a>
+			<a class="actionbtn" onclick="clearCache()" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)"><span class="actionbtn_l"></span><span class="actionbtn_c" string="clearcache"></span><span class="actionbtn_r"></span></a>
+		</div>	
+	</div>
+    <div class="smallServerContentSpacer">
+    </div>
+	<div id="actionButtonContainer">
+    	<a id="saveButton" class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="submitAdvancedData()"><span class="actionbtn_l"></span><span class="actionbtn_c" string="savechanges"></span><span class="actionbtn_r"></span></a>
+    	<a class="actionbtnmd bold floatL" onmousedown="onButtonMouseDown(this)" onmouseup="onButtonMouseUp(this)" onclick="cancelSettings()"><span class="actionbtn_l"></span><span class="actionbtn_c" string="cancel"></span><span class="actionbtn_r"></span></a>
+    	<div class="clear"></div>
+	</div>
+	<div id="spinnerContainer" style="display: none;">
+		<div class="spinner"></div>
+	</div>	
+</div>

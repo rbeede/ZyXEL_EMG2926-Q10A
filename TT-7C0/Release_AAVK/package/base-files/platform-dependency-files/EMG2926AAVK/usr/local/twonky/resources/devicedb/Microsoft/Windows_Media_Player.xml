@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Windows Media Player 4.0</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>&lt;modelName&gt;Windows Media Player Sharing&lt;/modelName&gt;</DescriptionText>
+			<DescriptionText>&lt;modelNumber&gt;4.0&lt;/modelNumber&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC3</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<PretendServer>WMC</PretendServer>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+		<Quirk>FILTER_BAD_CHARS</Quirk>
+	</DeviceQuirks>
+</Client>

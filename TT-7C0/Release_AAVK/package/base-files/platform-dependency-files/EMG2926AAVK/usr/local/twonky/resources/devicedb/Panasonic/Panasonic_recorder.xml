@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Panasonic recorder</DisplayName>
+		<HttpRecognition>>
+			<HttpText>Panasonic MIL DLNA CP UPnP/1.0 DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<DTCP>
+			<AkeSocketScheme>TWO_BUT_ONE_FOR_MOVE_SOCKET_SCHEME</AkeSocketScheme>
+		</DTCP>
+	</Adaptations>
+	<DeviceQuirks>
+        <Quirk>DATETIME</Quirk>
+	</DeviceQuirks>
+</Client>

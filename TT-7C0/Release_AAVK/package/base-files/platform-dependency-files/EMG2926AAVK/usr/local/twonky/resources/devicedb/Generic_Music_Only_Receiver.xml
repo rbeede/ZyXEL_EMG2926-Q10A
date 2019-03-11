@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Generic Music Only Receiver</DisplayName>
+		<MappingUpdatePolicy>FIXPC2</MappingUpdatePolicy>
+		<DeviceGroup>MUSIC</DeviceGroup>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

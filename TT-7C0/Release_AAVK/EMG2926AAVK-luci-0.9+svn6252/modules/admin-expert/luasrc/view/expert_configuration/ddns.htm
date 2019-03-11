@@ -1,0 +1,211 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/jquery-1.7.2.min.js" ></script>
+</head>
+<body  >
+<script type="text/javascript">
+
+function changSelect(){
+  var select=$("#DDNSProvider").val();
+	
+  switch(select){
+    case "dyndns":
+      link = "DynDNS.com";
+      break;
+    case "noip":
+      link = "No-ip.com";
+      break;
+    case "eurodyndns":
+	  link = "EuroDynDNS.com";
+      break;
+	case "myzyxel":
+      link = "MYZYXEL.IN.TH";
+      break;
+  }
+  html = '<a href="http://www.'+link+'" target="_blank"> '+link+'</a>'
+  document.getElementById("link_Show").innerHTML=html;
+ 
+}
+
+function checkInjection(str)
+{
+	var len = str.length;      
+	for (var i=0; i<str.length; i++) {
+		if ( str.charAt(i) == '`' || str.charAt(i) == '-' ||
+			 str.charAt(i) == '<' || str.charAt(i) == '>'){
+				return false;
+		}else
+	        continue;
+	}
+	return true;	
+}  
+
+function verifySubmitData()
+{
+
+   
+	if ( document.getElementsByName( "DDNSUpdate" )[0].checked )
+	{
+	  if(!(checkInjection(document.DDNSForm.DDNSHost.value)))
+	  {
+		alert("<%:Injection_alert%> ` - < > ");
+		return false;
+	  }
+	  if(!(checkInjection(document.DDNSForm.DDNSUser.value)))
+	  {
+		alert("<%:Injection_alert%> ` - < > ");
+		return false;
+	  }
+	  if(!(checkInjection(document.DDNSForm.DDNSPasswd.value)))
+	  {
+		alert("<%:Injection_alert%> ` - < > ");
+		return false;
+	  }
+
+	  var name;
+      name = "Host";
+      if ( document.getElementsByName( "DDNSHost" )[0].value != "" )
+      {
+         name = "Username";
+         if ( document.getElementsByName( "DDNSUser" )[0].value != "" )
+         {
+            name = "Password";
+            if ( document.getElementsByName( "DDNSPasswd" )[0].value != "" )
+            {
+               showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+               return true;
+            }
+         }
+      }
+      
+      alert( "Field \"" + name + "\" cannot be empty while enable!" );
+      return false;
+   }
+   
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+   return true;
+}
+
+</script>
+<form name="DDNSForm" onsubmit="return verifySubmitData()">
+   <div id="tabs">
+      <ul>
+         <li class="hightline"><a title="<%:Dynamic_DNS%>"><span><%:Dynamic_DNS%></span></a></li>
+      </ul>
+      <br class="clearfloat" />
+   </div>
+   <div id="table">
+      <ul>
+         <li class="table_top"></li>
+         <li class="table_content">
+            <div class="data">
+               <ul>
+                  <div class="title"><%:Dynamic_DNS_Setup%></div>
+                  <div class="w_text">
+				  <%local update = luci.sys.exec("uci get updatedd.@updatedd[0].update | tr -d '\n'")%>
+                     <ul>
+                        <li class="left_table"><%:Dynamic_DNS%>  :</li>
+                        <li class="right_table">
+                           <input name="DDNSUpdate" type="radio" value="enable" <%if update == "1" then%>checked="CHECKED"<%end%>/>
+                           <%:Enable%>
+                           <input name="DDNSUpdate" type="radio" value="disable" <%if update == "0" then%>checked="CHECKED"<%end%>/>
+                           <%:Disable%>
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text2">
+				  <%local service = luci.sys.exec("uci get updatedd.@updatedd[0].service | tr -d '\n'")%>
+                     <ul>
+                        <li class="left_table"><%:Service_Provider%> : </li>
+                        <li class="right_table">
+                           <select name="DDNSProvider" id="DDNSProvider" onchange="changSelect()" size="1" style="width:175px;">
+              							<option value="dyndns" <%if service == "dyndns" then%>selected="selected"<%end%>>www.DynDNS.org</option>
+              							<option value="noip" <%if service == "noip" then%>selected="selected"<%end%>>www.No-ip.com</option>
+              							<option value="eurodyndns" <%if service == "eurodyndns" then%>selected="selected"<%end%>>www.EuroDynDNS.com</option>
+										<option value="myzyxel" <%if service == "myzyxel" then%>selected="selected"<%end%>>MYZYXEL.IN.TH</option>
+						   </select>
+						<span id="link_Show" style="margin-left:10px;"><a href='http://www.<%if service == "noip" then%>No-ip
+						<%elseif service == "eurodyndns" then%>EuroDynDNS<%elseif service == "myzyxel" then%>MYZYXEL.IN.TH<%else%>DynDNS<%end%>.org' target="_blank"><%if service == "noip" then%>No-ip<%elseif service == "eurodyndns" then%>EuroDynDNS<%elseif service == "myzyxel" then%>MYZYXEL.IN.TH<%else%>DynDNS<%end%></a></span>
+						</li>
+                     </ul>
+                  </div>
+                  <div class="w_text2">
+				  <%local host = luci.sys.exec("uci get updatedd.@updatedd[0].host | tr -d '\n'")%>
+                     <ul>
+                        <li class="left_table"><%:Host_Name%>  :</li>
+                        <li class="right_table">
+                           <input name="DDNSHost" size="30" maxlength="63" type="text" <%if host then%> value="<%=host%>" <%end%> />
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text2">
+				  <%local username = luci.sys.exec("uci get updatedd.@updatedd[0].username | tr -d '\n'")%>
+                     <ul>
+                        <li class="left_table"><%:Username%>  :</li>
+                        <li class="right_table">
+                           <input name="DDNSUser" size="30" maxlength="63" type="text" <%if username then%> value="<%=username%>" <%end%> />
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="w_text2">
+				  <%
+					local origin_password = luci.sys.exec("uci get updatedd.@updatedd[0].password | tr -d '\n'")
+					local origin_password_len = string.len(origin_password)
+					local password = string.rep("-",origin_password_len)
+								
+				  %>
+                     <ul>
+                        <li class="left_table"><%:Password%>  :</li>
+                        <li class="right_table">
+                            <input name="DDNSPasswd" size="30" maxlength="63" type="password" onfocus="this.value=''"<%if password then%> value="<%=password%>" <%end%> />
+                        </li>
+                     </ul>
+                  </div>
+                  <div class="spaceair"></div>
+               </ul>
+            </div>
+         </li>
+         <li class="table_button">
+            <div class="button" align="center">
+               <input name="apply" value="<%:Apply%>" type="submit" />
+               &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+               <input name="Cancel" value="<%:Cancel%>" type="reset" />
+            </div>
+         </li>
+      </ul>
+   </div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Network%> > <%:Dynamic_DNS%>');
+   showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+</script>
+</html>

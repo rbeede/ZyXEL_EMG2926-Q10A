@@ -1,0 +1,24 @@
+#!/bin/sh
+
+local MAC
+local connect_time
+local min_to_sec
+local hr_to_sec
+local now
+
+while read line
+do
+
+	MAC=$(echo $line | cut -c '1-17')
+	sed -i "/$MAC .*/d" /tmp/associ_info
+	connect_time=$(echo $line | cut -c '18-')
+	min_to_sec=`expr $(echo $connect_time | awk -F ':' '{print $2}') \* 60 `
+	hr_to_sec=`expr $(echo $connect_time | awk -F ':' '{print $1}') \* 3600 `
+	now=$(date +%s)
+	total=`expr $(echo $connect_time | awk -F ':' '{print $3}') + $min_to_sec + $hr_to_sec`
+    associate_time=`expr $now - $(echo $connect_time | awk -F ':' '{print $3}') - $min_to_sec - $hr_to_sec `
+	echo "$MAC `date -d @$associate_time '+%H:%M:%S %Y/%m/%d'`" >>/tmp/associ_info
+
+done < $1
+
+sed -i "s/........$//" $1

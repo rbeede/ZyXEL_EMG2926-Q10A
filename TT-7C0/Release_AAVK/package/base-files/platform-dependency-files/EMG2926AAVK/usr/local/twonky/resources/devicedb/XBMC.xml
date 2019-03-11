@@ -1,0 +1,26 @@
+<Client>
+	<DeviceId>
+		<DisplayName>XBMC</DisplayName>
+		<HttpRecognition>
+			<HttpText>XBMC</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>XBMC Media Center - Media Renderer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920_1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<MimeTranslations>
+			<!-- DMR announces support for LPCM but fails to play it via pull and push -->
+			<MimeTypeSuppress>audio/L16</MimeTypeSuppress>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOEMBEDDEDALBUMART</Quirk>
+	</DeviceQuirks>
+</Client>

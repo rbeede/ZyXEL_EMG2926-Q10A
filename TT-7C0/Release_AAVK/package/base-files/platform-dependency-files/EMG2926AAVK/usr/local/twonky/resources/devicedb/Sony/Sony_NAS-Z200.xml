@@ -1,0 +1,22 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony NAS-Z200</DisplayName>
+		<HttpRecognition>
+			<HttpText>NAS-Z200</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOBITRATE</Quirk>
+	</DeviceQuirks>
+</Client>

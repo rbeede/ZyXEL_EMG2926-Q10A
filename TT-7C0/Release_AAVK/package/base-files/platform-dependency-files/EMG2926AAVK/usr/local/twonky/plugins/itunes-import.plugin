@@ -1,0 +1,4 @@
+#iTunes library import plugin
+#(c) 2015 by Lynx Technology
+launch on change:$ituneslib
+exec: itunes-import -dbdir $dbdir -playlist-dir $dbdir -itunes-lib !ituneslib -base $contentbase

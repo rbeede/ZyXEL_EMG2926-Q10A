@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>TG100</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>TG100</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>1.0RESPONSE</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

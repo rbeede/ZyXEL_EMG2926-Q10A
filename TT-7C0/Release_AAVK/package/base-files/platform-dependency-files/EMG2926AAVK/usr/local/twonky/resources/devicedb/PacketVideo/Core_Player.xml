@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Core Player</DisplayName>
+		<HttpRecognition>
+			<HttpText>CORE/8.503.1.1</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

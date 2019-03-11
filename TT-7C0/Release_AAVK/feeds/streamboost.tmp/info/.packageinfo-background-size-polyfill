@@ -1,0 +1,44 @@
+Source-Makefile: feeds/streamboost/background-size-polyfill/Makefile
+Package: background-size-polyfill
+Submenu: JavaScript
+Version: 20121123-gef5fa68-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Add support for background-size to IE8.
+Maintainer: 
+Source: backgroundsize.min.htc
+Type: ipkg
+Description:   An IE behavior adding support for background-size: cover; and
+  background-size: contain; to IE8.
+https://github.com/louisremi/background-size-polyfill
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_background-size-polyfill
+	config background-size-polyfill_USE_CUSTOM_VERSION
+		depends on PACKAGE_background-size-polyfill
+		bool "Use custom package version"
+		default n
+	config background-size-polyfill_CUSTOM_VERSION
+		depends on background-size-polyfill_USE_CUSTOM_VERSION
+		string " version as string (default version: 20121123-gef5fa68)"
+		default "20121123-gef5fa68"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_background-size-polyfill
+	config background-size-polyfill_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_background-size-polyfill
+		bool "Use custom source directory"
+		default n
+	config background-size-polyfill_CUSTOM_SOURCE_DIR
+		depends on background-size-polyfill_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

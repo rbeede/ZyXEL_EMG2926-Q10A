@@ -1,0 +1,1936 @@
+--- a/CMakeLists.txt	2013-07-16 12:01:00.000000000 +0800
++++ b/CMakeLists.txt	2013-08-23 17:23:44.000000000 +0800
+@@ -33,7 +33,7 @@
+ 	ADD_DEFINITIONS(-DHAVE_SHADOW)
+ ENDIF()
+ 
+-SET(SOURCES uhttpd.c uhttpd-file.c uhttpd-utils.c)
++SET(SOURCES uhttpd.c uhttpd-file.c uhttpd-utils.c if_range.c)
+ FIND_LIBRARY(LIBS crypt)
+ IF(LIBS STREQUAL "LIBS-NOTFOUND")
+ 	SET(LIBS "")
+--- a/config.h	2013-08-23 19:12:03.864797157 +0800
++++ b/config.h	2013-08-23 15:10:09.000000000 +0800
+@@ -0,0 +1,457 @@
++/* config.h.in.  Generated from configure.in by autoheader.  */
++
++/* Define to 1 if you have the <arpa/inet.h> header file. */
++#undef HAVE_ARPA_INET_H
++
++/* Define to 1 if you have the <attr/attributes.h> header file. */
++#undef HAVE_ATTR_ATTRIBUTES_H
++
++/* Define to 1 if you have the <bzlib.h> header file. */
++#undef HAVE_BZLIB_H
++
++/* Define to 1 if you have the `chroot' function. */
++#undef HAVE_CHROOT
++
++/* Define to 1 if you have the <crypt.h> header file. */
++#undef HAVE_CRYPT_H
++
++/* Define to 1 if you have the <dlfcn.h> header file. */
++#undef HAVE_DLFCN_H
++
++/* Define to 1 if you have the `dup2' function. */
++#undef HAVE_DUP2
++
++/* Define to 1 if you have the `epoll_ctl' function. */
++#undef HAVE_EPOLL_CTL
++
++/* Define to 1 if you have the <errmsg.h> header file. */
++#undef HAVE_ERRMSG_H
++
++/* Define to 1 if you have the `FAMNoExists' function. */
++#undef HAVE_FAMNOEXISTS
++
++/* fam.h */
++#undef HAVE_FAM_H
++
++/* Define to 1 if you have the <fastcgi/fastcgi.h> header file. */
++#undef HAVE_FASTCGI_FASTCGI_H
++
++/* Define to 1 if you have the <fastcgi.h> header file. */
++#undef HAVE_FASTCGI_H
++
++/* Define to 1 if you have the <fcntl.h> header file. */
++#undef HAVE_FCNTL_H
++
++/* Define to 1 if you have the `fork' function. */
++#undef HAVE_FORK
++
++/* libgdbm */
++#undef HAVE_GDBM
++
++/* Define to 1 if you have the <gdbm.h> header file. */
++#undef HAVE_GDBM_H
++
++/* Define to 1 if you have the `getcwd' function. */
++#undef HAVE_GETCWD
++
++/* Define to 1 if you have the `gethostbyname' function. */
++#undef HAVE_GETHOSTBYNAME
++
++/* Define to 1 if you have the `getopt' function. */
++#undef HAVE_GETOPT
++
++/* Define to 1 if you have the <getopt.h> header file. */
++#undef HAVE_GETOPT_H
++
++/* Define to 1 if you have the `getrlimit' function. */
++#undef HAVE_GETRLIMIT
++
++/* Define to 1 if you have the `getuid' function. */
++#undef HAVE_GETUID
++
++/* Define to 1 if you have the `inet_ntoa' function. */
++#undef HAVE_INET_NTOA
++
++/* Define to 1 if you have the `inet_ntop' function. */
++#undef HAVE_INET_NTOP
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#undef HAVE_INTTYPES_H
++
++/* Whether to enable IPv6 support */
++#undef HAVE_IPV6
++
++/* Define to 1 if you have the `kqueue' function. */
++#undef HAVE_KQUEUE
++
++/* Define to 1 if you have the <lber.h> header file. */
++#undef HAVE_LBER_H
++
++/* Define to 1 if you have the <ldap.h> header file. */
++#undef HAVE_LDAP_H
++
++/* libbz2 */
++#undef HAVE_LIBBZ2
++
++/* libcrypt */
++#undef HAVE_LIBCRYPT
++
++/* libdl */
++#undef HAVE_LIBDL
++
++/* libfam */
++#undef HAVE_LIBFAM
++
++/* liblber */
++#undef HAVE_LIBLBER
++
++/* libldap */
++#undef HAVE_LIBLDAP
++
++/* libpcre */
++#undef HAVE_LIBPCRE
++
++/* Have libssl */
++#undef HAVE_LIBSSL
++
++/* libxml2 */
++#undef HAVE_LIBXML2
++
++/* libxml.h */
++#undef HAVE_LIBXML_H
++
++/* libz */
++#undef HAVE_LIBZ
++
++/* Define to 1 if you have the `localtime_r' function. */
++#undef HAVE_LOCALTIME_R
++
++/* Define to 1 if you have the `lstat' function. */
++#undef HAVE_LSTAT
++
++/* liblua */
++#undef HAVE_LUA
++
++/* lua.h */
++#undef HAVE_LUA_H
++
++/* Define to 1 if you have the `madvise' function. */
++#undef HAVE_MADVISE
++
++/* libmemcache */
++#undef HAVE_MEMCACHE
++
++/* memcache.h */
++#undef HAVE_MEMCACHE_H
++
++/* Define to 1 if you have the <memory.h> header file. */
++#undef HAVE_MEMORY_H
++
++/* Define to 1 if you have the `memset' function. */
++#undef HAVE_MEMSET
++
++/* Define to 1 if you have the `mmap' function. */
++#undef HAVE_MMAP
++
++/* Define to 1 if you have the `munmap' function. */
++#undef HAVE_MUNMAP
++
++/* mysql support */
++#undef HAVE_MYSQL
++
++/* Define to 1 if you have the <mysql.h> header file. */
++#undef HAVE_MYSQL_H
++
++/* Define to 1 if you have the <netinet/in.h> header file. */
++#undef HAVE_NETINET_IN_H
++
++/* Define to 1 if you have the <openssl/ssl.h> header file. */
++#undef HAVE_OPENSSL_SSL_H
++
++/* Define to 1 if you have the `pathconf' function. */
++#undef HAVE_PATHCONF
++
++/* Define to 1 if you have the <pcre.h> header file. */
++#undef HAVE_PCRE_H
++
++/* Define to 1 if you have the `poll' function. */
++#undef HAVE_POLL
++
++/* Define to 1 if you have the <poll.h> header file. */
++#undef HAVE_POLL_H
++
++/* Define to 1 if you have the `port_create' function. */
++#undef HAVE_PORT_CREATE
++
++/* Define to 1 if you have the `posix_fadvise' function. */
++#undef HAVE_POSIX_FADVISE
++
++/* Define to 1 if you have the `posix_madvise' function. */
++#undef HAVE_POSIX_MADVISE
++
++/* Define to 1 if you have the <pwd.h> header file. */
++#undef HAVE_PWD_H
++
++/* Define to 1 if you have the `select' function. */
++#undef HAVE_SELECT
++
++/* Define to 1 if you have the `sendfile' function. */
++#undef HAVE_SENDFILE
++
++/* Define to 1 if you have the `sendfile64' function. */
++#undef HAVE_SENDFILE64
++
++/* solaris sendfilev */
++#undef HAVE_SENDFILEV
++
++/* broken sendfile */
++#undef HAVE_SENDFILE_BROKEN
++
++/* Define to 1 if you have the `send_file' function. */
++#undef HAVE_SEND_FILE
++
++/* Define to 1 if you have the `sigaction' function. */
++#undef HAVE_SIGACTION
++
++/* Define to 1 if you have the `signal' function. */
++#undef HAVE_SIGNAL
++
++/* Define to 1 if you have the `sigtimedwait' function. */
++#undef HAVE_SIGTIMEDWAIT
++
++/* Define to 1 if you have the `socket' function. */
++#undef HAVE_SOCKET
++
++/* Define to 1 if the system has the type `socklen_t'. */
++#undef HAVE_SOCKLEN_T
++
++/* libsqlite3 */
++#undef HAVE_SQLITE3
++
++/* sqlite3.h */
++#undef HAVE_SQLITE3_H
++
++/* Define to 1 if `stat' has the bug that it succeeds when given the
++   zero-length file name argument. */
++#undef HAVE_STAT_EMPTY_STRING_BUG
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#undef HAVE_STDINT_H
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#undef HAVE_STDLIB_H
++
++/* Define to 1 if you have the `strchr' function. */
++#undef HAVE_STRCHR
++
++/* Define to 1 if you have the `strdup' function. */
++#undef HAVE_STRDUP
++
++/* Define to 1 if you have the `strerror' function. */
++#undef HAVE_STRERROR
++
++/* Define to 1 if you have the `strftime' function. */
++#undef HAVE_STRFTIME
++
++/* Define to 1 if you have the <strings.h> header file. */
++#undef HAVE_STRINGS_H
++
++/* Define to 1 if you have the <string.h> header file. */
++#undef HAVE_STRING_H
++
++/* Define to 1 if you have the `strstr' function. */
++#undef HAVE_STRSTR
++
++/* Define to 1 if you have the `strtol' function. */
++#undef HAVE_STRTOL
++
++/* Define to 1 if the system has the type `struct sockaddr_storage'. */
++#undef HAVE_STRUCT_SOCKADDR_STORAGE
++
++/* gmtoff in struct tm */
++#undef HAVE_STRUCT_TM_GMTOFF
++
++/* Define to 1 if you have the <syslog.h> header file. */
++#undef HAVE_SYSLOG_H
++
++/* Define to 1 if you have the <sys/devpoll.h> header file. */
++#undef HAVE_SYS_DEVPOLL_H
++
++/* Define to 1 if you have the <sys/epoll.h> header file. */
++#undef HAVE_SYS_EPOLL_H
++
++/* Define to 1 if you have the <sys/event.h> header file. */
++#undef HAVE_SYS_EVENT_H
++
++/* Define to 1 if you have the <sys/filio.h> header file. */
++#undef HAVE_SYS_FILIO_H
++
++/* Define to 1 if you have the <sys/mman.h> header file. */
++#undef HAVE_SYS_MMAN_H
++
++/* Define to 1 if you have the <sys/poll.h> header file. */
++#undef HAVE_SYS_POLL_H
++
++/* Define to 1 if you have the <sys/port.h> header file. */
++#undef HAVE_SYS_PORT_H
++
++/* Define to 1 if you have the <sys/prctl.h> header file. */
++#undef HAVE_SYS_PRCTL_H
++
++/* Define to 1 if you have the <sys/resource.h> header file. */
++#undef HAVE_SYS_RESOURCE_H
++
++/* Define to 1 if you have the <sys/select.h> header file. */
++#undef HAVE_SYS_SELECT_H
++
++/* Define to 1 if you have the <sys/sendfile.h> header file. */
++#undef HAVE_SYS_SENDFILE_H
++
++/* Define to 1 if you have the <sys/socket.h> header file. */
++#undef HAVE_SYS_SOCKET_H
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#undef HAVE_SYS_STAT_H
++
++/* Define to 1 if you have the <sys/syslimits.h> header file. */
++#undef HAVE_SYS_SYSLIMITS_H
++
++/* Define to 1 if you have the <sys/time.h> header file. */
++#undef HAVE_SYS_TIME_H
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#undef HAVE_SYS_TYPES_H
++
++/* Define to 1 if you have the <sys/uio.h> header file. */
++#undef HAVE_SYS_UIO_H
++
++/* Define to 1 if you have the <sys/un.h> header file. */
++#undef HAVE_SYS_UN_H
++
++/* Define to 1 if you have <sys/wait.h> that is POSIX.1 compatible. */
++#undef HAVE_SYS_WAIT_H
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#undef HAVE_UNISTD_H
++
++/* libuuid */
++#undef HAVE_UUID
++
++/* uuid/uuid.h is available */
++#undef HAVE_UUID_H
++
++/* Define to 1 if you have the <uuid/uuid.h> header file. */
++#undef HAVE_UUID_UUID_H
++
++/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
++#undef HAVE_VALGRIND_VALGRIND_H
++
++/* Define to 1 if you have the `vfork' function. */
++#undef HAVE_VFORK
++
++/* Define to 1 if you have the <vfork.h> header file. */
++#undef HAVE_VFORK_H
++
++/* Define to 1 if `fork' works. */
++#undef HAVE_WORKING_FORK
++
++/* Define to 1 if `vfork' works. */
++#undef HAVE_WORKING_VFORK
++
++/* Define to 1 if you have the `writev' function. */
++#undef HAVE_WRITEV
++
++/* libattr */
++#undef HAVE_XATTR
++
++/* Define to 1 if you have the <zlib.h> header file. */
++#undef HAVE_ZLIB_H
++
++/* lighttpd-version-id */
++#undef LIGHTTPD_VERSION_ID
++
++/* Define to 1 if `lstat' dereferences a symlink specified with a trailing
++   slash. */
++#undef LSTAT_FOLLOWS_SLASHED_SYMLINK
++
++/* Name of package */
++#undef PACKAGE
++
++/* Define to the address where bug reports for this package should be sent. */
++#undef PACKAGE_BUGREPORT
++
++/* Define to the full name of this package. */
++#undef PACKAGE_NAME
++
++/* Define to the full name and version of this package. */
++#undef PACKAGE_STRING
++
++/* Define to the one symbol short name of this package. */
++#undef PACKAGE_TARNAME
++
++/* Define to the version of this package. */
++#undef PACKAGE_VERSION
++
++/* Define to 1 if the C compiler supports function prototypes. */
++#undef PROTOTYPES
++
++/* Define as the return type of signal handlers (`int' or `void'). */
++#undef RETSIGTYPE
++
++/* The size of `long', as computed by sizeof. */
++#undef SIZEOF_LONG
++
++/* The size of `off_t', as computed by sizeof. */
++#undef SIZEOF_OFF_T
++
++/* Define to 1 if you have the ANSI C header files. */
++#undef STDC_HEADERS
++
++/* Version number of package */
++#undef VERSION
++
++/* Define to 1 if on AIX 3.
++   System headers sometimes define this.
++   We just want to avoid a redefinition error message.  */
++#ifndef _ALL_SOURCE
++# undef _ALL_SOURCE
++#endif
++
++/* Define to 1 if on MINIX. */
++#undef _MINIX
++
++/* Define to 2 if the system does not provide POSIX.1 features except with
++   this defined. */
++#undef _POSIX_1_SOURCE
++
++/* Define to 1 if you need to in order for `stat' and other things to work. */
++#undef _POSIX_SOURCE
++
++/* Define to 1 if type `char' is unsigned and you are not using gcc.  */
++#ifndef __CHAR_UNSIGNED__
++# undef __CHAR_UNSIGNED__
++#endif
++
++/* Define like PROTOTYPES; this can be used by system headers. */
++#undef __PROTOTYPES
++
++/* Define to empty if `const' does not conform to ANSI C. */
++#undef const
++
++/* Define to `__inline__' or `__inline' if that's what the C compiler
++   calls it, or to nothing if 'inline' is not supported under any name.  */
++#ifndef __cplusplus
++#undef inline
++#endif
++
++/* Define to `long int' if <sys/types.h> does not define. */
++#undef off_t
++
++/* Define to `int' if <sys/types.h> does not define. */
++#undef pid_t
++
++/* Define to `unsigned int' if <sys/types.h> does not define. */
++#undef size_t
++
++/* Define as `fork' if `vfork' does not work. */
++#undef vfork
+--- a/if_range.c	2013-08-23 19:12:03.864797157 +0800
++++ b/if_range.c	2013-08-23 15:10:09.000000000 +0800
+@@ -0,0 +1,1070 @@
++#include <stdlib.h>
++#include <string.h>
++
++#include <stdio.h>
++#include <assert.h>
++#include <ctype.h>
++
++#include "if_range.h"
++
++
++static const char hex_chars[] = "0123456789abcdef";
++
++
++/**
++ * init the buffer
++ *
++ */
++
++buffer* buffer_init(void) {
++	buffer *b;
++
++	b = malloc(sizeof(*b));
++	assert(b);
++
++	b->ptr = NULL;
++	b->size = 0;
++	b->used = 0;
++
++	return b;
++}
++
++buffer *buffer_init_buffer(buffer *src) {
++	buffer *b = buffer_init();
++	buffer_copy_string_buffer(b, src);
++	return b;
++}
++
++/**
++ * free the buffer
++ *
++ */
++
++void buffer_free(buffer *b) {
++	if (!b) return;
++
++	free(b->ptr);
++	free(b);
++}
++
++void buffer_reset(buffer *b) {
++	if (!b) return;
++
++	/* limit don't reuse buffer larger than ... bytes */
++	if (b->size > BUFFER_MAX_REUSE_SIZE) {
++		free(b->ptr);
++		b->ptr = NULL;
++		b->size = 0;
++	}
++
++	b->used = 0;
++}
++
++
++/**
++ *
++ * allocate (if neccessary) enough space for 'size' bytes and
++ * set the 'used' counter to 0
++ *
++ */
++
++#define BUFFER_PIECE_SIZE 64
++
++int buffer_prepare_copy(buffer *b, size_t size) {
++	if (!b) return -1;
++
++	if ((0 == b->size) ||
++	    (size > b->size)) {
++		if (b->size) free(b->ptr);
++
++		b->size = size;
++
++		/* always allocate a multiply of BUFFER_PIECE_SIZE */
++		b->size += BUFFER_PIECE_SIZE - (b->size % BUFFER_PIECE_SIZE);
++
++		b->ptr = malloc(b->size);
++		assert(b->ptr);
++	}
++	b->used = 0;
++	return 0;
++}
++
++/**
++ *
++ * increase the internal buffer (if neccessary) to append another 'size' byte
++ * ->used isn't changed
++ *
++ */
++
++int buffer_prepare_append(buffer *b, size_t size) {
++	if (!b) return -1;
++
++	if (0 == b->size) {
++		b->size = size;
++
++		/* always allocate a multiply of BUFFER_PIECE_SIZE */
++		b->size += BUFFER_PIECE_SIZE - (b->size % BUFFER_PIECE_SIZE);
++
++		b->ptr = malloc(b->size);
++		b->used = 0;
++		assert(b->ptr);
++	} else if (b->used + size > b->size) {
++		b->size += size;
++
++		/* always allocate a multiply of BUFFER_PIECE_SIZE */
++		b->size += BUFFER_PIECE_SIZE - (b->size % BUFFER_PIECE_SIZE);
++
++		b->ptr = realloc(b->ptr, b->size);
++		assert(b->ptr);
++	}
++	return 0;
++}
++
++int buffer_copy_string(buffer *b, const char *s) {
++	size_t s_len;
++
++	if (!s || !b) return -1;
++
++	s_len = strlen(s) + 1;
++	buffer_prepare_copy(b, s_len);
++
++	memcpy(b->ptr, s, s_len);
++	b->used = s_len;
++
++	return 0;
++}
++
++int buffer_copy_string_len(buffer *b, const char *s, size_t s_len) {
++	if (!s || !b) return -1;
++#if 0
++	/* removed optimization as we have to keep the empty string
++	 * in some cases for the config handling
++	 *
++	 * url.access-deny = ( "" )
++	 */
++	if (s_len == 0) return 0;
++#endif
++	buffer_prepare_copy(b, s_len + 1);
++
++	memcpy(b->ptr, s, s_len);
++	b->ptr[s_len] = '\0';
++	b->used = s_len + 1;
++
++	return 0;
++}
++
++int buffer_copy_string_buffer(buffer *b, const buffer *src) {
++	if (!src) return -1;
++
++	if (src->used == 0) {
++		b->used = 0;
++		return 0;
++	}
++	return buffer_copy_string_len(b, src->ptr, src->used - 1);
++}
++
++int buffer_append_string(buffer *b, const char *s) {
++	size_t s_len;
++
++	if (!s || !b) return -1;
++
++	s_len = strlen(s);
++	buffer_prepare_append(b, s_len + 1);
++	if (b->used == 0)
++		b->used++;
++
++	memcpy(b->ptr + b->used - 1, s, s_len + 1);
++	b->used += s_len;
++
++	return 0;
++}
++
++int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen) {
++	size_t s_len;
++
++	if (!s || !b) return -1;
++
++	s_len = strlen(s);
++	buffer_prepare_append(b, maxlen + 1);
++	if (b->used == 0)
++		b->used++;
++
++	memcpy(b->ptr + b->used - 1, s, s_len);
++	if (maxlen > s_len) {
++		memset(b->ptr + b->used - 1 + s_len, ' ', maxlen - s_len);
++	}
++
++	b->used += maxlen;
++	b->ptr[b->used - 1] = '\0';
++	return 0;
++}
++
++/**
++ * append a string to the end of the buffer
++ *
++ * the resulting buffer is terminated with a '\0'
++ * s is treated as a un-terminated string (a \0 is handled a normal character)
++ *
++ * @param b a buffer
++ * @param s the string
++ * @param s_len size of the string (without the terminating \0)
++ */
++
++int buffer_append_string_len(buffer *b, const char *s, size_t s_len) {
++	if (!s || !b) return -1;
++	if (s_len == 0) return 0;
++
++	buffer_prepare_append(b, s_len + 1);
++	if (b->used == 0)
++		b->used++;
++
++	memcpy(b->ptr + b->used - 1, s, s_len);
++	b->used += s_len;
++	b->ptr[b->used - 1] = '\0';
++
++	return 0;
++}
++
++int buffer_append_string_buffer(buffer *b, const buffer *src) {
++	if (!src) return -1;
++	if (src->used == 0) return 0;
++
++	return buffer_append_string_len(b, src->ptr, src->used - 1);
++}
++
++int buffer_append_memory(buffer *b, const char *s, size_t s_len) {
++	if (!s || !b) return -1;
++	if (s_len == 0) return 0;
++
++	buffer_prepare_append(b, s_len);
++	memcpy(b->ptr + b->used, s, s_len);
++	b->used += s_len;
++
++	return 0;
++}
++
++int buffer_copy_memory(buffer *b, const char *s, size_t s_len) {
++	if (!s || !b) return -1;
++
++	b->used = 0;
++
++	return buffer_append_memory(b, s, s_len);
++}
++
++int buffer_append_long_hex(buffer *b, unsigned long value) {
++	char *buf;
++	int shift = 0;
++	unsigned long copy = value;
++
++	while (copy) {
++		copy >>= 4;
++		shift++;
++	}
++	if (shift == 0)
++		shift++;
++	if (shift & 0x01)
++		shift++;
++
++	buffer_prepare_append(b, shift + 1);
++	if (b->used == 0)
++		b->used++;
++	buf = b->ptr + (b->used - 1);
++	b->used += shift;
++
++	shift <<= 2;
++	while (shift > 0) {
++		shift -= 4;
++		*(buf++) = hex_chars[(value >> shift) & 0x0F];
++	}
++	*buf = '\0';
++
++	return 0;
++}
++
++int ltostr(char *buf, long val) {
++	char swap;
++	char *end;
++	int len = 1;
++
++	if (val < 0) {
++		len++;
++		*(buf++) = '-';
++		val = -val;
++	}
++
++	end = buf;
++	while (val > 9) {
++		*(end++) = '0' + (val % 10);
++		val = val / 10;
++	}
++	*(end) = '0' + val;
++	*(end + 1) = '\0';
++	len += end - buf;
++
++	while (buf < end) {
++		swap = *end;
++		*end = *buf;
++		*buf = swap;
++
++		buf++;
++		end--;
++	}
++
++	return len;
++}
++
++int buffer_append_long(buffer *b, long val) {
++	if (!b) return -1;
++
++	buffer_prepare_append(b, 32);
++	if (b->used == 0)
++		b->used++;
++
++	b->used += ltostr(b->ptr + (b->used - 1), val);
++	return 0;
++}
++
++int buffer_copy_long(buffer *b, long val) {
++	if (!b) return -1;
++
++	b->used = 0;
++	return buffer_append_long(b, val);
++}
++
++#if !defined(SIZEOF_LONG) || (SIZEOF_LONG != SIZEOF_OFF_T)
++int buffer_append_off_t(buffer *b, off_t val) {
++	char swap;
++	char *end;
++	char *start;
++	int len = 1;
++
++	if (!b) return -1;
++
++	buffer_prepare_append(b, 32);
++	if (b->used == 0)
++		b->used++;
++
++	start = b->ptr + (b->used - 1);
++	if (val < 0) {
++		len++;
++		*(start++) = '-';
++		val = -val;
++	}
++
++	end = start;
++	while (val > 9) {
++		*(end++) = '0' + (val % 10);
++		val = val / 10;
++	}
++	*(end) = '0' + val;
++	*(end + 1) = '\0';
++	len += end - start;
++
++	while (start < end) {
++		swap   = *end;
++		*end   = *start;
++		*start = swap;
++
++		start++;
++		end--;
++	}
++
++	b->used += len;
++	return 0;
++}
++
++int buffer_copy_off_t(buffer *b, off_t val) {
++	if (!b) return -1;
++
++	b->used = 0;
++	return buffer_append_off_t(b, val);
++}
++#endif /* !defined(SIZEOF_LONG) || (SIZEOF_LONG != SIZEOF_OFF_T) */
++
++char int2hex(char c) {
++	return hex_chars[(c & 0x0F)];
++}
++
++/* converts hex char (0-9, A-Z, a-z) to decimal.
++ * returns 0xFF on invalid input.
++ */
++char hex2int(unsigned char hex) {
++	hex = hex - '0';
++	if (hex > 9) {
++		hex = (hex + '0' - 1) | 0x20;
++		hex = hex - 'a' + 11;
++	}
++	if (hex > 15)
++		hex = 0xFF;
++
++	return hex;
++}
++
++
++/**
++ * init the buffer
++ *
++ */
++
++buffer_array* buffer_array_init(void) {
++	buffer_array *b;
++
++	b = malloc(sizeof(*b));
++
++	assert(b);
++	b->ptr = NULL;
++	b->size = 0;
++	b->used = 0;
++
++	return b;
++}
++
++void buffer_array_reset(buffer_array *b) {
++	size_t i;
++
++	if (!b) return;
++
++	/* if they are too large, reduce them */
++	for (i = 0; i < b->used; i++) {
++		buffer_reset(b->ptr[i]);
++	}
++
++	b->used = 0;
++}
++
++
++/**
++ * free the buffer_array
++ *
++ */
++
++void buffer_array_free(buffer_array *b) {
++	size_t i;
++	if (!b) return;
++
++	for (i = 0; i < b->size; i++) {
++		if (b->ptr[i]) buffer_free(b->ptr[i]);
++	}
++	free(b->ptr);
++	free(b);
++}
++
++buffer *buffer_array_append_get_buffer(buffer_array *b) {
++	size_t i;
++
++	if (b->size == 0) {
++		b->size = 16;
++		b->ptr = malloc(sizeof(*b->ptr) * b->size);
++		assert(b->ptr);
++		for (i = 0; i < b->size; i++) {
++			b->ptr[i] = NULL;
++		}
++	} else if (b->size == b->used) {
++		b->size += 16;
++		b->ptr = realloc(b->ptr, sizeof(*b->ptr) * b->size);
++		assert(b->ptr);
++		for (i = b->used; i < b->size; i++) {
++			b->ptr[i] = NULL;
++		}
++	}
++
++	if (b->ptr[b->used] == NULL) {
++		b->ptr[b->used] = buffer_init();
++	}
++
++	b->ptr[b->used]->used = 0;
++
++	return b->ptr[b->used++];
++}
++
++
++char * buffer_search_string_len(buffer *b, const char *needle, size_t len) {
++	size_t i;
++	if (len == 0) return NULL;
++	if (needle == NULL) return NULL;
++
++	if (b->used < len) return NULL;
++
++	for(i = 0; i < b->used - len; i++) {
++		if (0 == memcmp(b->ptr + i, needle, len)) {
++			return b->ptr + i;
++		}
++	}
++
++	return NULL;
++}
++
++buffer *buffer_init_string(const char *str) {
++	buffer *b = buffer_init();
++
++	buffer_copy_string(b, str);
++
++	return b;
++}
++
++int buffer_is_empty(buffer *b) {
++	return (b->used == 0);
++}
++
++/**
++ * check if two buffer contain the same data
++ *
++ * HISTORY: this function was pretty much optimized, but didn't handled
++ * alignment properly.
++ */
++
++int buffer_is_equal(buffer *a, buffer *b) {
++	if (a->used != b->used) return 0;
++	if (a->used == 0) return 1;
++
++	return (0 == strcmp(a->ptr, b->ptr));
++}
++
++int buffer_is_equal_string(buffer *a, const char *s, size_t b_len) {
++	buffer b;
++
++	b.ptr = (char *)s;
++	b.used = b_len + 1;
++
++	return buffer_is_equal(a, &b);
++}
++
++/* simple-assumption:
++ *
++ * most parts are equal and doing a case conversion needs time
++ *
++ */
++int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len) {
++	size_t ndx = 0, max_ndx;
++	size_t *al, *bl;
++	size_t mask = sizeof(*al) - 1;
++
++	al = (size_t *)a;
++	bl = (size_t *)b;
++
++	/* is the alignment correct ? */
++	if ( ((size_t)al & mask) == 0 &&
++	     ((size_t)bl & mask) == 0 ) {
++
++		max_ndx = ((a_len < b_len) ? a_len : b_len) & ~mask;
++
++		for (; ndx < max_ndx; ndx += sizeof(*al)) {
++			if (*al != *bl) break;
++			al++; bl++;
++
++		}
++
++	}
++
++	a = (char *)al;
++	b = (char *)bl;
++
++	max_ndx = ((a_len < b_len) ? a_len : b_len);
++
++	for (; ndx < max_ndx; ndx++) {
++		char a1 = *a++, b1 = *b++;
++
++		if (a1 != b1) {
++			if ((a1 >= 'A' && a1 <= 'Z') && (b1 >= 'a' && b1 <= 'z'))
++				a1 |= 32;
++			else if ((a1 >= 'a' && a1 <= 'z') && (b1 >= 'A' && b1 <= 'Z'))
++				b1 |= 32;
++			if ((a1 - b1) != 0) return (a1 - b1);
++
++		}
++	}
++
++	return 0;
++}
++
++
++/**
++ * check if the rightmost bytes of the string are equal.
++ *
++ *
++ */
++
++int buffer_is_equal_right_len(buffer *b1, buffer *b2, size_t len) {
++	/* no, len -> equal */
++	if (len == 0) return 1;
++
++	/* len > 0, but empty buffers -> not equal */
++	if (b1->used == 0 || b2->used == 0) return 0;
++
++	/* buffers too small -> not equal */
++	if (b1->used - 1 < len || b1->used - 1 < len) return 0;
++
++	if (0 == strncmp(b1->ptr + b1->used - 1 - len,
++			 b2->ptr + b2->used - 1 - len, len)) {
++		return 1;
++	}
++
++	return 0;
++}
++
++int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len) {
++	size_t i;
++
++	/* BO protection */
++	if (in_len * 2 < in_len) return -1;
++
++	buffer_prepare_copy(b, in_len * 2 + 1);
++
++	for (i = 0; i < in_len; i++) {
++		b->ptr[b->used++] = hex_chars[(in[i] >> 4) & 0x0F];
++		b->ptr[b->used++] = hex_chars[in[i] & 0x0F];
++	}
++	b->ptr[b->used++] = '\0';
++
++	return 0;
++}
++
++const char encoded_chars_rel_uri_part[] = {
++	/*
++	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
++	*/
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
++	1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1,  /*  20 -  2F space " # $ % & ' + , / */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,  /*  30 -  3F : ; = ? @ < > */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  /*  70 -  7F DEL */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  A0 -  AF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  B0 -  BF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  C0 -  CF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  D0 -  DF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  E0 -  EF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
++};
++
++const char encoded_chars_rel_uri[] = {
++	/*
++	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
++	*/
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
++	1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0,  /*  20 -  2F space " # $ % & ' + , / */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1,  /*  30 -  3F : ; = ? @ < > */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  /*  70 -  7F DEL */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  A0 -  AF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  B0 -  BF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  C0 -  CF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  D0 -  DF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  E0 -  EF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
++};
++
++const char encoded_chars_html[] = {
++	/*
++	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
++	*/
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
++	0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F & */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,  /*  30 -  3F < > */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  /*  70 -  7F DEL */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  A0 -  AF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  B0 -  BF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  C0 -  CF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  D0 -  DF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  E0 -  EF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
++};
++
++const char encoded_chars_minimal_xml[] = {
++	/*
++	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
++	*/
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
++	0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F & */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0,  /*  30 -  3F < > */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,  /*  70 -  7F DEL */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  80 -  8F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  90 -  9F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  A0 -  AF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  B0 -  BF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  C0 -  CF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  D0 -  DF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  E0 -  EF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  F0 -  FF */
++};
++
++const char encoded_chars_hex[] = {
++	/*
++	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
++	*/
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  00 -  0F control chars */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  10 -  1F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  20 -  2F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  30 -  3F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  40 -  4F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  50 -  5F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  60 -  6F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  70 -  7F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  80 -  8F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  90 -  9F */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  A0 -  AF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  B0 -  BF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  C0 -  CF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  D0 -  DF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  E0 -  EF */
++	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  /*  F0 -  FF */
++};
++
++const char encoded_chars_http_header[] = {
++	/*
++	0  1  2  3  4  5  6  7  8  9  A  B  C  D  E  F
++	*/
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,  /*  00 -  0F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  10 -  1F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  20 -  2F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  30 -  3F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  40 -  4F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  50 -  5F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  60 -  6F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  70 -  7F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  80 -  8F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  90 -  9F */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  A0 -  AF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  B0 -  BF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  C0 -  CF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  D0 -  DF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  E0 -  EF */
++	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  /*  F0 -  FF */
++};
++
++
++
++int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding) {
++	unsigned char *ds, *d;
++	size_t d_len, ndx;
++	const char *map = NULL;
++
++	if (!s || !b) return -1;
++
++	if (b->ptr[b->used - 1] != '\0') {
++		SEGFAULT();
++	}
++
++	if (s_len == 0) return 0;
++
++	switch(encoding) {
++	case ENCODING_REL_URI:
++		map = encoded_chars_rel_uri;
++		break;
++	case ENCODING_REL_URI_PART:
++		map = encoded_chars_rel_uri_part;
++		break;
++	case ENCODING_HTML:
++		map = encoded_chars_html;
++		break;
++	case ENCODING_MINIMAL_XML:
++		map = encoded_chars_minimal_xml;
++		break;
++	case ENCODING_HEX:
++		map = encoded_chars_hex;
++		break;
++	case ENCODING_HTTP_HEADER:
++		map = encoded_chars_http_header;
++		break;
++	case ENCODING_UNSET:
++		break;
++	}
++
++	assert(map != NULL);
++
++	/* count to-be-encoded-characters */
++	for (ds = (unsigned char *)s, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) {
++		if (map[*ds]) {
++			switch(encoding) {
++			case ENCODING_REL_URI:
++			case ENCODING_REL_URI_PART:
++				d_len += 3;
++				break;
++			case ENCODING_HTML:
++			case ENCODING_MINIMAL_XML:
++				d_len += 6;
++				break;
++			case ENCODING_HTTP_HEADER:
++			case ENCODING_HEX:
++				d_len += 2;
++				break;
++			case ENCODING_UNSET:
++				break;
++			}
++		} else {
++			d_len ++;
++		}
++	}
++
++	buffer_prepare_append(b, d_len);
++
++	for (ds = (unsigned char *)s, d = (unsigned char *)b->ptr + b->used - 1, d_len = 0, ndx = 0; ndx < s_len; ds++, ndx++) {
++		if (map[*ds]) {
++			switch(encoding) {
++			case ENCODING_REL_URI:
++			case ENCODING_REL_URI_PART:
++				d[d_len++] = '%';
++				d[d_len++] = hex_chars[((*ds) >> 4) & 0x0F];
++				d[d_len++] = hex_chars[(*ds) & 0x0F];
++				break;
++			case ENCODING_HTML:
++			case ENCODING_MINIMAL_XML:
++				d[d_len++] = '&';
++				d[d_len++] = '#';
++				d[d_len++] = 'x';
++				d[d_len++] = hex_chars[((*ds) >> 4) & 0x0F];
++				d[d_len++] = hex_chars[(*ds) & 0x0F];
++				d[d_len++] = ';';
++				break;
++			case ENCODING_HEX:
++				d[d_len++] = hex_chars[((*ds) >> 4) & 0x0F];
++				d[d_len++] = hex_chars[(*ds) & 0x0F];
++				break;
++			case ENCODING_HTTP_HEADER:
++				d[d_len++] = *ds;
++				d[d_len++] = '\t';
++				break;
++			case ENCODING_UNSET:
++				break;
++			}
++		} else {
++			d[d_len++] = *ds;
++		}
++	}
++
++	/* terminate buffer and calculate new length */
++	b->ptr[b->used + d_len - 1] = '\0';
++
++	b->used += d_len;
++
++	return 0;
++}
++
++
++/* decodes url-special-chars inplace.
++ * replaces non-printable characters with '_'
++ */
++
++static int buffer_urldecode_internal(buffer *url, int is_query) {
++	unsigned char high, low;
++	const char *src;
++	char *dst;
++
++	if (!url || !url->ptr) return -1;
++
++	src = (const char*) url->ptr;
++	dst = (char*) url->ptr;
++
++	while ((*src) != '\0') {
++		if (is_query && *src == '+') {
++			*dst = ' ';
++		} else if (*src == '%') {
++			*dst = '%';
++
++			high = hex2int(*(src + 1));
++			if (high != 0xFF) {
++				low = hex2int(*(src + 2));
++				if (low != 0xFF) {
++					high = (high << 4) | low;
++
++					/* map control-characters out */
++					if (high < 32 || high == 127) high = '_';
++
++					*dst = high;
++					src += 2;
++				}
++			}
++		} else {
++			*dst = *src;
++		}
++
++		dst++;
++		src++;
++	}
++
++	*dst = '\0';
++	url->used = (dst - url->ptr) + 1;
++
++	return 0;
++}
++
++int buffer_urldecode_path(buffer *url) {
++	return buffer_urldecode_internal(url, 0);
++}
++
++int buffer_urldecode_query(buffer *url) {
++	return buffer_urldecode_internal(url, 1);
++}
++
++/* Remove "/../", "//", "/./" parts from path.
++ *
++ * /blah/..         gets  /
++ * /blah/../foo     gets  /foo
++ * /abc/./xyz       gets  /abc/xyz
++ * /abc//xyz        gets  /abc/xyz
++ *
++ * NOTE: src and dest can point to the same buffer, in which case,
++ *       the operation is performed in-place.
++ */
++
++int buffer_path_simplify(buffer *dest, buffer *src)
++{
++	int toklen;
++	char c, pre1;
++	char *start, *slash, *walk, *out;
++	unsigned short pre;
++
++	if (src == NULL || src->ptr == NULL || dest == NULL)
++		return -1;
++
++	if (src == dest)
++		buffer_prepare_append(dest, 1);
++	else
++		buffer_prepare_copy(dest, src->used + 1);
++
++	walk  = src->ptr;
++	start = dest->ptr;
++	out   = dest->ptr;
++	slash = dest->ptr;
++
++
++#if defined(__WIN32) || defined(__CYGWIN__)
++	/* cygwin is treating \ and / the same, so we have to that too
++	 */
++
++	for (walk = src->ptr; *walk; walk++) {
++		if (*walk == '\\') *walk = '/';
++	}
++	walk = src->ptr;
++#endif
++
++	while (*walk == ' ') {
++		walk++;
++	}
++
++	pre1 = *(walk++);
++	c    = *(walk++);
++	pre  = pre1;
++	if (pre1 != '/') {
++		pre = ('/' << 8) | pre1;
++		*(out++) = '/';
++	}
++	*(out++) = pre1;
++
++	if (pre1 == '\0') {
++		dest->used = (out - start) + 1;
++		return 0;
++	}
++
++	while (1) {
++		if (c == '/' || c == '\0') {
++			toklen = out - slash;
++			if (toklen == 3 && pre == (('.' << 8) | '.')) {
++				out = slash;
++				if (out > start) {
++					out--;
++					while (out > start && *out != '/') {
++						out--;
++					}
++				}
++
++				if (c == '\0')
++					out++;
++			} else if (toklen == 1 || pre == (('/' << 8) | '.')) {
++				out = slash;
++				if (c == '\0')
++					out++;
++			}
++
++			slash = out;
++		}
++
++		if (c == '\0')
++			break;
++
++		pre1 = c;
++		pre  = (pre << 8) | pre1;
++		c    = *walk;
++		*out = pre1;
++
++		out++;
++		walk++;
++	}
++
++	*out = '\0';
++	dest->used = (out - start) + 1;
++
++	return 0;
++}
++
++int light_isdigit(int c) {
++	return (c >= '0' && c <= '9');
++}
++
++int light_isxdigit(int c) {
++	if (light_isdigit(c)) return 1;
++
++	c |= 32;
++	return (c >= 'a' && c <= 'f');
++}
++
++int light_isalpha(int c) {
++	c |= 32;
++	return (c >= 'a' && c <= 'z');
++}
++
++int light_isalnum(int c) {
++	return light_isdigit(c) || light_isalpha(c);
++}
++
++int buffer_to_lower(buffer *b) {
++	char *c;
++
++	if (b->used == 0) return 0;
++
++	for (c = b->ptr; *c; c++) {
++		if (*c >= 'A' && *c <= 'Z') {
++			*c |= 32;
++		}
++	}
++
++	return 0;
++}
++
++
++int buffer_to_upper(buffer *b) {
++	char *c;
++
++	if (b->used == 0) return 0;
++
++	for (c = b->ptr; *c; c++) {
++		if (*c >= 'a' && *c <= 'z') {
++			*c &= ~32;
++		}
++	}
++
++	return 0;
++}
++
++int http_response_parse_if_range(void) {
++    return 1;
++}
+\ No newline at end of file
+--- a/settings.h	2013-08-23 19:12:03.864797157 +0800
++++ b/settings.h	2013-08-23 15:10:09.000000000 +0800
+@@ -0,0 +1,44 @@
++#ifndef _LIGHTTPD_SETTINGS_H_
++#define _LIGHTTPD_SETTINGS_H_
++
++#define BV(x) (1 << x)
++
++#define INET_NTOP_CACHE_MAX 4
++#define FILE_CACHE_MAX      16
++
++/**
++ * max size of a buffer which will just be reset
++ * to ->used = 0 instead of really freeing the buffer
++ *
++ * 64kB (no real reason, just a guess)
++ */
++#define BUFFER_MAX_REUSE_SIZE  (4 * 1024)
++
++/**
++ * max size of the HTTP request header
++ *
++ * 32k should be enough for everything (just a guess)
++ *
++ */
++#define MAX_HTTP_REQUEST_HEADER  (32 * 1024)
++
++typedef enum { HANDLER_UNSET,
++		HANDLER_GO_ON,
++		HANDLER_FINISHED,
++		HANDLER_COMEBACK,
++		HANDLER_WAIT_FOR_EVENT,
++		HANDLER_ERROR,
++		HANDLER_WAIT_FOR_FD
++} handler_t;
++
++
++/* we use it in a enum */
++#ifdef TRUE
++#undef TRUE
++#endif
++
++#ifdef FALSE
++#undef FALSE
++#endif
++
++#endif
+--- a/if_range.h	2013-08-23 19:12:03.000000000 +0800
++++ b/if_range.h	2013-08-23 15:10:09.000000000 +0800
+@@ -0,0 +1,263 @@
++#ifndef _BUFFER_H_
++#define _BUFFER_H_
++
++#include <stdlib.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++
++#ifdef HAVE_CONFIG_H
++# include "config.h"
++#endif
++
++#include "settings.h"
++
++#define PLUGIN_DATA        size_t id
++
++typedef struct {
++	char *ptr;
++
++	size_t used;
++	size_t size;
++} buffer;
++
++typedef enum { TYPE_UNSET, TYPE_STRING, TYPE_COUNT, TYPE_ARRAY, TYPE_INTEGER, TYPE_FASTCGI, TYPE_CONFIG } data_type_t;
++
++#define DATA_UNSET \
++	data_type_t type; \
++	buffer *key; \
++	int is_index_key; /* 1 if key is a array index (autogenerated keys) */ \
++	struct data_unset *(*copy)(const struct data_unset *src); \
++	void (* free)(struct data_unset *p); \
++	void (* reset)(struct data_unset *p); \
++	int (*insert_dup)(struct data_unset *dst, struct data_unset *src); \
++	void (*print)(const struct data_unset *p, int depth)
++
++typedef struct data_unset {
++	DATA_UNSET;
++} data_unset;
++
++typedef struct {
++	DATA_UNSET;
++
++	buffer *value;
++} data_string;
++
++typedef struct {
++	buffer *name;
++	buffer *etag;
++
++	struct stat st;
++	time_t stat_ts;
++
++#ifdef HAVE_LSTAT
++	char is_symlink;
++#endif
++
++#ifdef HAVE_FAM_H
++	int    dir_version;
++	int    dir_ndx;
++#endif
++
++	buffer *content_type;
++} stat_cache_entry;
++
++typedef struct {
++	data_unset  **data;
++
++	size_t *sorted;
++
++	size_t used;
++	size_t size;
++
++	size_t unique_ndx;
++
++	size_t next_power_of_2;
++	int is_weakref; /* data is weakref, don't bother the data */
++} array;
++
++data_unset *array_get_element(array *a, const char *key);
++
++typedef struct chunk {
++	enum { UNUSED_CHUNK, MEM_CHUNK, FILE_CHUNK } type;
++
++	buffer *mem; /* either the storage of the mem-chunk or the read-ahead buffer */
++
++	struct {
++		/* filechunk */
++		buffer *name; /* name of the file */
++		off_t  start; /* starting offset in the file */
++		off_t  length; /* octets to send from the starting offset */
++
++		int    fd;
++		struct {
++			char   *start; /* the start pointer of the mmap'ed area */
++			size_t length; /* size of the mmap'ed area */
++			off_t  offset; /* start is <n> octet away from the start of the file */
++		} mmap;
++
++		int is_temp; /* file is temporary and will be deleted if on cleanup */
++	} file;
++
++	off_t  offset; /* octets sent from this chunk
++			  the size of the chunk is either
++			  - mem-chunk: mem->used - 1
++			  - file-chunk: file.length
++			*/
++
++	struct chunk *next;
++} chunk;
++
++typedef struct {
++	chunk *first;
++	chunk *last;
++
++	chunk *unused;
++	size_t unused_chunks;
++
++	array *tempdirs;
++
++	off_t  bytes_in, bytes_out;
++} chunkqueue;
++
++buffer * chunkqueue_get_append_buffer(chunkqueue *c);
++
++buffer * chunkqueue_get_append_buffer(chunkqueue *c);
++
++typedef struct {
++	int http_range;
++} request;
++
++typedef struct {
++	int content_length;
++} response;
++
++typedef struct {
++	char path;
++} physical;
++
++typedef struct {
++	chunkqueue *write_queue;      /* a large queue for low-level write ( HTTP response ) [ file, mem ] */
++    request  request;
++	response response;
++	physical physical;
++} connection;
++
++int chunkqueue_append_file(chunkqueue *c, buffer *fn, off_t offset, off_t len);
++/*
++int response_header_insert(server *srv, connection *con, const char *key, size_t keylen, const char *value, size_t vallen);
++
++int response_header_overwrite(server *srv, connection *con, const char *key, size_t keylen, const char *value, size_t vallen);
++*/
++typedef struct {
++	buffer **ptr;
++
++	size_t used;
++	size_t size;
++} buffer_array;
++
++typedef struct {
++	char *ptr;
++
++	size_t offset; /* input-pointer */
++
++	size_t used;   /* output-pointer */
++	size_t size;
++} read_buffer;
++
++buffer_array* buffer_array_init(void);
++void buffer_array_free(buffer_array *b);
++void buffer_array_reset(buffer_array *b);
++buffer *buffer_array_append_get_buffer(buffer_array *b);
++
++buffer* buffer_init(void);
++buffer* buffer_init_buffer(buffer *b);
++buffer* buffer_init_string(const char *str);
++void buffer_free(buffer *b);
++void buffer_reset(buffer *b);
++
++int buffer_prepare_copy(buffer *b, size_t size);
++int buffer_prepare_append(buffer *b, size_t size);
++
++int buffer_copy_string(buffer *b, const char *s);
++int buffer_copy_string_len(buffer *b, const char *s, size_t s_len);
++int buffer_copy_string_buffer(buffer *b, const buffer *src);
++int buffer_copy_string_hex(buffer *b, const char *in, size_t in_len);
++
++int buffer_copy_long(buffer *b, long val);
++
++int buffer_copy_memory(buffer *b, const char *s, size_t s_len);
++
++int buffer_append_string(buffer *b, const char *s);
++int buffer_append_string_len(buffer *b, const char *s, size_t s_len);
++int buffer_append_string_buffer(buffer *b, const buffer *src);
++int buffer_append_string_lfill(buffer *b, const char *s, size_t maxlen);
++int buffer_append_string_rfill(buffer *b, const char *s, size_t maxlen);
++
++int buffer_append_long_hex(buffer *b, unsigned long len);
++int buffer_append_long(buffer *b, long val);
++
++#if defined(SIZEOF_LONG) && (SIZEOF_LONG == SIZEOF_OFF_T)
++#define buffer_copy_off_t(x, y)		buffer_copy_long(x, y)
++#define buffer_append_off_t(x, y)	buffer_append_long(x, y)
++#else
++int buffer_copy_off_t(buffer *b, off_t val);
++int buffer_append_off_t(buffer *b, off_t val);
++#endif
++
++int buffer_append_memory(buffer *b, const char *s, size_t s_len);
++
++char * buffer_search_string_len(buffer *b, const char *needle, size_t len);
++
++int buffer_is_empty(buffer *b);
++int buffer_is_equal(buffer *a, buffer *b);
++int buffer_is_equal_right_len(buffer *a, buffer *b, size_t len);
++int buffer_is_equal_string(buffer *a, const char *s, size_t b_len);
++int buffer_caseless_compare(const char *a, size_t a_len, const char *b, size_t b_len);
++
++typedef enum {
++	ENCODING_UNSET,
++	ENCODING_REL_URI, /* for coding a rel-uri (/with space/and%percent) nicely as part of a href */
++	ENCODING_REL_URI_PART, /* same as ENC_REL_URL plus coding / too as %2F */
++	ENCODING_HTML,         /* & becomes &amp; and so on */
++	ENCODING_MINIMAL_XML,  /* minimal encoding for xml */
++	ENCODING_HEX,          /* encode string as hex */
++	ENCODING_HTTP_HEADER   /* encode \n with \t\n */
++} buffer_encoding_t;
++
++int buffer_append_string_encoded(buffer *b, const char *s, size_t s_len, buffer_encoding_t encoding);
++
++int buffer_urldecode_path(buffer *url);
++int buffer_urldecode_query(buffer *url);
++int buffer_path_simplify(buffer *dest, buffer *src);
++
++int buffer_to_lower(buffer *b);
++int buffer_to_upper(buffer *b);
++
++/** deprecated */
++int ltostr(char *buf, long val);
++char hex2int(unsigned char c);
++char int2hex(char i);
++
++int light_isdigit(int c);
++int light_isxdigit(int c);
++int light_isalpha(int c);
++int light_isalnum(int c);
++int http_response_parse_if_range (void);
++
++#define BUFFER_APPEND_STRING_CONST(x, y) \
++	buffer_append_string_len(x, y, sizeof(y) - 1)
++
++#define BUFFER_COPY_STRING_CONST(x, y) \
++	buffer_copy_string_len(x, y, sizeof(y) - 1)
++
++#define BUFFER_APPEND_SLASH(x) \
++	if (x->used > 1 && x->ptr[x->used - 2] != '/') { BUFFER_APPEND_STRING_CONST(x, "/"); }
++
++#define CONST_STR_LEN(x) x, x ? sizeof(x) - 1 : 0
++#define CONST_BUF_LEN(x) x->ptr, x->used ? x->used - 1 : 0
++
++
++#define SEGFAULT() do { fprintf(stderr, "%s.%d: aborted\n", __FILE__, __LINE__); abort(); } while(0)
++#define UNUSED(x) ( (void)(x) )
++
++#endif
+--- a/uhttpd-file.c	2013-07-16 12:01:00.000000000 +0800
++++ b/uhttpd-file.c	2013-08-23 19:22:54.000000000 +0800
+@@ -22,10 +22,36 @@
+ 
+ #include "uhttpd-mimetypes.h"
+ 
++/* 20120628 */
++#include <ctype.h>  
++#include <stdlib.h>
++#include <stdio.h>
++#include <string.h>
++
++#include "if_range.h"
++
+ #ifdef __APPLE__
+ time_t timegm (struct tm *tm);
+ #endif
+ 
++/* plugin config for all request/connections */
++typedef struct {
++	array *exclude_ext;
++	unsigned short etags_used;
++} plugin_config;
++
++typedef struct {
++	PLUGIN_DATA;
++
++	buffer *range_buf;
++
++	plugin_config **config_storage;
++
++	plugin_config conf;
++} plugin_data;
++/* plugin config for all request/connections */
++/* 20120628 */
++
+ static const char * uh_file_mime_lookup(const char *path)
+ {
+ 	struct mimetype *m = &uh_mime_types[0];
+@@ -119,6 +145,14 @@
+ 	return uh_file_response_ok_hdrs(cl, s);
+ }
+ 
++/* 20120628 */
++static int uh_file_response_206(struct client *cl, struct stat *s)
++{
++	ensure_ret(uh_http_sendf(cl, NULL, "HTTP/%.1f 206 Partial Content\r\n", http_versions[cl->request.version]));
++	return uh_file_response_ok_hdrs(cl, s);
++}
++/* 20120628 */
++
+ static int uh_file_response_304(struct client *cl, struct stat *s)
+ {
+ 	ensure_ret(uh_http_sendf(cl, NULL, "%s 304 Not Modified\r\n",
+@@ -234,12 +268,21 @@
+ 
+ 	if (hdr)
+ 	{
+-		*ok = 0;
+-		ensure_ret(uh_file_response_412(cl));
++		/* init the plugin data */
++		plugin_data *p;
++		p = calloc(1, sizeof(*p));
++		p->range_buf = buffer_init();
++		
++		if (0 == http_response_parse_if_range())
++		{
++		    *ok = 0;		
++                    ensure_ret(uh_file_response_206(cl, NULL));
++		}
+ 	}
+ 
+ 	return *ok;
+ }
++/* 20120628 */
+ 
+ static int uh_file_if_unmodified_since(struct client *cl, struct stat *s,
+ 									   int *ok)

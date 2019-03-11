@@ -1,0 +1,205 @@
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local sys = require("luci.sys")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body onload="MM_preloadImages('images/i_edit_on.gif','images/i_delete_on.gif')">
+<form method="post" name="IPsec_VPN" action="<%=controller%>/expert/configuration/security/vpn" >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="General"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/security/vpn/samonitor" title="<%:SA_Monitor%>"><span><%:SA_Monitor%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>     <li class="table_content">
+        <div class="data">
+          <ul><div class="tableframe">
+   <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+     <tr>
+       <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+         <tr>
+           <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+             <tr>
+               <td><table width="100%" cellpadding="0" cellspacing="0" >
+                 <tr>
+                   <td height="26" colspan="9"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                       <tr>
+                         <td height="26"class="table_title"> <%:VPN_Summary%> </td>
+                       </tr>
+                   </table></td>
+                 </tr>
+                 <tr class="top_font" align="center">
+                   <td width="35">#</td>
+                   <td width="80" ><%:Status%></td>
+                   <td ><%:Local_Addr_dot%></td>
+                   <td ><%:Remote_Addr_dot%> </td>
+                   <td ><%:Encap_dot%></td>
+                   <td ><%:Algorithm%></td>
+                   <td ><%:Gateway%></td>
+                   <td width="100"><%:Modify%></td>
+                 </tr>
+                 <tr class="table_font" align="center">
+<%local statusEnable1 = uci.get("ipsec","rule1","statusEnable")%>
+<%local localIP1 = uci.get("ipsec","rule1","localIP")%>
+<%local locaNetMask1 = uci.get("ipsec","rule1","locaNetMask")%>
+<%local peerIP1 = uci.get("ipsec","rule1","peerIP")%>
+<%local peerNetMask1 = uci.get("ipsec","rule1","peerNetMask")%>
+<%local enMode1 = uci.get("ipsec","rule1","enMode")%>
+<%local protocol1 = uci.get("ipsec","rule1","protocol")%>
+<%local enAlgo1 = uci.get("ipsec","rule1","enAlgo")%>
+
+<%local authAlgo1 = uci.get("ipsec","rule1","authAlgo")%>
+<%if enAlgo1=="des-cbc" then enAlgo1="des" else enAlgo1="3des" end%>
+<%if authAlgo1=="hmac-md5" then authAlgo1="md5" else authAlgo1="sha1" end%>
+<%local remoteGwIP1 = uci.get("ipsec","rule1","remoteGwIP")%>
+<td>1</td>
+<td><%if not statusEnable1 then%>--<% elseif statusEnable1 == "enable" then %><img src="<%=media%>/admin/images/i_active_on.gif" title="<%:On%>" width="18" height="18" /><%else%><img src="<%=media%>/admin/images/i_active_off.gif" title="<%:Off%>" width="18" height="18" /><% end %>  </td>
+<td><%if localIP1 then%><%=localIP1%><%else%>--<%end%></td>
+<td><%if peerIP1 then%><%=peerIP1%><%else%>--<%end%></td>
+<td><%if enMode1 then%><%=enMode1%><%else%>--<%end%></td>
+<td><%if protocol1 then%><%=protocol1 .. "-" .. enAlgo1 .. "-" .. authAlgo1%><%else%>--<%end%></td>
+<td><%if remoteGwIP1 then%><%=remoteGwIP1%><%else%>--<%end%></td>
+                   <td><a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?edit=rule1" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','images/i_edit_on.gif',1)" ><img src="/luci-static/zyxel/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>"/></a>&nbsp;&nbsp;<a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?delete=rule1"><img src="/luci-static/zyxel/admin/images/i_delete.gif" name="Image141" width="18" height="18" border="0" id="Image141"  title="<%:Delete%>" onclick="MM_popupMsg('<%:msg_confirm_1%>')" onmouseover="MM_swapImage('Image141','','images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a><a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','images/i_delete_on.gif',1)"></a></td>
+                 </tr>
+                 <tr class="table_font" align="center">
+<%local statusEnable2 = uci.get("ipsec","rule2","statusEnable")%>
+<%local localIP2 = uci.get("ipsec","rule2","localIP")%>
+<%local locaNetMask2 = uci.get("ipsec","rule2","locaNetMask")%>
+<%local peerIP2 = uci.get("ipsec","rule2","peerIP")%>
+<%local peerNetMask2 = uci.get("ipsec","rule2","peerNetMask")%>
+<%local enMode2 = uci.get("ipsec","rule2","enMode")%>
+<%local protocol2 = uci.get("ipsec","rule2","protocol")%>
+<%local enAlgo2 = uci.get("ipsec","rule2","enAlgo")%>
+<%local authAlgo2 = uci.get("ipsec","rule2","authAlgo")%>
+<%if enAlgo2=="des-cbc" then enAlgo2="des" else enAlgo2="3des" end%>
+<%if authAlgo2=="hmac-md5" then authAlgo2="md5" else authAlgo2="sha1" end%>
+<%local remoteGwIP2 = uci.get("ipsec","rule2","remoteGwIP")%>
+<td>2</td>
+<td><%if not statusEnable2 then%>--<% elseif statusEnable2 == "enable" then %><img src="<%=media%>/admin/images/i_active_on.gif" title="<%:On%>" width="18" height="18" /><%else%><img src="<%=media%>/admin/images/i_active_off.gif" title="<%:Off%>" width="18" height="18" /><% end %>  </td>
+<td><%if localIP2 then%><%=localIP2%><%else%>--<%end%></td>
+<td><%if peerIP2 then%><%=peerIP2%><%else%>--<%end%></td>
+<td><%if enMode2 then%><%=enMode2%><%else%>--<%end%></td>
+<td><%if protocol2 then%><%=protocol2 .. "-" .. enAlgo2 .. "-" .. authAlgo2%><%else%>--<%end%></td>
+<td><%if remoteGwIP2 then%><%=remoteGwIP2%><%else%>--<%end%></td>
+                   <td><a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?edit=rule2" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','images/i_edit_on.gif',1)" ><img src="/luci-static/zyxel/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>"/></a>&nbsp;&nbsp;<a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?delete=rule2"><img src="/luci-static/zyxel/admin/images/i_delete.gif" name="Image141" width="18" height="18" border="0" id="Image141"  title="<%:Delete%>" onclick="MM_popupMsg('<%:msg_confirm_1%>')" onmouseover="MM_swapImage('Image141','','images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a><a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','images/i_delete_on.gif',1)"></a></td>
+                 </tr>
+                 <tr class="table_font" align="center">
+<%local statusEnable3 = uci.get("ipsec","rule3","statusEnable")%>
+<%local localIP3 = uci.get("ipsec","rule3","localIP")%>
+<%local locaNetMask3 = uci.get("ipsec","rule3","locaNetMask")%>
+<%local peerIP3 = uci.get("ipsec","rule3","peerIP")%>
+<%local peerNetMask3 = uci.get("ipsec","rule3","peerNetMask")%>
+<%local enMode3 = uci.get("ipsec","rule3","enMode")%>
+<%local protocol3 = uci.get("ipsec","rule3","protocol")%>
+<%local enAlgo3 = uci.get("ipsec","rule3","enAlgo")%>
+<%local authAlgo3 = uci.get("ipsec","rule3","authAlgo")%>
+<%if enAlgo3=="des-cbc" then enAlgo3="des" else enAlgo3="3des" end%>
+<%if authAlgo3=="hmac-md5" then authAlgo3="md5" else authAlgo3="sha1" end%>
+<%local remoteGwIP3 = uci.get("ipsec","rule3","remoteGwIP")%>
+<td>3</td>
+<td><%if not statusEnable3 then%>--<% elseif statusEnable3 == "enable" then %><img src="<%=media%>/admin/images/i_active_on.gif" title="<%:On%>" width="18" height="18" /><%else%><img src="<%=media%>/admin/images/i_active_off.gif" title="<%:Off%>" width="18" height="18" /><% end %>  </td>
+<td><%if localIP3 then%><%=localIP3%><%else%>--<%end%></td>
+<td><%if peerIP3 then%><%=peerIP3%><%else%>--<%end%></td>
+<td><%if enMode3 then%><%=enMode3%><%else%>--<%end%></td>
+<td><%if protocol3 then%><%=protocol3 .. "-" .. enAlgo3 .. "-" .. authAlgo3%><%else%>--<%end%></td>
+<td><%if remoteGwIP3 then%><%=remoteGwIP3%><%else%>--<%end%></td>
+                   <td><a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?edit=rule3" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','images/i_edit_on.gif',1)" ><img src="/luci-static/zyxel/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>"/></a>&nbsp;&nbsp;<a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?delete=rule3"><img src="/luci-static/zyxel/admin/images/i_delete.gif" name="Image141" width="18" height="18" border="0" id="Image141"  title="<%:Delete%>" onclick="MM_popupMsg('<%:msg_confirm_1%>')" onmouseover="MM_swapImage('Image141','','images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a><a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','images/i_delete_on.gif',1)"></a></td>
+                 </tr>
+                 <tr class="table_font" align="center">
+<%local statusEnable4 = uci.get("ipsec","rule4","statusEnable")%>
+<%local localIP4 = uci.get("ipsec","rule4","localIP")%>
+<%local locaNetMask4 = uci.get("ipsec","rule4","locaNetMask")%>
+<%local peerIP4 = uci.get("ipsec","rule4","peerIP")%>
+<%local peerNetMask4 = uci.get("ipsec","rule4","peerNetMask")%>
+<%local enMode4 = uci.get("ipsec","rule4","enMode")%>
+<%local protocol4 = uci.get("ipsec","rule4","protocol")%>
+<%local enAlgo4 = uci.get("ipsec","rule4","enAlgo")%>
+<%local authAlgo4 = uci.get("ipsec","rule4","authAlgo")%>
+<%if enAlgo4=="des-cbc" then enAlgo4="des" else enAlgo4="3des" end%>
+<%if authAlgo4=="hmac-md5" then authAlgo4="md5" else authAlgo4="sha1" end%>
+<%local remoteGwIP4 = uci.get("ipsec","rule4","remoteGwIP")%>
+<td>4</td>
+<td><%if not statusEnable4 then%>--<% elseif statusEnable4 == "enable" then %><img src="<%=media%>/admin/images/i_active_on.gif" title="<%:On%>" width="18" height="18" /><%else%><img src="<%=media%>/admin/images/i_active_off.gif" title="<%:Off%>" width="18" height="18" /><% end %>  </td>
+<td><%if localIP4 then%><%=localIP4%><%else%>--<%end%></td>
+<td><%if peerIP4 then%><%=peerIP4%><%else%>--<%end%></td>
+<td><%if enMode4 then%><%=enMode4%><%else%>--<%end%></td>
+<td><%if protocol4 then%><%=protocol4 .. "-" .. enAlgo4 .. "-" .. authAlgo4%><%else%>--<%end%></td>
+<td><%if remoteGwIP4 then%><%=remoteGwIP4%><%else%>--<%end%></td>
+                   <td><a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?edit=rule4" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','images/i_edit_on.gif',1)" ><img src="/luci-static/zyxel/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>"/></a>&nbsp;&nbsp;<a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?delete=rule4"><img src="/luci-static/zyxel/admin/images/i_delete.gif" name="Image141" width="18" height="18" border="0" id="Image141"  title="<%:Delete%>" onclick="MM_popupMsg('<%:msg_confirm_1%>')" onmouseover="MM_swapImage('Image141','','images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a><a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','images/i_delete_on.gif',1)"></a></td>
+                 </tr>
+                 <tr class="table_font" align="center">
+<%local statusEnable5 = uci.get("ipsec","rule5","statusEnable")%>
+<%local localIP5 = uci.get("ipsec","rule5","localIP")%>
+<%local locaNetMask5 = uci.get("ipsec","rule5","locaNetMask")%>
+<%local peerIP5 = uci.get("ipsec","rule5","peerIP")%>
+<%local peerNetMask5 = uci.get("ipsec","rule5","peerNetMask")%>
+<%local enMode5 = uci.get("ipsec","rule5","enMode")%>
+<%local protocol5 = uci.get("ipsec","rule5","protocol")%>
+<%local enAlgo5 = uci.get("ipsec","rule5","enAlgo")%>
+<%local authAlgo5 = uci.get("ipsec","rule5","authAlgo")%>
+<%if enAlgo5=="des-cbc" then enAlgo5="des" else enAlgo5="3des" end%>
+<%if authAlgo5=="hmac-md5" then authAlgo5="md5" else authAlgo5="sha1" end%>
+<%local remoteGwIP5 = uci.get("ipsec","rule5","remoteGwIP")%>
+<td>5</td>
+<td><%if not statusEnable5 then%>--<% elseif statusEnable5 == "enable" then %><img src="<%=media%>/admin/images/i_active_on.gif" title="<%:On%>" width="18" height="18" /><%else%><img src="<%=media%>/admin/images/i_active_off.gif" title="<%:Off%>" width="18" height="18" /><% end %>  </td>
+<td><%if localIP5 then%><%=localIP5%><%else%>--<%end%></td>
+<td><%if peerIP5 then%><%=peerIP5%><%else%>--<%end%></td>
+<td><%if enMode5 then%><%=enMode5%><%else%>--<%end%></td>
+<td><%if protocol5 then%><%=protocol5 .. "-" .. enAlgo5 .. "-" .. authAlgo5%><%else%>--<%end%></td>
+<td><%if remoteGwIP5 then%><%=remoteGwIP5%><%else%>--<%end%></td>
+                   <td><a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?edit=rule5" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image19','','images/i_edit_on.gif',1)" ><img src="/luci-static/zyxel/admin/images/i_edit.gif" name="Image19" width="18" height="18" border="0" id="Image19"  title="<%:Edit%>"/></a>&nbsp;&nbsp;<a href="<%=controller%>/expert/configuration/security/vpn/vpn_edit?delete=rule5"><img src="/luci-static/zyxel/admin/images/i_delete.gif" name="Image141" width="18" height="18" border="0" id="Image141"  title="<%:Delete%>" onclick="MM_popupMsg('<%:msg_confirm_1%>')" onmouseover="MM_swapImage('Image141','','images/i_delete_on.gif',1)" onmouseout="MM_swapImgRestore()"/></a><a href="#" onmouseout="MM_swapImgRestore()" onmouseover="MM_swapImage('Image14','','images/i_delete_on.gif',1)"></a></td>
+                 </tr>
+                                </table></td>
+             </tr>
+           </table></td>
+         </tr>
+       </table></td>
+     </tr>
+   </table>
+ </div>	
+   	        <div class="space"></div>
+   	        <div class="title"><%:VPN_Summary%> </div>
+   	        <div class="w_text">
+              <ul>
+                <li class="all_table">
+                     <%local netbiosAllow = uci.get("ipsec_new","general","netbiosAllow")%>
+<input type="checkbox" <%if netbiosAllow=="enable" or not netbiosAllow then%>checked="checked"<%end%> name="IPSecPassThrough" />
+<%:Allow_Through_IPSec_Tunnel%> </li>
+              </ul>
+            </div>
+   	        <div class="spaceair"></div>
+          </ul>
+      </div>
+    </li>
+<li class="table_button">
+<div class="button">
+  <div align="center">
+    <input name="sysSubmit" value="<%:Apply%>" type="submit" />
+    &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+    <input name="Cancel" value="<%:Cancel%>" type="reset" />
+  </div>
+</div>
+</li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">showFullPath(' <%:Security%> > <%:IPSec_VPN%> ');</script>
+</html>

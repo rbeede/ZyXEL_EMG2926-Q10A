@@ -1,0 +1,11 @@
+config twonky main
+	option enabled 0
+	option usb1_photo 1
+	option usb1_music 1
+	option usb1_video 1
+	option usb2_photo 1
+	option usb2_music 1
+	option usb2_video 1
+	option rescan 0
+	
+

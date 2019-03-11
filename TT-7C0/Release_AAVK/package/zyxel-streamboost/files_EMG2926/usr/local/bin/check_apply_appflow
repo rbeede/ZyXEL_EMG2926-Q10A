@@ -1,0 +1,50 @@
+#!/bin/sh
+
+	# check /usr/local/bin/apply_appflow 
+	appflow_pid=$(ps | grep "/usr/local/bin/apply_appflow" | grep "grep" -v )			
+	if [ "$appflow_pid" == "" ]; then
+	
+		# kill watch /bin/streamboost_monitor daemon
+		streamboost_monitor_pid=$(ps | grep "/bin/streamboost_monitor" | grep "grep" -v | awk '{print $1}')			
+		if [ "$streamboost_monitor_pid" != "" ]; then
+			kill $streamboost_monitor_pid
+		fi	
+		
+		if [ -d /tmp/run/appflow/streamboost.lock ]; then
+			rm -rf /tmp/run/appflow/streamboost.lock
+		fi	
+		/usr/local/bin/apply_appflow
+		
+	fi
+	
+	## if streamboost disable, add nat sessions
+	local enable_streamboost=$(uci get appflow.tccontroller.enable_streamboost)
+	if [ "$enable_streamboost" == "0" ]; then
+		sysctl -w net.nf_conntrack_max=65536
+	else
+		sysctl -w net.nf_conntrack_max=16384
+	fi	
+	
+	# create watch /bin/streamboost_monitor daemon
+	local proto
+	local wan_status
+	local wan_type=$(uci get network.wan.proto)
+	streamboost_monitor_pid=$(ps | grep "/bin/streamboost_monitor" | grep "grep" -v | awk '{print $1}')
+
+	if [ "$wan_type" == "pppoe" ] || [ "$wan_type" == "pptp" ]; then
+		proto=$wan_type-wan
+	else
+		proto=$(uci get network.wan.ifname)
+	fi
+
+	wan_status=$(ifconfig $proto | grep "inet addr:")
+
+	if [ "$streamboost_monitor_pid" == "" ] && [ "$enable_streamboost" == "1" ]; then
+	
+	        if [ "$wan_status" != "" ]; then
+		   watch -tn 90 /bin/streamboost_monitor 1>/dev/null 2>&1 &
+	        fi
+		
+	fi	
+
+

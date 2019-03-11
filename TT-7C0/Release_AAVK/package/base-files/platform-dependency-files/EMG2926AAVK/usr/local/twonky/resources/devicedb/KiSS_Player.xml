@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>KiSS Player</DisplayName>
+		<HttpRecognition>
+			<HttpText>KiSS_UPnP_STACK</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<ExtraProtocolInfo>http-get:*:image/jpeg:*</ExtraProtocolInfo>
+	</Adaptations>
+</Client>

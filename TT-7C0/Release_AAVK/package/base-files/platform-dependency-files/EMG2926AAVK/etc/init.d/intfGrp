@@ -1,0 +1,1094 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=46
+
+print_log()
+{
+	echo "========= intfGrp log ==========>  $1 " 1> /dev/null
+	#echo "========= intfGrp log ==========>  $1 " 
+}
+
+initial_opt60_config() {
+
+	print_log "initial_opt60_config"
+
+	local opt60_port=$(uci get intfGrp.Default.option60del)
+
+	if [ -z "$opt60_port" ]; then
+		return 0
+	fi
+
+	local lan_port=$(uci get intfGrp.Default.lanport)
+	local wlan_port=$(uci get intfGrp.Default.wlan)
+	local available=$(uci get intfGrp.general.available)
+
+	opt60_array=$(echo $opt60_port | tr "," "\n")
+	for i in $opt60_array
+	do
+		if [ $i -lt 5 ]; then
+			if [ -z "$lan_port" ]; then
+				lan_port=$i
+			else
+				lan_port=$lan_port,$i
+			fi
+		else
+			if [ -z "$wlan" ]; then
+				wlan_port=$i
+			else
+				wlan_port=$wlan_port,$i
+			fi
+		fi
+	done
+
+	uci set intfGrp.general.available=$lan_port
+	uci set intfGrp.Default.lanport=$lan_port
+	uci set intfGrp.Default.wlan=$wlan_port
+	uci delete intfGrp.Default.option60del
+
+	group_count=$(uci get intfGrp.general.group_count)
+	max_group_num=`expr $(uci get intfGrp.general.group_count) + 2`
+
+	for i in `seq 4 1 $max_group_num`
+	do
+		lan_port=$(uci get intfGrp.Group$i.lanport)
+		wlan_port=$(uci get intfGrp.Group$i.wlan)
+
+		lan_port_data=""
+		wlan_port_data=""
+
+		for j in $opt60_array
+		do
+			[ $j -lt 5 ] && multi_wan_array=$(echo $lan_port | tr "," "\n") || multi_wan_array=$(echo $wlan_port | tr "," "\n")
+
+			for k in $multi_wan_array
+			do
+
+				if [ $j != $k ]; then
+					if [ $j -lt 5 ]; then
+
+						if [ -z "$lan_port_data" ]; then
+							lan_port_data=$k
+						else
+							lan_port_data=$lan_port_data,$k
+						fi
+
+					else
+
+						if [ -z "$wlan_port_data" ]; then
+							wlan_port_data=$k
+						else
+							wlan_port_data=$wlan_port_data,$k
+						fi
+
+					fi
+				fi
+			done
+
+		done
+
+		[ $lan_port == $lan_port_data ] || uci set intfGrp.Group$i.lanport=$lan_port_data
+		[ $wlan_port = $wlan_port_data ] || uci set intfGrp.Group$i.wlan=$wlan_port_data
+
+	done
+
+	uci commit intfGrp	
+}
+
+
+
+set_iptables_rule(){
+    print_log "set_iptables_rule"
+
+    iptables -N IntfGrp
+    iptables -N IntfGrp_INPUT
+
+    iptables -F IntfGrp
+    iptables -F IntfGrp_INPUT
+
+    
+## Set iptables for Default Interface Group
+	iptables -D IntfGrp -i br-lan  -j DROP 2>/dev/null
+	iptables -I IntfGrp -i br-lan  -j DROP 2>/dev/null
+	
+	for iface in "" 1 2 3 4 
+	do	
+	grouped=$(uci get network.wan$iface.grouped)
+	wan_enabled=$(uci get network.wan$iface.enable)
+	default_iface=$(uci get network.wan$iface.default)
+	if [ "$wan_enabled" == "1" ] ;then
+		local iface2=$(uci get network.wan$iface.proto)
+		if [ "$iface2" == "pppoe" ]; then
+			iface3=pppoe-wan"$iface"
+		else
+			iface3=$(uci get network.wan$iface.ifname)
+		fi
+		
+		if [ "$grouped" == "1" ] && [ "$default_iface" != "1" ] ; then
+			iptables -D IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+			iptables -I IntfGrp -i br-lan -o $iface3 -j DROP 2>/dev/null 
+		else
+			iptables -D IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+			iptables -I IntfGrp -i br-lan -o $iface3 -j ACCEPT 2>/dev/null 
+		fi
+		
+	fi
+	done
+
+	iptables -D IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+	iptables -I IntfGrp -i br-lan -o br-lan -j ACCEPT 2>/dev/null
+## End Set
+
+	local LAN_ip=$(uci get network.lan.ipaddr)   
+
+	local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+	if [ "$Guest_24GWLAN" == "1" ]; then
+		local Guest_24GWLAN_IP=$(uci get wireless.ath3.guest_ip)
+		
+		iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+
+		iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null	
+
+		print_log "iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+		print_log "iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+
+		print_log "iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+		print_log "iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+	fi		
+	
+	local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+	if [ "$Guest_5GWLAN" == "1" ]; then
+		local Guest_5GWLAN_IP=$(uci get wireless.ath13.guest_ip)
+		
+		iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+
+		iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null	
+
+		print_log "iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+		print_log "iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+
+		print_log "iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+		print_log "iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+	fi
+							
+    for i in `seq 4 1 7`
+    do 
+        local grouped_wan=$(uci get intfGrp.Group$i.wanint)
+        local group_vid=$(uci get intfGrp.Group$i.vlanid)
+
+        if [ ! -z "$grouped_wan" ]; then  
+           #echo "the Group$i grouped wan is $grouped_wan" >> /tmp/bbb 
+           local ifname=""
+
+			local WAN_PROTO=$(uci get network.$grouped_wan.proto)
+			if [ "$WAN_PROTO" == "pppoe" ]; then
+				ifname=pppoe-"$grouped_wan"
+			else
+				ifname=$(uci_get network $grouped_wan ifname)
+			fi
+
+##
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "1" ]; then
+				local Guest_24GWLAN_IP=$(uci get wireless.ath3.guest_ip)
+				
+				for j in `seq 4  1 7`
+				do 
+					local grouped_wan3=$(uci get intfGrp.Group$j.wanint)
+
+					if [ ! -z "$grouped_wan3" ]; then  
+   
+						iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+
+						iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+						
+						print_log "iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+						print_log "iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+
+						print_log "iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+						print_log "iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+					fi
+				done
+			fi
+			
+##		
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "1" ]; then
+				local Guest_5GWLAN_IP=$(uci get wireless.ath13.guest_ip)
+				
+				for j in `seq 4  1 7`
+				do 
+					local grouped_wan3=$(uci get intfGrp.Group$j.wanint)
+
+					if [ ! -z "$grouped_wan3" ]; then  
+						iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+
+						iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+						
+						print_log "iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+						print_log "iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+
+						print_log "iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+						print_log "iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+					fi
+				done
+			fi
+
+			if [ "$Guest_5GWLAN" == "1" ] && [ "$Guest_24GWLAN" == "1" ]; then
+				iptables -D INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+				iptables -I INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+
+				iptables -D INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+				iptables -I INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+
+				print_log "iptables -D INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+				print_log "iptables -I INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+
+				print_log "iptables -D INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+				print_log "iptables -I INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+			fi
+##
+			#echo "the wan ifname is $ifname" >> /tmp/bbb
+
+			#iptables -I IntfGrp -i br-vlanth$group_vid -j DROP 2>/dev/null
+			#iptables -I IntfGrp -i br-vlanth$group_vid -o $ifname -j ACCEPT 2>/dev/null
+			iptables -I IntfGrp -i br-vlanth$group_vid ! -o $ifname -j DROP 2>/dev/null
+			iptables -I IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j ACCEPT 2>/dev/null
+
+			iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+			iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null
+
+
+			#print_log "iptables -I IntfGrp -i br-vlanth$group_vid -j DROP 2>/dev/null"
+			#print_log "iptables -I IntfGrp -i br-vlanth$group_vid -o $ifname -j ACCEPT 2>/dev/null"
+			print_log "iptables -I IntfGrp -i br-vlanth$group_vid ! -o $ifname -j DROP 2>/dev/null"
+			print_log "iptables -I IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j ACCEPT 2>/dev/null"
+
+			print_log "iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+			print_log "iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null"
+###
+			for j in `seq 4  1 7`
+			do 
+				if [ "$j" -gt "$i" ]; then
+				
+					local grouped_wan2=$(uci get intfGrp.Group$j.wanint)
+
+					if [ ! -z "$grouped_wan2" ]; then  
+   
+						iptables -D IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+
+						iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null
+						
+						print_log "iptables -D IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+						print_log "iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+
+						print_log "iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null"
+						print_log "iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null"
+					fi
+				fi
+			done
+###
+			
+        fi
+    done
+
+	#Pass LAN side traffic and block illegal upstream traffic.
+	/sbin/configure_intfGrp set_iptables_rule
+}
+
+setup_intfGrp_wifi(){
+    print_log "setup_intfGrp_wifi"
+
+        local group_name="$1"
+        local vlan_vid
+        local wlan
+        local avalable
+        local vlan_tag
+
+    # If Group neam is Default, skip interface Grouping
+    if [ $group_name != "Default" ]; then
+
+        config_get wanint $group_name wanint
+        config_get vlan_vid $group_name vlanid
+        config_get wlan $group_name wlan
+        config_get vlan_tag $group_name vlan_tag
+        local available=$(uci get network.general.available)
+
+        # Setup the vlan interface
+        local vlan_int="vlan$vlan_vid"
+		
+
+		echo 'wlan = $wlan'   $wlan
+
+		var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+		set -- $var2
+	
+		for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+		do	
+		case "$cmd2" in
+        10)
+			uci set wireless.ath10.group="br-vlanth$vlan_vid"
+        ;;
+        11)
+			uci set wireless.ath11.group="br-vlanth$vlan_vid"
+        ;;
+        12)
+			uci set wireless.ath12.group="br-vlanth$vlan_vid"
+        ;;        
+        13)
+			uci set wireless.ath13.group="br-vlanth$vlan_vid"
+        ;;
+        20)
+			uci set wireless.ath0.group="br-vlanth$vlan_vid"
+        ;;
+        21)
+			uci set wireless.ath1.group="br-vlanth$vlan_vid"
+        ;;
+        22)
+			uci set wireless.ath2.group="br-vlanth$vlan_vid"
+        ;;        
+        23)
+			uci set wireless.ath3.group="br-vlanth$vlan_vid"
+		;;
+		esac
+		done
+  else    #Default interfact Grouping	
+        config_get wlan $group_name wlan
+
+		var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+		set -- $var2
+	
+		for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+		do	
+		case "$cmd2" in
+        10)
+			uci set wireless.ath10.group="br-lan"
+        ;;
+        11)
+			uci set wireless.ath11.group="br-lan"
+        ;;
+        12)
+			uci set wireless.ath12.group="br-lan"
+        ;;        
+        13)
+			uci set wireless.ath13.group="br-lan"
+        ;;
+        20)
+			uci set wireless.ath0.group="br-lan"
+        ;;
+        21)
+			uci set wireless.ath1.group="br-lan"
+        ;;
+        22)
+			uci set wireless.ath2.group="br-lan"
+        ;;        
+        23)
+			uci set wireless.ath3.group="br-lan"
+		;;
+	esac
+	done
+  fi
+  uci commit wireless
+}
+
+setup_intfGrp(){
+    print_log "setup_intfGrp"
+
+        local group_name="$1"
+        local wanint
+        local vlan_vid
+        local lanport
+        local wlan
+        local avalable
+        local vlan_tag
+        local vlan_flag
+
+    # If Group neam is Default, skip interface Grouping
+    if [ $group_name != "Default" ]; then
+
+        config_get wanint $group_name wanint
+        config_get vlan_vid $group_name vlanid
+        config_get lanport $group_name lanport
+        config_get wlan $group_name wlan
+        config_get vlan_tag $group_name vlan_tag
+        vlan_flag="0"
+
+        local wan_proto=$(uci get network.$wanint.proto)
+        local available=$(uci get network.general.available)
+        
+        # Setup the vlan interface
+        local vlan_int="vlan$vlan_vid"
+		
+        #//frank   /bin/configure_vlan add $vlan_vid $vlan_int
+		/bin/configure_vlan.sh add_vlan $vlan_vid
+		print_log "/bin/configure_vlan.sh add_vlan $vlan_vid"
+
+		
+        # setup br-vlan interface
+        #//frank   /sbin/ifup vlan$vlan_vid
+        #//frank   /sbin/ifup vlanth$vlan_vid
+
+        # Handle Grouping ethernet ports
+       #//frank if [ ! -z "$lanport" ]; then
+        #//frank   /bin/configure_vlan vlan_port $vlan_vid $lanport 0 1
+       #//frank  fi
+
+		var=$(echo $lanport | awk -F"," '{print  $1,$2,$3,$4,$5,$6}')   
+		set -- $var
+	
+		for cmd in "" $1 $2 $3 $4 $5 $6
+		do	
+		case "$cmd" in
+        0)
+			brctl delif br-lan  eth1.11
+			brctl delif br-vlanth4  eth1.11
+			brctl delif br-vlanth5  eth1.11
+			brctl delif br-vlanth6  eth1.11
+			brctl delif br-vlanth7  eth1.11
+			brctl addif br-vlanth$vlan_vid eth1.11
+			vlan_flag="1"
+        ;;
+        1)
+			brctl delif br-lan  eth1.12
+			brctl delif br-vlanth4  eth1.12
+			brctl delif br-vlanth5  eth1.12
+			brctl delif br-vlanth6  eth1.12
+			brctl delif br-vlanth7  eth1.12
+			brctl addif br-vlanth$vlan_vid eth1.12
+			vlan_flag="1"
+        ;;
+        2)
+			brctl delif br-lan  eth1.13
+			brctl delif br-vlanth4  eth1.13
+			brctl delif br-vlanth5  eth1.13
+			brctl delif br-vlanth6  eth1.13
+			brctl delif br-vlanth7  eth1.13
+			brctl addif br-vlanth$vlan_vid eth1.13
+			vlan_flag="1"
+        ;;        
+        3)
+			brctl delif br-lan  eth1.14
+			brctl delif br-vlanth4  eth1.14
+			brctl delif br-vlanth5  eth1.14
+			brctl delif br-vlanth6  eth1.14
+			brctl delif br-vlanth7  eth1.14
+			brctl addif br-vlanth$vlan_vid eth1.14
+			vlan_flag="1"
+        ;;
+		esac
+		done
+
+	   
+		echo 'wlan = $wlan'   $wlan
+
+		var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+		set -- $var2
+	
+		for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+		do	
+		case "$cmd2" in
+        10)
+			brctl delif br-lan  ath10
+			brctl delif br-vlanth4  ath10
+			brctl delif br-vlanth5  ath10
+			brctl delif br-vlanth6  ath10
+			brctl delif br-vlanth7  ath10
+			brctl addif br-vlanth$vlan_vid ath10
+        ;;
+        11)
+			brctl delif br-lan  ath11
+			brctl delif br-vlanth4  ath11
+			brctl delif br-vlanth5  ath11
+			brctl delif br-vlanth6  ath11
+			brctl delif br-vlanth7  ath11
+			brctl addif br-vlanth$vlan_vid ath11
+        ;;
+        12)
+			brctl delif br-lan  ath12
+			brctl delif br-vlanth4  ath12
+			brctl delif br-vlanth5  ath12
+			brctl delif br-vlanth6  ath12
+			brctl delif br-vlanth7  ath12
+			brctl addif br-vlanth$vlan_vid ath12
+        ;;        
+        13)
+			brctl delif br-lan ath13
+			brctl delif br-vlanth4  ath13
+			brctl delif br-vlanth5  ath13
+			brctl delif br-vlanth6  ath13
+			brctl delif br-vlanth7  ath13
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "0" ]; then
+			    brctl addif br-vlanth$vlan_vid ath13
+			fi
+        ;;
+        20)
+			brctl delif br-lan  ath0
+			brctl delif br-vlanth4  ath0
+			brctl delif br-vlanth5  ath0
+			brctl delif br-vlanth6  ath0
+			brctl delif br-vlanth7  ath0
+			brctl addif br-vlanth$vlan_vid ath0
+        ;;
+        21)
+			brctl delif br-lan  ath1
+			brctl delif br-vlanth4  ath1
+			brctl delif br-vlanth5  ath1
+			brctl delif br-vlanth6  ath1
+			brctl delif br-vlanth7  ath1
+			brctl addif br-vlanth$vlan_vid ath1
+        ;;
+        22)
+			brctl delif br-lan  ath2
+			brctl delif br-vlanth4  ath2
+			brctl delif br-vlanth5  ath2
+			brctl delif br-vlanth6  ath2
+			brctl delif br-vlanth7  ath2
+			brctl addif br-vlanth$vlan_vid ath2
+        ;;        
+        23)
+			brctl delif br-lan ath3
+			brctl delif br-vlanth4  ath3
+			brctl delif br-vlanth5  ath3
+			brctl delif br-vlanth6  ath3
+			brctl delif br-vlanth7  ath3
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "0" ]; then
+			    brctl addif br-vlanth$vlan_vid ath3
+			fi
+		;;
+		esac
+		done
+
+        #GroupING wan and vlan interface
+	local wan_ifname=""
+	local WAN_PROTO=$(uci get network.$wanint.proto)
+	local default_gw_ip=""
+
+	if [ "$WAN_PROTO" == "static" ] ;then
+		default_gw_ip=$(uci get network.$wanint.gateway)
+	else
+		default_gw_ip=$(uci get network.$wanint.isp_gw)
+	fi
+
+	if [ "$WAN_PROTO" == "pppoe" ] || [ "$WAN_PROTO" == "pptp" ];then
+
+		wan_ifname="$WAN_PROTO"-"$wanint"
+
+		rm /tmp/wan_route3
+		default_gw_ip=""
+		route -n | grep  $wan_ifname | grep 255.255  > /tmp/wan_route3
+		exec < /tmp/wan_route3
+		while read line
+		do
+			local test=$(echo $line | awk '{print $8}' )
+			local test2=$(echo $line | awk '{print $4}' )
+			if [ "$test" == "$wan_ifname" ] && [ "$test2" != "UG" ] ;then
+				default_gw_ip=$(echo $line | awk '{print $1}' | tr -d '\n')
+				break
+			fi		
+		done
+		
+		#default_gw_ip=$(route -n | grep  $wan_ifname | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+		if [ "$default_gw_ip" == "" ] ;then
+			default_gw_ip="0.0.0.0"
+		fi		
+	else
+		wan_ifname=$(uci get network.$wanint.ifname)	
+	fi
+	
+        /bin/configure_vlan.sh del_int_group $vlan_vid $wanint 192.168.$vlan_vid.0
+        /bin/configure_vlan.sh int_group $vlan_vid $wan_ifname 192.168.$vlan_vid.0 $default_gw_ip
+ 
+        print_log "/bin/configure_vlan.sh del_int_group $vlan_vid $wanint 192.168.$vlan_vid.0"
+        print_log "/bin/configure_vlan.sh int_group $vlan_vid $wan_ifname 192.168.$vlan_vid.0 $default_gw_ip"
+
+
+        #check the vlan bridge interface
+#	if [ "$vlan_flag" == "1" ]; then
+#	    brctl delif br-vlanth$vlan_vid vlan$vlan_vid
+#	    print_log "brctl delif br-vlanth$vlan_vid vlan$vlan_vid"
+#	else
+	    brctl addif br-vlanth$vlan_vid vlan$vlan_vid
+#	    print_log "brctl addif br-vlanth$vlan_vid vlan$vlan_vid"
+#	fi
+
+	if [ "$WAN_PROTO" == "bridge" ] ;then
+	    brctl addif br-vlanth$vlan_vid $wan_ifname
+	    print_log "brctl addif br-vlanth$vlan_vid $wan_ifname"
+	fi
+
+        #IPv6
+        uci set dhcp6c.basic.intfGrp_write_prefix="1"
+	#if [ -n "$wanint" ]; then
+	#    uci set dhcp6c.basic.interface=$wanint
+	#fi 
+	uci set dhcp6c.basic.interface="wan"
+	uci commit dhcp6c
+
+	#IP_version=$(uci get network.$wanint.IP_version)
+	IP_version=$(uci get network.wan.IP_version)
+	if [ "$IP_version" != "IPv4_Only" ]; then
+	  /etc/init.d/dhcp6c restart  
+	  print_log "/etc/init.d/dhcp6c restart"
+	fi
+
+	/etc/init.d/default_lan_radvd boot
+	print_log "/etc/init.d/default_lan_radvd boot"
+
+        # Avoid the special case:
+        # Modified default wan to bridge mode and add new routing mode multi-wan 
+        ifconfig eth1 up
+	print_log "ifconfig eth1 up"
+
+        # re-arrange the route table, only keep this routing rule in group table
+        ip route del 192.168.$vlan_vid.0/24
+	ip route add 192.168.$vlan_vid.0/24 dev br-vlanth$vlan_vid
+
+	print_log "ip route del 192.168.$vlan_vid.0/24"
+	print_log "ip route add 192.168.$vlan_vid.0/24 dev br-vlanth$vlan_vid"
+
+	
+  else    #Default interfact Grouping	
+
+        config_get wanint $group_name wanint
+        config_get lanport $group_name lanport
+        config_get wlan $group_name wlan
+        config_get vlan_tag $group_name vlan_tag
+        vlan_flag="0"
+
+        local wan_proto=$(uci get network.$wanint.proto)
+        local available=$(uci get network.general.available)
+        
+
+
+
+		var=$(echo $lanport | awk -F"," '{print  $1,$2,$3,$4,$5,$6}')   
+		set -- $var
+	
+		for cmd in "" $1 $2 $3 $4 $5 $6
+		do	
+		case "$cmd" in
+        0)
+			brctl delif br-lan  eth1.11
+			brctl delif br-vlanth4  eth1.11
+			brctl delif br-vlanth5  eth1.11
+			brctl delif br-vlanth6  eth1.11
+			brctl delif br-vlanth7  eth1.11
+			brctl addif br-lan eth1.11
+			vlan_flag="1"
+        ;;
+        1)
+			brctl delif br-lan  eth1.12
+			brctl delif br-vlanth4  eth1.12
+			brctl delif br-vlanth5  eth1.12
+			brctl delif br-vlanth6  eth1.12
+			brctl delif br-vlanth7  eth1.12
+			brctl addif br-lan eth1.12
+			vlan_flag="1"
+        ;;
+        2)
+			brctl delif br-lan  eth1.13
+			brctl delif br-vlanth4  eth1.13
+			brctl delif br-vlanth5  eth1.13
+			brctl delif br-vlanth6  eth1.13
+			brctl delif br-vlanth7  eth1.13
+			brctl addif br-lan eth1.13
+			vlan_flag="1"
+        ;;        
+        3)
+			brctl delif br-lan  eth1.14
+			brctl delif br-vlanth4  eth1.14
+			brctl delif br-vlanth5  eth1.14
+			brctl delif br-vlanth6  eth1.14
+			brctl delif br-vlanth7  eth1.14
+			brctl addif br-lan eth1.14
+			vlan_flag="1"
+        ;;
+		esac
+		done
+
+		var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+		set -- $var2
+	
+		for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+		do	
+		case "$cmd2" in
+        10)
+			brctl delif br-lan  ath10
+			brctl delif br-vlanth4  ath10
+			brctl delif br-vlanth5  ath10
+			brctl delif br-vlanth6  ath10
+			brctl delif br-vlanth7  ath10
+			brctl addif br-lan ath10
+        ;;
+        11)
+			brctl delif br-lan  ath11
+			brctl delif br-vlanth4  ath11
+			brctl delif br-vlanth5  ath11
+			brctl delif br-vlanth6  ath11
+			brctl delif br-vlanth7  ath11
+			brctl addif br-lan ath11
+        ;;
+        12)
+			brctl delif br-lan  ath12
+			brctl delif br-vlanth4  ath12
+			brctl delif br-vlanth5  ath12
+			brctl delif br-vlanth6  ath12
+			brctl delif br-vlanth7  ath12
+			brctl addif br-lan ath12
+        ;;        
+        13)
+			brctl delif br-lan ath13
+			brctl delif br-vlanth4  ath13
+			brctl delif br-vlanth5  ath13
+			brctl delif br-vlanth6  ath13
+			brctl delif br-vlanth7  ath13
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "0" ]; then
+			    brctl addif br-lan ath13
+			fi
+        ;;
+        20)
+			brctl delif br-lan  ath0
+			brctl delif br-vlanth4  ath0
+			brctl delif br-vlanth5  ath0
+			brctl delif br-vlanth6  ath0
+			brctl delif br-vlanth7  ath0
+			brctl addif br-lan ath0
+        ;;
+        21)
+			brctl delif br-lan  ath1
+			brctl delif br-vlanth4  ath1
+			brctl delif br-vlanth5  ath1
+			brctl delif br-vlanth6  ath1
+			brctl delif br-vlanth7  ath1
+			brctl addif br-lan ath1
+        ;;
+        22)
+			brctl delif br-lan  ath2
+			brctl delif br-vlanth4  ath2
+			brctl delif br-vlanth5  ath2
+			brctl delif br-vlanth6  ath2
+			brctl delif br-vlanth7  ath2
+			brctl addif br-lan ath2
+        ;;        
+        23)
+			brctl delif br-lan ath3
+			brctl delif br-vlanth4  ath3
+			brctl delif br-vlanth5  ath3
+			brctl delif br-vlanth6  ath3
+			brctl delif br-vlanth7  ath3
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "0" ]; then
+			    brctl addif br-lan ath3
+			fi
+		;;
+	esac
+	done
+
+	local wan_ifname=""
+	local WAN_PROTO=$(uci get network.$wanint.proto)
+	local default_gw_ip=""
+
+	if [ "$WAN_PROTO" == "static" ] ;then
+		default_gw_ip=$(uci get network.$wanint.gateway)
+	else
+		default_gw_ip=$(uci get network.$wanint.isp_gw)
+	fi
+
+	if [ "$WAN_PROTO" == "pppoe" ] || [ "$WAN_PROTO" == "pptp" ];then
+
+		wan_ifname="$WAN_PROTO"-"$wanint"
+
+		rm /tmp/wan_route3
+		default_gw_ip=""
+		route -n | grep  $wan_ifname | grep 255.255  > /tmp/wan_route3
+		exec < /tmp/wan_route3
+		while read line
+		do
+			local test=$(echo $line | awk '{print $8}' )
+			local test2=$(echo $line | awk '{print $4}' )
+			if [ "$test" == "$wan_ifname" ] && [ "$test2" != "UG" ] ;then
+				default_gw_ip=$(echo $line | awk '{print $1}' | tr -d '\n')
+				break
+			fi		
+		done
+		
+		#default_gw_ip=$(route -n | grep  $wan_ifname | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+		if [ "$default_gw_ip" == "" ] ;then
+			default_gw_ip="0.0.0.0"
+		fi		
+	else
+		wan_ifname=$(uci get network.$wanint.ifname)	
+	fi
+
+        #check the vlan bridge interface
+#	if [ "$vlan_flag" == "1" ]; then
+#	    brctl delif br-lan eth1
+#	    print_log "brctl delif br-lan eth1"
+#	else
+	    brctl addif br-lan eth1
+#	    print_log "brctl addif br-lan eth1"	    
+#	fi
+
+	for i in "" 1 2 3 4
+	do
+		wanEable=$(uci get network.wan$i.enable)
+		WAN_PROTO=$(uci get network.wan$i.proto)
+		WAN_grouped=$(uci get network.wan$i.grouped)
+		bind_LAN=$(uci get network.wan$i.bind_LAN)
+		if [ "$wanEable" == "1" ] && [ "$WAN_PROTO" == "bridge" ]  && [ "$WAN_grouped" == "0" ] ;then
+			wan_ifname=$(uci get network.wan$i.ifname)
+			brctl addif br-lan $wan_ifname
+			print_log "brctl addif br-lan $wan_ifname"
+		elif [ "$wanEable" == "1" ] && [ "$WAN_PROTO" == "bridge" ]  && [ "$bind_LAN" == "br-lan" ] ;then
+			wan_ifname=$(uci get network.wan$i.ifname)
+			brctl addif br-lan $wan_ifname
+			print_log "brctl addif br-lan $wan_ifname"
+		fi
+	done
+  fi
+}
+
+setup_intfGrp_one_lan(){
+	print_log "setup_intfGrp_one_lan"
+
+        local group_name="$1"
+        local wanint
+        local vlan_vid
+        local lanport
+        local wlan
+        local avalable
+        local vlan_tag
+        local vlan_flag
+
+
+#Default interfact Grouping	
+
+        config_get wanint $group_name wanint
+        config_get lanport $group_name lanport
+        config_get wlan $group_name wlan
+        config_get vlan_tag $group_name vlan_tag
+        vlan_flag="0"
+
+        local wan_proto=$(uci get network.$wanint.proto)
+        local available=$(uci get network.general.available)
+
+	var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+	set -- $var2
+
+	for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+	do	
+	case "$cmd2" in
+        10)
+			brctl delif br-lan  ath10
+
+			brctl addif br-lan ath10
+        ;;
+        11)
+			brctl delif br-lan  ath11
+
+			brctl addif br-lan ath11
+        ;;
+        12)
+			brctl delif br-lan  ath12
+
+			brctl addif br-lan ath12
+        ;;        
+        13)
+			brctl delif br-lan ath13
+
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "0" ]; then
+			    brctl addif br-lan ath13
+			fi
+        ;;
+        20)
+			brctl delif br-lan  ath0
+
+			brctl addif br-lan ath0
+        ;;
+        21)
+			brctl delif br-lan  ath1
+
+			brctl addif br-lan ath1
+        ;;
+        22)
+			brctl delif br-lan  ath2
+
+			brctl addif br-lan ath2
+        ;;        
+        23)
+			brctl delif br-lan ath3
+
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "0" ]; then
+			    brctl addif br-lan ath3
+			fi
+		;;
+	esac
+	done
+
+	local wan_ifname=""
+	local WAN_PROTO=$(uci get network.$wanint.proto)
+	local default_gw_ip=""
+
+	if [ "$WAN_PROTO" == "static" ] ;then
+		default_gw_ip=$(uci get network.$wanint.gateway)
+	else
+		default_gw_ip=$(uci get network.$wanint.isp_gw)
+	fi
+
+	if [ "$WAN_PROTO" == "pppoe" ] || [ "$WAN_PROTO" == "pptp" ];then
+
+		wan_ifname="$WAN_PROTO"-"$wanint"
+
+		rm /tmp/wan_route3
+		default_gw_ip=""
+		route -n | grep  $wan_ifname | grep 255.255  > /tmp/wan_route3
+		exec < /tmp/wan_route3
+		while read line
+		do
+			local test=$(echo $line | awk '{print $8}' )
+			local test2=$(echo $line | awk '{print $4}' )
+			if [ "$test" == "$wan_ifname" ] && [ "$test2" != "UG" ] ;then
+				default_gw_ip=$(echo $line | awk '{print $1}' | tr -d '\n')
+				break
+			fi		
+		done
+		
+		#default_gw_ip=$(route -n | grep  $wan_ifname | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+		if [ "$default_gw_ip" == "" ] ;then
+			default_gw_ip="0.0.0.0"
+		fi		
+	else
+		wan_ifname=$(uci get network.$wanint.ifname)	
+	fi
+
+        #check the vlan bridge interface
+#	if [ "$vlan_flag" == "1" ]; then
+#	    brctl delif br-lan eth1
+#	    print_log "brctl delif br-lan eth1"
+#	else
+	    brctl addif br-lan eth1
+#	    print_log "brctl addif br-lan eth1"	    
+#	fi
+
+	if [ "$WAN_PROTO" == "bridge" ] ;then
+	    brctl addif br-lan $wan_ifname
+	    print_log "brctl addif br-lan $wan_ifname"
+	fi
+}
+
+start() {
+	print_log "start"
+
+	for i in 1 4 5 6 7
+	do
+		ip route flush table $i
+	done
+
+	local chk_apmode=$(uci get system.main.system_mode)
+
+	if [ "$chk_apmode" != "1" ];then
+		brctl addif br-lan eth0
+		return
+	fi
+
+	for i in "" 1 2 3 4
+	do
+		wanEable=$(uci get network.wan$i.enable)
+		wanIfName=$(uci get network.wan$i.ifname)
+		if [ "$wanEable" == "1" ];then
+			brctl delif br-lan $wanIfName
+			brctl delif br-vlanth4 $wanIfName
+			brctl delif br-vlanth5 $wanIfName
+			brctl delif br-vlanth6 $wanIfName
+			brctl delif br-vlanth7 $wanIfName
+		fi
+	done
+
+
+	ig_check=$(uci get intfGrp.general.group_count)
+	chk_intf=$(ifconfig | grep eth1.11 | awk '{print $1}' | tr -d '\n')
+
+	if [ -z "$chk_intf" ] && [ "$ig_check" == "1" ] ; then
+		config_load intfGrp
+		config_foreach setup_intfGrp_wifi interface
+		config_foreach setup_intfGrp_one_lan interface
+		set_iptables_rule
+		/etc/init.d/route reload replug
+		return
+	else
+		if [ ! -z "$chk_intf" ] && [ "$ig_check" == "1" ] ; then
+			config_load intfGrp
+			config_foreach setup_intfGrp_wifi interface
+			config_foreach setup_intfGrp_one_lan interface
+			set_iptables_rule
+			#/etc/init.d/network boot
+			/bin/vlan_default remove_lan_inf
+			/bin/vlan_default setup_switch_default
+			/etc/init.d/route reload replug
+			return
+		else
+			if [ "$chk_apmode" == "1" ];then
+				/bin/vlan_default setup_switch
+				/bin/vlan_default setup_lan_inf
+				/etc/init.d/route reload replug
+			fi
+		fi
+	fi
+
+	if [ "$chk_apmode" == "1" ];then
+		config_load intfGrp
+		config_foreach setup_intfGrp_wifi interface
+		config_foreach setup_intfGrp interface
+		#wifi up
+		set_iptables_rule
+		/etc/init.d/route reload replug
+	fi
+}
+
+
+reload() {
+	print_log "reload"
+	start
+	/etc/init.d/route reload replug
+
+}
+
+
+
+boot() {
+	print_log "boot"
+	# Note: For EMG2926AAVK network initial value issue , wan default bind_LAN value is br-lan not non.
+	local bind_LAN=$(uci get network.wan.bind_LAN)
+	local wanint=$(uci get intfGrp.Default.wanint)
+
+	if [ -z "$bind_LAN" ] && [ "$wanint" == "wan" ] ; then
+		uci set network.wan.bind_LAN="br-lan"
+		uci commit network
+	fi
+
+
+	#reset default br-lan prot manber
+	initial_opt60_config
+
+	start
+
+}
+

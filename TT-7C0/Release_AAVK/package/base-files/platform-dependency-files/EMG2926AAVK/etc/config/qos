@@ -1,0 +1,26 @@
+# Created for quality of service (Qos).
+
+config 'qos' 'general'
+	option 'upload' '20480'
+	option 'download' '20480'
+	option 'wanQueue_count' '0'
+	option 'lanQueue_count' '0'
+	option 'enable' '0'
+
+config 'DefaultQueue' 'wanQueue'
+	option 'enable' '1'
+	option 'name' 'DefaultWanQueue'
+	option 'interface' 'wan'
+	option 'classid' '0'
+	option 'priority' '7'
+	option 'weight' '1'
+	option 'rate' '0'
+
+config 'DefaultQueue' 'lanQueue'
+	option 'enable' '1'
+	option 'name' 'DefaultLanQueue'
+	option 'interface' 'lan'
+	option 'classid' '0'
+	option 'priority' '7'
+	option 'weight' '1'
+	option 'rate' '0'

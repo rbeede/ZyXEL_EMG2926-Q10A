@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>SkyPerfect Generic Source</DisplayName>
+		<CreateObjectRecognition>&lt;arib:objectType&gt;SPTV_CS&lt;/arib:objectType&gt;</CreateObjectRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<UserAgent>UPnP/1.0</UserAgent>
+		</HTTP>
+		<DTCP>
+			<AkeSocketScheme>TWO_BUT_ONE_FOR_MOVE_SOCKET_SCHEME</AkeSocketScheme>
+		</DTCP>
+	</Adaptations>
+</Client>

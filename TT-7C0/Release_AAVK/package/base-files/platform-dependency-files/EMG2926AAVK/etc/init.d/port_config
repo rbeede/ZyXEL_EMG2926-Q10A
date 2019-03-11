@@ -1,0 +1,36 @@
+#!/bin/sh /etc/rc.common
+
+START=04
+
+       
+   #echo 0x4 > /proc/driver/ar8216/regAddr
+   #echo 0x80080 > /proc/driver/ar8216/regVal
+
+   local speed=$(uci get port_status.port5.speed)
+   local duplex=$(uci get port_status.port5.duplex)
+   /bin/port_config w 5 $speed $duplex
+
+   sleep 1
+
+   local speed=$(uci get port_status.port1.speed)
+   local duplex=$(uci get port_status.port1.duplex)
+   /bin/port_config w 1 $speed $duplex
+
+   sleep 1
+
+   local speed=$(uci get port_status.port2.speed)
+   local duplex=$(uci get port_status.port2.duplex)
+   /bin/port_config w 2 $speed $duplex
+
+   sleep 1
+
+   local speed=$(uci get port_status.port3.speed)
+   local duplex=$(uci get port_status.port3.duplex)
+   /bin/port_config w 3 $speed $duplex
+
+   sleep 1
+
+   local speed=$(uci get port_status.port4.speed)
+   local duplex=$(uci get port_status.port4.duplex)
+   /bin/port_config w 4 $speed $duplex
+

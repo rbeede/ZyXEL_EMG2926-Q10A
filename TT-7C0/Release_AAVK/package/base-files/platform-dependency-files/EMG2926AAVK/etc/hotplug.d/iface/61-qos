@@ -1,0 +1,12 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+#!/bin/sh
+
+if [ "$ACTION" = "ifup" ] ; then	
+
+	##reload qos
+
+	/sbin/configure_qos restart
+
+
+fi

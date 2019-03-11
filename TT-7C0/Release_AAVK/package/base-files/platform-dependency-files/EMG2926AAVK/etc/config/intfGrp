@@ -1,0 +1,14 @@
+# Created for interface Grouping.
+
+config interface 'Default'
+        option ifname 'WAN'
+        option lanport '0,1,2,3'
+        option wlan '20,21,22,23,10,11,12,13'
+        option vlan 'eth1'
+        option vlan_name 'eth1'
+        option wanint 'wan'
+
+
+config intfGrp 'general'
+        option available '0,1,2,3'
+        option group_count '1'

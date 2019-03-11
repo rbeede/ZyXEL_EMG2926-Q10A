@@ -1,0 +1,45 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Name for UI</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Philips Streamium HiFi Player</DescriptionText>
+			<DescriptionText>NP</DescriptionText>
+			<DescriptionText>2900</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+  			<HttpText>PLAYSTATION</HttpText> 
+  		</HttpRecognition>
+		<BrowseRecognition>
+			<BrowseHttpHeaders>IPI/1.0 UPnP/1.0 DLNADOC/1.50</BrowseHttpHeaders>
+			<BrowseRequestMatch>&lt;ObjectID&gt;0&lt;/ObjectID&gt;&lt;BrowseFlag&gt;BrowseDirectChildren&lt;/BrowseFlag&gt;&lt;Filter&gt;res,res@resolution,res@protocolInfo,res@size,res@duration,res@bitrate,res@sampleFrequency,res@bitsPerSample,res@nrAudioChannels,dc:creator,dc:date,upnp:genre,upnp:album,upnp:originalTrackNumber,upnp:channelNr,upnp:scheduledStartTime,upnp:scheduledEndTime,upnp:icon,upnp:albumArtURI,upnp:artist,upnp:rating,arib:objectType,upnp:channelName,upnp:radioBand&lt;/Filter&gt;&lt;RequestedCount&gt;30&lt;/RequestedCount&gt;</BrowseRequestMatch>
+		</BrowseRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG120x90</Target>
+			<Target>JPEG720x576</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>MPEG</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+	<Adaptations>
+		<DefaultView>classified</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+ 		<MimeTranslations>
+  			<MimeTypeSuppress>audio/x-aiff</MimeTypeSuppress> 
+  			<MimeTypeSuppress>video/x-msvideo</MimeTypeSuppress> 
+  			<MimeTypeSuppress>audio/x-flac</MimeTypeSuppress> 
+		</MimeTranslations>
+		<DeviceQuirks>
+			<Quirk>DATETIME</Quirk>
+			<Quirk>NO_KEYFRAME_SEEK</Quirk>
+		</DeviceQuirks>
+</Client>

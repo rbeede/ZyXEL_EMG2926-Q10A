@@ -1,0 +1,35 @@
+<view name='classified' path='classified.view'>
+	<navtree>
+		<container id='music'>
+			<link id='music/all' />
+			<link id='music/artists' />
+			<link id='music/artistindex' />
+			<link id='music/artistalbum' />
+			<link id='music/genre' />
+			<link id='music/genrealbum' />
+			<link id='music/genreartistalbum' />
+			<link id='music/rating' />
+			<link id='music/albums' />
+			<link id='music/folders' />
+			<link id='music/playlists' />
+		</container>
+		<container id='picture' >
+			<link id='picture/all' />
+			<link id='picture/folders' />
+			<link id='picture/date' />
+			<link id='picture/keywords' />
+			<link id='picture/albums' />
+			<link id='picture/rating' />
+			<link id='picture/playlists' />
+		</container>
+		<container id='video' >
+			<link id='video/all' />
+			<link id='video/albums' />
+			<link id='video/folders' />
+			<link id='video/date' />
+			<link id='video/rating' />
+			<link id='video/playlists' />
+			<link id='video/classified' />
+		</container>
+	</navtree>
+</view>

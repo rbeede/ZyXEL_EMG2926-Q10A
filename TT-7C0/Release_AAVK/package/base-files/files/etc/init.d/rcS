@@ -1,0 +1,39 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+run_scripts() {
+        {
+        for i in /etc/rc.d/$1*; do
+                [ "$1" = "S" ] && {
+                        file=$(echo $i | awk -F"/" '{print $4}')
+                        len=${#file}
+                        file=$(echo $file |  cut -c 4-$len)
+                        echo "Start $file"
+                }
+                [ -x $i ] && $i $2 2>/dev/null
+        done
+
+        [ "$1" = "S" ] && echo "Boot finished!"
+
+        } | $LOGGER 2>&1
+}
+
+system_config() {
+	config_get_bool foreground $1 foreground 0
+}
+
+LOGGER="cat"
+[ -x /usr/bin/logger ] && LOGGER="logger -s -p 6 -t sysinit"
+
+. /lib/functions.sh
+
+config_load system
+config_foreach system_config system
+
+if [ "$1" = "S" -a "$foreground" != "1" ]; then
+	/bin/setmac ethernet
+        /bin/setmac vlan
+	run_scripts "$1" "$2" &
+else
+	run_scripts "$1" "$2"
+fi

@@ -1,0 +1,230 @@
+diff -ruN a/mcproxy/include/proxy/igmp_sender.hpp b/mcproxy/include/proxy/igmp_sender.hpp
+--- a/mcproxy/include/proxy/igmp_sender.hpp	2014-10-18 16:48:14.000000000 +0800
++++ b/mcproxy/include/proxy/igmp_sender.hpp	2016-03-29 10:59:19.891219100 +0800
+@@ -36,10 +36,11 @@
+ class igmp_sender : public sender
+ {
+ private:
++    bool send_igmpv2_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr) const;
+     bool send_igmpv3_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, bool s_flag, const source_list<source>& slist) const;
+ 
+ public:
+-    igmp_sender(const std::shared_ptr<const interfaces>& interfaces);
++    igmp_sender(const std::shared_ptr<const interfaces>& interfaces, group_mem_protocol gmp);
+ 
+     bool send_record(unsigned int if_index, mc_filter filter_mode, const addr_storage& gaddr, const source_list<source>& slist) const;
+ 
+diff -ruN a/mcproxy/include/proxy/mld_sender.hpp b/mcproxy/include/proxy/mld_sender.hpp
+--- a/mcproxy/include/proxy/mld_sender.hpp	2014-10-18 16:48:14.000000000 +0800
++++ b/mcproxy/include/proxy/mld_sender.hpp	2016-03-29 10:59:16.043237400 +0800
+@@ -53,10 +53,11 @@
+ private:
+     bool add_hbh_opt_header() const;
+ 
++    bool send_mldv1_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr) const;
+     bool send_mldv2_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, bool s_flag, const source_list<source>& slist) const;
+ 
+ public:
+-    mld_sender(const std::shared_ptr<const interfaces>& interfaces);
++    mld_sender(const std::shared_ptr<const interfaces>& interfaces, group_mem_protocol gmp);
+ 
+     bool send_record(unsigned int if_index, mc_filter filter_mode, const addr_storage& gaddr, const source_list<source>& slist) const;
+ 
+diff -ruN a/mcproxy/src/proxy/igmp_sender.cpp b/mcproxy/src/proxy/igmp_sender.cpp
+--- a/mcproxy/src/proxy/igmp_sender.cpp	2014-10-18 16:48:14.000000000 +0800
++++ b/mcproxy/src/proxy/igmp_sender.cpp	2016-03-30 09:56:06.612503400 +0800
+@@ -32,7 +32,7 @@
+ 
+ #include <memory>
+ 
+-igmp_sender::igmp_sender(const std::shared_ptr<const interfaces>& interfaces): sender(interfaces, IGMPv3)
++igmp_sender::igmp_sender(const std::shared_ptr<const interfaces>& interfaces, group_mem_protocol gmp): sender(interfaces, gmp)
+ {
+     HC_LOG_TRACE("");
+ 
+@@ -79,14 +79,19 @@
+ {
+     HC_LOG_TRACE("");
+ 
+-    return send_igmpv3_query(if_index, tv, addr_storage(AF_INET), false, source_list<source>());
++    if (IGMPv3 & m_group_mem_protocol)
++        return send_igmpv3_query(if_index, tv, addr_storage(AF_INET), false, source_list<source>());
++    else
++        return send_igmpv2_query(if_index, tv, addr_storage(AF_INET));		
+ }
+ 
+ bool igmp_sender::send_mc_addr_specific_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, bool s_flag) const
+ {
+     HC_LOG_TRACE("");
+-
+-    return send_igmpv3_query(if_index, tv, gaddr, s_flag, source_list<source>());
++    if (IGMPv3 & m_group_mem_protocol)
++        return send_igmpv3_query(if_index, tv, gaddr, s_flag, source_list<source>());
++    else
++        return send_igmpv2_query(if_index, tv, gaddr);
+ }
+ 
+ bool igmp_sender::send_mc_addr_and_src_specific_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, source_list<source>& slist) const
+@@ -127,6 +132,71 @@
+     return rc;
+ }
+ 
++bool igmp_sender::send_igmpv2_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr) const
++{
++    HC_LOG_TRACE("");
++
++    std::unique_ptr<unsigned char[]> packet;
++    unsigned int size;
++
++	size = sizeof(ip) + sizeof(router_alert_option) + sizeof(igmp);
++	packet.reset(new unsigned char[size]);
++
++    addr_storage dst_addr;
++
++    if (gaddr == addr_storage(AF_INET)) { //is general query
++        dst_addr = IPV4_ALL_HOST_ADDR;
++    } else {
++        dst_addr = gaddr;
++    }
++
++    //-------------------------------------------------------------------
++    //fill ip header
++    ip* ip_hdr = reinterpret_cast<ip*>(packet.get());
++
++    ip_hdr->ip_v = 4;
++    ip_hdr->ip_hl = (sizeof(ip) + sizeof(router_alert_option)) / 4;
++    ip_hdr->ip_tos = 0;
++    ip_hdr->ip_len = htons(size);
++    ip_hdr->ip_id = 0;
++    ip_hdr->ip_off = htons(0 | IP_DF); //dont fragment flag
++    ip_hdr->ip_ttl = 1;
++    ip_hdr->ip_p = IPPROTO_IGMP;
++    ip_hdr->ip_sum = 0;
++    ip_hdr->ip_src = m_interfaces->get_saddr(interfaces::get_if_name(if_index)).get_in_addr();
++    ip_hdr->ip_dst = dst_addr.get_in_addr();
++
++    //-------------------------------------------------------------------
++    //fill router_alert_option header
++    router_alert_option* ra_hdr = reinterpret_cast<router_alert_option*>(reinterpret_cast<unsigned char*>(ip_hdr) + sizeof(ip));
++    *ra_hdr = router_alert_option();
++
++    ip_hdr->ip_sum = m_sock.calc_checksum(reinterpret_cast<unsigned char*>(ip_hdr), sizeof(ip) + sizeof(router_alert_option));
++
++    //-------------------------------------------------------------------
++    //fill igmpv2 query
++    igmp* query = reinterpret_cast<igmp*>(reinterpret_cast<unsigned char*>(ra_hdr) + sizeof(router_alert_option));
++
++    query->igmp_type = IGMP_MEMBERSHIP_QUERY;
++
++    if (gaddr == addr_storage(AF_INET)) { //general query
++        query->igmp_code = tv.maxrespi_to_maxrespc_igmpv3(tv.get_query_response_interval());
++    } else {
++        query->igmp_code = tv.maxrespi_to_maxrespc_igmpv3(tv.get_last_listener_query_time());
++    }
++
++    query->igmp_cksum = 0;
++    query->igmp_group = gaddr.get_in_addr();
++
++    query->igmp_cksum = m_sock.calc_checksum(reinterpret_cast<unsigned char*>(query), sizeof(igmp));
++
++    if (!m_sock.choose_if(if_index)) {
++        return false;
++    }
++
++    return m_sock.send_packet(dst_addr, reinterpret_cast<unsigned char*>(ip_hdr), size);
++}
++
+ bool igmp_sender::send_igmpv3_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, bool s_flag, const source_list<source>& slist) const
+ {
+     HC_LOG_TRACE("");
+diff -ruN a/mcproxy/src/proxy/mld_sender.cpp b/mcproxy/src/proxy/mld_sender.cpp
+--- a/mcproxy/src/proxy/mld_sender.cpp	2014-10-18 16:48:14.000000000 +0800
++++ b/mcproxy/src/proxy/mld_sender.cpp	2016-03-30 10:28:22.039875600 +0800
+@@ -31,7 +31,7 @@
+ 
+ #include <memory>
+ 
+-mld_sender::mld_sender(const std::shared_ptr<const interfaces>& interfaces): sender(interfaces, MLDv2)
++mld_sender::mld_sender(const std::shared_ptr<const interfaces>& interfaces, group_mem_protocol gmp): sender(interfaces, gmp)
+ {
+     HC_LOG_TRACE("");
+ 
+@@ -73,14 +73,20 @@
+ {
+     HC_LOG_TRACE("");
+ 
+-    return send_mldv2_query(if_index, tv, addr_storage(AF_INET6), false, source_list<source>());
++    if (MLDv2 & m_group_mem_protocol)
++        return send_mldv2_query(if_index, tv, addr_storage(AF_INET6), false, source_list<source>());
++    else
++        return send_mldv1_query(if_index, tv, addr_storage(AF_INET6));
+ }
+ 
+ bool mld_sender::send_mc_addr_specific_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, bool s_flag) const
+ {
+     HC_LOG_TRACE("");
+ 
+-    return send_mldv2_query(if_index, tv, gaddr, s_flag, source_list<source>());
++    if (MLDv2 & m_group_mem_protocol)
++        return send_mldv2_query(if_index, tv, gaddr, s_flag, source_list<source>());
++    else
++        return send_mldv1_query(if_index, tv, gaddr);
+ }
+ 
+ bool mld_sender::send_mc_addr_and_src_specific_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, source_list<source>& slist) const
+@@ -121,6 +127,40 @@
+     return rc;
+ }
+ 
++bool mld_sender::send_mldv1_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr) const
++{
++    HC_LOG_TRACE("");
++
++    std::unique_ptr<mldv1> q;
++    unsigned int size;
++
++	size = sizeof(mldv1);
++	q.reset(new mldv1);
++
++    q->type = MLD_LISTENER_QUERY;
++    q->code = 0;
++    q->checksum = MC_MASSAGES_AUTO_FILL;
++
++    addr_storage dst_addr;
++
++    if (gaddr == addr_storage(AF_INET6)) { //general query
++        dst_addr = IPV6_ALL_NODES_ADDR;
++        q->max_resp_delay = htons(tv.maxrespi_to_maxrespc_mldv2(tv.get_query_response_interval()));
++    } else { //all other types of queries
++        dst_addr = gaddr;
++        q->max_resp_delay = htons(tv.maxrespi_to_maxrespc_mldv2(tv.get_last_listener_query_time()));
++    }
++
++    q->reserved = 0;
++    q->gaddr = gaddr.get_in6_addr();
++
++    if (!m_sock.choose_if(if_index)) {
++        return false;
++    }
++
++    return m_sock.send_packet(dst_addr, reinterpret_cast<unsigned char*>(q.get()), size);
++}
++
+ bool mld_sender::send_mldv2_query(unsigned int if_index, const timers_values& tv, const addr_storage& gaddr, bool s_flag, const source_list<source>& slist) const
+ {
+     HC_LOG_TRACE("");
+diff -ruN a/mcproxy/src/proxy/proxy_instance.cpp b/mcproxy/src/proxy/proxy_instance.cpp
+--- a/mcproxy/src/proxy/proxy_instance.cpp	2014-10-18 16:48:14.000000000 +0800
++++ b/mcproxy/src/proxy/proxy_instance.cpp	2016-03-29 10:58:56.947327900 +0800
+@@ -119,9 +119,9 @@
+ {
+     HC_LOG_TRACE("");
+     if (is_IPv4(m_group_mem_protocol)) {
+-        m_sender = std::make_shared<igmp_sender>(m_interfaces);
++        m_sender = std::make_shared<igmp_sender>(m_interfaces, m_group_mem_protocol);
+     } else if (is_IPv6(m_group_mem_protocol)) {
+-        m_sender = std::make_shared<mld_sender>(m_interfaces);
++        m_sender = std::make_shared<mld_sender>(m_interfaces, m_group_mem_protocol);
+     } else {
+         HC_LOG_ERROR("unknown ip version");
+         return false;

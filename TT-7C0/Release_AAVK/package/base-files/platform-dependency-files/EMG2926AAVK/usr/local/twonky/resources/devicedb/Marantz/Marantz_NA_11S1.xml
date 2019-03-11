@@ -1,0 +1,24 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Marantz NA-11S1</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Marantz</DescriptionText>
+			<DescriptionText>11S1</DescriptionText>
+		</DeviceDescriptionRecognition>		
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>	
+</Client>

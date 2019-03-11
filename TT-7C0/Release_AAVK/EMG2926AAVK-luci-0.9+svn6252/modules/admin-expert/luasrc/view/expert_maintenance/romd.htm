@@ -1,0 +1,205 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+  if not lang then
+     lang = "en"
+  end
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+function redirect()
+{
+	top.location.href="http://192.168.1.1";
+}
+
+function AdmFormCheck()
+{
+	
+	if (document.BAKUP_RESTORE.RstFile.value == "") {
+		alert("Please specify the file name.");
+		return false;
+	}
+	if (document.BAKUP_RESTORE.RstFile.files[0].size > 2048000){
+		alert("File size error.");
+		return false;
+    }
+	
+	return true;
+}
+function CountDown()
+{
+	CountDownSecond = document.theForm.timer.value;
+	if ( CountDownSecond !=0 ) {
+		document.theForm.timer.value = CountDownSecond - 1;
+		setTimeout('CountDown()',1000);
+	}
+	else {
+		redirect();
+	}
+}
+function upload_status()
+{
+	
+	alert("Upload Success,Please reset to default and the settings will take effect!!");
+	showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+    return true;
+	
+}
+</script>
+</head>
+<%
+   
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+
+<body  >
+<div id="tabs">
+
+<% if not ( privilege == "1") then %>
+  <ul>
+    <li class="hightline"><a title="<%:bak_rst%>"><span><%:bak_rst%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+  
+<% else %>
+   <ul>
+      <li><a href="<%=controller%>/expert/maintenance/bakrestore" title="<%:bak_rst%>"><span><%:bak_rst%></span></a></li>
+	  <li class="hightline"><a title="<%:romd%>"><span><%:romd%></span></a></li>  
+   </ul>
+<% end %>
+ 
+</div>
+<!-- Tab -->
+<% if rebootsystem == 1 then %>
+<form name="theForm">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:restarting%></div>
+          <div class="w_text"><%:bak_remind1%>
+            <input name="timer"  size="3" type="text" value=150 style="border:0;background:transparent" readonly=true />
+            <%:seconds%>.
+          </div>
+          <div class="spaceair"></div> 
+        </ul> 
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<script language="JavaScript">
+	CountDown();
+</script>
+<% elseif rebootsystem == 2 then %>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:bak_remind3%></div>
+          <div class="w_text">
+            <%:bak_remind4%><br>
+	    <%=errmsg%>	
+          </div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+<% else %>
+<form method="post" name="BAKUP_RESTORE" action="<%=controller%>/expert/maintenance/bakrestore/romd" enctype="multipart/form-data">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+		  <div class="title">Save/Clean/Upload Configuration to ROM-D</div>
+		  
+          <div class="w_text">Save configuration to ROM-D 	&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <input name="BackupROMD" value=" Save " type="submit" />
+          </div>
+	 <br>
+          <div class="w_text">Clean configuration to ROM-D &nbsp;&nbsp;&nbsp;
+            <input name="CleanROMD" value=" Clean " type="submit" />
+          </div>
+	<br>
+		  <div class="w_text">Upload ROM-D  &nbsp;&nbsp;&nbsp;
+		  </div>
+	<br>
+		  <div class="w_text"><%:file_path%> :
+            <input name="RstFile"  size="20" maxlength="128" type="file" />
+            <input name="Restore" value="<%:file_upload%>" type="submit" onClick="return AdmFormCheck()" />
+          </div>
+		    
+            <div class="w_text">
+              <ul>
+                <li class="left_table">
+                  <% local reset_default = uci:get("system", "main", "romd_firstboot")%>
+				  <input name="firstboot" type="checkbox" value="1" <%if reset_default == "1" then%> checked="CHECKED" <%end%> />
+                  <font id="reset_default">After upload Rom-D, reset currently config to Rom-d</font>
+                </li>
+              </ul>
+            </div>
+          
+		  <div class="spaceair"></div>
+		
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<% end %>
+</body>
+<% if noreboot == 1 then %>
+<script language="JavaScript">
+	upload_status();
+</script>
+<% end %>
+
+<script language="JavaScript">
+	showFullPath(' <%:maintenance%> > <%:bak_rst%>');
+</script>
+</html>

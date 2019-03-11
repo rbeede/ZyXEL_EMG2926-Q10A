@@ -1,0 +1,42 @@
+#!/bin/sh /etc/rc.common
+#copyright (C) 2013 Zyxel
+
+START=50
+
+boot() {
+
+		##check hw_nat
+		/sbin/chk_sfe
+
+		/sbin/configure_qos boot
+		
+}
+
+start() {
+
+
+	##check hw_nat
+	/sbin/chk_sfe
+		
+	/sbin/configure_qos start
+
+
+}
+
+restart() {
+
+	##check hw_nat
+	/sbin/chk_sfe
+	
+
+	/sbin/configure_qos restart
+
+}
+
+stop(){
+
+	/sbin/configure_qos stop
+	
+	##check hw_nat
+	/sbin/chk_sfe
+}

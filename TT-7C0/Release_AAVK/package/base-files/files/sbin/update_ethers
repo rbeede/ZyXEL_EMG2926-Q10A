@@ -1,0 +1,53 @@
+. /etc/functions.sh
+include /lib/config
+
+#get some info from config file
+op_staticIP=$(uci_get dhcp lan staticIP )
+
+#get separate staticIP resource
+op=$op_staticIP';'
+if [ "$op_staticIP" != "" ]; then
+
+	op1=$(echo $op | awk -F";" '{print $1}')
+	if [ "$op1" != "" ]; then
+		echo $op1 > /etc/ethers
+	fi
+		
+	op2=$(echo $op | awk -F";" '{print $2}')
+	if [ "$op2" != "" ]; then
+		echo $op2 >> /etc/ethers
+	fi
+
+	op3=$(echo $op | awk -F";" '{print $3}')
+	if [ "$op3" != "" ]; then
+		echo $op3 >> /etc/ethers
+	fi
+
+	op4=$(echo $op | awk -F";" '{print $4}')
+	if [ "$op4" != "" ]; then
+		echo $op4 >> /etc/ethers
+	fi
+
+	op5=$(echo $op | awk -F";" '{print $5}')
+	if [ "$op5" != "" ]; then
+		echo $op5 >> /etc/ethers
+	fi
+
+	op6=$(echo $op | awk -F";" '{print $6}')
+	if [ "$op6" != "" ]; then
+		echo $op6 >> /etc/ethers
+	fi
+
+	op7=$(echo $op | awk -F";" '{print $7}')
+	if [ "$op7" != "" ]; then
+		echo $op7 >> /etc/ethers
+	fi
+
+	op8=$(echo $op | awk -F";" '{print $8}')
+	if [ "$op8" != "" ]; then
+		echo $op8 >> /etc/ethers
+	fi
+else
+	rm /etc/ethers
+	touch /etc/ethers
+fi

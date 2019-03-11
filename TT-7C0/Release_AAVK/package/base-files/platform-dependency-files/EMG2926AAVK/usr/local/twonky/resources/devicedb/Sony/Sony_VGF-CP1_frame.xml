@@ -1,0 +1,21 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony VGF-CP1 frame</DisplayName>
+		<HttpRecognition>
+			<HttpText>Digital Photo Frame</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DefaultView>byfolder</DefaultView>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOTRPICS</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,92 @@
+#!/bin/sh
+
+cmd=$1
+db=$2
+num=$3
+
+if [[ -z "$num" ]]; then
+	exit;
+fi
+
+case "$cmd" in
+        add)
+			op=$(uci get $db)
+			
+			if [ "$op" == " " ]; then
+				echo "db is null"
+				uci set $db=$num
+				uci commit intfGrp
+				exit $?
+			fi
+			
+			if [[ -z "$op" ]]; then
+				echo "no db"
+				uci set $db=$num
+				uci commit intfGrp
+				exit $?
+			else
+				
+				array=$(echo $op | tr "," "\n")
+				
+				for i in $array
+				do
+					if [ $i == $num ]; then
+						exit $?
+					fi
+				done
+				
+				uci set $db=$op,$num
+				uci commit intfGrp
+				exit $?
+			fi
+
+            exit $?
+		;;
+        del)
+
+			op=$(uci get $db)
+			
+			if [ "$op" == " " ]; then
+				exit $?
+			fi
+			
+			if [[ -z "$op" ]]; then
+				exit $?
+			else
+				
+				array=$(echo $op | tr "," "\n")
+				
+				for i in $array
+				do
+					if [ $i == $num ]; then
+						echo "del $num"
+					else
+						if [[ -z "$data" ]]; then
+							data=$i
+						else
+							data=$data,$i
+						fi
+					fi
+				done
+				if [[ -z "$data" ]]; then
+					uci del $db
+				else
+					uci set $db=$data
+				fi
+
+				uci commit intfGrp
+				exit $?
+			fi
+
+            exit $?
+        ;;
+
+        *)
+			echo "none"
+            Usage
+        ;; 
+esac
+
+
+exit $?
+

@@ -1,0 +1,557 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2010 Jo-Philipp Wich
+
+START=50
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+
+UHTTPD_BIN="/usr/sbin/uhttpd"
+PX5G_BIN="/usr/sbin/px5g"
+
+. /etc/functions.sh
+include /lib/config/
+
+append_arg() {
+	local cfg="$1"
+	local var="$2"
+	local opt="$3"
+	local def="$4"
+	local val
+
+	config_get val "$cfg" "$var"
+	[ -n "$val" -o -n "$def" ] && append UHTTPD_ARGS "$opt ${val:-$def}"
+}
+
+append_bool() {
+	local cfg="$1"
+	local var="$2"
+	local opt="$3"
+	local def="$4"
+	local val
+
+	config_get_bool val "$cfg" "$var" "$def"
+	[ "$val" = 1 ] && append UHTTPD_ARGS "$opt"
+}
+
+generate_keys() {
+	local cfg="$1"
+	local key="$2"
+	local crt="$3"
+	local days bits country state location commonname
+
+	config_get days       "$cfg" days
+	config_get bits       "$cfg" bits
+	config_get country    "$cfg" country
+	config_get state      "$cfg" state
+	config_get location   "$cfg" location
+	config_get commonname "$cfg" commonname
+
+	[ -x "$PX5G_BIN" ] && {
+		$PX5G_BIN selfsigned -der \
+			-days ${days:-730} -newkey rsa:${bits:-1024} -keyout "$UHTTPD_KEY" -out "$UHTTPD_CERT" \
+			-subj /C="${country:-DE}"/ST="${state:-Saxony}"/L="${location:-Leipzig}"/CN="${commonname:-OpenWrt}"
+	}
+}
+
+start_instance()
+{
+	UHTTPD_ARGS=""
+	UHTTPD_CERT=""
+	UHTTPD_KEY=""
+
+	local cfg="$1"
+	local realm="$(uci_get system.@system[0].hostname)"
+	local listen http https interpreter indexes path
+
+	append_arg "$cfg" home "-h"
+	append_arg "$cfg" realm "-r" "${realm:-OpenWrt}"
+	append_arg "$cfg" config "-c"
+	append_arg "$cfg" cgi_prefix "-x"
+	append_arg "$cfg" lua_prefix "-l"
+	append_arg "$cfg" lua_handler "-L"
+	append_arg "$cfg" script_timeout "-t"
+	append_arg "$cfg" network_timeout "-T"
+	append_arg "$cfg" tcp_keepalive "-A"
+	append_arg "$cfg" error_page "-E"
+	append_arg "$cfg" max_requests "-n" 10
+
+	append_bool "$cfg" no_symlinks "-S" 0
+	append_bool "$cfg" no_dirlists "-D" 0
+	append_bool "$cfg" rfc1918_filter "-R" 0
+
+	config_get http "$cfg" listen_http
+	for listen in $http; do
+		append UHTTPD_ARGS "-p $listen"
+	done
+
+	config_get interpreter "$cfg" interpreter
+	for path in $interpreter; do
+		append UHTTPD_ARGS "-i $path"
+	done
+
+	config_get indexes "$cfg" index_page
+	for path in $indexes; do
+		append UHTTPD_ARGS "-I $path"
+	done
+
+	config_get https "$cfg" listen_https
+	#config_get UHTTPD_KEY  "$cfg" key  /etc/uhttpd.key
+	#config_get UHTTPD_CERT "$cfg" cert /etc/uhttpd.crt
+
+	##Aviod to write flash, and store certification file to RAM.
+	UHTTPD_KEY=/tmp/uhttpd.key
+	UHTTPD_CERT=/tmp/uhttpd.crt
+
+	[ -n "$https" ] && {
+		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] || {
+			config_foreach generate_keys cert
+		}
+
+		[ -f "$UHTTPD_CERT" -a -f "$UHTTPD_KEY" ] && {
+			#append_arg "$cfg" cert "-C"
+			#append_arg "$cfg" key  "-K"
+			append UHTTPD_ARGS "-C $UHTTPD_CERT"
+			append UHTTPD_ARGS "-K $UHTTPD_KEY"
+
+			for listen in $https; do
+				append UHTTPD_ARGS "-s $listen"
+			done
+		}
+	}
+
+	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
+	service_start $UHTTPD_BIN -f $UHTTPD_ARGS
+
+	# Check if daemon is running, if not then
+	# re-execute in foreground to display error.
+	sleep 1 && service_check $UHTTPD_BIN || \
+		$UHTTPD_BIN -f $UHTTPD_ARGS
+}
+
+stop_instance()
+{
+	local cfg="$1"
+
+	SERVICE_PID_FILE=/var/run/uhttpd_${cfg}.pid
+	service_stop $UHTTPD_BIN
+}
+
+ck_http() {
+	config_load firewall
+#check firewall config for upgrade firmware without "reset to default"	
+	ckHttpFlag=$(uci get firewall.remote_WWW_WAN)
+	[ -z "$ckHttpFlag" ] && {
+
+		interface_status=$(uci get firewall.remote_www.interface)
+		client_status=$(uci get firewall.remote_www.client_check)
+
+		uci set firewall.remote_WWW_LAN=firewall
+		uci set firewall.remote_WWW_WAN=firewall
+
+		if [ "$interface_status" == "1" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_WWW_LAN.client_check=0
+			uci set firewall.remote_WWW_WAN.client_check=0
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "1" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_www.client_addr)
+			uci set firewall.remote_WWW_LAN.client_check=2
+			uci set firewall.remote_WWW_WAN.client_check=2
+			uci set firewall.remote_WWW_LAN.client_count=1
+			uci set firewall.remote_WWW_LAN.client_addr1=$ip_status
+			uci set firewall.remote_WWW_WAN.client_count=1
+			uci set firewall.remote_WWW_WAN.client_addr1=$ip_status
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_WWW_LAN.client_check=0
+			uci set firewall.remote_WWW_WAN.client_check=1
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_www.client_addr)
+			uci set firewall.remote_WWW_LAN.client_check=2
+			uci set firewall.remote_WWW_WAN.client_check=1
+			uci set firewall.remote_WWW_LAN.client_count=1
+			uci set firewall.remote_WWW_LAN.client_addr1=$ip_status
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_WWW_LAN.client_check=1
+			uci set firewall.remote_WWW_WAN.client_check=0
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_www.client_addr)
+			uci set firewall.remote_WWW_LAN.client_check=1
+			uci set firewall.remote_WWW_WAN.client_check=2
+			uci set firewall.remote_WWW_LAN.client_count=0
+			uci set firewall.remote_WWW_WAN.client_count=1
+			uci set firewall.remote_WWW_WAN.client_addr1=$ip_status
+		fi
+		
+		uci set firewall.remote_www.interface=2
+		uci set firewall.remote_www.client_check=0
+		delete=$(uci get firewall.remote_www.client_addr)
+		if [ -z "$delete" ]; then
+			uci commit firewall
+		else
+			uci del firewall.remote_www.client_addr
+			uci commit firewall
+		fi
+	}
+#end	
+}
+
+ck_https() {
+	config_load firewall
+#check firewall config for upgrade firmware without "reset to default"	
+	ckHttpsFlag=$(uci get firewall.remote_https_WAN)
+	[ -z "$ckHttpsFlag" ] && {
+
+		interface_status=$(uci get firewall.remote_https.interface)
+		client_status=$(uci get firewall.remote_https.client_check)
+
+		uci set firewall.remote_https_WAN=firewall
+		uci set firewall.remote_https_LAN=firewall
+
+		if [ "$interface_status" == "1" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_https_LAN.client_check=0
+			uci set firewall.remote_https_WAN.client_check=0
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "1" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_https.client_addr)
+			uci set firewall.remote_https_LAN.client_check=2
+			uci set firewall.remote_https_WAN.client_check=2
+			uci set firewall.remote_https_LAN.client_count=1
+			uci set firewall.remote_https_LAN.client_addr1=$ip_status
+			uci set firewall.remote_https_WAN.client_count=1
+			uci set firewall.remote_https_WAN.client_addr1=$ip_status
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_https_LAN.client_check=0
+			uci set firewall.remote_https_WAN.client_check=1
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "2" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_https.client_addr)
+			uci set firewall.remote_https_LAN.client_check=2
+			uci set firewall.remote_https_WAN.client_check=1
+			uci set firewall.remote_https_LAN.client_count=1
+			uci set firewall.remote_https_LAN.client_addr1=$ip_status
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "0" ] ; then
+			uci set firewall.remote_https_LAN.client_check=1
+			uci set firewall.remote_https_WAN.client_check=0
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=0
+		elif [ "$interface_status" == "3" ] && [ "$client_status" == "1" ] ; then
+			ip_status=$(uci get firewall.remote_https.client_addr)
+			uci set firewall.remote_https_LAN.client_check=1
+			uci set firewall.remote_https_WAN.client_check=2
+			uci set firewall.remote_https_LAN.client_count=0
+			uci set firewall.remote_https_WAN.client_count=1
+			uci set firewall.remote_https_WAN.client_addr1=$ip_status
+		fi
+		
+		uci set firewall.remote_https.interface=2
+		uci set firewall.remote_https.client_check=0
+		delete=$(uci get firewall.remote_https.client_addr)
+		if [ -z "$delete" ]; then
+			uci commit firewall
+		else
+			uci del firewall.remote_https.client_addr
+			uci commit firewall
+		fi
+	}
+#end	
+}
+
+filter()
+{
+	config_load firewall
+
+	config_get www_port remote_www port
+	config_get WAN_http_client_check remote_WWW_WAN client_check
+	config_get WAN_http_client_count remote_WWW_WAN client_count
+	config_get LAN_http_client_check remote_WWW_LAN client_check
+	config_get LAN_http_client_count remote_WWW_LAN client_count
+
+	if [ "on" = "$1" ]; then
+		filter_type=" -I "
+	else
+		filter_type=" -D "
+	fi
+
+	## insert DROP rule
+	if [ "1" = "$WAN_http_client_check" ] || [ "2" = "$WAN_http_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  ! -i br+  -p tcp --dport $www_port -j DROP 2> /dev/null
+	fi
+
+	if [ "1" = "$LAN_http_client_check" ] || [ "2" = "$LAN_http_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  -i br+  -p tcp --dport $www_port -j DROP 2> /dev/null
+	fi
+
+	## insert ACCEPT rule
+	if [ "0" = "$WAN_http_client_check" ] && [ "0" = "$LAN_http_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" = "$WAN_http_client_check" ] && [ "0" != "$LAN_http_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  ! -i br+  -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" != "$WAN_http_client_check" ] && [ "0" = "$LAN_http_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  -i br+  -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "2" = "$WAN_http_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($WAN_http_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get WAN_http_client_addr remote_WWW_WAN $client_addr
+			addr_cmd=" -s $WAN_http_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  ! -i br+  $addr_cmd -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+	
+	if [ "2" = "$LAN_http_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($LAN_http_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get LAN_http_client_addr remote_WWW_LAN $client_addr
+			addr_cmd=" -s $LAN_http_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  -i br+  $addr_cmd -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+
+}
+#For Https Here#
+filterHttps()
+{
+	config_load firewall
+	config_get www_port remote_https port
+	config_get WAN_https_client_check remote_https_WAN client_check
+	config_get WAN_https_client_count remote_https_WAN client_count
+	config_get LAN_https_client_check remote_https_LAN client_check
+	config_get LAN_https_client_count remote_https_LAN client_count
+
+	if [ "on" = "$1" ]; then
+		filter_type=" -I "
+	else
+		filter_type=" -D "
+	fi
+
+	## insert DROP rule
+	if [ "1" = "$WAN_https_client_check" ] || [ "2" = "$WAN_https_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  ! -i br+  -p tcp --dport $www_port -j DROP 2> /dev/null
+	fi
+
+	if [ "1" = "$LAN_https_client_check" ] || [ "2" = "$LAN_https_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  -i br+  -p tcp --dport $www_port -j DROP 2> /dev/null
+	fi
+
+	## insert ACCEPT rule
+	if [ "0" = "$WAN_https_client_check" ] && [ "0" = "$LAN_https_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" = "$WAN_https_client_check" ] && [ "0" != "$LAN_https_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  ! -i br+  -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "0" != "$WAN_https_client_check" ] && [ "0" = "$LAN_https_client_check" ]; then
+		/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  -i br+  -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+	fi
+	
+	if [ "2" = "$WAN_https_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($WAN_https_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get WAN_https_client_addr remote_https_WAN $client_addr
+			addr_cmd=" -s $WAN_https_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  ! -i br+  $addr_cmd -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+	
+	if [ "2" = "$LAN_https_client_check" ]; then
+		i=1
+		while [ "$i" != "$(($LAN_https_client_count+1))" ]
+		do
+			client_addr="client_addr"$i
+			config_get LAN_https_client_addr remote_https_LAN $client_addr
+			addr_cmd=" -s $LAN_https_client_addr "
+			
+			/usr/sbin/iptables -t filter $filter_type RMMG_WWW_INPUT  -i br+  $addr_cmd -p tcp --dport $www_port -j ACCEPT 2> /dev/null
+			
+			i=`expr $i + 1`
+		done
+	fi
+
+}
+
+boot()  {
+	ck_https
+	ck_http
+
+	config_load firewall
+	config_get remote_http remote_www port
+	http_port=$(uci_get uhttpd main listen_http)
+	http_limit=$(uci_get uhttpd main max_requests)
+
+	if [ "$http_limit" != "10" ]; then
+		uci set uhttpd.main.max_requests=10
+		uci commit uhttpd
+	fi
+	
+	## uhttpd is reloaded if and only if listen port is changed
+	if [ -n "$remote_http" ] && [ $http_port -ne $remote_http ] ; then
+		uci set uhttpd.main.listen_http=$remote_http
+		uci commit uhttpd
+	fi
+	
+	config_get remote_https remote_https port
+	https_port=$(uci get uhttpd.main.listen_https)
+	## uhttpd is reloaded if and only if listen port is changed
+	if [ -n "$remote_https" ] && [ "$https_port" != "$remote_https" ] ; then
+		uci set uhttpd.main.listen_https=$remote_https
+		uci commit uhttpd
+	fi
+
+#	config_get www_inf remote_www interface
+#	config_get www_inf_https remote_https interface
+#	config_get check remote_www client_check
+#	if [ "$www_inf" = "0" ] && [ "$check" = "0" ]; then
+#	if [ "$www_inf" = "0" ] && [ "$www_inf_https" = "0" ]; then
+		#no access
+		#echo disable www
+#	else
+		## uhttpd is reloaded if and only if listen port is changed
+		if [ -n "$remote_http" ] && [ $http_port -ne $remote_http ] || [ ! -e /var/run/uhttpd_main.pid ]; then
+			config_load uhttpd
+			config_foreach start_instance uhttpd
+		elif [ -n "$remote_https" ] && [ "$https_port" != "$remote_https" ] || [ ! -e /var/run/uhttpd_main.pid ]; then
+			config_load uhttpd
+			config_foreach start_instance uhttpd
+		fi
+
+		##check mode,if AP/UR,exit
+		local sys_mode=$(get_sys_mode)
+		[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+		
+		insmod x_tables  2>&- >&-
+		insmod ip_tables  2>&- >&-
+		insmod ip6_tables  2>&- >&-
+		insmod iptable_filter  2>&- >&-
+		insmod xt_tcpudp  2>&- >&-
+		
+		/usr/sbin/iptables -F RMMG_WWW_INPUT
+		/usr/sbin/iptables -X RMMG_WWW_INPUT
+		/usr/sbin/iptables -N RMMG_WWW_INPUT		
+		
+		filter "on"
+		filterHttps "on"
+		local changeToSer=$(uci_get nat general changeToSer)
+		[ "$changeToSer" = "1" ] && /sbin/nat apply
+#	fi
+	
+	echo "0" > /tmp/uhttpd_restart
+	
+}
+
+start() {
+	config_load firewall
+	config_get remote_http remote_www port
+	http_port=$(uci_get uhttpd main listen_http)
+	
+	## uhttpd is reloaded if and only if listen port is changed
+	if [ -n "$remote_http" ] && [ $http_port -ne $remote_http ] ; then
+		uci set uhttpd.main.listen_http=$remote_http
+		uci commit uhttpd
+	fi
+	
+	config_get remote_https remote_https port
+	https_port=$(uci get uhttpd.main.listen_https)
+	## uhttpd is reloaded if and only if listen port is changed
+	if [ -n "$remote_https" ] && [ "$https_port" != "$remote_https" ] ; then
+		uci set uhttpd.main.listen_https=$remote_https
+		uci commit uhttpd
+	fi
+
+#	config_get www_inf remote_www interface
+#	config_get www_inf_https remote_https interface
+#	config_get check remote_www client_check
+#	if [ "$www_inf" = "0" ] && [ "$check" = "0" ]; then
+#	if [ "$www_inf" = "0" ] && [ "$www_inf_https" = "0" ]; then
+		#no access
+#		echo disable www
+#	else
+		## uhttpd is reloaded if and only if listen port is changed
+		if [ -n "$remote_http" ] && [ $http_port -ne $remote_http ] || [ ! -e /var/run/uhttpd_main.pid ]; then
+			config_load uhttpd
+			config_foreach start_instance uhttpd
+		elif [ -n "$remote_https" ] && [ "$https_port" != "$remote_https" ] || [ ! -e /var/run/uhttpd_main.pid ]; then
+			config_load uhttpd
+			config_foreach start_instance uhttpd
+		fi
+
+		##check mode,if AP/UR,exit
+		local sys_mode=$(get_sys_mode)
+		[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+		
+		insmod x_tables  2>&- >&-
+		insmod ip_tables  2>&- >&-
+		insmod ip6_tables  2>&- >&-
+		insmod iptable_filter  2>&- >&-
+		insmod xt_tcpudp  2>&- >&-
+		
+		/usr/sbin/iptables -F RMMG_WWW_INPUT
+		/usr/sbin/iptables -X RMMG_WWW_INPUT
+		/usr/sbin/iptables -N RMMG_WWW_INPUT		
+		
+		filter "on"
+		filterHttps "on"
+		local changeToSer=$(uci_get nat general changeToSer)
+		[ "$changeToSer" = "1" ] && /sbin/nat apply
+#	fi
+	
+	echo "0" > /tmp/uhttpd_restart
+	
+}
+
+stop() {
+	remote_http=$(uci_get firewall remote_www port)
+	http_port=$(uci_get uhttpd main listen_http)
+	remote_https=$(uci_get firewall remote_https port)
+	https_port=$(uci_get uhttpd main listen_https)	
+	
+	## uhttpd is reloaded if and only if listen port is changed
+	if [ -n "$remote_http" ] && [ $http_port -ne $remote_http ]; then
+		config_load uhttpd
+		config_foreach stop_instance uhttpd
+	elif [ -n "$remote_https" ] && [ "$https_port" != "$remote_https" ]; then
+		config_load uhttpd
+		config_foreach stop_instance uhttpd
+	fi
+	
+	## check uhttpd daemon
+	uhttpd_restart=$(cat /tmp/uhttpd_restart)	
+	if [ "$uhttpd_restart" == "1" ]; then
+		config_load uhttpd
+		config_foreach stop_instance uhttpd
+		rm /var/run/uhttpd_main.pid
+	fi	
+	
+	filter "off"
+    filterHttps "off"
+}

@@ -1,0 +1,822 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.sys")
+uci = require("luci.model.uci").cursor()
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/DST.js" ></script>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/javascript">
+
+function calculate_target_date(target_year, target_month, target_day, target_num_day)
+{
+	var now=new Date();
+	now.setYear(target_year);
+	now.setMonth(target_month-1);
+	temp_Month = now.setMonth(target_month-1);
+	now.setDate(1);
+	temp_Day = now.getDay();
+	
+	if (target_day>=temp_Day)
+		offset_date=target_day-temp_Day+1;
+	else	
+		offset_date=target_day-temp_Day+8;
+		
+	target_date	=offset_date+(target_num_day*7);
+
+	if (target_num_day==4)
+	{
+		if( (target_month==1) || (target_month==3) || (target_month==5) || (target_month==7) || (target_month==8) || (target_month==10) || (target_month==12) )
+	    {
+	    	max_date=31;
+	    }
+		
+		if( (target_month==4) || (target_month==6) || (target_month==9) || (target_month==11) )
+	    {
+		    max_date=30;
+		}
+		
+		if (target_month==2)
+	    {
+			if(((target_year)%4)==0)
+		    	max_date=29;
+		    else	
+		    	max_date=28;
+		}
+		
+		if (target_date>max_date)
+			target_date=target_date-7;
+	}
+	
+	return target_date;
+
+}
+
+function onchange_calculate_target_date(change_year)
+{
+	if(document.TIME_SETTING.btndaylight.checked)
+	{
+		
+		if (document.TIME_SETTING.mten_ServiceType[0].checked == true)
+		{
+			temp_yyy=document.TIME_SETTING.mtenNew_Year.value;
+			mten_ServiceTypes='1';
+		}
+		else
+		{
+			temp_yyy=document.TIME_SETTING.TIME_SETTING_mtenCurrent_Year.value;
+			mten_ServiceTypes='0';
+		}
+		
+		if (change_year)
+		{
+	 	  temp_yyy++;
+		}
+		
+		dst_startMon=document.TIME_SETTING.startMonth.options.selectedIndex+1;
+		dst_startDay=calculate_target_date(temp_yyy, document.TIME_SETTING.startMonth.options.selectedIndex+1, document.TIME_SETTING.startD.options.selectedIndex, document.TIME_SETTING.startNum.options.selectedIndex);
+		dst_startclock=document.TIME_SETTING.startTime.options.selectedIndex;
+	
+		temp_dst_start_Hour=dst_startclock;
+	
+		dst_endMon=document.TIME_SETTING.endMonth.options.selectedIndex+1;
+		dst_endDay=calculate_target_date(temp_yyy, document.TIME_SETTING.endMonth.options.selectedIndex+1, document.TIME_SETTING.endD.options.selectedIndex, document.TIME_SETTING.endNum.options.selectedIndex);
+		dst_endclock=document.TIME_SETTING.endTime.options.selectedIndex;
+   
+		temp_dst_end_Hour=dst_endclock;
+		
+		temp_dst_start_long_sec = Date.parse(""+temp_yyy+"/"+dst_startMon+"/"+dst_startDay+" "+temp_dst_start_Hour+":0:0");
+		temp_dst_end_long_sec = Date.parse(""+temp_yyy+"/"+dst_endMon+"/"+dst_endDay+" "+temp_dst_end_Hour+":0:0");
+   
+		if (temp_dst_end_long_sec < temp_dst_start_long_sec)
+		{
+			temp_over_year=1;
+		}
+		else
+		{
+			temp_over_year=0;
+		}
+		
+		if (temp_dst_end_long_sec == temp_dst_start_long_sec)
+		{
+			temp_over_year=1;
+		}		
+		
+		
+		//current time
+		temp_now_Hour=parseInt(document.TIME_SETTING.TIME_SETTING_mtenCurrent_Hour.value,10);
+		temp_now_Min=parseInt(document.TIME_SETTING.TIME_SETTING_mtenCurrent_Min.value,10);
+		temp_now_Sec=parseInt(document.TIME_SETTING.TIME_SETTING_mtenCurrent_Sec.value,10);
+		temp_now_Year=parseInt(document.TIME_SETTING.TIME_SETTING_mtenCurrent_Year.value,10);
+		temp_now_Mon=parseInt(document.TIME_SETTING.TIME_SETTING_mtenCurrent_Mon.value,10);
+		temp_now_Day=parseInt(document.TIME_SETTING.TIME_SETTING_mtenCurrent_Day.value,10);
+		temp_now_long_sec = Date.parse(""+temp_now_Year+"/"+temp_now_Mon+"/"+temp_now_Day+" "+temp_now_Hour+":"+temp_now_Min+":"+temp_now_Sec+"");
+   
+		
+		if (document.TIME_SETTING.btndaylight.checked)
+		{
+			temp_now_long_sec=temp_now_long_sec-3600000;
+		}
+	
+		in_range_park=0;
+   
+		if(temp_over_year==1)
+		{
+			if(temp_now_long_sec < temp_dst_end_long_sec)
+				in_range_park=1;
+	
+			if(temp_now_long_sec >= temp_dst_start_long_sec)
+				in_range_park=2;
+
+		}
+		
+		e = document.getElementById("startMonDay");
+		
+		if (dst_startMon<10)
+			mon_zero_string="0";
+		else
+			mon_zero_string="";
+		
+		if (dst_startDay<10)
+			day_zero_string="0";
+		else 
+			day_zero_string="";
+		
+		if(temp_over_year==1)
+		{
+			if (in_range_park==0)
+			{
+				startDay_value= day_zero_string+dst_startDay ;			
+				e.innerHTML = "("+temp_yyy+"-"+mon_zero_string+dst_startMon+"-"+day_zero_string+dst_startDay+")";
+			}
+			
+			if (in_range_park==1)
+			{
+				temp_y=temp_yyy;
+				temp_y--;
+				prev_year_dst_startDay=calculate_target_date(temp_y, document.TIME_SETTING.startMonth.options.selectedIndex+1, document.TIME_SETTING.startD.options.selectedIndex, document.TIME_SETTING.startNum.options.selectedIndex);
+				startDay_value= day_zero_string+prev_year_dst_startDay ;					
+				e.innerHTML = "("+temp_y+"-"+mon_zero_string+dst_startMon+"-"+day_zero_string+prev_year_dst_startDay+")";
+			}
+		
+			if (in_range_park==2)
+			{
+				startDay_value= day_zero_string+dst_startDay ;			
+				e.innerHTML = "("+temp_yyy+"-"+mon_zero_string+dst_startMon+"-"+day_zero_string+dst_startDay+")";
+			}	
+		}
+		else
+		{
+			startDay_value= day_zero_string+dst_startDay ;		
+			e.innerHTML = "("+temp_yyy+"-"+mon_zero_string+dst_startMon+"-"+day_zero_string+dst_startDay+")";
+		}
+		
+		e = document.getElementById("endMonDay");
+		
+		if (dst_endMon<10)
+		{
+			mon_zero_string="0";
+		}
+		else
+		{	
+			mon_zero_string="";
+		}
+		
+		if (dst_endDay<10)
+		{
+			day_zero_string="0";
+		}	
+		else
+		{
+			day_zero_string="";
+		}
+		
+		if(temp_over_year==1) 
+		{
+			if (in_range_park==0)
+			{
+				temp_y=temp_yyy;
+				temp_y++;
+				next_year_dst_endDay=calculate_target_date(temp_y, document.TIME_SETTING.endMonth.options.selectedIndex+1, document.TIME_SETTING.endD.options.selectedIndex, document.TIME_SETTING.endNum.options.selectedIndex);
+				endDay_value= day_zero_string+next_year_dst_endDay ;			
+				e.innerHTML = "("+temp_y+"-"+mon_zero_string+dst_endMon+"-"+day_zero_string+next_year_dst_endDay+")";
+			}
+		
+			if (in_range_park==1)
+			{
+				endDay_value= day_zero_string+dst_endDay ;
+				e.innerHTML = "("+temp_yyy+"-"+mon_zero_string+dst_endMon+"-"+day_zero_string+dst_endDay+")";
+			}
+			
+			if (in_range_park==2)
+			{
+				temp_y=temp_yyy;
+				temp_y++;
+				next_year_dst_endDay=calculate_target_date(temp_y, document.TIME_SETTING.endMonth.options.selectedIndex+1, document.TIME_SETTING.endD.options.selectedIndex, document.TIME_SETTING.endNum.options.selectedIndex);
+				endDay_value= day_zero_string+next_year_dst_endDay ;			
+				e.innerHTML = "("+temp_y+"-"+mon_zero_string+dst_endMon+"-"+day_zero_string+next_year_dst_endDay+")";
+			}
+		}
+		else
+		{
+			endDay_value= day_zero_string+dst_endDay ;	
+			e.innerHTML = "("+temp_yyy+"-"+mon_zero_string+dst_endMon+"-"+day_zero_string+dst_endDay+")";
+		}
+		
+		document.TIME_SETTING.startDay.value = startDay_value;  
+		document.TIME_SETTING.endDay.value = endDay_value;      
+		
+	}
+	else
+	{
+		e = document.getElementById("startMonDay");
+		e.innerHTML = " ";
+		e = document.getElementById("endMonDay");
+		e.innerHTML = " ";
+
+	}
+	
+}
+
+function enableDST()
+{
+	if(document.TIME_SETTING.btndaylight.checked)
+	{
+		document.TIME_SETTING.btndaylight.value = "1";
+
+		document.TIME_SETTING.startNum.disabled = false;		
+		document.TIME_SETTING.startD.disabled = false;
+		document.TIME_SETTING.startMonth.disabled = false;
+		document.TIME_SETTING.startTime.disabled = false;
+		
+		document.TIME_SETTING.endNum.disabled = false;
+		document.TIME_SETTING.endD.disabled = false;
+		document.TIME_SETTING.endMonth.disabled = false;
+		document.TIME_SETTING.endTime.disabled = false;
+	}
+	else
+	{
+		document.TIME_SETTING.btndaylight.value = "0";
+		
+		document.TIME_SETTING.startDay.value = "01";
+		document.TIME_SETTING.endDay.value = "01";
+
+		document.TIME_SETTING.startNum.disabled = true;		
+		document.TIME_SETTING.startD.disabled = true;
+		document.TIME_SETTING.startMonth.disabled = true;
+		document.TIME_SETTING.startTime.disabled = true;
+
+		document.TIME_SETTING.endNum.disabled = true;
+		document.TIME_SETTING.endD.disabled = true;
+		document.TIME_SETTING.endMonth.disabled = true;
+		document.TIME_SETTING.endTime.disabled = true;
+	}
+}
+
+<!--
+//Addition for input error check, EMG2926-Q10A, WenHsiang, 2011/10/28
+function allcheck()
+{   
+    
+	var flag1 = curronttimeFormCheck();
+	//var flag2 = DSTFormCheck();  //Modification for input error check, EMG2926-Q10A, WenHsiang, 2012/07/04
+    //Addition for input error check, EMG2926-Q10A, WenHsiang, 2011/11/15
+	//if ( flag1 == false || flag2 == false )
+	
+	if ( flag1 == false )
+	{
+	    showWebMessage( 1, '<%:Message%>', '<%:Error%>' );
+	    return false;
+	}
+	else
+	{
+	    showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+	    return true;
+	}
+    //Addition for input error check, EMG2926-Q10A, WenHsiang, 2011/11/15
+}
+function curronttimeFormCheck()
+{
+	if (!((document.TIME_SETTING.mtenNew_Hour.value != "") && (document.TIME_SETTING.mtenNew_Hour.value >= 0)&& (document.TIME_SETTING.mtenNew_Hour.value <= 23)))
+	{
+	   alert("You must input 0~23 hours!!");
+	   return false;
+	}
+	else if (!((document.TIME_SETTING.mtenNew_Min.value != "") && (document.TIME_SETTING.mtenNew_Min.value >= 0)&& (document.TIME_SETTING.mtenNew_Min.value <= 59)))
+	{
+	   alert("You must input 0~59 minutes!!");
+	   return false;
+	} 
+	else if (!((document.TIME_SETTING.mtenNew_Sec.value != "") && (document.TIME_SETTING.mtenNew_Sec.value >= 0)&& (document.TIME_SETTING.mtenNew_Sec.value <= 59)))
+	{
+	   alert("You must input 0~59 seconds!!");
+	   return false;
+	}  
+	else if (!((document.TIME_SETTING.mtenNew_Year.value != "") && (document.TIME_SETTING.mtenNew_Year.value >= 1970)&& (document.TIME_SETTING.mtenNew_Year.value <= 2050)))
+	{
+	   alert("You must input 1970~2050 years!!");
+	   return false;
+	} 
+	else if (!((document.TIME_SETTING.mtenNew_Mon.value != "") && (document.TIME_SETTING.mtenNew_Mon.value >= 1)&& (document.TIME_SETTING.mtenNew_Mon.value <= 12)))
+    {
+	   alert("You must input 1~12 month!!");
+	   return false;
+	} 
+	else if ((document.TIME_SETTING.mtenNew_Mon.value == 1)||(document.TIME_SETTING.mtenNew_Mon.value == 3)||(document.TIME_SETTING.mtenNew_Mon.value == 5)||(document.TIME_SETTING.mtenNew_Mon.value == 7)||(document.TIME_SETTING.mtenNew_Mon.value == 8)||(document.TIME_SETTING.mtenNew_Mon.value == 10)||(document.TIME_SETTING.mtenNew_Mon.value == 12))
+	{
+		if (!((document.TIME_SETTING.mtenNew_Day.value != "") && (document.TIME_SETTING.mtenNew_Day.value > 0)&& (document.TIME_SETTING.mtenNew_Day.value <= 31)))
+		{
+		   alert("You must input 1~31 days!");
+		   return false;
+		}
+	}    
+    else if ((document.TIME_SETTING.mtenNew_Mon.value == 4)||(document.TIME_SETTING.mtenNew_Mon.value == 6)||(document.TIME_SETTING.mtenNew_Mon.value == 9)||(document.TIME_SETTING.mtenNew_Mon.value == 11))
+	{
+		if (!((document.TIME_SETTING.mtenNew_Day.value != "") && (document.TIME_SETTING.mtenNew_Day.value > 0)&& (document.TIME_SETTING.mtenNew_Day.value <= 30)))
+		{
+		   alert("You must input 1~30 days!");
+		   return false;
+		}
+	}
+	else if (document.TIME_SETTING.mtenNew_Mon.value == 2)
+	{
+		if (((document.TIME_SETTING.mtenNew_Year.value)%4)==0)
+		{
+		   if (!((document.TIME_SETTING.mtenNew_Day.value != "") && (document.TIME_SETTING.mtenNew_Day.value > 0)&& (document.TIME_SETTING.mtenNew_Day.value <= 29)))
+		   {
+		      alert("You must input 1~29 days!");
+		      return false;
+		   }
+		}
+		else
+		{
+		   if (!((document.TIME_SETTING.mtenNew_Day.value != "") && (document.TIME_SETTING.mtenNew_Day.value > 0)&& (document.TIME_SETTING.mtenNew_Day.value <= 28)))
+		   {
+		      alert("You must input 1~28 days!");
+		      return false;
+		   }
+	    }
+	}
+	else
+	   return true;
+}
+
+//Modification for input error check, NBG5715, WenHsiang, 2012/07/04
+function DSTFormCheck()
+{
+	if ((!((document.TIME_SETTING.startTime.value != "") && (document.TIME_SETTING.startTime.value >= 0)&& (document.TIME_SETTING.startTime.value <= 23)))||(!((document.TIME_SETTING.endTime.value != "") && (document.TIME_SETTING.endTime.value >= 0)&& (document.TIME_SETTING.endTime.value <= 23))))
+	{
+	   alert("Daylight Savings : You must input 0~23 hours!!");
+	   return false;
+	} 
+    else if ((document.TIME_SETTING.startMonth.options.value == "4")||(document.TIME_SETTING.startMonth.options.value == "6")||(document.TIME_SETTING.startMonth.options.value == "9")||(document.TIME_SETTING.startMonth.options.value == "11"))
+	{
+		if (!((document.TIME_SETTING.startTime.value != "") && (document.TIME_SETTING.startDay.options.value > 0)&& (document.TIME_SETTING.startDay.options.value <= 30)))
+		{
+		   alert("Daylight Savings : You must input 1~30 days!");
+		   return false;
+		}
+	} 
+    else if ((document.TIME_SETTING.endMonth.options.value == "4")||(document.TIME_SETTING.endMonth.options.value == "6")||(document.TIME_SETTING.endMonth.options.value == "9")||(document.TIME_SETTING.endMonth.options.value == "11"))
+	{
+		if (!((document.TIME_SETTING.endTime.value != "") && (document.TIME_SETTING.endDay.options.value > 0)&& (document.TIME_SETTING.endDay.options.value <= 30)))
+		{
+		   alert("Daylight Savings : You must input 1~30 days!");
+		   return false;
+		}
+	}
+	else if (document.TIME_SETTING.startMonth.options.value == "2")
+	{
+		if (((document.NTP.mtenCurrent_Year.value)%4)==0)
+		{
+		   if (!((document.TIME_SETTING.startDay.options.value != "") && (document.TIME_SETTING.startDay.options.value > 0)&& (document.TIME_SETTING.startDay.options.value <= 29)))
+		   {
+		      alert("Daylight Savings : You must input 1~29 days!");
+		      return false;
+		   }
+		}
+		else
+		{
+		   if (!((document.TIME_SETTING.startDay.options.value != "") && (document.TIME_SETTING.startDay.options.value > 0)&& (document.TIME_SETTING.startDay.options.value <= 28)))
+		   {
+		      alert("Daylight Savings : You must input 1~28 days!");
+		      return false;
+		   }
+		}
+	} 
+	else if (document.TIME_SETTING.endMonth.options.value == "2")
+	{
+		if (((document.NTP.mtenCurrent_Year.value)%4)==0)
+		{
+		   if (!((document.TIME_SETTING.endTime.value != "") && (document.TIME_SETTING.endDay.options.value > 0)&& (document.TIME_SETTING.endDay.options.value <= 29)))
+		   {
+			  alert("Daylight Savings : You must input 1~29 days!");
+			  return false;
+		   }
+		}
+		else
+		{
+		   if (!((document.TIME_SETTING.endTime.value != "") && (document.TIME_SETTING.endDay.options.value > 0)&& (document.TIME_SETTING.endDay.options.value <= 28)))
+		   {
+		      alert("Daylight Savings : You must input 1~28 days!");
+		      return false;
+		   }
+		}
+	}
+	else
+	    return true;
+}
+//Modification for input error check, EMG2926-Q10A, WenHsiang, 2012/07/04
+//Addition for input error check, EMG2926-Q10A, WenHsiang, 2011/10/28	  
+//-->
+</script>	
+</head>
+<body  onload="get_tzIndex(document.forms[0]); enableDST(); onchange_calculate_target_date(0); ">
+<form method="post" name="TIME_SETTING" action="<%=controller%>/expert/maintenance/time" >
+
+<input type="hidden" name="TIME_SETTING_mtenCurrent_Hour" value='<%=string.match(luci.sys.exec("date +%H"),"(%d+)")%>' />
+<input type="hidden" name="TIME_SETTING_mtenCurrent_Min" value='<%=string.match(luci.sys.exec("date +%M"),"(%d+)")%>' />
+<input type="hidden" name="TIME_SETTING_mtenCurrent_Sec" value='<%=string.match(luci.sys.exec("date +%S"),"(%d+)")%>' />
+<input type="hidden" name="TIME_SETTING_mtenCurrent_Year" value='<%=string.match(luci.sys.exec("date +%Y"),"(%d+)")%>' />
+<input type="hidden" name="TIME_SETTING_mtenCurrent_Mon" value='<%=string.match(luci.sys.exec("date +%m"),"(%d+)")%>' />
+<input type="hidden" name="TIME_SETTING_mtenCurrent_Day" value='<%=string.match(luci.sys.exec("date +%d"),"(%d+)")%>' />
+
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:time_setting%>"><span><%:time_setting%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab --> 
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:current_time_date%></div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:current_time%> : </li>
+              <li class="right_table" id="mtenCurrent_Time"></li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:current_date%> :</li>
+              <li class="right_table" id="mtenCurrent_Date"></li>
+            </ul>
+          </div>
+          <%local manual_year = uci.get("time","main","manual_year")%>
+          <%local manual_mon = uci.get("time","main","manual_mon")%>
+          <%local manual_day = uci.get("time","main","manual_day")%>
+          <%local manual_hour = uci.get("time","main","manual_hour")%>
+          <%local manual_min = uci.get("time","main","manual_min")%>
+          <%local manual_sec = uci.get("time","main","manual_sec")%>
+          <%local mode = uci.get("time","main","mode")%>
+          <%local ntpName = uci.get("time","main","ntpName")%>
+          <%local tzIndex = uci.get("time","main","tzIndex")%>
+		  <%local start_num = uci.get("time","DST","start_num")%>
+          <%local start_month = uci.get("time","DST","start_month")%>
+          <%local start_d = uci.get("time","DST","start_d")%>
+          <%local start_clock = uci.get("time","DST","start_clock")%>
+		  <%local end_num = uci.get("time","DST","end_num")%>
+          <%local end_month = uci.get("time","DST","end_month")%>
+          <%local end_d = uci.get("time","DST","end_d")%>
+          <%local end_clock = uci.get("time","DST","end_clock")%>
+          <%local enable = uci.get("time","DST","enable")%>
+          <div class="space"></div>
+          <div class="title"><%:time_date_setup%></div>
+          <div class="w_text">
+            <input name="mten_ServiceType" value="0" <%if mode=="manual" then%>checked="checked"<%end%> type="radio" /><%:time_manual%>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:new_time%> : </li>
+              <li class="right_table">
+                <input name="mtenNew_Hour" size="2" maxlength="2" <%if manual_hour then%>value="<%=manual_hour%>" <%else%>value="00" <%end%> type="text" />:
+                <input name="mtenNew_Min" size="2" maxlength="2" <%if manual_min then%>value="<%=manual_min%>" <%else%>value="00" <%end%>  type="text" />:
+                <input name="mtenNew_Sec" size="2" maxlength="2" <%if manual_sec then%>value="<%=manual_sec%>" <%else%>value="00" <%end%>  type="text" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:new_date%> : </li>
+              <li class="right_table">
+                <input name="mtenNew_Year" size="2" maxlength="4" <%if manual_year then%>value="<%=manual_year%>" <%else%>value="2012" <%end%>  type="text" />/
+                <input name="mtenNew_Mon" size="2" maxlength="2" <%if manual_mon then%>value="<%=manual_mon%>" <%else%>value="01" <%end%> type="text" />/
+                <input name="mtenNew_Day" size="2" maxlength="2" <%if manual_day then%>value="<%=manual_day%>" <%else%>value="01" <%end%> type="text" />
+              </li>
+            </ul>
+          </div>
+          <div class="w_text">
+            <input name="mten_ServiceType" value="1" type="radio" <%if mode=="NTP" then%>checked="checked"<%end%>/>
+            <%:get_from_server%>
+          </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:server_address%> : </li>
+              <li class="right_table">
+                <input  name="ntpName" size="20" maxlength="31" <%if ntpName then%>value="<%=ntpName%>" <%else%>value="time.stdtime.gov.tw"<%end%> type="text" />
+              </li>
+            </ul>
+          </div>
+          <div class="space"></div>
+          <div class="title"><%:time_zone_setup%></div>
+		  
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:time_zone%> : </li>
+              <li class="right_table">
+                <select name="mtenTimeZone" size="1" onchange="get_tzIndex(document.forms[0])">
+                  <option value="GMT+12"   <%if tzIndex=="0"  then%>selected="selected"<%end%>><%:International%>  </option>
+                  <option value="GMT+11"   <%if tzIndex=="1"  then%>selected="selected"<%end%>><%:Midway_Island%>  </option>
+                  <option value="GMT+10"   <%if tzIndex=="2"  then%>selected="selected"<%end%>><%:Hawaii%>         </option>
+                  <option value="GMT+9"    <%if tzIndex=="3"  then%>selected="selected"<%end%>><%:Alaska%>         </option>
+                  <option value="GMT+8"    <%if tzIndex=="4"  then%>selected="selected"<%end%>><%:Pacific_Time%>   </option>
+                  <option value="GMT+7"    <%if tzIndex=="5"  then%>selected="selected"<%end%>><%:Arizona%>        </option>
+                  <option value="GMT+7"    <%if tzIndex=="6"  then%>selected="selected"<%end%>><%:Chihuahua%>      </option>
+                  <option value="GMT+7"    <%if tzIndex=="7"  then%>selected="selected"<%end%>><%:Mountain_Time%>  </option>
+                  <option value="GMT+6"    <%if tzIndex=="8"  then%>selected="selected"<%end%>><%:Central_America%></option>
+                  <option value="GMT+6"    <%if tzIndex=="9"  then%>selected="selected"<%end%>><%:Central_Time%>   </option>
+                  <option value="GMT+6"    <%if tzIndex=="10" then%>selected="selected"<%end%>><%:Guadalajara%>    </option>
+                  <option value="GMT+6"    <%if tzIndex=="11" then%>selected="selected"<%end%>><%:Saskatchewan%>   </option>
+                  <option value="GMT+5"    <%if tzIndex=="12" then%>selected="selected"<%end%>><%:Bogota%>         </option>
+                  <option value="GMT+5"    <%if tzIndex=="13" then%>selected="selected"<%end%>><%:Eastern_Time%>   </option>
+                  <option value="GMT+5"    <%if tzIndex=="14" then%>selected="selected"<%end%>><%:Indiana%>        </option>
+                  <option value="GMT+4"    <%if tzIndex=="15" then%>selected="selected"<%end%>><%:Altlantic_Time%> </option>
+                  <option value="GMT+4"    <%if tzIndex=="16" then%>selected="selected"<%end%>><%:Caracas%>        </option>
+                  <option value="GMT+3:30" <%if tzIndex=="17" then%>selected="selected"<%end%>><%:Newfoundland%>   </option>
+                  <option value="GMT+3"    <%if tzIndex=="18" then%>selected="selected"<%end%>><%:Brasilia%>       </option>
+                  <option value="GMT+3"    <%if tzIndex=="19" then%>selected="selected"<%end%>><%:Buenos_Aires%>   </option>
+                  <option value="GMT+2"    <%if tzIndex=="20" then%>selected="selected"<%end%>><%:Mid_Atlantic%>   </option>
+                  <option value="GMT+1"    <%if tzIndex=="21" then%>selected="selected"<%end%>><%:Azores%>         </option>
+                  <option value="GMT-0"    <%if tzIndex=="22" then%>selected="selected"<%end%>><%:Casablanca%>     </option>
+                  <option value="GMT-0"    <%if tzIndex=="23" then%>selected="selected"<%end%>><%:Greenwich%>      </option>
+                  <option value="GMT-1"    <%if tzIndex=="24" then%>selected="selected"<%end%>><%:Amsterdam%>      </option>
+                  <option value="GMT-1"    <%if tzIndex=="25" then%>selected="selected"<%end%>><%:Belgrade%>       </option>
+                  <option value="GMT-1"    <%if tzIndex=="26" then%>selected="selected"<%end%>><%:Brussels%>       </option>
+                  <option value="GMT-1"    <%if tzIndex=="27" then%>selected="selected"<%end%>><%:Sarajevo%>       </option>
+                  <option value="GMT-1"    <%if tzIndex=="28" then%>selected="selected"<%end%>><%:West_Central_Africa%></option>
+                  <option value="GMT-2"    <%if tzIndex=="29" then%>selected="selected"<%end%>><%:Athens%>         </option>
+                  <option value="GMT-2"    <%if tzIndex=="30" then%>selected="selected"<%end%>><%:Bucharest%>      </option>
+                  <option value="GMT-2"    <%if tzIndex=="31" then%>selected="selected"<%end%>><%:Helsinki%>       </option>
+                  <option value="GMT-2"    <%if tzIndex=="32" then%>selected="selected"<%end%>><%:Jerusalem%>      </option>
+                  <option value="GMT-3"    <%if tzIndex=="33" then%>selected="selected"<%end%>><%:Baghdad%>        </option>
+                  <option value="GMT-3"    <%if tzIndex=="34" then%>selected="selected"<%end%>><%:Moscow%>         </option>
+                  <option value="GMT-3"    <%if tzIndex=="35" then%>selected="selected"<%end%>><%:Tehran%>         </option>
+                  <option value="GMT-4"    <%if tzIndex=="36" then%>selected="selected"<%end%>><%:Abu_Dhabi%>      </option>
+                  <option value="GMT-4"    <%if tzIndex=="37" then%>selected="selected"<%end%>><%:Baku%>           </option>
+                  <option value="GMT-4"    <%if tzIndex=="38" then%>selected="selected"<%end%>><%:Kabul%>          </option>
+                  <option value="GMT-5"    <%if tzIndex=="39" then%>selected="selected"<%end%>><%:Ekaterinburg%>   </option>
+                  <option value="GMT-5"    <%if tzIndex=="40" then%>selected="selected"<%end%>><%:Islamabad%>      </option>
+                  <option value="GMT-5:30" <%if tzIndex=="41" then%>selected="selected"<%end%>><%:Chennai%>        </option>
+                  <option value="GMT-5:45" <%if tzIndex=="42" then%>selected="selected"<%end%>><%:Katmandu%>       </option>
+                  <option value="GMT-6"    <%if tzIndex=="43" then%>selected="selected"<%end%>><%:Almaty%>         </option>
+                  <option value="GMT-6"    <%if tzIndex=="44" then%>selected="selected"<%end%>><%:Astana%>         </option>
+                  <option value="GMT-6"    <%if tzIndex=="45" then%>selected="selected"<%end%>><%:Sri_Jayawardenepura%></option>
+                  <option value="GMT-6:30" <%if tzIndex=="46" then%>selected="selected"<%end%>><%:Rangoon%>        </option>
+                  <option value="GMT-7"    <%if tzIndex=="47" then%>selected="selected"<%end%>><%:Bangkok%>        </option>
+                  <option value="GMT-7"    <%if tzIndex=="48" then%>selected="selected"<%end%>><%:Krasnoyarsk%>    </option>
+                  <option value="GMT-8"    <%if tzIndex=="49" then%>selected="selected"<%end%>><%:Beijing%>        </option>
+                  <option value="GMT-8"    <%if tzIndex=="50" then%>selected="selected"<%end%>><%:Irkutsk%>        </option>
+                  <option value="GMT-8"    <%if tzIndex=="51" then%>selected="selected"<%end%>><%:Singapore%>      </option>
+                  <option value="GMT-8"    <%if tzIndex=="52" then%>selected="selected"<%end%>><%:Taipei%>         </option>
+                  <option value="GMT-9"    <%if tzIndex=="53" then%>selected="selected"<%end%>><%:Tokyo%>          </option>
+                  <option value="GMT-9"    <%if tzIndex=="54" then%>selected="selected"<%end%>><%:Seoul%>          </option>
+                  <option value="GMT-9:30" <%if tzIndex=="55" then%>selected="selected"<%end%>><%:Adelaide%>       </option>
+                  <option value="GMT-10"   <%if tzIndex=="56" then%>selected="selected"<%end%>><%:Brisbane%>       </option>
+                  <option value="GMT-10"   <%if tzIndex=="57" then%>selected="selected"<%end%>><%:Canberra%>       </option>
+                  <option value="GMT-10"   <%if tzIndex=="58" then%>selected="selected"<%end%>><%:Guam%>           </option>
+                  <option value="GMT-11"   <%if tzIndex=="59" then%>selected="selected"<%end%>><%:Magadan%>        </option>
+                  <option value="GMT-12"   <%if tzIndex=="60" then%>selected="selected"<%end%>><%:Auckland%>       </option>
+                  <option value="GMT-12"   <%if tzIndex=="61" then%>selected="selected"<%end%>><%:Fiji%>           </option>
+                  <option value="GMT-13"   <%if tzIndex=="62" then%>selected="selected"<%end%>><%:Nuku_alofa%>     </option>
+                </select>
+              </li>
+            </ul>
+          </div>
+		  
+          <div class="w_text"><input name="btndaylight"  type="checkbox" <%if enable=="1" then%>checked="checked"<%end%> onclick="enableDST(); onchange_calculate_target_date(0);"/><%:daylight_savings%></div>
+          
+		   <div class="w_text">
+             <ul>
+			   <li class="left_table"><%:start_date%></li>			
+			   <!-- <li class="right_table"> -->
+				 <select name="startNum" size="1" maxlength="15" onchange="onchange_calculate_target_date(0);" >
+				  <option value="1" <%if start_num=="1" then%>selected="selected"<%end%>>First</option>			
+                  <option value="2" <%if start_num=="2" then%>selected="selected"<%end%>>Second</option>
+                  <option value="3" <%if start_num=="3" then%>selected="selected"<%end%>>Thrid</option>
+                  <option value="4" <%if start_num=="4" then%>selected="selected"<%end%>>Fourth</option>
+                  <option value="5" <%if start_num=="5" then%>selected="selected"<%end%>>Last</option>
+				 </select>&nbsp;
+				 <select name="startD" size="1" maxlength="15" onchange="onchange_calculate_target_date(0);" >
+				  <option value="0" <%if start_d=="0" then%>selected="selected"<%end%>>Sunday</option>			
+                  <option value="1" <%if start_d=="1" then%>selected="selected"<%end%>>Monday</option>
+                  <option value="2" <%if start_d=="2" then%>selected="selected"<%end%>>Tuesday</option>
+                  <option value="3" <%if start_d=="3" then%>selected="selected"<%end%>>Wednesday</option>
+                  <option value="4" <%if start_d=="4" then%>selected="selected"<%end%>>Thursday</option>
+                  <option value="5" <%if start_d=="5" then%>selected="selected"<%end%>>Friday</option>
+                  <option value="6" <%if start_d=="6" then%>selected="selected"<%end%>>Saturday</option>
+				 </select>&nbsp;<%:of%>&nbsp;
+				 <select name="startMonth" size="1" maxlength="15" onchange="onchange_calculate_target_date(0);" >
+                  <option value="01" <%if start_month=="01" then%>selected="selected"<%end%>><%:January%>   </option>
+                  <option value="02" <%if start_month=="02" then%>selected="selected"<%end%>><%:February%>  </option>
+                  <option value="03" <%if start_month=="03" then%>selected="selected"<%end%>><%:March%>     </option>
+                  <option value="04" <%if start_month=="04" then%>selected="selected"<%end%>><%:April%>     </option>
+                  <option value="05" <%if start_month=="05" then%>selected="selected"<%end%>><%:May%>       </option>
+                  <option value="06" <%if start_month=="06" then%>selected="selected"<%end%>><%:June%>      </option>
+                  <option value="07" <%if start_month=="07" then%>selected="selected"<%end%>><%:July%>      </option>
+                  <option value="08" <%if start_month=="08" then%>selected="selected"<%end%>><%:August%>    </option>
+                  <option value="09" <%if start_month=="09" then%>selected="selected"<%end%>><%:September%> </option>
+                  <option value="10" <%if start_month=="10" then%>selected="selected"<%end%>><%:October%>   </option>
+                  <option value="11" <%if start_month=="11" then%>selected="selected"<%end%>><%:November%>  </option>
+                  <option value="12" <%if start_month=="12" then%>selected="selected"<%end%>><%:December%>  </option>
+                 </select>
+			     <span id="startMonDay"></span>&nbsp;&nbsp;<%:at%>&nbsp;
+		
+                 <select name="startTime" size="1" maxlength="15">
+                  <option value="00" <%if start_clock=="00" then%>selected="selected"<%end%>>00</option>			
+                  <option value="01" <%if start_clock=="01" then%>selected="selected"<%end%>>01</option>
+                  <option value="02" <%if start_clock=="02" then%>selected="selected"<%end%>>02</option>
+				  <option value="03" <%if start_clock=="03" then%>selected="selected"<%end%>>03</option>
+				  <option value="04" <%if start_clock=="04" then%>selected="selected"<%end%>>04</option>
+				  <option value="05" <%if start_clock=="05" then%>selected="selected"<%end%>>05</option>
+				  <option value="06" <%if start_clock=="06" then%>selected="selected"<%end%>>06</option>
+				  <option value="07" <%if start_clock=="07" then%>selected="selected"<%end%>>07</option>
+				  <option value="08" <%if start_clock=="08" then%>selected="selected"<%end%>>08</option>
+				  <option value="09" <%if start_clock=="09" then%>selected="selected"<%end%>>09</option>
+				  <option value="10" <%if start_clock=="10" then%>selected="selected"<%end%>>10</option>
+				  <option value="11" <%if start_clock=="11" then%>selected="selected"<%end%>>11</option>
+				  <option value="12" <%if start_clock=="12" then%>selected="selected"<%end%>>12</option>
+				  <option value="13" <%if start_clock=="13" then%>selected="selected"<%end%>>13</option>
+				  <option value="14" <%if start_clock=="14" then%>selected="selected"<%end%>>14</option>
+				  <option value="15" <%if start_clock=="15" then%>selected="selected"<%end%>>15</option>
+				  <option value="16" <%if start_clock=="16" then%>selected="selected"<%end%>>16</option>
+				  <option value="17" <%if start_clock=="17" then%>selected="selected"<%end%>>17</option>
+				  <option value="18" <%if start_clock=="18" then%>selected="selected"<%end%>>18</option>
+				  <option value="19" <%if start_clock=="19" then%>selected="selected"<%end%>>19</option>
+				  <option value="20" <%if start_clock=="20" then%>selected="selected"<%end%>>20</option>
+				  <option value="21" <%if start_clock=="21" then%>selected="selected"<%end%>>21</option>
+				  <option value="22" <%if start_clock=="22" then%>selected="selected"<%end%>>22</option>
+				  <option value="23" <%if start_clock=="23" then%>selected="selected"<%end%>>23</option>
+				 </select>&nbsp;&nbsp;<%:oclock%>&nbsp;
+               <!-- </li> -->
+             </ul>			
+		   </div>
+		   
+		   <div class="w_text">
+             <ul>
+			  <li class="left_table"><%:end_date%></li>			
+			  <!-- <li class="right_table"> -->		  
+				<select name="endNum" size="1" maxlength="15" onchange="onchange_calculate_target_date(0);" >
+				  <option value="1" <%if end_num=="1" then%>selected="selected"<%end%>>First</option>			
+				  <option value="2" <%if end_num=="2" then%>selected="selected"<%end%>>Second</option>
+				  <option value="3" <%if end_num=="3" then%>selected="selected"<%end%>>Thrid</option>
+				  <option value="4" <%if end_num=="4" then%>selected="selected"<%end%>>Fourth</option>
+				  <option value="5" <%if end_num=="5" then%>selected="selected"<%end%>>Last</option>
+				</select>&nbsp;
+				<select name="endD" size="1" maxlength="15" onchange="onchange_calculate_target_date(0);" >
+				  <option value="0" <%if end_d=="0" then%>selected="selected"<%end%>>Sunday</option>			
+				  <option value="1" <%if end_d=="1" then%>selected="selected"<%end%>>Monday</option>
+				  <option value="2" <%if end_d=="2" then%>selected="selected"<%end%>>Tuesday</option>
+				  <option value="3" <%if end_d=="3" then%>selected="selected"<%end%>>Wednesday</option>
+				  <option value="4" <%if end_d=="4" then%>selected="selected"<%end%>>Thursday</option>
+				  <option value="5" <%if end_d=="5" then%>selected="selected"<%end%>>Friday</option>
+				  <option value="6" <%if end_d=="6" then%>selected="selected"<%end%>>Saturday</option>
+				</select>&nbsp;<%:of%>&nbsp;
+				<select name="endMonth" size="1" maxlength="15" onchange="onchange_calculate_target_date(0);" >
+				  <option value="01" <%if end_month=="01" then%>selected="selected"<%end%>><%:January%>   </option>
+				  <option value="02" <%if end_month=="02" then%>selected="selected"<%end%>><%:February%>  </option>
+				  <option value="03" <%if end_month=="03" then%>selected="selected"<%end%>><%:March%>     </option>
+				  <option value="04" <%if end_month=="04" then%>selected="selected"<%end%>><%:April%>     </option>
+				  <option value="05" <%if end_month=="05" then%>selected="selected"<%end%>><%:May%>       </option>
+				  <option value="06" <%if end_month=="06" then%>selected="selected"<%end%>><%:June%>      </option>
+				  <option value="07" <%if end_month=="07" then%>selected="selected"<%end%>><%:July%>      </option>
+				  <option value="08" <%if end_month=="08" then%>selected="selected"<%end%>><%:August%>    </option>
+				  <option value="09" <%if end_month=="09" then%>selected="selected"<%end%>><%:September%> </option>
+				  <option value="10" <%if end_month=="10" then%>selected="selected"<%end%>><%:October%>   </option>
+				  <option value="11" <%if end_month=="11" then%>selected="selected"<%end%>><%:November%>  </option>
+				  <option value="12" <%if end_month=="12" then%>selected="selected"<%end%>><%:December%>  </option>
+				</select>
+				<span id="endMonDay"></span>&nbsp;&nbsp;<%:at%>&nbsp;
+						
+				<select name="endTime" size="1" maxlength="15">
+				  <option value="00" <%if end_clock=="00" then%>selected="selected"<%end%>>00</option>			
+				  <option value="01" <%if end_clock=="01" then%>selected="selected"<%end%>>01</option>
+				  <option value="02" <%if end_clock=="02" then%>selected="selected"<%end%>>02</option>
+				  <option value="03" <%if end_clock=="03" then%>selected="selected"<%end%>>03</option>
+				  <option value="04" <%if end_clock=="04" then%>selected="selected"<%end%>>04</option>
+				  <option value="05" <%if end_clock=="05" then%>selected="selected"<%end%>>05</option>
+				  <option value="06" <%if end_clock=="06" then%>selected="selected"<%end%>>06</option>
+				  <option value="07" <%if end_clock=="07" then%>selected="selected"<%end%>>07</option>
+				  <option value="08" <%if end_clock=="08" then%>selected="selected"<%end%>>08</option>
+				  <option value="09" <%if end_clock=="09" then%>selected="selected"<%end%>>09</option>
+				  <option value="10" <%if end_clock=="10" then%>selected="selected"<%end%>>10</option>
+				  <option value="11" <%if end_clock=="11" then%>selected="selected"<%end%>>11</option>
+				  <option value="12" <%if end_clock=="12" then%>selected="selected"<%end%>>12</option>
+				  <option value="13" <%if end_clock=="13" then%>selected="selected"<%end%>>13</option>
+				  <option value="14" <%if end_clock=="14" then%>selected="selected"<%end%>>14</option>
+				  <option value="15" <%if end_clock=="15" then%>selected="selected"<%end%>>15</option>
+				  <option value="16" <%if end_clock=="16" then%>selected="selected"<%end%>>16</option>
+				  <option value="17" <%if end_clock=="17" then%>selected="selected"<%end%>>17</option>
+				  <option value="18" <%if end_clock=="18" then%>selected="selected"<%end%>>18</option>
+				  <option value="19" <%if end_clock=="19" then%>selected="selected"<%end%>>19</option>
+				  <option value="20" <%if end_clock=="20" then%>selected="selected"<%end%>>20</option>
+				  <option value="21" <%if end_clock=="21" then%>selected="selected"<%end%>>21</option>
+				  <option value="22" <%if end_clock=="22" then%>selected="selected"<%end%>>22</option>
+				  <option value="23" <%if end_clock=="23" then%>selected="selected"<%end%>>23</option>
+				</select>&nbsp;&nbsp;<%:oclock%>&nbsp;
+			   <!-- </li> -->
+              </ul>			
+			</div>
+          </ul>
+		  
+          <ul>
+            <div class="spaceair"></div>
+          </ul>
+		  
+        </div>
+      </li>
+      <li class="table_button">
+        <div class="button">
+          <center>
+            <input name="sysSubmit2" value="<%:apply%>" type="submit" onClick="return allcheck()"/>
+            &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+            <input name="Cancel" value="<%:cancel%>" type="reset" />&nbsp;&nbsp;&nbsp;
+          </center>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <input type="hidden" name="tzIndex" size="20" value="1">
+  
+  <input type="hidden" name="startDay" size="20" value="document.TIME_SETTING.startDay.value"> 
+  <input type="hidden" name="endDay" size="20" value="document.TIME_SETTING.endDay.value">
+    
+</form> 
+</body>
+<form method="post" name="NTP">
+<input type="hidden" name="mtenCurrent_Hour" value='<%=string.match(luci.sys.exec("date +%H"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Min" value='<%=string.match(luci.sys.exec("date +%M"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Sec" value='<%=string.match(luci.sys.exec("date +%S"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Year" value='<%=string.match(luci.sys.exec("date +%Y"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Mon" value='<%=string.match(luci.sys.exec("date +%m"),"(%d+)")%>' />
+<input type="hidden" name="mtenCurrent_Day" value='<%=string.match(luci.sys.exec("date +%d"),"(%d+)")%>' />
+</form>
+
+<script language="JavaScript">
+function get_tzIndex(form)
+{
+	var newIndex = form.mtenTimeZone.selectedIndex;
+	document.forms[0].tzIndex.value=newIndex;
+}
+
+start_Mon='<%=uci:get("time", "DST", "start_month")%>';
+start_Hour='<%=uci:get("time", "DST", "start_clock")%>'; 
+end_Mon='<%=uci:get("time", "DST", "end_month")%>';
+end_Hour='<%=uci:get("time", "DST", "end_clock")%>';
+enable_dst= '<%=uci:get("time", "DST", "enable")%>';
+
+
+start_Num='<%=uci:get("time", "DST", "start_num")%>';
+end_Num='<%=uci:get("time", "DST", "end_num")%>';
+start_D='<%=uci:get("time", "DST", "start_d")%>';
+end_D='<%=uci:get("time", "DST", "end_d")%>';
+
+modes= '<%=uci:get("time", "main", "mode")%>';
+mtensNew_Year= '<%=uci:get("time", "main", "manual_year")%>';
+
+
+initDateAndTime();
+IncreaseSec();	
+</script>
+
+<script language="JavaScript"> showFullPath(' <%:maintenance%> > <%:time%>');</script> 
+</html>

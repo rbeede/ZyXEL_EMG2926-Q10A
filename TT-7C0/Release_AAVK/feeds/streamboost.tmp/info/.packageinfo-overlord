@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/overlord/Makefile
+Package: overlord
+Submenu: Bandwidth Control
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +jansson
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Overlord
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: overlord-.tar.gz
+Type: ipkg
+Description: Overlord manages bandwidth allocation by computing the current policy profile for each flow.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_overlord
+	config overlord_USE_CUSTOM_VERSION
+		depends on PACKAGE_overlord
+		bool "Use custom package version"
+		default n
+	config overlord_CUSTOM_VERSION
+		depends on overlord_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_overlord
+	config overlord_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_overlord
+		bool "Use custom source directory"
+		default n
+	config overlord_CUSTOM_SOURCE_DIR
+		depends on overlord_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

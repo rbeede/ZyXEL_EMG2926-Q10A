@@ -1,0 +1,426 @@
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+<%local dns_str = uci.get("dhcp","lan","lan_dns")%>
+var dns_str="<%=dns_str%>";
+<%local dns_op1,dns_op2,dns_op3 = string.match(dns_str,"([FromISPNonednsRelay0-9.]+),([FromISPNonednsRelay0-9.]+),([FromISPNonednsRelay0-9.]+)")%>
+var dns1="0.0.0.0";
+var dns2="0.0.0.0";
+var dns3="0.0.0.0";
+
+<%luci.sys.net.obtainDns(function(rt) %>
+dns<%=rt.index%>="<%=rt.dns%>";
+<%end)%>
+
+
+var show1=0;
+var show2=0;
+var show3=0;
+function doFirDNSType( form )
+{
+    	var newIndex = form.LAN_FirstDNS.selectedIndex;
+    	switch(newIndex)
+    	{
+        	case 2:
+                	show1=0;
+                       	form.sysFirDNSAddr.value=form.LAN_FirstDNS.options[newIndex].value;
+                        form.sysFirDNSAddr.readOnly = true;
+                        break;
+        	case 0:
+                        show1=1;
+                        form.sysFirDNSAddr.value=dns1;
+                        form.sysFirDNSAddr.readOnly = true;
+                        break;
+
+        	case 3:
+			show1=0;
+                        form.sysFirDNSAddr.value="0.0.0.0";
+                        form.sysFirDNSAddr.readOnly = true;
+                        break;
+        	case 1:
+			show1=0;
+                        form.sysFirDNSAddr.readOnly = false;
+                        break;
+        	default:
+                	break;
+    	}
+}
+
+function doSecDNSType( form )
+{
+    	var newIndex = form.LAN_SecondDNS.selectedIndex;
+    	switch(newIndex)
+    	{
+        	case 2:
+			show2=0;
+                        form.sysSecDNSAddr.value=form.LAN_SecondDNS.options[newIndex].value;
+                        form.sysSecDNSAddr.readOnly = true;
+                        break;
+        	case 0:
+                        if(  show1==0){
+                                form.sysSecDNSAddr.value=dns1;
+                                show1=1;
+                                show2=0;
+                        }
+                        else if ( show1==1 ){
+                                show2=1;
+                        	form.sysSecDNSAddr.value=dns2;
+                        }
+                        form.sysSecDNSAddr.readOnly = true;
+                        break;
+        	case 3:
+			show2=0;
+                        form.sysSecDNSAddr.value="0.0.0.0";
+                        form.sysSecDNSAddr.readOnly = true;
+                        break;
+        	case 1:
+						show2=0;
+                        form.sysSecDNSAddr.readOnly = false;
+                        break;
+        	default:
+                	break;
+    	}
+}
+
+
+function doThirdDNSType( form )
+{
+    	var newIndex = form.LAN_ThirdDNS.selectedIndex;
+    	switch(newIndex)
+    	{
+        	case 2:
+			show3=0;
+			form.sysThirdDNSAddr.value=form.LAN_ThirdDNS.options[newIndex].value;
+			form.sysThirdDNSAddr.readOnly = true;
+			break;
+       	 	case 0:
+			if(show1==0) {
+				form.sysThirdDNSAddr.value=dns1;
+				show1=1;
+			}
+			else if (show2==0){
+				show2=1;
+				form.sysThirdDNSAddr.value=dns2;
+			}
+			else{
+				show3=1;
+				form.sysThirdDNSAddr.value=dns3;
+			}
+                        form.sysThirdDNSAddr.readOnly = true;
+                        break;
+        	case 3:
+			show3=0;
+                        form.sysThirdDNSAddr.value="0.0.0.0";
+                        form.sysThirdDNSAddr.readOnly = true;
+                        break;
+        	case 1:
+        		show3=0;
+                        form.sysThirdDNSAddr.readOnly = false;
+                        break;
+        	default:
+                        break;
+    	}
+}
+
+function copyto()
+{
+	doFirDNSType( document.forms[0] );
+   	doSecDNSType( document.forms[0] );
+     	doThirdDNSType( document.forms[0] );
+	doMacIp( document.forms[0] );
+}
+
+function doMacIp( form )
+{
+	<%luci.sys.net.macIp(function(rt) %>
+		var mac<%=rt.index%>="<%=rt.mac%>"; 
+		var ip<%=rt.index%>="<%=rt.ip%>";
+		form.dhcp_static_mac<%=rt.index%>.value=mac<%=rt.index%>;
+		form.dhcp_static_ip<%=rt.index%>.value=ip<%=rt.index%>;
+	<%end)%>
+}
+function CheckValue()
+{
+	var i;
+	var j;
+
+
+	for(i=1;i<=7;i++){
+		var checkMac = document.getElementsByName("dhcp_static_mac" + i)[0].value;
+		var checkIp = document.getElementsByName("dhcp_static_ip" + i)[0].value;
+		if ((checkMac != "00:00:00:00:00:00" && checkIp == "0.0.0.0") || (checkMac == "00:00:00:00:00:00" && checkIp != "0.0.0.0")){
+			alert("<%:DHCP_Error_1%>, MAC[" + checkMac + "] IP[" + checkIp + "]!!");
+			return false;
+		}
+		if(checkMac == "" || checkIp == ""){
+			alert("<%:DHCP_Error_1%>, MAC[" + checkMac + "] IP[" + checkIp + "]!!");
+			return false;
+		}
+		
+		if (checkMac != "00:00:00:00:00:00" && checkIp != "0.0.0.0"){
+			if(false == checkIpFormat(checkIp)){
+				return false;
+			}
+			
+			for (j=i+1;j<=8;j++){
+				var tempMac = document.getElementsByName("dhcp_static_mac" + j)[0].value;
+				var tempIp = document.getElementsByName("dhcp_static_ip" + j)[0].value;
+				
+				if (tempMac != "00:00:00:00:00:00" && tempIp != "0.0.0.0"){
+					if(checkMac == tempMac){
+						alert("<%:DHCP_Error_2%>, [" + checkMac + "]!");
+						return false;
+					}
+					
+					if(checkIp == tempIp){
+						alert("<%:DHCP_Error_3%>, [" + checkIp + "]!");
+						return false;
+					}
+					
+					if(false == checkIpFormat(tempIp)){
+						return false;
+					}
+				}
+			}
+		}
+	}
+	
+	if(document.DHCP_Add.LAN_FirstDNS.selectedIndex == 1){
+		if(document.DHCP_Add.sysFirDNSAddr.value == ""){
+			alert('<%:WAN_Error_12%>');
+			return false;
+		}
+		if(false == checkIpFormat(document.DHCP_Add.sysFirDNSAddr.value)){
+			return false;
+		} 
+	}
+	
+	if(document.DHCP_Add.LAN_SecondDNS.selectedIndex == 1){
+		if(document.DHCP_Add.sysSecDNSAddr.value == ""){
+			alert('<%:WAN_Error_14%>');
+			return false;
+		}
+		if(false == checkIpFormat(document.DHCP_Add.sysSecDNSAddr.value)){
+			return false;
+		} 
+	}
+	
+	if(document.DHCP_Add.LAN_ThirdDNS.selectedIndex == 1){
+		if(document.DHCP_Add.sysThirdDNSAddr.value == ""){
+			alert('<%:WAN_Error_16%>');
+			return false;
+		}
+		if(false == checkIpFormat(document.DHCP_Add.sysThirdDNSAddr.value)){
+			return false;
+		} 
+	}
+	
+	return true;
+}
+</script>
+</head>
+<body onload="copyto()">
+<form method="post" name="DHCP_Add" action="<%=controller%>/expert/configuration/network/dhcpserver/ipstatic" onSubmit="return CheckValue()" >
+<div id="tabs">
+  <ul>
+    <li><a href="<%=controller%>/expert/configuration/network/dhcpserver" title="<%:General%>"><span><%:General%> </span></a></li>
+    <li class="hightline"><a title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/dhcpserver/dhcptbl" title="<%:Client_List%>"><span><%:Client_List%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+        <div class="data">
+          <ul><div class="tableframe">
+            <table width="100%" border="0" align="center" cellpadding="0" cellspacing="0" class="table_frame">
+              <tr>
+                <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td><table width="100%" border="0" align="center" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td><table width="100%" cellpadding="0" cellspacing="0" >
+                                  <tr>
+                                    <td height="26" colspan="3"><table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                        <tr>
+                                          <td height="26" class="table_title"><%:Static_DHCP_Table%> </td>
+                                        </tr>
+                                    </table></td>
+                                  </tr>
+                                  <tr align="center"  class="top_font">
+                                    <td width="35" >#</td>
+                                    <td><%:MAC_Address%> </td>
+                                    <td ><%:IP_Address%> </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td >1</td>
+                                    <td>
+
+                         <input maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac1" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip1" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td >2</td>
+                                    <td>
+
+                         <input maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac2" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip2" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td >3</td>
+                                    <td>
+
+                         <input maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac3" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip3" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td >4</td>
+                                    <td>
+
+                         <input maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac4" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip4" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td valign="top">5</td>
+                                    <td>
+
+                         <input maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac5" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip5" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td >6</td>
+                                    <td>
+
+                         <input maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac6" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip6" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td valign="top">7</td>
+                                    <td>
+
+                         <input  maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac7" />                         </td>
+ 									<td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip7" />                                    
+                                    </td>
+                                  </tr>
+                                  <tr class="table_font" align="center">
+                                    <td valign="top">8</td>
+                                    <td>
+
+                         <input  maxlength="17" size="18" value="00:00:00:00:00:00" name="dhcp_static_mac8" />                         </td>
+                                    <td>
+                                      <input maxlength="15" size="15" value="0.0.0.0" name="dhcp_static_ip8" />                                    
+                                    </td>
+                                  </tr>
+                              </table></td>
+                            </tr>
+                        </table></td>
+                      </tr>
+                </table></td>
+              </tr>
+            </table>
+            </div>
+            <div class="space"></div>
+            <div class="title"><%:DNS_Server%> </div>
+            <div class="w_text">
+              <ul>
+                <li class="alltable"><%:DNS_Servers_Assigned_by_DHCP_Server%> </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:First_DNS_Server%>  :</li>
+                <li class="right_table">
+                <%local lanIP = uci.get("network","lan","ipaddr")%>
+		<select size="1" name="LAN_FirstDNS" onchange="copyto()">
+		   <option value="00000000" <%if dns_op1== "FromISP" then%>selected="selected" <%end%> ><%:Obtained_From_ISP%></option>
+                   <option value="00000001" <%if dns_op1~= "FromISP" and dns_op1~= "dnsRelay" and dns_op1~= "None" then%> selected="selected"<%end%> ><%:User_Defined%></option>
+                   <option <%if lanIP then%>value="<%=lanIP%>"<%end%><%if dns_op1== "dnsRelay" then%> selected="selected"<%end%> ><%:DNS_Relay%></option>
+                   <option value="00000003"<%if dns_op1== "None" then%> selected="selected"<%end%> ><%:None%></option>
+                </select>
+
+                <input maxlength="15" size="15"<%if dns_op1~= "FromISP" and dns_op1~= "dnsRelay" and dns_op1~= "None" then%> value="<%=dns_op1%>"<%else%> value="0.0.0.0"<%end%> name="sysFirDNSAddr" />
+                </li>
+              </ul>
+	    </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Second_DNS_Server%>  :</li>
+                <li class="right_table">
+                <select size="1" name="LAN_SecondDNS" onchange="copyto()">
+		   <option value="00000000" <%if dns_op2== "FromISP" then%>selected="selected" <%end%> ><%:Obtained_From_ISP%></option>
+                   <option value="00000001" <%if dns_op2~= "FromISP" and dns_op2~= "dnsRelay" and dns_op2~= "None" then%> selected="selected"<%end%> ><%:User_Defined%></option>
+		   <option <%if lanIP then%>value="<%=lanIP%>"<%end%><%if dns_op2== "dnsRelay" then%> selected="selected"<%end%> ><%:DNS_Relay%></option>
+		   <option value="00000003"<%if dns_op2== "None" then%> selected="selected"<%end%> ><%:None%></option>
+                </select>
+                <input maxlength="15" size="15"<%if dns_op2~= "FromISP" and dns_op2~= "dnsRelay" and dns_op2~= "None" then%> value="<%=dns_op2%>"<%else%> value="0.0.0.0"<%end%> name="sysSecDNSAddr" />
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Third_DNS_Server%>  :</li>
+                <li class="right_table">
+                  <select size="1" name="LAN_ThirdDNS" onchange="copyto()">
+<option value="00000000" <%if dns_op3== "FromISP" then%>selected="selected" <%end%> ><%:Obtained_From_ISP%></option>
+<option value="00000001" <%if dns_op3~= "FromISP" and dns_op3~= "dnsRelay" and dns_op3~= "None" then%> selected="selected"<%end%> ><%:User_Defined%></option>
+<option <%if lanIP then%>value="<%=lanIP%>"<%end%><%if dns_op3== "dnsRelay" then%> selected="selected"<%end%> ><%:DNS_Relay%></option>
+<option value="00000003"<%if dns_op3== "None" then%> selected="selected"<%end%> ><%:None%></option>
+
+                  </select>
+		  
+<input maxlength="15" size="15"<%if dns_op3~= "FromISP" and dns_op3~= "dnsRelay" and dns_op3~= "None" then%> value="<%=dns_op3%>"<%else%> value="test"<%end%> name="sysThirdDNSAddr" />
+                </li>
+              </ul>
+                    </div>
+                        <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+     <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="sysSubmit" value="<%:Apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div></li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+<!--
+showFullPath(' <%:Network%> > <%:DHCP_Server%> > <%:Advanced%>');
+//-->
+</script>
+</html>

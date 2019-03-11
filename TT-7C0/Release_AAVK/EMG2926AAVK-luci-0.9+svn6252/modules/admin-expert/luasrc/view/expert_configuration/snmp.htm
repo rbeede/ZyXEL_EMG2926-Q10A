@@ -1,0 +1,483 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local http = require("luci.http")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+var enbl_snmp = "1";
+var getCommunity = "public";
+var setCommunity = "private";
+var sysLocation = "ZyXEL Communications Corp.";
+var sysContact = "ZyXEL Communications Corp.";
+var enbl_trap = "0";
+var trapIp = "192.168.1.100";
+var trapCommunity = "public";
+
+function changeClientIP()
+{
+	var f = document.snmpCfg;
+	
+	if (f.SecuredIPradio[0].checked == true)
+	{
+		f.SecuredIP.value = "0.0.0.0";
+		f.SecuredIP_all_flag.value = "1";
+		f.SecuredIP.disabled = true;
+	} else if (f.SecuredIPradio[1].checked == true)
+	{
+		f.SecuredIP.disabled = false;
+	}
+}
+
+function snmpSwitch()
+{
+	if (document.snmpCfg.enblSnmp.checked == true) {
+		document.snmpCfg.snmp_getCommunity.disabled = false;
+		document.snmpCfg.snmp_setCommunity.disabled = false;
+		document.snmpCfg.snmp_sysLocation.disabled = false;
+		document.snmpCfg.snmp_sysContact.disabled = false;
+		document.snmpCfg.enblTrap.disabled = false;
+		document.snmpCfg.snmp_trapIp.disabled = false;
+		document.snmpCfg.snmp_trapCommunity.disabled = false;
+	} else {
+		document.snmpCfg.snmp_getCommunity.disabled = true;
+		document.snmpCfg.snmp_setCommunity.disabled = true;
+		document.snmpCfg.snmp_sysLocation.disabled = true;
+		document.snmpCfg.snmp_sysContact.disabled = true;
+		document.snmpCfg.enblTrap.disabled = true;
+		document.snmpCfg.snmp_trapIp.disabled = true;
+		document.snmpCfg.snmp_trapCommunity.disabled = true;
+	}
+
+	trapSwitch();
+}
+
+function trapSwitch()
+{
+	if (document.snmpCfg.enblTrap.checked == true) {
+		document.snmpCfg.snmp_trapIp.disabled = false;
+		document.snmpCfg.snmp_trapCommunity.disabled = false;
+	} else {
+		document.snmpCfg.snmp_trapIp.disabled = true;
+		document.snmpCfg.snmp_trapCommunity.disabled = true;
+	}
+}
+
+function checkInjection(str)
+{
+	var len = str.length;      
+	for (var i=0; i<str.length; i++) {
+		if ( str.charAt(i) == '`' || str.charAt(i) == '$' ||
+			 str.charAt(i) == '<' || str.charAt(i) == '>'){
+				return false;
+		}else
+	        continue;
+	}
+	return true;	
+}  
+
+function checkValue()
+{	
+	with (document.forms[0]) {
+		if(snmp_serverPort.value != ""){
+			if( isAllNum(snmp_serverPort.value) == 0)
+			{
+				alert('<%:Port_Error_2%>');
+				return false;
+			}
+		}
+		if (SecuredIPradio[1].checked == true && !checkIpAddr(SecuredIP, false)) {
+			return false;
+		}
+
+		if (enblTrap.checked == true && !checkIpAddr(snmp_trapIp, false)) {
+			return false;
+		}
+
+		if (enblSnmp.checked == true) {
+			snmp_enable.value = "1";
+			if(!(checkInjection(document.snmpCfg.snmp_getCommunity.value)))
+			{
+				alert("<%:Injection_alert%> ` - > <");
+				return false;
+			}
+			if(!(checkInjection(document.snmpCfg.snmp_setCommunity.value)))
+			{
+				alert("<%:Injection_alert%> ` - > <");
+				return false;
+			}
+			if(!(checkInjection(document.snmpCfg.snmp_sysLocation.value)))
+			{
+				alert("<%:Injection_alert%> ` - > <");
+				return false;
+			}
+			if(!(checkInjection(document.snmpCfg.snmp_sysContact.value)))
+			{
+				alert("<%:Injection_alert%> ` - > <");
+			return false;
+			}
+		}
+		else {
+			snmp_enable.value = "0";
+		}
+
+		if (enblTrap.checked == true) {
+			trap_enable.value = "1";
+			if(!(checkInjection(document.snmpCfg.snmp_trapCommunity.value)))
+			{
+				alert("<%:Injection_alert%> ` - > <");
+				return false;
+			}
+		}
+		else {
+			trap_enable.value = "0";
+		}
+	}
+
+	document.snmpCfg.enblTrap.disabled = true;
+	document.snmpCfg.enblSnmp.disabled = true;
+	document.snmpCfg.submit();
+	return true;
+}
+
+function initValue()
+{
+	document.snmpCfg.snmp_getCommunity.value = getCommunity;
+	document.snmpCfg.snmp_setCommunity.value = setCommunity;
+	document.snmpCfg.snmp_sysLocation.value = sysLocation;
+	document.snmpCfg.snmp_sysContact.value = sysContact;
+	document.snmpCfg.snmp_trapIp.value = trapIp;
+	document.snmpCfg.snmp_trapCommunity.value = trapCommunity;
+
+	if (enbl_snmp == "1")
+		document.snmpCfg.enblSnmp.checked = true;
+	else
+		document.snmpCfg.enblSnmp.checked = false;
+
+	if (enbl_trap == "1")
+		document.snmpCfg.enblTrap.checked = true;
+	else
+		document.snmpCfg.enblTrap.checked = false;
+
+	snmpSwitch();
+
+}
+
+function checkRange(str , mask)
+{
+
+  if (!mask){
+
+   ValidIpAddressRegex = "^(([1-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$";
+
+   if(str.match(ValidIpAddressRegex))
+    return true;  
+   else  
+    return false;
+  }
+  else{
+
+   var correct_range = {128:1,192:1,224:1,240:1,248:1,252:1,254:1,255:1,0:1};
+
+   var m = str.split('.');
+
+   for (var i = 0; i <= 3; i ++) {
+
+     if (!(m[i] in correct_range)) {
+
+     return false;
+     break;
+     }
+   }
+   return true;
+  }
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function checkIpAddr(field, ismask)
+{
+	if (field.value == "") {
+		alert("<%:IP_Error_1%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+	if (isAllNum(field.value) == 0) {
+		alert("<%:IP_Error_2%>");
+		field.value = field.defaultValue;
+		field.focus();
+		return false;
+	}
+
+	if (ismask) {
+		if ((!checkRange(field.value),true) ||
+			(!checkRange(field.value),true) ||
+			(!checkRange(field.value),true) ||
+			(!checkRange(field.value),true))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	else {
+		if ((!checkRange(field.value),false) ||
+			(!checkRange(field.value),false) ||
+			(!checkRange(field.value),false) ||
+			(!checkRange(field.value),false))
+		{
+			alert("<%:IP_Error_3%>");
+			field.value = field.defaultValue;
+			field.focus();
+			return false;
+		}
+	}
+	return true;
+}
+
+function init_fun()
+{
+  <%if VAR_SNMP_TrapEnable == "1" then%>document.snmpCfg.enblTrap.checked = true<%else%>document.snmpCfg.enblTrap.checked = false<%end%>
+  <%if VAR_SNMP_SNMPEnable == "1" then%>document.snmpCfg.enblSnmp.checked = true<%else%>document.snmpCfg.enblSnmp.checked = false<%end%>
+  snmpSwitch();
+  trapSwitch();
+}
+
+
+
+</script>
+</head>
+
+<!-- #BEGINZONE form_SNMP_zone -->
+<%
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+<body>
+<form method="post" name="snmpCfg" action="<%=controller%>/expert/configuration/management/remote/snmpsetting" >
+
+<div id="tabs">
+  <ul>
+  	<li><a href="<%=controller%>/expert/configuration/management/remote" title="<%:WWW%>" ><span><%:WWW%></span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/management/remote/telnet" title="<%:Telnet%>"><span><%:Telnet%></span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/management/remote/ssh" title="<%:SSH%>"><span><%:SSH%></span></a></li>
+	<li class="hightline"><a href="<%=controller%>/expert/configuration/management/remote/snmpsetting" title="SNMP"><span><%:SNMP%></span></a></li> 
+	<li><a href="<%=controller%>/expert/configuration/management/remote/wol" title="<%:Wake_On_LAN%>"><span><%:Wake_On_LAN%></span></a></li>  
+   
+  </ul>
+  <br class="clearfloat" />
+</div>
+
+
+<%
+local VAR_SNMP_SERVER_PORT = uci:get("snmpd","agent","port")
+local VAR_SNMP_ServerAccess = uci:get("snmpd","agent","serveraccess")
+local VAR_RMSNMP_SecuredIP = uci:get("snmpd","agent","securedIP")
+local VAR_SNMP_SNMPEnable = uci:get("snmpd","agent","enable")
+local VAR_SNMP_GetCommunity = uci:get("snmpd","public","community")
+local VAR_SNMP_SetCommunity = uci:get("snmpd","private","community")
+local VAR_SNMP_SystemLocation = uci:get("snmpd","system","sysLocation")
+local VAR_SNMP_SystemContact = uci:get("snmpd","system","sysContact")
+local VAR_SNMP_TrapEnable = uci:get("snmpd","trapset","enable")
+local VAR_SNMP_TrapIp = uci:get("snmpd","trapset","trapip")
+local VAR_SNMP_TrapCommunity = uci:get("snmpd","trapset","community")
+%>
+
+<div id="table">
+  <ul id="list">
+
+  <li class="table_top"></li><li class="table_content">
+   <div class="data">
+
+      <input type="hidden" name="snmp_enable" id="snmp_enable" value="<%=VAR_SNMP_SNMPEnable%>" >
+      <input type="hidden" name="trap_enable" id="trap_enable" value="<%=VAR_SNMP_TrapEnable%>" >
+
+ <div class="title"><%:SNMP_Settings%></div>
+
+ <div class="w_text">
+  <ul>
+
+
+      <li class="left_table"><%:Server_Port%></li>
+      <li class="right_table">
+         <input name="snmp_serverPort" size="15" maxlength="15" value="<%=VAR_SNMP_SERVER_PORT%>" />
+      </li>
+  </ul>
+ </div>
+
+
+ <div class="w_text">
+  <ul> 
+      <li class="left_table"><%:Server_Access%></li>
+      <li class="right_table">
+        <select onchange="" size="1" name="ServerAccess" >
+          <option value="0" <% if VAR_SNMP_ServerAccess == "0" then %>SELECTED<% end %>><%:LAN_WAN%> </option>
+          <option value="1" <% if VAR_SNMP_ServerAccess == "1" then %>SELECTED<% end %>><%:LAN%> </option>
+          <option value="2" <% if VAR_SNMP_ServerAccess == "2" then %>SELECTED<% end %>><%:Disable%> </option>
+        </select>
+     </li>
+ </ul>
+ </div>
+
+ <div class="w_text">
+  <ul> 
+      <li class="left_table"><%:Secured_Ip%></li>
+      <li class="right_table">
+        <input type="radio" <%if VAR_RMSNMP_SecuredIP == "0.0.0.0" then%>checked="checked"<%end%> name="SecuredIPradio" onClick="changeClientIP();"/> <%:All%>
+        <input type="radio" <%if VAR_RMSNMP_SecuredIP ~= "0.0.0.0" then%>checked="checked"<%end%> name="SecuredIPradio" onClick="changeClientIP();"/> <%:Selected%>
+        <input type="text" <%if VAR_RMSNMP_SecuredIP ~= "0.0.0.0" then%>value="<%=VAR_RMSNMP_SecuredIP%>"<%else%>value="0.0.0.0" disabled="true"<%end%> name="SecuredIP"/>
+      </li>
+  </ul>
+ </div>
+
+
+<div class="space"></div>
+
+
+ <div class="w_text">
+  <ul> 
+      <li class="all_table" colspan="2">
+      <input name="enblSnmp" type="checkbox" <%if VAR_SNMP_SNMPEnable == "1" then%>checked="checked"<%end%> onClick="snmpSwitch();"/><%:SNMP_Enable%>
+      </li>
+  </ul>
+ </div>
+
+  <div class="w_text">
+  <ul> 
+      <li class="left_table"><%:Get_Community%></li>
+      <li class="right_table">
+      <input name="snmp_getCommunity" size="30" maxlength="63" value="<%=VAR_SNMP_GetCommunity%>"/>
+      </li>
+  </ul>
+ </div>
+
+  <div class="w_text">
+  <ul>  
+      <li class="left_table"><%:Set_Community%></li>
+      <li class="right_table">
+      <input name="snmp_setCommunity" size="30" maxlength="63" value="<%=VAR_SNMP_SetCommunity%>"/>
+      </li>
+  </ul>
+ </div>
+
+  <div class="w_text">
+  <ul>  
+      <li class="left_table"><%:System_Location%></li>
+      <li class="right_table">
+      <input name="snmp_sysLocation" size="30" maxlength="63" value="<%=VAR_SNMP_SystemLocation%>"/>
+      </li>
+  </ul>
+ </div>
+
+   <div class="w_text">
+  <ul>  
+      <li class="left_table"><%:System_Contact%></li>
+      <li class="right_table"><input name="snmp_sysContact" size="30" maxlength="63" value="<%=VAR_SNMP_SystemContact%>"/>
+      </li>
+
+ </ul>
+</div>
+
+
+<div class="space"></div>
+
+
+<!-- fieldset ending -->
+<!-- fieldset beginning -->
+
+<div class="title"><%:Trap_Settings%></div>
+
+ <div class="w_text">
+  <ul>
+
+  
+
+          <li class="all_table" colspan="2"><input name="enblTrap" type="checkbox" <%if VAR_SNMP_TrapEnable == "1" then%>checked="checked"<%end%> onClick="trapSwitch();"/><%:Trap_Enable%>
+          </li>
+ </ul>
+</div>
+
+ <div class="w_text">
+  <ul>
+      <li class="left_table"><%:Trap_Manager_Ip%></li>
+      <li class="right_table"><input name="snmp_trapIp" size="15" maxlength="15" value="<%=VAR_SNMP_TrapIp%>"/>
+      </li>
+  </ul>
+ </div>
+
+ <div class="w_text">
+  <ul>
+          <li class="left_table"><%:Trap_Community%></li>
+          <li class="right_table"><input name="snmp_trapCommunity" size="30" maxlength="63" value="<%=VAR_SNMP_TrapCommunity%>"/>
+          </li>
+  </ul>
+  </div>
+  
+  <div class="spaceair"></div>
+
+<!-- fieldset ending -->
+
+   <li class="table_button">
+      <div class="button" align="center">
+               <input value="Apply" type="button" onclick="checkValue()" />
+               <input value="Reset" type="button" onclick="initValue()" />
+      </div>
+   </li>
+  </ul>
+ </div>
+
+</form>
+</body>
+
+
+<script language="JavaScript">
+        showFullPath(' <%:Management%> > <%:Remote_MGMT%> > SNMP');
+        showWebMessage( 0, 'Message', 'Ready' );
+</script>
+</html>
+<!-- #ENDZONE form_SNMP_zone -->
+
+

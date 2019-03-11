@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Siemens M740 AV</DisplayName>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG720x576</Target>
+		</Scaling>
+		<AudioTranscoding>
+			<Target>MP3</Target>
+			<Target>WAV</Target>
+		</AudioTranscoding>
+		<VideoTranscoding>
+			<Target>WMV</Target>
+		</VideoTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

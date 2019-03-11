@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WD Guru</DisplayName>
+		<HttpRecognition>
+			<HttpText>WDGuru</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC3</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+                <DefaultView>storage</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

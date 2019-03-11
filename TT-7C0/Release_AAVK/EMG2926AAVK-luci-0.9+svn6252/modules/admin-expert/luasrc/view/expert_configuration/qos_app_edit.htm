@@ -1,0 +1,1520 @@
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
+<head>
+<title> </title>
+<meta http-equiv='content-type' content='text/html;charset=utf-8'>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style>
+td {white-space: nowrap;}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript">
+
+//var totWanSum;
+//var totLanSum;
+//var currLanSum;
+//var currWanSum;
+
+var userEnb;
+var userDire;
+var oldBwSel;
+var oldBwRate;
+
+function atoi(str, num)
+{
+	i = 1;
+	if (num != 1) {
+		while (i != num && str.length != 0) {
+			if (str.charAt(0) == '.') {
+				i++;
+			}
+			str = str.substring(1);
+		}
+		if (i != num)
+			return -1;
+	}
+
+	for (i=0; i<str.length; i++) {
+		if (str.charAt(i) == '.') {
+			str = str.substring(0, i);
+			break;
+		}
+	}
+	if (str.length == 0)
+		return -1;
+	return parseInt(str, 10);
+}
+
+function checkRange(str, num, min, max)
+{
+	d = atoi(str, num);
+	if (d > max || d < min)
+		return false;
+	return true;
+}
+
+function isNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9'))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+function isAllNum(str)
+{
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') || (str.charAt(i) == '.' ))
+			continue;
+		return 0;
+	}
+	return 1;
+}
+
+
+function btnApply(buttonSel)
+{
+    var enable1 = "";
+    var enable2 = "";
+    var enable3 = "";
+    var enable4 = "";
+	var B1,B2,B3,B4;
+	
+	var loc = '<%=luci.dispatcher.build_url("expert","configuration","management","qos","advance")%>';
+	with ( document.forms[0] ){
+		if(buttonSel==1)
+		{
+			Upstream = atoi(document.QoSUserCfg.Upstream_value.value, 1);
+			Downstream = atoi(document.QoSUserCfg.Downstream_value.value, 1);
+			LAN_miniSum = atoi(document.QoSUserCfg.LAN_mini_sum.value, 1);
+			WAN_miniSum = atoi(document.QoSUserCfg.WAN_mini_sum.value, 1);
+		
+            if( 'XBox_Live' == '<%=section_name%>' )
+			{
+
+				B1 = atoi(document.QoSUserCfg.Bandwidth_value1.value, 1);
+				B2 = atoi(document.QoSUserCfg.Bandwidth_value2.value, 1);
+				B3 = atoi(document.QoSUserCfg.Bandwidth_value3.value, 1);
+				B4 = atoi(document.QoSUserCfg.Bandwidth_value4.value, 1);				
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(document.getElementById("Bandwidth_enable1").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select1.value == 1){
+						LAN_miniSum+=B1;
+					}				
+
+				}
+					
+				if(document.getElementById("Bandwidth_enable2").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select2.value == 1){
+						LAN_miniSum+=B2;
+					}				
+						
+				}
+
+				if(document.getElementById("Bandwidth_enable3").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select3.value == 1){
+						WAN_miniSum+=B3;
+					}				
+					
+				}
+
+				if(document.getElementById("Bandwidth_enable4").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select4.value == 1){
+						WAN_miniSum+=B4;
+					}				
+					
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if( LAN_miniSum > Downstream ){
+					alert("Input minimum rate is greater than downlink rate");
+					return false;
+				}
+				
+				if( WAN_miniSum > Upstream ){
+					alert("Input minimum rate is greater than uplink rate.");
+					return false;
+				}
+				
+				loc += '?apply_edit_AdvSet=<%=section_name%>';
+			
+					if(document.getElementById("Bandwidth_enable1").checked == true){
+						enable1 += "1";
+					}
+					else{
+						enable1 += "0";
+					}
+					
+					if(document.getElementById("Bandwidth_enable2").checked == true){
+						enable2 += "1";
+					}
+					else{
+						enable2 += "0";
+					}					
+
+					if(document.getElementById("Bandwidth_enable3").checked == true){
+						enable3 += "1";
+					}
+					else{
+						enable3 += "0";
+					}
+
+					if(document.getElementById("Bandwidth_enable4").checked == true){
+						enable4 += "1";
+					}
+					else{
+						enable4 += "0";
+					}
+					
+				loc += '&Bandwidth_enable1=' + enable1;
+				loc += '&Bandwidth_select1=' + Bandwidth_select1.value;
+				loc += '&Bandwidth_value1=' + Bandwidth_value1.value;
+			
+				loc += '&Bandwidth_enable2=' + enable2;
+				loc += '&Bandwidth_select2=' + Bandwidth_select2.value;
+				loc += '&Bandwidth_value2=' + Bandwidth_value2.value;
+
+				loc += '&Bandwidth_enable3=' + enable3;
+				loc += '&Bandwidth_select3=' + Bandwidth_select3.value;
+				loc += '&Bandwidth_value3=' + Bandwidth_value3.value;			
+
+				loc += '&Bandwidth_enable4=' + enable4;
+				loc += '&Bandwidth_select4=' + Bandwidth_select4.value;
+				loc += '&Bandwidth_value4=' + Bandwidth_value4.value;			
+            }
+			else if( 'PlayStation' == '<%=section_name%>' )
+			{
+
+				B1 = atoi(document.QoSUserCfg.Bandwidth_value1.value, 1);
+				B2 = atoi(document.QoSUserCfg.Bandwidth_value2.value, 1);
+				B3 = atoi(document.QoSUserCfg.Bandwidth_value3.value, 1);
+				B4 = atoi(document.QoSUserCfg.Bandwidth_value4.value, 1);				
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(document.getElementById("Bandwidth_enable1").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select1.value == 1){
+						LAN_miniSum+=B1;
+					}				
+
+				}
+					
+				if(document.getElementById("Bandwidth_enable2").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select2.value == 1){
+						LAN_miniSum+=B2;
+					}				
+						
+				}
+
+				if(document.getElementById("Bandwidth_enable3").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select3.value == 1){
+						WAN_miniSum+=B3;
+					}				
+					
+				}
+
+				if(document.getElementById("Bandwidth_enable4").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select4.value == 1){
+						WAN_miniSum+=B4;
+					}				
+					
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if( LAN_miniSum > Downstream ){
+					alert("Input minimum rate is greater than downlink rate");
+					return false;
+				}
+				
+				if( WAN_miniSum > Upstream ){
+					alert("Input minimum rate is greater than uplink rate.");
+					return false;
+				}
+			
+				loc += '?apply_edit_AdvSet=<%=section_name%>';
+
+					if(document.getElementById("Bandwidth_enable1").checked == true){
+						enable1 += "1";
+					}
+					else{
+						enable1 += "0";
+					}
+					
+					if(document.getElementById("Bandwidth_enable2").checked == true){
+						enable2 += "1";
+					}
+					else{
+						enable2 += "0";
+					}					
+
+					if(document.getElementById("Bandwidth_enable3").checked == true){
+						enable3 += "1";
+					}
+					else{
+						enable3 += "0";
+					}
+
+					if(document.getElementById("Bandwidth_enable4").checked == true){
+						enable4 += "1";
+					}
+					else{
+						enable4 += "0";
+					}
+			
+				loc += '&Bandwidth_enable1=' + enable1;
+				loc += '&Bandwidth_select1=' + Bandwidth_select1.value;
+				loc += '&Bandwidth_value1=' + Bandwidth_value1.value;
+			
+				loc += '&Bandwidth_enable2=' + enable2;
+				loc += '&Bandwidth_select2=' + Bandwidth_select2.value;
+				loc += '&Bandwidth_value2=' + Bandwidth_value2.value;
+
+				loc += '&Bandwidth_enable3=' + enable3;
+				loc += '&Bandwidth_select3=' + Bandwidth_select3.value;
+				loc += '&Bandwidth_value3=' + Bandwidth_value3.value;			
+
+				loc += '&Bandwidth_enable4=' + enable4;
+				loc += '&Bandwidth_select4=' + Bandwidth_select4.value;
+				loc += '&Bandwidth_value4=' + Bandwidth_value4.value;						
+			}
+			else if( 'MSN_Game_Zone' == '<%=section_name%>' )
+			{
+
+				B1 = atoi(document.QoSUserCfg.Bandwidth_value1.value, 1);
+				B2 = atoi(document.QoSUserCfg.Bandwidth_value2.value, 1);
+				B3 = atoi(document.QoSUserCfg.Bandwidth_value3.value, 1);
+				B4 = atoi(document.QoSUserCfg.Bandwidth_value4.value, 1);				
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(document.getElementById("Bandwidth_enable1").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select1.value == 1){
+						LAN_miniSum+=B1;
+					}				
+
+				}
+					
+				if(document.getElementById("Bandwidth_enable2").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select2.value == 1){
+						LAN_miniSum+=B2;
+					}				
+						
+				}
+
+				if(document.getElementById("Bandwidth_enable3").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select3.value == 1){
+						WAN_miniSum+=B3;
+					}				
+					
+				}
+
+				if(document.getElementById("Bandwidth_enable4").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select4.value == 1){
+						WAN_miniSum+=B4;
+					}				
+					
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if( LAN_miniSum > Downstream ){
+					alert("Input minimum rate is greater than downlink rate");
+					return false;
+				}
+				
+				if( WAN_miniSum > Upstream ){
+					alert("Input minimum rate is greater than uplink rate.");
+					return false;
+				}
+			
+				loc += '?apply_edit_AdvSet=<%=section_name%>';
+
+					if(document.getElementById("Bandwidth_enable1").checked == true){
+						enable1 += "1";
+					}
+					else{
+						enable1 += "0";
+					}
+					
+					if(document.getElementById("Bandwidth_enable2").checked == true){
+						enable2 += "1";
+					}
+					else{
+						enable2 += "0";
+					}					
+
+					if(document.getElementById("Bandwidth_enable3").checked == true){
+						enable3 += "1";
+					}
+					else{
+						enable3 += "0";
+					}
+
+					if(document.getElementById("Bandwidth_enable4").checked == true){
+						enable4 += "1";
+					}
+					else{
+						enable4 += "0";
+					}
+				
+				loc += '&Bandwidth_enable1=' + enable1;
+				loc += '&Bandwidth_select1=' + Bandwidth_select1.value;
+				loc += '&Bandwidth_value1=' + Bandwidth_value1.value;
+			
+				loc += '&Bandwidth_enable2=' + enable2;
+				loc += '&Bandwidth_select2=' + Bandwidth_select2.value;
+				loc += '&Bandwidth_value2=' + Bandwidth_value2.value;
+
+				loc += '&Bandwidth_enable3=' + enable3;
+				loc += '&Bandwidth_select3=' + Bandwidth_select3.value;
+				loc += '&Bandwidth_value3=' + Bandwidth_value3.value;			
+
+				loc += '&Bandwidth_enable4=' + enable4;
+				loc += '&Bandwidth_select4=' + Bandwidth_select4.value;
+				loc += '&Bandwidth_value4=' + Bandwidth_value4.value;						
+			}
+			else if( 'BitTorrent' == '<%=section_name%>' )
+			{
+
+				B1 = atoi(document.QoSUserCfg.Bandwidth_value1.value, 1);
+				B2 = atoi(document.QoSUserCfg.Bandwidth_value2.value, 1);
+				B3 = atoi(document.QoSUserCfg.Bandwidth_value3.value, 1);
+				B4 = atoi(document.QoSUserCfg.Bandwidth_value4.value, 1);				
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(document.getElementById("Bandwidth_enable1").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select1.value == 1){
+						LAN_miniSum+=B1;
+					}				
+
+				}
+					
+				if(document.getElementById("Bandwidth_enable2").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select2.value == 1){
+						LAN_miniSum+=B2;
+					}				
+						
+				}
+
+				if(document.getElementById("Bandwidth_enable3").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select3.value == 1){
+						WAN_miniSum+=B3;
+					}				
+					
+				}
+
+				if(document.getElementById("Bandwidth_enable4").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select4.value == 1){
+						WAN_miniSum+=B4;
+					}				
+					
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value3.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value4.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if( LAN_miniSum > Downstream ){
+					alert("Input minimum rate is greater than downlink rate");
+					return false;
+				}
+				
+				if( WAN_miniSum > Upstream ){
+					alert("Input minimum rate is greater than uplink rate.");
+					return false;
+				}
+			
+				loc += '?apply_edit_AdvSet=<%=section_name%>';
+
+					if(document.getElementById("Bandwidth_enable1").checked == true){
+						enable1 += "1";
+					}
+					else{
+						enable1 += "0";
+					}
+					
+					if(document.getElementById("Bandwidth_enable2").checked == true){
+						enable2 += "1";
+					}
+					else{
+						enable2 += "0";
+					}					
+
+					if(document.getElementById("Bandwidth_enable3").checked == true){
+						enable3 += "1";
+					}
+					else{
+						enable3 += "0";
+					}
+
+					if(document.getElementById("Bandwidth_enable4").checked == true){
+						enable4 += "1";
+					}
+					else{
+						enable4 += "0";
+					}
+				
+				loc += '&Bandwidth_enable1=' + enable1;
+				loc += '&Bandwidth_select1=' + Bandwidth_select1.value;
+				loc += '&Bandwidth_value1=' + Bandwidth_value1.value;
+			
+				loc += '&Bandwidth_enable2=' + enable2;
+				loc += '&Bandwidth_select2=' + Bandwidth_select2.value;
+				loc += '&Bandwidth_value2=' + Bandwidth_value2.value;
+
+				loc += '&Bandwidth_enable3=' + enable3;
+				loc += '&Bandwidth_select3=' + Bandwidth_select3.value;
+				loc += '&Bandwidth_value3=' + Bandwidth_value3.value;			
+
+				loc += '&Bandwidth_enable4=' + enable4;
+				loc += '&Bandwidth_select4=' + Bandwidth_select4.value;
+				loc += '&Bandwidth_value4=' + Bandwidth_value4.value;						
+			}
+			else
+			{
+
+				B1 = atoi(document.QoSUserCfg.Bandwidth_value1.value, 1);
+				B2 = atoi(document.QoSUserCfg.Bandwidth_value2.value, 1);
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(document.getElementById("Bandwidth_enable1").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select1.value == 1){
+						LAN_miniSum+=B1;
+					}				
+
+				}
+					
+				if(document.getElementById("Bandwidth_enable2").checked == true){
+
+					if(document.QoSUserCfg.Bandwidth_select2.value == 1){
+						WAN_miniSum+=B2;
+					}				
+						
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value1.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if(isAllNum( document.QoSUserCfg.Bandwidth_value2.value ) == 0){
+					alert("The value of bandwitdth is not valid value.");
+					return false;
+				}
+				
+				if( LAN_miniSum > Downstream ){
+					alert("Input minimum rate is greater than downlink rate");
+					return false;
+				}
+				
+				if( WAN_miniSum > Upstream ){
+					alert("Input minimum rate is greater than uplink rate.");
+					return false;
+				}
+			
+				loc += '?apply_edit_AdvSet=<%=section_name%>';
+
+					if(document.getElementById("Bandwidth_enable1").checked == true){
+						enable1 += "1";
+					}
+					else{
+						enable1 += "0";
+					}
+					
+					if(document.getElementById("Bandwidth_enable2").checked == true){
+						enable2 += "1";
+					}
+					else{
+						enable2 += "0";
+					}					
+				
+				loc += '&Bandwidth_enable1=' + enable1;
+				loc += '&Bandwidth_select1=' + Bandwidth_select1.value;
+				loc += '&Bandwidth_value1=' + Bandwidth_value1.value;
+			
+				loc += '&Bandwidth_enable2=' + enable2;
+				loc += '&Bandwidth_select2=' + Bandwidth_select2.value;
+				loc += '&Bandwidth_value2=' + Bandwidth_value2.value;			
+			}
+		}
+		else if(buttonSel==2){
+			//loc += '?edit=<%=section_name%>';
+		}
+		
+		var code = 'location="' + loc + '"';
+     	eval(code);
+	}
+}
+
+function BwStrValue()
+{
+    var bandwidth_enable1 = "<%=AdvSet_enable1%>";
+    var bandwidth_enable2 = "<%=AdvSet_enable2%>";
+    var bandwidth_enable3 = "<%=AdvSet_enable3%>";
+    var bandwidth_enable4 = "<%=AdvSet_enable4%>";   
+	
+    var bandwidth1 = "<%=AdvSet_bandwidth1%>";
+    var bandwidth2 = "<%=AdvSet_bandwidth2%>";
+    var bandwidth3 = "<%=AdvSet_bandwidth3%>";
+    var bandwidth4 = "<%=AdvSet_bandwidth4%>";	
+	
+	if( bandwidth_enable1 == 1 )
+	{
+		document.getElementById("Bandwidth_enable1").checked = true;
+	}
+
+	if( bandwidth_enable2 == 1 )
+	{
+		document.getElementById("Bandwidth_enable2").checked = true;
+	}
+
+	if( bandwidth_enable3 == 1 )
+	{
+		document.getElementById("Bandwidth_enable3").checked = true;
+	}
+
+	if( bandwidth_enable4 == 1 )
+	{
+		document.getElementById("Bandwidth_enable4").checked = true;
+	}
+	
+	document.forms[0].Bandwidth_select1.options[bandwidth1].selected = true;
+	document.forms[0].Bandwidth_select2.options[bandwidth2].selected = true;
+	document.forms[0].Bandwidth_select3.options[bandwidth3].selected = true;
+	document.forms[0].Bandwidth_select4.options[bandwidth4].selected = true;	
+
+}
+
+function UpdoServiceChange(index){
+   if(index==0){
+   		document.QoSSetup.UploadBandwidth_value.value="";
+   }else{
+		document.QoSSetup.UploadBandwidth_value.value=document.QoSSetup.UploadBandwidth_select.options[index].value;
+	}
+}
+function DowndoServiceChange(index){
+   if(index==0){
+   		document.QoSSetup.DownloadBandwidth_value.value="";
+   }else{
+		document.QoSSetup.DownloadBandwidth_value.value=document.QoSSetup.DownloadBandwidth_select.options[index].value;
+	}
+}
+
+
+</script>
+
+<style type="text/css">
+<!--
+.wtext_3 {font-family:Arial, Helvetica, sans-serif;color:#000000;font-size:11px;}
+.cfg_title{ font-family:Arial, Helvetica, sans-serif; color:#385f95; font-size:11px; font-weight:bold; height:25px; line-height:25px;}
+-->
+</style>
+
+</head>
+<body onload="BwStrValue()">
+<div id="tabs">
+  <ul>
+  	<li><a  href="<%=controller%>/expert/configuration/management/qos" title="<%:General%>"><span><%:General%></span></a></li>
+    <li class="hightline"><a title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<div id="table">
+	<ul>
+    	<li class="table_content">
+      		<div class="data">
+        		<ul>
+			   		<li class="title" ><font id="userEditTitle"><%:Rule_Configuration%></font>- <%=section_name%> </li>
+					<li>&nbsp;</li>
+				</ul>
+    		</div>
+			<form method="post" name="QoSUserCfg">
+			<table width="100%" border="0" cellspacing="0" cellpadding="0" >
+				<tr>
+					<td>
+						<input type="hidden" name="Upstream_value" size="6" maxlength="6" value="<%=upstream_value%>" >
+						<input type="hidden" name="Downstream_value" size="6" maxlength="6" value="<%=downstream_value%>" >
+						<input type="hidden" name="LAN_mini_sum" size="6" maxlength="6" value="<%=LAN_sum%>" >
+						<input type="hidden" name="WAN_mini_sum" size="6" maxlength="6" value="<%=WAN_sum%>" >						
+					
+						<table width="92%" border="0" align=center cellspacing="0" class="wtext_3">
+							<tr><td width="5%" ><center><span class="top_left">#</span></center></td>
+								<td width="8%" height="26"><span class="top_font" id="appEditEnable"><%:Enable%></span></center></td>
+								<td width="16%"><center><span class="top_font" id="appEditDir"><%:Direction%></span></center></td>
+								<td width="35%"><center><span class="top_font" id="appEditBandwidth"><%:Bandwidth%></span></center></td>
+								<td width="15%"><center><span class="top_font" id="appEditDstPort"><%:Destination_Port%></span></center></td>
+								<td width="13%"><center><span class="top_font" id="appEditSrcPort"><%:Source_Port%></span></center></td>
+								<td width="8%"><center><span class="top_right" id="appEditProto"><%:Protocol%></span></center></td>
+							</tr>
+							
+							
+							<% if section_name == "XBox_Live" then %>							
+							
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>3</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable3" id="Bandwidth_enable3" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select3" id="Bandwidth_select3" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value3" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue3%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>4</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable4" id="Bandwidth_enable4" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select4" id="Bandwidth_select4" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value4" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue4%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+									
+                            <%end%>	
+
+							<% if section_name == "PlayStation" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>3</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable3" id="Bandwidth_enable3" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select3" id="Bandwidth_select3" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value3" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue3%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>4</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable4" id="Bandwidth_enable4" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select4" id="Bandwidth_select4" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value4" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue4%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+									
+                            <%end%>	
+
+							<% if section_name == "MSN_Game_Zone" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>3</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable3" id="Bandwidth_enable3" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select3" id="Bandwidth_select3" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value3" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue3%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>4</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable4" id="Bandwidth_enable4" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select4" id="Bandwidth_select4" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value4" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue4%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+									
+                            <%end%>	
+
+							<% if section_name == "BitTorrent" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>3</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable3" id="Bandwidth_enable3" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select3" id="Bandwidth_select3" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value3" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue3%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+
+								
+								<tr><td><center><span class=table_left>4</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable4" id="Bandwidth_enable4" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select4" id="Bandwidth_select4" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value4" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue4%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> UDP </span></center></td>
+								</tr>
+									
+                            <%end%>	
+
+							<% if section_name == "Battlenet" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+							
+							<% if section_name == "VoIP" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+							
+							<% if section_name == "Instant_Messanger" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+							
+							<% if section_name == "FTP" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+							
+							<% if section_name == "eMule" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+							
+							<% if section_name == "Web_Surfing" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> 80,443 </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> 80,443 </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+
+							<% if section_name == "E_Mail" then %>							
+								
+								<tr><td><center><span class=table_left>1</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable1" id="Bandwidth_enable1" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>LAN/WLAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select1" id="Bandwidth_select1" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value1" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue1%>" > (kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_font> 110 </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+								
+
+								
+								<tr><td><center><span class=table_left>2</span></center></td>
+
+								<td><center><span class=table_font><input type=checkbox name="Bandwidth_enable2" id="Bandwidth_enable2" value=1 ></span></center></td>
+		
+								<td><center><span class=table_font>WAN</span></center></td>
+
+								<td><center><span class=table_font>	
+								<select name="Bandwidth_select2" id="Bandwidth_select2" size="1" >
+								<option value="0"><%:Maximum_Bandwidth%></option>
+								<option value="1"><%:Minimum_Bandwidth%></option>						
+							
+								<input name="Bandwidth_value2" size="6" maxlength="6" value="<%=AdvSet_bandwidthvalue2%>" >(kbps)
+								</select></span></center></td>
+							
+								<td><center><span class=table_font> 25 </span></center></td>
+								<td><center><span class=table_font> - </span></center></td>
+								<td><center><span class=table_right> TCP </span></center></td>
+								</tr>
+															
+                            <%end%>
+
+							
+
+						</table>					
+
+
+						<table border="0" cellspacing="0" cellpadding="0" width="100%" align=center>
+							<tr>
+								<td height="10">&nbsp;&nbsp;</td>
+							</tr>
+							<tr>
+								<td align=center class="table_button">
+									<input type="button" value="<%:Apply%>" onClick="btnApply(1);" >
+									&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+									<input type="button" value="<%:Cancel%>" onClick="btnApply(2);">
+								</td>
+							</tr>
+						</table>
+
+					</td>
+				</tr>
+			</table>
+			</form>
+		</li>
+	</ul>
+</div>
+
+</body>
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Bandwidth_MGMT%> > <%:Advance%>');
+</script>
+</html>

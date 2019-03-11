@@ -1,0 +1,438 @@
+#!/bin/sh
+# Copyright (C) 2006 OpenWrt.org
+
+. /lib/functions.sh
+. /etc/functions.sh
+include /lib/config
+
+usage() {
+	cat <<EOF
+Usage: $0 [down|detect]
+enables (default), disables or detects a wifi configuration.
+EOF
+	exit 1
+}
+##
+
+print_log()
+{
+	echo "========= print log ==========>  $1 " 1> /dev/null
+	#echo "========= print log ==========>  $1 " 
+}
+
+setup_intfGrp(){
+    print_log "setup_intfGrp"
+
+        local group_name="$1"
+        local wanint
+        local vlan_vid
+        local lanport
+        local wlan
+        local avalable
+        local vlan_tag
+#        local vlan_flag
+
+    # If Group neam is Default, skip interface Grouping
+    if [ $group_name != "Default" ]; then
+
+        config_get wanint $group_name wanint
+        config_get vlan_vid $group_name vlanid
+        config_get lanport $group_name lanport
+        config_get wlan $group_name wlan
+        config_get vlan_tag $group_name vlan_tag
+#        vlan_flag="0"
+
+        local wan_proto=$(uci get network.$wanint.proto)
+        local available=$(uci get network.general.available)
+
+        
+        # Setup the vlan interface
+        local vlan_int="vlan$vlan_vid"
+		
+
+
+	   
+		echo 'wlan = $wlan'   $wlan
+
+		var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+		set -- $var2
+	
+		for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+		do	
+		case "$cmd2" in
+        10)
+			brctl delif br-lan  ath10
+			brctl delif br-vlanth4  ath10
+			brctl delif br-vlanth5  ath10
+			brctl delif br-vlanth6  ath10
+			brctl delif br-vlanth7  ath10
+			brctl addif br-vlanth$vlan_vid ath10
+        ;;
+        11)
+			brctl delif br-lan  ath11
+			brctl delif br-vlanth4  ath11
+			brctl delif br-vlanth5  ath11
+			brctl delif br-vlanth6  ath11
+			brctl delif br-vlanth7  ath11
+			brctl addif br-vlanth$vlan_vid ath11
+        ;;
+        12)
+			brctl delif br-lan  ath12
+			brctl delif br-vlanth4  ath12
+			brctl delif br-vlanth5  ath12
+			brctl delif br-vlanth6  ath12
+			brctl delif br-vlanth7  ath12
+			brctl addif br-vlanth$vlan_vid ath12
+        ;;        
+        13)
+			brctl delif br-lan ath13
+			brctl delif br-vlanth4  ath13
+			brctl delif br-vlanth5  ath13
+			brctl delif br-vlanth6  ath13
+			brctl delif br-vlanth7  ath13
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "0" ]; then
+			    brctl addif br-vlanth$vlan_vid ath13
+			fi
+        ;;
+        20)
+			brctl delif br-lan  ath0
+			brctl delif br-vlanth4  ath0
+			brctl delif br-vlanth5  ath0
+			brctl delif br-vlanth6  ath0
+			brctl delif br-vlanth7  ath0
+			brctl addif br-vlanth$vlan_vid ath0
+        ;;
+        21)
+			brctl delif br-lan  ath1
+			brctl delif br-vlanth4  ath1
+			brctl delif br-vlanth5  ath1
+			brctl delif br-vlanth6  ath1
+			brctl delif br-vlanth7  ath1
+			brctl addif br-vlanth$vlan_vid ath1
+        ;;
+        22)
+			brctl delif br-lan  ath2
+			brctl delif br-vlanth4  ath2
+			brctl delif br-vlanth5  ath2
+			brctl delif br-vlanth6  ath2
+			brctl delif br-vlanth7  ath2
+			brctl addif br-vlanth$vlan_vid ath2
+        ;;        
+        23)
+			brctl delif br-lan ath3
+			brctl delif br-vlanth4  ath3
+			brctl delif br-vlanth5  ath3
+			brctl delif br-vlanth6  ath3
+			brctl delif br-vlanth7  ath3
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "0" ]; then
+			    brctl addif br-vlanth$vlan_vid ath3
+			fi
+		;;
+		esac
+		done
+
+
+  else    #Default interfact Grouping	
+        config_get lanport $group_name lanport
+        config_get wlan $group_name wlan
+#        vlan_flag="0"
+
+
+		var2=$(echo $wlan | awk -F"," '{print  $1,$2,$3,$4,$5,$6,$7,$8,$9,$10}')   
+		set -- $var2
+	
+		for cmd2 in "" $1 $2 $3 $4 $5 $6 $7 $8 $9 $10
+		do	
+		case "$cmd2" in
+        10)
+			brctl delif br-lan  ath10
+			brctl delif br-vlanth4  ath10
+			brctl delif br-vlanth5  ath10
+			brctl delif br-vlanth6  ath10
+			brctl delif br-vlanth7  ath10
+			brctl addif br-lan ath10
+        ;;
+        11)
+			brctl delif br-lan  ath11
+			brctl delif br-vlanth4  ath11
+			brctl delif br-vlanth5  ath11
+			brctl delif br-vlanth6  ath11
+			brctl delif br-vlanth7  ath11
+			brctl addif br-lan ath11
+        ;;
+        12)
+			brctl delif br-lan  ath12
+			brctl delif br-vlanth4  ath12
+			brctl delif br-vlanth5  ath12
+			brctl delif br-vlanth6  ath12
+			brctl delif br-vlanth7  ath12
+			brctl addif br-lan ath12
+        ;;        
+        13)
+			brctl delif br-lan ath13
+			brctl delif br-vlanth4  ath13
+			brctl delif br-vlanth5  ath13
+			brctl delif br-vlanth6  ath13
+			brctl delif br-vlanth7  ath13
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "0" ]; then
+			    brctl addif br-lan ath13
+			fi
+        ;;
+        20)
+			brctl delif br-lan  ath0
+			brctl delif br-vlanth4  ath0
+			brctl delif br-vlanth5  ath0
+			brctl delif br-vlanth6  ath0
+			brctl delif br-vlanth7  ath0
+			brctl addif br-lan ath0
+        ;;
+        21)
+			brctl delif br-lan  ath1
+			brctl delif br-vlanth4  ath1
+			brctl delif br-vlanth5  ath1
+			brctl delif br-vlanth6  ath1
+			brctl delif br-vlanth7  ath1
+			brctl addif br-lan ath1
+        ;;
+        22)
+			brctl delif br-lan  ath2
+			brctl delif br-vlanth4  ath2
+			brctl delif br-vlanth5  ath2
+			brctl delif br-vlanth6  ath2
+			brctl delif br-vlanth7  ath2
+			brctl addif br-lan ath2
+        ;;        
+        23)
+			brctl delif br-lan ath3
+			brctl delif br-vlanth4  ath3
+			brctl delif br-vlanth5  ath3
+			brctl delif br-vlanth6  ath3
+			brctl delif br-vlanth7  ath3
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "0" ]; then
+			    brctl addif br-lan ath3
+			fi
+		;;
+	esac
+	done
+
+  fi
+}
+##
+find_net_config() {(
+	local vif="$1"
+	local cfg
+	local ifname
+
+	config_get cfg "$vif" network
+
+	[ -z "$cfg" ] && {
+		include /lib/network
+		scan_interfaces
+
+		config_get ifname "$vif" ifname
+
+		cfg="$(find_config "$ifname")"
+	}
+	[ -z "$cfg" ] && return 0
+	echo "$cfg"
+)}
+
+
+bridge_interface() {(
+	local cfg="$1"
+	[ -z "$cfg" ] && return 0
+
+	include /lib/network
+	scan_interfaces
+
+	for cfg in $cfg; do
+		config_get iftype "$cfg" type
+		[ "$iftype" = bridge ] && config_get "$cfg" ifname
+		prepare_interface_bridge "$cfg"
+		return $?
+	done
+)}
+
+prepare_key_wep() {
+	local key="$1"
+	local hex=1
+
+	echo -n "$key" | grep -qE "[^a-fA-F0-9]" && hex=0
+	[ "${#key}" -eq 10 -a $hex -eq 1 ] || \
+	[ "${#key}" -eq 26 -a $hex -eq 1 ] || {
+		[ "${key:0:2}" = "s:" ] && key="${key#s:}"
+        	key="$(echo -n "$key" | hexdump -ve '1/1 "%02x" ""')"
+	}
+	echo "$key"
+}
+
+wifi_fixup_hwmode() {
+	local device="$1"
+	local default="$2"
+	local hwmode hwmode_11n
+
+	config_get channel "$device" channel
+	config_get hwmode "$device" hwmode
+	case "$hwmode" in
+		11bg) hwmode=bg;;
+		11a) hwmode=a;;
+		11b) hwmode=b;;
+		11g) hwmode=g;;
+		11n*)
+			hwmode_11n="${hwmode##11n}"
+			case "$hwmode_11n" in
+				a|g) ;;
+				default) hwmode_11n="$default"
+			esac
+			config_set "$device" hwmode_11n "$hwmode_11n"
+		;;
+		*)
+			hwmode=
+			if [ "${channel:-0}" -gt 0 ]; then 
+				if [ "${channel:-0}" -gt 14 ]; then
+					hwmode=a
+				else
+					hwmode=g
+				fi
+			else
+				hwmode="$default"
+			fi
+		;;
+	esac
+	config_set "$device" hwmode "$hwmode"
+}
+
+wifi_updown() {
+	[ enable = "$1" ] && {
+		wifi_updown disable "$2"
+		scan_wifi
+	}
+	for device in ${2:-$DEVICES}; do (
+		config_get disabled "$device" disabled
+		[ 1 == "$disabled" ] && {
+			echo "'$device' is disabled"
+			set disable
+		}
+		config_get iftype "$device" type
+		if eval "type ${1}_$iftype" 2>/dev/null >/dev/null; then
+			eval "scan_$iftype '$device'"
+			eval "${1}_$iftype '$device'" || echo "$device($iftype): ${1} failed"
+		else
+			echo "$device($iftype): Interface type not supported"
+		fi
+	); done
+}
+
+wifi_detect() {
+	for driver in ${2:-$DRIVERS}; do (
+		if eval "type detect_$driver" 2>/dev/null >/dev/null; then
+			eval "detect_$driver" || echo "$driver: Detect failed" >&2
+		else
+			echo "$driver: Hardware detection not supported" >&2
+		fi
+	); done
+}
+
+start_net() {(
+	local iface="$1"
+	local config="$2"
+	local vifmac="$3"
+
+	[ -f "/var/run/$iface.pid" ] && kill "$(cat /var/run/${iface}.pid)" 2>/dev/null
+	[ -z "$config" ] || {
+		include /lib/network
+		scan_interfaces
+		for config in $config; do
+			setup_interface "$iface" "$config" "" "$vifmac"
+		done
+	}
+)}
+
+set_wifi_up() {
+	local cfg="$1"
+	local ifname="$2"
+	uci_set_state wireless "$cfg" up 1
+	uci_set_state wireless "$cfg" ifname "$ifname"
+}
+
+set_wifi_down() {
+	local cfg="$1"
+	local vifs vif vifstr
+
+	[ -f "/var/run/wifi-${cfg}.pid" ] &&
+		kill "$(cat "/var/run/wifi-${cfg}.pid")" 2>/dev/null
+	uci_revert_state wireless "$cfg"
+	config_get vifs "$cfg" vifs
+	for vif in $vifs; do
+		uci_revert_state wireless "$vif"
+	done
+}
+
+scan_wifi() {
+	local cfgfile="$1"
+	DEVICES=
+	config_cb() {
+		local type="$1"
+		local section="$2"
+
+		# section start
+		case "$type" in
+			wifi-device)
+				append DEVICES "$section"
+				config_set "$section" vifs ""
+				config_set "$section" ht_capab ""
+			;;
+		esac
+
+		# section end
+		config_get TYPE "$CONFIG_SECTION" TYPE
+		case "$TYPE" in
+			wifi-iface)
+				config_get device "$CONFIG_SECTION" device
+				config_get vifs "$device" vifs 
+				append vifs "$CONFIG_SECTION"
+				config_set "$device" vifs "$vifs"
+			;;
+		esac
+	}
+	config_load "${cfgfile:-wireless}"
+}
+
+DEVICES=
+DRIVERS=
+include /lib/wifi
+
+wlan_btn=$(cat /tmp/wlan_on | sed 's/"//g' )
+
+if [ "$wlan_btn" != "1" ] &&[ "$1" == "up" ]; then
+	exit
+fi
+
+scan_wifi
+
+case "$1" in
+	down) wifi_updown "disable" "$2";;
+	detect) wifi_detect "$2";;
+	--help|help) usage;;
+	*) 
+		chkwifi=$(cat /tmp/wifiup)
+		[ -n "$chkwifi" ] || {
+			echo 1 >/tmp/wifiup 
+			wifi_updown "enable" "$2"
+			rm /tmp/wifiup
+		}
+	;;
+esac
+local lanMtu=$(uci get network.lan.mtu)
+[ -n "$lanMtu" ] && ifconfig br-lan mtu $lanMtu
+
+sleep 1
+
+config_load intfGrp
+config_foreach setup_intfGrp interface
+
+

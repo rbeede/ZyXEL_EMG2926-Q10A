@@ -1,0 +1,65 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Samsung Smart TV (J Series)</DisplayName>
+		<DeviceDescriptionRecognition BoolOp="OR">
+            		<!-- J series from 2015 -->
+			<DescriptionText>Samsung RVU TV 2014</DescriptionText>
+			<DescriptionText>Samsung RVU UHD TV 2014</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<PretendServer>SAMSUNGFEATLIST</PretendServer>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/x-matroska</In>
+				<Out>video/x-mkv</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>video/mpeg2</In>
+				<Out>video/mpeg</Out>
+			</MimeTypeMapping>
+			<MimeTypeSuppress>audio/x-wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wav</MimeTypeSuppress>
+			<MimeTypeSuppress>audio/wave</MimeTypeSuppress>
+		</MimeTranslations>
+		<ScreenResolution>3840x2160</ScreenResolution>
+	</Adaptations>
+	<Capabilities> 
+		<Scaling>
+			<Target>JPEG3840x2160</Target>
+			<Target>JPEG1920x1080</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEG160x160</Target>
+			<Target>JPEGORG</Target> 
+		</Scaling> 
+                <SupportedMediaProfiles>
+                        <Profile>AASCALE#JPEG640x480</Profile>
+                </SupportedMediaProfiles>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>NEEDS_THUMBNAIL_CI_FLAG</Quirk>
+		<Quirk>KEEP_RES_4_THUMBNAIL</Quirk>
+		<!-- Device selects original image even if it is too large
+		     to display. -->
+		<Quirk>REDUCED_METADATA</Quirk>
+		<Quirk>FORCE_DURATION</Quirk>
+		<Quirk>NEEDS_OP01_ON_TRANSCODED_FILES</Quirk>
+		<Quirk>SUPPRESS_SEEK_ON_GROWING_FILES</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+		<Quirk>TUNER_SAMSUNG</Quirk>
+		<!-- Device sends a LastChange event for new metadata which always contains a
+		     STOPPED event although it is transitioning. When polling the state at that
+		     time the device may run into a timeout. -->
+		<Quirk>IGNORE_STOP_AFTER_PLAY</Quirk>
+		<!-- Device returns an error for Play if TRANSITIONING on its own
+		     after SetAVTransportURI. -->
+		<Quirk>need_no_play_4_setavt</Quirk>
+		<!-- Can invoke Next on device to skip although not announced in
+		     current available transport actions. -->
+		<Quirk>assume_next_available</Quirk>
+	</DeviceQuirks>
+</Client>

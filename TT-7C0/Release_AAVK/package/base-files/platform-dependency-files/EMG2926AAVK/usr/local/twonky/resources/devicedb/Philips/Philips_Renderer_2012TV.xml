@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Philips 2012 TV</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>UPnP Media Renderer 1.0</DescriptionText>
+			<DescriptionText>TV2012HE</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>INVALID_TRACK_METADATA</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,142 @@
+#!/bin/sh
+. /lib/functions.sh
+
+## write register 0x624 with value 0x017f207f to avoid flooding on four eth port when receiving unknown multicast traffic */
+## write register 0x620 with value 0x000004f8 */
+## write register 0x618 with value 0x1ff8002b */
+## write register 0x210 with value 0x06060606 */
+## write register 0x214 with value 0x01060606 */
+## write register 0x664 with value 0x00040018 */
+## write register 0x670 with value 0x00040018 */
+## write register 0x67c with value 0x00040018 */
+## write register 0x688 with value 0x00040018 */
+## write register 0x694 with value 0x00040018 */
+## write register 0x6a0 with value 0x00040018 */
+## write register 0x6ac with value 0x00040018 */
+
+
+igmpmode=$(uci get network.lan.igmpmode)
+
+if [ $igmpmode == "1" ]; then
+
+	echo "0" > /sys/devices/virtual/net/br-lan/bridge/multicast_snooping
+
+	echo 0x624 > /proc/driver/ar8216/regAddr 
+	echo 0x217f7f7f > /proc/driver/ar8216/regVal
+	echo 0x620 > /proc/driver/ar8216/regAddr
+	echo 0x000004f8 > /proc/driver/ar8216/regVal
+	echo 0x618 > /proc/driver/ar8216/regAddr
+	echo 0x1ff8002b > /proc/driver/ar8216/regVal
+	echo 0x210 > /proc/driver/ar8216/regAddr
+	echo 0x06060606 > /proc/driver/ar8216/regVal
+	echo 0x214 > /proc/driver/ar8216/regAddr
+	echo 0x01060606 > /proc/driver/ar8216/regVal
+	echo 0x664 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x670 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x67c > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x688 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x694 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x6a0 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x6ac > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+fi
+
+if [ $igmpmode == "2" ]; then
+
+	echo "0" > /sys/devices/virtual/net/br-lan/bridge/multicast_snooping
+
+	echo 0x624 > /proc/driver/ar8216/regAddr
+	echo 0x217f607f > /proc/driver/ar8216/regVal
+	echo 0x620 > /proc/driver/ar8216/regAddr
+	echo 0x000004f8 > /proc/driver/ar8216/regVal
+	echo 0x618 > /proc/driver/ar8216/regAddr
+	echo 0x1ff8002b > /proc/driver/ar8216/regVal
+	echo 0x210 > /proc/driver/ar8216/regAddr
+	echo 0x06060606 > /proc/driver/ar8216/regVal
+	echo 0x214 > /proc/driver/ar8216/regAddr
+	echo 0x01060606 > /proc/driver/ar8216/regVal
+	echo 0x664 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x670 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x67c > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x688 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x694 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x6a0 > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+	echo 0x6ac > /proc/driver/ar8216/regAddr
+	echo 0x00040018 > /proc/driver/ar8216/regVal
+
+fi
+
+if [ $igmpmode == "0" ]; then
+	echo "0" > /sys/devices/virtual/net/br-lan/bridge/multicast_snooping
+
+	#Default
+	echo 0x624 > /proc/driver/ar8216/regAddr
+	echo 0x007F7F7F > /proc/driver/ar8216/regVal
+	echo 0x620 > /proc/driver/ar8216/regAddr
+	echo 0x000004F0 > /proc/driver/ar8216/regVal
+	echo 0x618 > /proc/driver/ar8216/regAddr
+	echo 0xD0E8002B > /proc/driver/ar8216/regVal
+	echo 0x210 > /proc/driver/ar8216/regAddr
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x214 > /proc/driver/ar8216/regAddr
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x664 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x670 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x67c > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x688 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x694 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x6a0 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x6ac > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+
+fi
+
+if [[ -z "$igmpmode" ]]; then
+	echo "0" > /sys/devices/virtual/net/br-lan/bridge/multicast_snooping
+
+	#Default
+	echo 0x624 > /proc/driver/ar8216/regAddr
+	echo 0x007F7F7F > /proc/driver/ar8216/regVal
+	echo 0x620 > /proc/driver/ar8216/regAddr
+	echo 0x000004F0 > /proc/driver/ar8216/regVal
+	echo 0x618 > /proc/driver/ar8216/regAddr
+	echo 0xD0E8002B > /proc/driver/ar8216/regVal
+	echo 0x210 > /proc/driver/ar8216/regAddr
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x214 > /proc/driver/ar8216/regAddr
+	echo 0x00000000 > /proc/driver/ar8216/regVal
+	echo 0x664 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x670 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x67c > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x688 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x694 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x6a0 > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+	echo 0x6ac > /proc/driver/ar8216/regAddr
+	echo 0x00000018 > /proc/driver/ar8216/regVal
+
+fi
+

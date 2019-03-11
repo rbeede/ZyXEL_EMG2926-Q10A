@@ -1,0 +1,20 @@
+<Client>
+	<DeviceId>
+		<DisplayName>CyberLink SoftDMA</DisplayName>
+		<HttpRecognition>
+			<HttpText>Intel_MicroStack</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>&lt;modelName&gt;CyberLink SoftDMA iSale&lt;/modelName&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>IGNORE_PROTECTION_RES</Quirk>
+	</DeviceQuirks>
+</Client>

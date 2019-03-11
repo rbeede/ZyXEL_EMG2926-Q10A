@@ -1,0 +1,236 @@
+Source-Makefile: feeds/alljoyn/alljoyn-services_common/Makefile
+Package: alljoyn-services_common
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Services Common service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-services_common-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn Services Common service library.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+
+Source-Makefile: feeds/alljoyn/alljoyn-controlpanel/Makefile
+Package: alljoyn-controlpanel
+Menu: 1
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn ControlPanel service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-controlpanel-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn ControlPanel service library.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+Package: alljoyn-controlpanel-samples
+Menu: 0
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn-controlpanel +alljoyn-about +alljoyn-notification +alljoyn-services_common
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn ControlPanel service library - testing samples
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-controlpanel-14.06.00-src.tar.gz
+Type: ipkg
+Description: Alljoyn ControlPanel service library samples.  (This is primarily for testing.
+The contents of this package vary according which other alljoyn packages
+are selected.)
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+
+Source-Makefile: feeds/alljoyn/alljoyn-config/Makefile
+Package: alljoyn-config
+Menu: 1
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn +alljoyn-about URL:=http://www.allseenalliance.org
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Config service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-config-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn Config service library.
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+Package: alljoyn-config-samples
+Menu: 0
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn-config +alljoyn-services_common
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Config service library - testing samples
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-config-14.06.00-src.tar.gz
+Type: ipkg
+Description: Alljoyn Config service library samples.  (This is primarily for testing.
+The contents of this package vary according which other alljoyn packages
+are selected.)
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+
+Source-Makefile: feeds/alljoyn/alljoyn/Makefile
+Package: alljoyn
+Menu: 1
+Version: 14.06.00a-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libopenssl +libpthread +librt +libstdcpp
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Peer-to-Peer networking
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-14.06.00a-src.tar.gz
+Type: ipkg
+Description: AllJoyn is a daemon and application framework for developing
+ad hoc peer-to-peer applications.  This includes the run-time
+daemon and C++ library.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+Package: alljoyn-c
+Version: 14.06.00a-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Peer-to-Peer networking - C binding
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-14.06.00a-src.tar.gz
+Type: ipkg
+Description: AllJoyn C binding.  This provides a C library for building
+AllJoyn programs in C.  This is just a C callable wrapper
+to the C++ library.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+Package: alljoyn-about
+Version: 14.06.00a-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn - About service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-14.06.00a-src.tar.gz
+Type: ipkg
+Description: AllJoyn About service library.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+Package: alljoyn-samples
+Version: 14.06.00a-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn +PACKAGE_alljoyn-about:alljoyn-about
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Peer-to-Peer networking - testing samples
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-14.06.00a-src.tar.gz
+Type: ipkg
+Description: Alljoyn samples.  (This is primarily for testing.  The contents of this
+package vary according which other alljoyn packages are selected.)
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+
+Source-Makefile: feeds/alljoyn/alljoyn-notification/Makefile
+Package: alljoyn-notification
+Menu: 1
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn +alljoyn-about URL:=http://www.allseenalliance.org
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Notification service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-notification-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn Notification service library.
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+Package: alljoyn-notification-samples
+Menu: 0
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn-notification +alljoyn-services_common
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn Notification service library - testing samples
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-notification-14.06.00-src.tar.gz
+Type: ipkg
+Description: Alljoyn Notification service library samples.  (This is primarily for testing.
+The contents of this package vary according which other alljoyn packages
+are selected.)
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+
+Source-Makefile: feeds/alljoyn/alljoyn-onboarding/Makefile
+Package: alljoyn-onboarding
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn wpa-supplicant +alljoyn-about +alljoyn-config +alljoyn-services_common +hostapd +wpa-cli
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn onboarding service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-onboarding-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn onboarding service.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+
+Source-Makefile: feeds/alljoyn/alljoyn-sample_apps/Makefile
+Package: alljoyn-sample_apps
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn +alljoyn-about +alljoyn-config +alljoyn-controlpanel +alljoyn-notification +alljoyn-services_common
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn services sample_apps - sample applications
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-sample_apps-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn services sample_apps sample applications - includes ServerSample and ACServerSample.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+

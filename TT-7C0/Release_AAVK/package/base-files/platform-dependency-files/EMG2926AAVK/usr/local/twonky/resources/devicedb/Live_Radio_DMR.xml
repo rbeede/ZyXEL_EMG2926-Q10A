@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Live Radio DMR</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Live Radio DMR</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>SUPPORTS_ICY</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,195 @@
+#!/bin/sh
+
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/rc.appflow
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/classids.sh
+
+# Note: EXTRA_COMMANDS isn't actually used by the rc.appflow environment, but
+# it's defined here in the hopes that one day it will be.  At that time,
+# the redefinition of action() and usage() in this file should be deleted.
+EXTRA_COMMANDS="start_qdiscs stop_qdiscs setup_iptables teardown_iptables"
+EXTRA_HELP="        start_qdiscs	create root qdisc structure
+        stop_qdiscs	delete root qdisc structure
+        setup_iptables	insert iptables rules
+        teardown_iptables	delete iptables rules"
+
+#
+# Environment config
+#
+NAME="qdiscman"
+DISPLAY_NAME=${NAME}
+
+# path to binary
+BINARY="${BINDIR}/${NAME}"
+
+# path to pid file
+PIDFILE="${RUNDIR}/${NAME}.pid"
+
+# Redis server port
+REDIS_PORT=6379
+
+# tests whether the NSS QDisc package is installed
+nss_qdisc_is_installed() {
+	opkg list | grep 'kmod-qca-nss-.*qdisc' >/dev/null 2>&1
+	[ "$?" = "0" ] || return 1
+}
+
+# source the setup_iface, setup_iptables, and teardown_iptables functions,
+# switched by whether or not we're enabled for NSS mode.  to be enabled
+# for NSS mode, the kmod-qca-nss-qdisc package must be installed and the
+# nss_qdisc variable in streamboost.user.conf must be 'yes'.
+if nss_qdisc_is_installed; then
+	# we can potentially use NSS QDiscs, so see if we're configured for it.
+	# the user config file contains the nss_qdisc setting
+	. $STREAMBOOST_USER_CFG
+	# test the nss_qdisc value to see if we're in NSS mode
+	if [ "${nss_qdisc}" = "yes" ]; then
+		. ${STREAMBOOST_CFGDIR:-/etc/appflow}/qdiscman-nss.sh
+	else
+		. ${STREAMBOOST_CFGDIR:-/etc/appflow}/qdiscman.sh
+	fi
+else
+	. ${STREAMBOOST_CFGDIR:-/etc/appflow}/qdiscman.sh
+fi
+
+[ -f /etc/dhcp.guest.conf ] && . /etc/dhcp.guest.conf
+
+# Format the command line parameters
+CMDLINE_OPTS="\
+--daemon \
+--run-dir=${RUNDIR} \
+--pid-file=${PIDFILE} \
+--redis-port=${REDIS_PORT} \
+--redis-stat-prefix=flowdb:flows: \
+--ifname-up=${WAN_IFACE} \
+--ifname-down=${LAN_IFACE} \
+${EXTRA_CMD_ARGS} \
+"
+
+#
+# Functions
+#
+
+# $1: dev
+# $2: parent
+# $3: handle
+# $4: qdisc type (default = fq_codel)
+# $5: extra opts
+add_interactive_qdisc() {
+	tc qdisc add dev $1 parent $2 handle $3 \
+		${4:-fq_codel} \
+			limit 100\
+			target 250000 interval 2500000 $5
+	[ $? = 0 ] || return $?
+}
+
+start_qdiscs() {
+	echo "Setting up qdiscs on interface ${WAN_IFACE}"
+	GUEST_BANDWIDTH_LIMIT="${GUEST_BANDWIDTH_LIMIT_UP}"
+	setup_iface ${WAN_IFACE}
+	[ $? = 0 ] || return $?
+
+	echo "Setting up qdiscs on interface ${LAN_IFACE}"
+	GUEST_BANDWIDTH_LIMIT="${GUEST_BANDWIDTH_LIMIT_DOWN}"
+	setup_iface ${LAN_IFACE}
+	[ $? = 0 ] || return $?
+}
+
+stop_qdiscs() {
+	tc qdisc del dev ${WAN_IFACE} root
+	tc qdisc del dev ${LAN_IFACE} root
+}
+
+start() {
+	[ -f "${PIDFILE}" ] && {
+		return 0
+	}
+
+	teardown_iptables 2>/dev/null
+	setup_iptables
+
+	for i in ${KERNEL_MODULES}; do
+		insmod $i 2>/dev/null
+	done
+
+	[ ! -d "${RUNDIR}" ] && {
+		mkdir ${RUNDIR}
+	}
+
+	[ -x ${BINARY} ] || {
+		echo "${NAME} not found: ${BINARY}"
+		exit 2
+	}
+
+	stop_qdiscs 2>/dev/null
+	start_qdiscs || exit 3
+
+	echo -n "Starting ${NAME}: "
+	${BINARY} ${CMDLINE_OPTS} "$@"
+	retval=$?
+	echo
+	return ${retval}
+}
+
+boot() {
+	start "$@"
+}
+
+stop() {
+	local retval=0
+
+	[ -f "${PIDFILE}" ] && {
+		echo -n "Stopping ${NAME}: "
+		kill -TERM $(cat ${PIDFILE})
+		retval=$?
+		echo
+		rm -f ${PIDFILE}
+	}
+
+	stop_qdiscs
+	teardown_iptables
+
+	return ${retval}
+}
+
+usage() {
+	cat <<EOF
+Usage: $0 [command]
+
+Commands:
+	start
+	stop
+	restart
+	reload
+	boot
+	init
+	status
+${EXTRA_HELP}
+EOF
+}
+
+action() {
+	action=${1:-$DEFAULT_ACTION}
+	# this shift is required because the start() function accepts
+	# parameters from the command line and passes them through to the
+	# daemon
+	shift
+
+	BINARY=${BINARY:-$(echo $0 | sed 's/.*\///')}
+	DISPLAY_NAME=${DISPLAY_NAME:-${NAME:-$BINARY}}
+	PIDFILE=${PIDFILE:-$RUNDIR/$BINARY.pid}
+
+	case "${action}" in
+		boot|init)
+			boot "$@"
+			;;
+		start|stop|restart|reload|status|start_qdiscs|stop_qdiscs|setup_iptables|teardown_iptables)
+			${action} "$@"
+			;;
+		*)
+			usage
+			exit 3
+	esac
+}
+
+action "$@"
+exit $?

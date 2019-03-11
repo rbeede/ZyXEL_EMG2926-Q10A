@@ -1,0 +1,72 @@
+diff -ruN e_2926/arch/mips/ath79/Kconfig f_2926/arch/mips/ath79/Kconfig
+--- e_2926/arch/mips/ath79/Kconfig	2014-09-11 12:17:59.956412000 +0800
++++ f_2926/arch/mips/ath79/Kconfig	2015-03-04 17:16:48.894583743 +0800
+@@ -712,6 +712,23 @@
+ 	  Say 'Y' here if you want your kernel to support the
+ 	  ZyXEL EMG2926.	  
+ 
++config ATH79_MACH_EMG3425VT
++	bool "ZyXEL EMG3425VT"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_NAND
++	select USE_OF
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  ZyXEL EMG3425VT.	
++
+ config ATH79_MACH_EMG2926OBM
+ 	bool "ZyXEL EMG2926OBM"
+ 	select SOC_QCA955X
+@@ -746,6 +763,23 @@
+ 	  Say 'Y' here if you want your kernel to support the
+ 	  ZyXEL EMG2926AAVK.
+ 
++config ATH79_MACH_EMG3425AAYJ
++	bool "ZyXEL EMG3425AAYJ"
++	select SOC_QCA955X
++	select ATH79_DEV_ETH
++	select ATH79_DEV_AP9X_PCI if PCI
++	select ATH79_DEV_GPIO_BUTTONS
++	select ATH79_DEV_LEDS_GPIO
++	select ATH79_DEV_SPI
++	select ATH79_DEV_USB
++	select ATH79_DEV_WMAC
++	select ATH79_DEV_M25P80
++	select ATH79_DEV_NAND
++	select USE_OF
++	help
++	  Say 'Y' here if you want your kernel to support the
++	  ZyXEL EMG3425AAYJ.
++
+ endmenu
+ 
+ config SOC_AR71XX
+diff -ruN e_2926/arch/mips/ath79/machtypes.h f_2926/arch/mips/ath79/machtypes.h
+--- e_2926/arch/mips/ath79/machtypes.h	2014-09-11 12:17:59.900229000 +0800
++++ f_2926/arch/mips/ath79/machtypes.h	2015-03-05 09:40:11.762438430 +0800
+@@ -127,6 +127,8 @@
+ 	ATH79_MACH_EMG2926,		/* ZyXEL EMG2926 */	
+ 	ATH79_MACH_EMG2926OBM,		/* ZyXEL EMG2926OBM */
+ 	ATH79_MACH_EMG2926AAVK,		/* ZyXEL EMG2926AAVK */
++	ATH79_MACH_EMG3425VT,		/* ZyXEL EMG3425VT */	
++	ATH79_MACH_EMG3425AAYJ,		/* ZyXEL EMG3425AAYJ */
+ };
+ 
+ #endif /* _ATH79_MACHTYPE_H */
+diff -ruN e_2926/arch/mips/ath79/Makefile f_2926/arch/mips/ath79/Makefile
+--- e_2926/arch/mips/ath79/Makefile	2014-09-11 12:17:59.956412000 +0800
++++ f_2926/arch/mips/ath79/Makefile	2015-03-04 17:23:50.822357450 +0800
+@@ -108,3 +108,5 @@
+ obj-$(CONFIG_ATH79_MACH_EMG2926)	+= mach-emg2926.o
+ obj-$(CONFIG_ATH79_MACH_EMG2926OBM)	+= mach-emg2926obm.o
+ obj-$(CONFIG_ATH79_MACH_EMG2926AAVK)	+= mach-emg2926aavk.o
++obj-$(CONFIG_ATH79_MACH_EMG3425VT)	+= mach-emg3425vt.o
++obj-$(CONFIG_ATH79_MACH_EMG3425AAYJ)	+= mach-emg3425aayj.o

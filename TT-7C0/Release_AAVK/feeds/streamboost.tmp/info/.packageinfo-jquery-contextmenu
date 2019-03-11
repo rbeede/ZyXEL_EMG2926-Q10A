@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/jquery-contextmenu/Makefile
+Package: jquery-contextmenu
+Submenu: JavaScript
+Version: 1.01-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: jQuery context menu
+Maintainer: 
+Source: jquery-contextmenu-1.01-gecb2ce1.tar.gz
+Type: ipkg
+Description: 	A jquery context menu plugin
+http://abeautifulsite.net/2008/09/jquery-context-menu-plugin/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-contextmenu
+	config jquery-contextmenu_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-contextmenu
+		bool "Use custom package version"
+		default n
+	config jquery-contextmenu_CUSTOM_VERSION
+		depends on jquery-contextmenu_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.01)"
+		default "1.01"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-contextmenu
+	config jquery-contextmenu_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-contextmenu
+		bool "Use custom source directory"
+		default n
+	config jquery-contextmenu_CUSTOM_SOURCE_DIR
+		depends on jquery-contextmenu_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

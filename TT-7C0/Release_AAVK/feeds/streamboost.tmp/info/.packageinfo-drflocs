@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/drflocs/Makefile
+Package: drflocs
+Submenu: Flow Detect
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpcap +librt +libevent2-core +hiredis +libnl-bf
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone libyaml
+Section: opt
+Category: Bigfoot
+Title: Bigfoot Networks Runtime Flow Classification System
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: drflocs-.tar.gz
+Type: ipkg
+Description: DRFloCS implements Layer 4-based packet inspection sauce to accelerate your life!!!
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_drflocs
+	config drflocs_USE_CUSTOM_VERSION
+		depends on PACKAGE_drflocs
+		bool "Use custom package version"
+		default n
+	config drflocs_CUSTOM_VERSION
+		depends on drflocs_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_drflocs
+	config drflocs_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_drflocs
+		bool "Use custom source directory"
+		default n
+	config drflocs_CUSTOM_SOURCE_DIR
+		depends on drflocs_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

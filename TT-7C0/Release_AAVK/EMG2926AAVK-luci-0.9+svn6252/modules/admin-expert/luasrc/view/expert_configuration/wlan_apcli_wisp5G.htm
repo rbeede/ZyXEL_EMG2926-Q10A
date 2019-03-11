@@ -1,0 +1,1730 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+
+<style>
+.on {display:on}
+.off {display:none}
+</style>
+<script language="JavaScript" type="text/javascript">
+
+var wirelessmode  = "<%=uci:get("system","main","system_mode")%>";
+var ssid = "<%=uci:get("wireless_client","general","ApCliSsid")%>";
+var bssid = "<%=uci:get("wireless_client","general","ApCliBssid")%>";
+var mode = "<%=uci:get("wireless_client","general","ApCliAuthMode")%>";
+var enc = "<%=uci:get("wireless_client","general","ApCliEncrypType")%>";
+var wpapsk = "<%=uci:get("wireless_client","general","ApCliWPAPSK")%>";
+
+var keytype = "<%=uci:get("wireless_client","general","ApCliKeyType")%>";
+//var keytype = "<%=uci:get("wireless_client","general","ApCliKey1Type")%>";
+//var keytype = "<%=uci:get("wireless_client","general","ApCliKey2Type")%>";
+//var keytype = "<%=uci:get("wireless_client","general","ApCliKey3Type")%>";
+//var keytype = "<%=uci:get("wireless_client","general","ApCliKey4Type")%>";
+var key1 = "<%=uci:get("wireless_client","general","ApCliKey1Str")%>";
+var key2 = "<%=uci:get("wireless_client","general","ApCliKey2Str")%>";
+var key3 = "<%=uci:get("wireless_client","general","ApCliKey3Str")%>";
+var key4 = "<%=uci:get("wireless_client","general","ApCliKey4Str")%>";
+//var apclienable  = "<%=uci:get("wireless_client","general","ApCliEnable")%>";
+
+var site_survey = "<%=luci.http.formvalue("site_survey")%>";
+var site_ssid = "<%=luci.http.protocol.urldecode(luci.http.formvalue("site_ssid"))%>";
+var site_signal = "<%=luci.http.formvalue("site_signal")%>";
+var site_network_type = "<%=luci.http.formvalue("site_network_type")%>";
+var site_channel = "<%=luci.http.formvalue("site_channel")%>";
+var site_auth = "<%=luci.http.formvalue("site_auth")%>";
+var site_encry = "<%=luci.http.formvalue("site_encry")%>";
+var site_bssid = "<%=luci.http.formvalue("site_bssid")%>";
+
+function style_display_on()
+{
+	if (window.ActiveXObject){//IE
+		return "block";
+	}else if (window.XMLHttpRequest){//Mozilla, Safari,...
+		return "table-row";
+	}
+}
+
+function show_div(show,id) {
+	if(show)
+		document.getElementById(id).className  = "on" ;
+	else
+		document.getElementById(id).className  = "off" ;
+}
+
+function SiteSurveySecurityModeSwitchInit()
+{
+	var enc = site_encry;
+	var mode = site_auth;
+	show_div(false, "div_wep");
+	show_div(false, "div_wpa_psk");
+	document.wireless_apcli.DefWEPKey.disabled = true;
+	document.wireless_apcli.apcli_key1.disabled = true;
+	document.wireless_apcli.apcli_key2.disabled = true;
+	document.wireless_apcli.apcli_key3.disabled = true;
+	document.wireless_apcli.apcli_key4.disabled = true;
+	document.wireless_apcli.apcli_wpapsk.disabled = true;
+	if ( ((document.wireless_apcli.apcli_mode.options.selectedIndex == 0)&&(key1 == "")&&(key2 == "")&&(key3 == "")&&(key4 == "")) ||
+		((document.wireless_apcli.apcli_mode.options.selectedIndex == 0) && (enc == "NONE")) ){ // No Security
+
+		show_div(false, "div_wep");
+		show_div(false, "div_wpa_psk");
+
+	}
+	else if ( (document.wireless_apcli.apcli_mode.options.selectedIndex == 1) || (document.wireless_apcli.apcli_mode.options.selectedIndex == 0)){
+
+		show_div(true, "div_wep");
+		document.wireless_apcli.DefWEPKey.disabled = false;
+		document.wireless_apcli.apcli_key1.disabled = false;
+		document.wireless_apcli.apcli_key2.disabled = false;
+		document.wireless_apcli.apcli_key3.disabled = false;
+		document.wireless_apcli.apcli_key4.disabled = false;
+
+		//default Open
+		document.wireless_apcli.auth_method.options.selectedIndex = 0;
+
+		if (mode == "SHARED"){
+			document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+			document.wireless_apcli.auth_method.options.selectedIndex = 1;
+		}else if (mode == "OPEN"){
+			document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+			document.wireless_apcli.auth_method.options.selectedIndex = 0;
+		}
+
+		if ( (document.wireless_apcli.apcli_key1.value == "") && (document.wireless_apcli.apcli_key2.value == "") && (document.wireless_apcli.apcli_key3.value == "") && (document.wireless_apcli.apcli_key4.value == "") ){
+			//Set ASCII default
+			document.wireless_apcli.WEPKey_Code[0].checked = true; //ASCII
+		}else{
+			document.wireless_apcli.WEPKey_Code[1].checked = true; //hex
+		}
+    		if (document.wireless_apcli.wep_encry.options.selectedIndex == 0) {
+			if (document.wireless_apcli.WEPKey_Code[1].checked == true) { //point to Hex
+          			document.wireless_apcli.apcli_key1.maxLength = 10;
+          			document.wireless_apcli.apcli_key2.maxLength = 10;
+          			document.wireless_apcli.apcli_key3.maxLength = 10;
+          			document.wireless_apcli.apcli_key4.maxLength = 10;
+       			}
+       			else { //point to ASCII
+          			document.wireless_apcli.apcli_key1.maxLength = 5;
+          			document.wireless_apcli.apcli_key2.maxLength = 5;
+          			document.wireless_apcli.apcli_key3.maxLength = 5;
+          			document.wireless_apcli.apcli_key4.maxLength = 5;
+       			}
+    		}
+   		else {
+       			if (document.wireless_apcli.WEPKey_Code[1].checked == true) { //point to Hex
+          			document.wireless_apcli.apcli_key1.maxLength = 26;
+          			document.wireless_apcli.apcli_key2.maxLength = 26;
+          			document.wireless_apcli.apcli_key3.maxLength = 26;
+          			document.wireless_apcli.apcli_key4.maxLength = 26;
+       			}
+       			else { //point to ASCII
+          			document.wireless_apcli.apcli_key1.maxLength = 13;
+          			document.wireless_apcli.apcli_key2.maxLength = 13;
+          			document.wireless_apcli.apcli_key3.maxLength = 13;
+          			document.wireless_apcli.apcli_key4.maxLength = 13;
+       			}
+    		}
+	}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 2) {
+		show_div(true, "div_wpa_psk");
+
+		document.wireless_apcli.apcli_mode.disabled = false;
+		document.wireless_apcli.apcli_wpapsk.disabled = false;
+
+		document.wireless_apcli.cipher[0].checked = true;
+
+		if (mode == "WPAPSK"){
+			if (enc =='TKIP'){
+				document.wireless_apcli.cipher[0].checked = true;
+			}else if (enc =='AES'){
+				document.wireless_apcli.cipher[1].checked = true;
+			}else{
+				document.wireless_apcli.cipher[0].checked = true;
+			}
+		}
+
+	}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 3) {
+
+		show_div(true, "div_wpa_psk");
+		document.wireless_apcli.apcli_mode.disabled = false;
+		document.wireless_apcli.apcli_wpapsk.disabled = false;
+
+		document.wireless_apcli.cipher[1].checked = true;
+
+		if (mode == "WPA2PSK"){
+			if (enc =='TKIP'){
+				document.wireless_apcli.cipher[0].checked = true;
+			}else if (enc =='AES'){
+				document.wireless_apcli.cipher[1].checked = true;
+			}else{
+				document.wireless_apcli.cipher[1].checked = true;
+			}
+		}
+	}
+	//parent.adjustMyFrameHeight();
+}
+
+function SecurityModeSwitchInit()
+{
+	show_div(false, "div_wep");
+	show_div(false, "div_wpa_psk");
+	document.wireless_apcli.DefWEPKey.disabled = true;
+	document.wireless_apcli.apcli_key1.disabled = true;
+	document.wireless_apcli.apcli_key2.disabled = true;
+	document.wireless_apcli.apcli_key3.disabled = true;
+	document.wireless_apcli.apcli_key4.disabled = true;
+	document.wireless_apcli.apcli_wpapsk.disabled = true;
+
+	if ( ((document.wireless_apcli.apcli_mode.options.selectedIndex == 0)&&(key1 == "")&&(key2 == "")&&(key3 == "")&&(key4 == "")) ||
+		((document.wireless_apcli.apcli_mode.options.selectedIndex == 0) && (enc == "NONE")) ){ // No Security
+
+		show_div(false, "div_wep");
+		show_div(false, "div_wpa_psk");
+
+	}
+	else if ( (document.wireless_apcli.apcli_mode.options.selectedIndex == 1) || (document.wireless_apcli.apcli_mode.options.selectedIndex == 0)){
+
+		show_div(true, "div_wep");
+		document.wireless_apcli.DefWEPKey.disabled = false;
+		document.wireless_apcli.apcli_key1.disabled = false;
+		document.wireless_apcli.apcli_key2.disabled = false;
+		document.wireless_apcli.apcli_key3.disabled = false;
+		document.wireless_apcli.apcli_key4.disabled = false;
+
+		//default Open
+		document.wireless_apcli.auth_method.options.selectedIndex = 0;
+
+		if (mode == "SHARED"){
+			document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+			document.wireless_apcli.auth_method.options.selectedIndex = 1;
+		}else if (mode == "OPEN"){
+			document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+			document.wireless_apcli.auth_method.options.selectedIndex = 0;
+		}
+	}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 2) {
+		show_div(true, "div_wpa_psk");
+
+		document.wireless_apcli.apcli_mode.disabled = false;
+		document.wireless_apcli.apcli_wpapsk.disabled = false;
+
+		document.wireless_apcli.cipher[0].checked = true;
+
+		if (mode == "WPAPSK"){
+			if (enc =='TKIP'){
+				document.wireless_apcli.cipher[0].checked = true;
+			}else if (enc =='AES'){
+				document.wireless_apcli.cipher[1].checked = true;
+			}else{
+				document.wireless_apcli.cipher[0].checked = true;
+			}
+		}
+
+	}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 3) {
+
+		show_div(true, "div_wpa_psk");
+		document.wireless_apcli.apcli_mode.disabled = false;
+		document.wireless_apcli.apcli_wpapsk.disabled = false;
+
+		document.wireless_apcli.cipher[1].checked = true;
+
+		if (mode == "WPA2PSK"){
+			if (enc =='TKIP'){
+				document.wireless_apcli.cipher[0].checked = true;
+			}else if (enc =='AES'){
+				document.wireless_apcli.cipher[1].checked = true;
+			}else{
+				document.wireless_apcli.cipher[1].checked = true;
+			}
+		}
+	}
+	//parent.adjustMyFrameHeight();
+}
+
+function SecurityModeSwitch()
+{
+	show_div(false, "div_wep");
+	show_div(false, "div_wpa_psk");
+
+	document.wireless_apcli.DefWEPKey.disabled = true;
+	document.wireless_apcli.apcli_key1.disabled = true;
+	document.wireless_apcli.apcli_key2.disabled = true;
+	document.wireless_apcli.apcli_key3.disabled = true;
+	document.wireless_apcli.apcli_key4.disabled = true;
+	document.wireless_apcli.apcli_wpapsk.disabled = true;
+	document.wireless_apcli.cipher.disabled = true;
+
+	if (document.wireless_apcli.apcli_mode.options.selectedIndex == 0) {
+
+		show_div(false, "div_wep");
+		show_div(false, "div_wpa_psk");
+	}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 1) {
+
+	show_div(true, "div_wep");
+		document.wireless_apcli.DefWEPKey.disabled = false;
+		document.wireless_apcli.apcli_key1.disabled = false;
+		document.wireless_apcli.apcli_key2.disabled = false;
+		document.wireless_apcli.apcli_key3.disabled = false;
+		document.wireless_apcli.apcli_key4.disabled = false;
+
+		//default Open
+		document.wireless_apcli.auth_method.options.selectedIndex = 0;
+
+		if ( (mode == "SHARED")||(mode == "OPEN") && (enc == "NONE")){
+
+				document.wireless_apcli.auth_method.options.selectedIndex = 1;
+		}else if (mode == "OPEN"){
+
+				document.wireless_apcli.auth_method.options.selectedIndex = 0;
+			}
+		}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 2) {
+
+	show_div(true, "div_wpa_psk");
+		document.wireless_apcli.apcli_wpapsk.disabled = false;
+		document.wireless_apcli.cipher.disabled = false;
+
+		//WPA-PSK default TKIP
+		document.wireless_apcli.cipher[0].checked = true;
+
+		if (mode == "WPAPSK"){
+			if (enc =='TKIP'){
+				document.wireless_apcli.cipher[0].checked = true;
+			}else if (enc =='AES'){
+				document.wireless_apcli.cipher[1].checked = true;
+			}else{
+				document.wireless_apcli.cipher[0].checked = true;
+			}
+		}
+
+	}
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 3) {
+
+		show_div(true, "div_wpa_psk");
+		document.wireless_apcli.apcli_wpapsk.disabled = false;
+
+		//WPA2-PSK default AES
+		document.wireless_apcli.cipher[1].checked = true;
+
+		if (mode == "WPA2PSK"){
+			if (enc =='TKIP'){
+				document.wireless_apcli.cipher[0].checked = true;
+			}else if (enc =='AES'){
+				document.wireless_apcli.cipher[1].checked = true;
+			}else{
+				document.wireless_apcli.cipher[1].checked = true;
+			}
+		}
+	}
+	//parent.adjustMyFrameHeight();
+}
+
+function securityMode(c_f)
+{
+	var security_mode;
+
+	changed = c_f;
+	show_div(false, "div_wep");
+
+	security_mode = document.wireless_apcli.apcli_mode.value;
+
+	if (security_mode == "OPEN"){
+		show_div(false, "div_wep");
+		show_div(flase, "div_wpa_psk");
+	}else if (security_mode == "SHARED"){
+		show_div(true, "div_wep");
+	}else if (security_mode == "WPAPSK" || security_mode == "WPA2PSK"){
+		show_div(true, "div_wpa_psk");
+	}
+}
+
+function wep_switch_key_length()
+{
+    document.wireless_apcli.apcli_key1.value = "";
+    document.wireless_apcli.apcli_key2.value = "";
+    document.wireless_apcli.apcli_key3.value = "";
+    document.wireless_apcli.apcli_key4.value = "";
+
+    if (document.wireless_apcli.wep_encry.options.selectedIndex == 0) {
+	if (document.wireless_apcli.WEPKey_Code[1].checked == true) { //point to Hex
+          document.wireless_apcli.apcli_key1.maxLength = 10;
+          document.wireless_apcli.apcli_key2.maxLength = 10;
+          document.wireless_apcli.apcli_key3.maxLength = 10;
+          document.wireless_apcli.apcli_key4.maxLength = 10;
+       }
+       else { //point to ASCII
+          document.wireless_apcli.apcli_key1.maxLength = 5;
+          document.wireless_apcli.apcli_key2.maxLength = 5;
+          document.wireless_apcli.apcli_key3.maxLength = 5;
+          document.wireless_apcli.apcli_key4.maxLength = 5;
+       }
+    }
+    else {
+       	if (document.wireless_apcli.WEPKey_Code[1].checked == true) { //point to Hex
+          document.wireless_apcli.apcli_key1.maxLength = 26;
+          document.wireless_apcli.apcli_key2.maxLength = 26;
+          document.wireless_apcli.apcli_key3.maxLength = 26;
+          document.wireless_apcli.apcli_key4.maxLength = 26;
+       }
+       else { //point to ASCII
+          document.wireless_apcli.apcli_key1.maxLength = 13;
+          document.wireless_apcli.apcli_key2.maxLength = 13;
+          document.wireless_apcli.apcli_key3.maxLength = 13;
+          document.wireless_apcli.apcli_key4.maxLength = 13;
+       }
+    }
+}
+
+function initValue()
+{
+if (site_survey == 0)
+{
+	document.wireless_apcli.apcli_ssid.value = ssid;
+    var general_channel = "<%=uci:get("wireless", "ra0","channel")%>";
+
+	if (general_channel == 0){
+		document.wireless_apcli.apcli_channel.value = 1;
+	}
+	else{
+		document.wireless_apcli.apcli_channel.value = general_channel;
+	}
+
+	var mode = "<%=uci:get("wireless_client","general","ApCliAuthMode")%>";
+
+	if (mode == "OPEN")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 0;
+	else if (mode == "SHARED")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+	else if (mode == "WPAPSK")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 2;
+	else if (mode == "WPA2PSK")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 3;
+	else
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 0;
+
+	if (keytype == ''){
+		keytype = 1;
+
+	}else{
+		keytype = keytype - '0';
+	}
+	if (keytype == 0){
+		document.wireless_apcli.WEPKey_Code[1].checked = true;
+		document.wireless_apcli.WEPKey_Code[1].checked = true;
+		document.wireless_apcli.WEPKey_Code[1].checked = true;
+		document.wireless_apcli.WEPKey_Code[1].checked = true;
+	}else{
+		document.wireless_apcli.WEPKey_Code[0].checked = true;
+		document.wireless_apcli.WEPKey_Code[0].checked = true;
+		document.wireless_apcli.WEPKey_Code[0].checked = true;
+		document.wireless_apcli.WEPKey_Code[0].checked = true;
+	}
+	var keyid = "<%=uci:get("wireless_client","general","ApCliDefaultKeyId")%>";
+	
+	if (keyid == ''){
+		keyid = 1;
+	}
+
+	document.wireless_apcli.DefWEPKey[0].checked= false;
+	document.wireless_apcli.DefWEPKey[1].checked= false;
+	document.wireless_apcli.DefWEPKey[2].checked= false;
+	document.wireless_apcli.DefWEPKey[3].checked= false;
+
+	document.wireless_apcli.DefWEPKey[keyid-1].checked= true;
+
+	document.wireless_apcli.apcli_key1.value = key1;
+	document.wireless_apcli.apcli_key2.value = key2;
+	document.wireless_apcli.apcli_key3.value = key3;
+	document.wireless_apcli.apcli_key4.value = key4;
+
+	document.wireless_apcli.apcli_wpapsk.value = wpapsk;
+
+	SecurityModeSwitchInit();
+
+    		if (document.wireless_apcli.wep_encry.options.selectedIndex == 0) {
+			if (document.wireless_apcli.WEPKey_Code[1].checked == true) { //point to Hex
+          			document.wireless_apcli.apcli_key1.maxLength = 10;
+          			document.wireless_apcli.apcli_key2.maxLength = 10;
+          			document.wireless_apcli.apcli_key3.maxLength = 10;
+          			document.wireless_apcli.apcli_key4.maxLength = 10;
+       			}
+       			else { //point to ASCII
+          			document.wireless_apcli.apcli_key1.maxLength = 5;
+          			document.wireless_apcli.apcli_key2.maxLength = 5;
+          			document.wireless_apcli.apcli_key3.maxLength = 5;
+          			document.wireless_apcli.apcli_key4.maxLength = 5;
+       			}
+    		}
+   		else {
+       			if (document.wireless_apcli.WEPKey_Code[1].checked == true) { //point to Hex
+          			document.wireless_apcli.apcli_key1.maxLength = 26;
+          			document.wireless_apcli.apcli_key2.maxLength = 26;
+          			document.wireless_apcli.apcli_key3.maxLength = 26;
+          			document.wireless_apcli.apcli_key4.maxLength = 26;
+       			}
+       			else { //point to ASCII
+          			document.wireless_apcli.apcli_key1.maxLength = 13;
+          			document.wireless_apcli.apcli_key2.maxLength = 13;
+          			document.wireless_apcli.apcli_key3.maxLength = 13;
+          			document.wireless_apcli.apcli_key4.maxLength = 13;
+       			}
+    		}
+
+	// Now, 4 Keys type are same, so only get the first key to display HEX or ASCII. It's OK
+	if ( (document.wireless_apcli.apcli_key1.value == "") && (document.wireless_apcli.apcli_key2.value == "") && (document.wireless_apcli.apcli_key3.value == "") && (document.wireless_apcli.apcli_key4.value == "") ){
+		//Set ASCII default
+		document.wireless_apcli.WEPKey_Code[0].checked = true; //ASCII
+	}else if (keytype == "0"){
+
+		document.wireless_apcli.WEPKey_Code[1].checked = true; //hex
+
+		if (document.wireless_apcli.apcli_key1.value != ""){
+			if (document.wireless_apcli.apcli_key1.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key2.value != ""){
+			if (document.wireless_apcli.apcli_key2.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key3 != ""){
+			if (document.wireless_apcli.apcli_key3.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key4 != ""){
+			if (document.wireless_apcli.apcli_key4.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}
+	}else{
+		document.wireless_apcli.WEPKey_Code[0].checked = true; //ASCII
+
+		if (document.wireless_apcli.apcli_key1.value != ""){
+			if (document.wireless_apcli.apcli_key1.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key2.value != ""){
+			if (document.wireless_apcli.apcli_key2.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key3 != ""){
+			if (document.wireless_apcli.apcli_key3.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key4 != ""){
+			if (document.wireless_apcli.apcli_key4.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}
+	}
+
+	if(mode == "OPEN"){
+		document.getElementById("auth_method").selectedIndex = 0; // OPEN
+	}else if (enc == "WEP"){                                            //if(mode == "SHARED"){
+		document.getElementById("auth_method").selectedIndex = 1; // Shared Key
+	}
+	else{
+		document.getElementById("auth_method").selectedIndex = 1; // default OPEN
+	}
+}
+else {
+
+	document.wireless_apcli.apcli_ssid.value = site_ssid;
+	var network_type = site_network_type;
+	var enc = site_encry;
+	var mode = site_auth;
+	document.wireless_apcli.apcli_channel.value = site_channel;
+	document.wireless_apcli.apcli_bssid.value = site_bssid;
+
+	if (mode == "OPEN")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 0;
+	else if (mode == "SHARED")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+	else if (mode == "WPAPSK")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 2;
+	else if (mode == "WPA2PSK")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 3;
+	else
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 0;
+
+	if (enc == "WEP")
+		document.wireless_apcli.apcli_mode.options.selectedIndex = 1;
+
+	document.wireless_apcli.apcli_key1.value = "";
+	document.wireless_apcli.apcli_key2.value = "";
+	document.wireless_apcli.apcli_key3.value = "";
+	document.wireless_apcli.apcli_key4.value = "";
+
+
+	document.wireless_apcli.WEPKey_Code.value = 0;
+	document.wireless_apcli.WEPKey_Code.value = 0;
+	document.wireless_apcli.WEPKey_Code.value = 0;
+	document.wireless_apcli.WEPKey_Code.value = 0;
+
+	var keyid = 1;
+	document.wireless_apcli.DefWEPKey[0].checked= false;
+	document.wireless_apcli.DefWEPKey[1].checked= false;
+	document.wireless_apcli.DefWEPKey[2].checked= false;
+	document.wireless_apcli.DefWEPKey[3].checked= false;
+
+	document.wireless_apcli.DefWEPKey[keyid-1].checked= true;
+
+	document.wireless_apcli.apcli_wpapsk.value = "";
+
+	SiteSurveySecurityModeSwitchInit();
+	// Now, 4 Keys type are same, so only get the first key to display HEX or ASCII. It's OK
+	if ( (document.wireless_apcli.apcli_key1.value == "") && (document.wireless_apcli.apcli_key2.value == "") && (document.wireless_apcli.apcli_key3 == "") && (document.wireless_apcli.apcli_key4 == "") ){
+		//Set ASCII default
+		document.wireless_apcli.WEPKey_Code[0].checked = true; //ASCII
+	}else if (keytype == "0"){
+		document.wireless_apcli.WEPKey_Code[1].checked = true; //hex
+
+		if (document.wireless_apcli.apcli_key1.value != ""){
+			if (document.wireless_apcli.apcli_key1.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key2.value != ""){
+			if (document.wireless_apcli.apcli_key2.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key3 != ""){
+			if (document.wireless_apcli.apcli_key3.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key4 != ""){
+			if (document.wireless_apcli.apcli_key4.value.length > 10){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}
+	}else{
+		document.wireless_apcli.WEPKey_Code[0].checked = true; //ASCII
+
+		if (document.wireless_apcli.apcli_key1.value != ""){
+			if (document.wireless_apcli.apcli_key1.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key2.value != ""){
+			if (document.wireless_apcli.apcli_key2.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key3 != ""){
+			if (document.wireless_apcli.apcli_key3.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}else if (document.wireless_apcli.apcli_key4 != ""){
+			if (document.wireless_apcli.apcli_key4.value.length > 5){
+				document.getElementById("wep_encry").selectedIndex = 1;
+			}else{
+				document.getElementById("wep_encry").selectedIndex = 0;
+			}
+		}
+	}
+
+	if(mode == "OPEN"){
+		document.getElementById("auth_method").selectedIndex = 0; // OPEN
+	}else if (enc == "WEP"){                                            //if(mode == "SHARED"){
+		document.getElementById("auth_method").selectedIndex = 1; // Shared Key
+	}
+	else{
+		document.getElementById("auth_method").selectedIndex = 1; // default OPEN
+	}
+
+
+}
+	if ((wirelessmode != 3) && (wirelessmode != 4) && (wirelessmode != 5)){
+	    alert("Please select WISP mode to configure this page");
+	}
+
+	//parent.adjustMyFrameHeight();
+//	securityMode(0);
+}
+
+function checkHex(str){
+	var len = str.length;
+
+	for (var i=0; i<str.length; i++) {
+		if ((str.charAt(i) >= '0' && str.charAt(i) <= '9') ||
+			(str.charAt(i) >= 'a' && str.charAt(i) <= 'f') ||
+			(str.charAt(i) >= 'A' && str.charAt(i) <= 'F') ){
+				continue;
+		}else
+	        return false;
+	}
+	return true;
+}
+
+function checkInjection(str)
+{
+	var len = str.length;
+	for (var i = 0; i < str.length; i++) {
+		if (str.charAt(i) == ';' || str.charAt(i) == ',' ||
+				str.charAt(i) == '\r' || str.charAt(i) == '\n') {
+			return false;
+		}
+		else
+			continue;
+	}
+	return true;
+}
+
+function CheckWep()
+{
+	var defaultid = 0;
+	var keylen = 0 ;
+	var securitymode;
+
+	securitymode = document.wireless_apcli.apcli_mode.value;
+
+	if (document.wireless_apcli.DefWEPKey[0].checked == true){
+		defaultid = 1;
+		var keyvalue = document.wireless_apcli.apcli_key1.value;
+	}else if (document.wireless_apcli.DefWEPKey[1].checked == true){
+		defaultid = 2;
+		var keyvalue = document.wireless_apcli.apcli_key2.value;
+	}else if (document.wireless_apcli.DefWEPKey[2].checked == true){
+		defaultid = 3;
+		var keyvalue = document.wireless_apcli.apcli_key3.value;
+	}else if (document.wireless_apcli.DefWEPKey[3].checked == true){
+		defaultid = 4;
+		var keyvalue = document.wireless_apcli.apcli_key4.value;
+	}
+
+	if (keyvalue.length == 0 &&  securitymode == "SHARED"){
+		alert('Please input wep key'+defaultid+' !');		
+		return false;
+	}
+
+	var keylength = document.wireless_apcli.apcli_key1.value.length;
+	if (keylength != 0){
+		if (document.wireless_apcli.WEPKey_Code[0].checked == true){ //ASCII
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (ASCII)
+				if(keylength != 5) {
+					alert('Please input 5 characters of wep key1 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key1.value)== false){
+					alert('Wep key1 contains invalid characters.');
+					return false;
+				}
+			}else{ // 128-bits (ASCII)
+				if(keylength != 13) {
+					alert('Please input 13 characters of wep key1 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key1.value)== false){
+					alert('Wep key1 contains invalid characters.');
+					return false;
+				}
+			}
+		}else{ //HEX
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (HEX)
+				if(keylength != 10) {
+					alert('Please input 10 characters of wep key1 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key1.value) == false){
+					alert('Invalid Wep key1 format!');
+					return false;
+				}
+			}else{ // 128-bits (HEX)
+				if(keylength != 26) {
+					alert('Please input 26 characters of wep key1 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key1.value) == false){
+					alert('Invalid Wep key1 format!');
+					return false;
+				}
+			}
+
+		}
+	}
+
+	var keylength = document.wireless_apcli.apcli_key2.value.length;
+	if (keylength != 0){
+		if (document.wireless_apcli.WEPKey_Code[0].checked == true){ //ASCII
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (ASCII)
+				if(keylength != 5) {
+					alert('Please input 5 characters of wep key2 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key2.value)== false){
+					alert('Wep key2 contains invalid characters.');
+					return false;
+				}
+			}else{ // 128-bits (ASCII)
+				if(keylength != 13) {
+					alert('Please input 13 characters of wep key2 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key2.value)== false){
+					alert('Wep key2 contains invalid characters.');
+					return false;
+				}
+			}
+		}else{ //HEX
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (HEX)
+				if(keylength != 10) {
+					alert('Please input 10 characters of wep key2 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key2.value) == false){
+					alert('Invalid Wep key2 format!');
+					return false;
+				}
+			}else{ // 128-bits (HEX)
+				if(keylength != 26) {
+					alert('Please input 26 characters of wep key2 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key2.value) == false){
+					alert('Invalid Wep key2 format!');
+					return false;
+				}
+			}
+
+		}
+	}
+
+	var keylength = document.wireless_apcli.apcli_key3.value.length;
+	if (keylength != 0){
+		if (document.wireless_apcli.WEPKey_Code[0].checked == true){ //ASCII
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (ASCII)
+				if(keylength != 5) {
+					alert('Please input 5 characters of wep key3 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key3.value)== false){
+					alert('Wep key3 contains invalid characters.');
+					return false;
+				}
+			}else{ // 128-bits (ASCII)
+				if(keylength != 13) {
+					alert('Please input 13 characters of wep key3 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key3.value)== false){
+					alert('Wep key3 contains invalid characters.');
+					return false;
+				}
+			}
+		}else{ //HEX
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (HEX)
+				if(keylength != 10) {
+					alert('Please input 10 characters of wep key3 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key3.value) == false){
+					alert('Invalid Wep key3 format!');
+					return false;
+				}
+			}else{ // 128-bits (HEX)
+				if(keylength != 26) {
+					alert('Please input 26 characters of wep key3 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key3.value) == false){
+					alert('Invalid Wep key3 format!');
+					return false;
+				}
+			}
+
+		}
+	}
+
+	var keylength = document.wireless_apcli.apcli_key4.value.length;
+	if (keylength != 0){
+		if (document.wireless_apcli.WEPKey_Code[0].checked == true){ //ASCII
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (ASCII)
+				if(keylength != 5) {
+					alert('Please input 5 characters of wep key4 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key4.value)== false){
+					alert('Wep key4 contains invalid characters.');
+					return false;
+				}
+			}else{ // 128-bits (ASCII)
+				if(keylength != 13) {
+					alert('Please input 13 characters of wep key4 !');
+					return false;
+				}
+				if(checkInjection(document.wireless_apcli.apcli_key4.value)== false){
+					alert('Wep key4 contains invalid characters.');
+					return false;
+				}
+			}
+		}else{ //HEX
+			if (document.getElementById("wep_encry").selectedIndex == 0 ){ // 64-bits (HEX)
+				if(keylength != 10) {
+					alert('Please input 10 characters of wep key4 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key4.value) == false){
+					alert('Invalid Wep key4 format!');
+					return false;
+				}
+			}else{ // 128-bits (HEX)
+				if(keylength != 26) {
+					alert('Please input 26 characters of wep key4 !');
+					return false;
+				}
+				if(checkHex(document.wireless_apcli.apcli_key4.value) == false){
+					alert('Invalid Wep key4 format!');
+					return false;
+				}
+			}
+
+	}
+
+	}
+}
+
+function setChange(c){
+	changed = c;
+}
+
+function CheckWpa()
+{
+	if (document.wireless_apcli.apcli_wpapsk.value.length < 8) {
+		alert("Please enter 8~63 ASCII or 8~64 Hex characters in Pre-Shared Key.");
+		document.wireless_apcli.apcli_wpapsk.focus();
+		return false;
+	}
+	if (!checkInjection(document.wireless_apcli.apcli_wpapsk.value)) {
+		alert('Invalid characters in Pass Phrase.');
+		document.wireless_apcli.apcli_wpapsk.focus();
+		return false;
+	}
+
+	if (checkHex(document.wireless_apcli.apcli_wpapsk.value) == true){ // Hex
+		if ((document.wireless_apcli.apcli_wpapsk.value.length < 8) || (document.wireless_apcli.apcli_wpapsk.value.length > 64)){
+			alert('Please input at least 8 character wpapsk key!');
+			return false;
+		}
+	}else{ // ASCII
+		if ((document.wireless_apcli.apcli_wpapsk.value.length < 8) || (document.wireless_apcli.apcli_wpapsk.value.length > 63)){
+			alert('Please enter 8~63 ASCII or 8~64 Hex characters in Pre-Shared Key.');
+			return false;
+		}
+	}
+
+	return true;
+}
+
+function submit_apply()
+{
+	return CheckValue();
+
+//	if ((wirelessmode != 5) && (wirelessmode != 6) && (wirelessmode != 7)){
+//		alert("Please select Universal Repeater mode to configure this page");
+//		return false;
+//	}
+
+//	if ( (document.wireless_apcli.apcli_mode.options.selectedIndex == 1) && (document.wireless_apcli.auth_method.options.selectedIndex == 0) ){
+//		document.wireless_apcli.apcli_mode.value = "OPEN"; // Auth = OPEN
+//		alert("document.wireless_apcli.apcli_mode.value ="+document.wireless_apcli.apcli_mode.value);
+//		document.wireless_apcli.apcli_enc.value = "WEP"; // Enc = WEP
+//	}
+//		showWebMessage(2, "");
+//		return true;
+
+}
+
+function CheckValue()
+{
+//	if (submit_apply() == false)
+//	    return false;
+
+	if (document.wireless_apcli.apcli_ssid.value == '') {
+		alert('Please enter SSID!');
+		document.wireless_apcli.apcli_ssid.focus();
+		return false;
+	}
+
+	if (document.wireless_apcli.apcli_mode.options.selectedIndex == 0)
+		return true;
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 1)
+		return CheckWep();
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 2)
+		return CheckWpa();
+	else if (document.wireless_apcli.apcli_mode.options.selectedIndex == 3)
+		return CheckWpa();
+	else {
+		alert('Unknown Security Mode!');
+		return false;
+	}
+}
+
+function doWEP64_128(selectedindex)
+{
+	document.forms[0].WEP64_128.value =document.forms[0].wep_encry.value;
+	return
+}
+
+
+function MM_findObj(n, d)
+{
+	var p,i,x;
+	  
+	if(!d) d=document;
+	if((p=n.indexOf("?"))>0&&parent.frames.length) {
+		d=parent.frames[n.substring(p+1)].document;
+		n=n.substring(0,p);
+	}
+	if(!(x=d[n])&&d.all) x=d.all[n];
+	for (i=0;!x&&i<d.forms.length;i++) x=d.forms[i][n];
+	for(i=0;!x&&d.layers&&i<d.layers.length;i++) x=MM_findObj(n,d.layers[i].document);
+
+	return x;
+}
+
+var ascii="01234567890123456789012345678901" +
+          " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ"+
+          "[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
+function MD5(entree) 
+{
+	var l,s,k,ka,kb,kc,kd;
+
+	init();
+	for (k=0;k<entree.length;k++) {
+		l=entree.charAt(k);
+		update(ascii.lastIndexOf(l));
+	}
+	finish();
+	ka=kb=kc=kd=0;
+	for (i=0;i<4;i++) ka+=shl(digestBits[15-i], (i*8));
+	for (i=4;i<8;i++) kb+=shl(digestBits[15-i], ((i-4)*8));
+	for (i=8;i<12;i++) kc+=shl(digestBits[15-i], ((i-8)*8));
+	for (i=12;i<16;i++) kd+=shl(digestBits[15-i], ((i-12)*8));
+	s=hexa(kd)+hexa(kc)+hexa(kb)+hexa(ka);
+	return s; 
+}
+
+function ToHex(i)
+{
+	h="0123456789abcdef";
+	return h.charAt((i>>4)&0x0f)+h.charAt(i&0x0f);
+}
+
+function hexa(n) {
+	var hexa_h = "0123456789abcdef";
+	var hexa_c=""; 
+	var hexa_m=n;
+
+	for (hexa_i=0;hexa_i<8;hexa_i++) {
+		hexa_c=hexa_h.charAt(Math.abs(hexa_m)%16)+hexa_c;
+		hexa_m=Math.floor(hexa_m/16);
+	}
+	return hexa_c;
+}
+
+function finish() {
+	var bits = new array(8);
+	var	padding; 
+	var	i=0, index=0, padLen=0;
+
+	for (i = 0; i < 4; i++) {
+	    bits[i] = and(shr(count[0],(i * 8)), 0xff);
+	}
+        for (i = 0; i < 4; i++) {
+	    bits[i+4]=and(shr(count[1],(i * 8)), 0xff);
+	}
+	index = and(shr(count[0], 3) ,0x3f);
+	padLen = (index < 56) ? (56 - index) : (120 - index);
+	padding = new array(64); 
+	padding[0] = 0x80;
+        for (i=0;i<padLen;i++)
+	  update(padding[i]);
+        for (i=0;i<8;i++) 
+	  update(bits[i]);
+
+	for (i = 0; i < 4; i++) {
+	    for (j = 0; j < 4; j++) {
+		digestBits[i*4+j] = and(shr(state[i], (j * 8)) , 0xff);
+	    }
+	} 
+}
+
+
+function array(n) {
+  for(i=0;i<n;i++) this[i]=0;
+  this.length=n;
+}
+
+function integer(n) { return n%(0xffffffff+1); }
+
+function shr(a,b) {
+  a=integer(a);
+  b=integer(b);
+  if (a-0x80000000>=0) {
+    a=a%0x80000000;
+    a>>=b;
+    a+=0x40000000>>(b-1);
+  } else
+    a>>=b;
+  return a;
+}
+
+function shl1(a) {
+  a=a%0x80000000;
+  if (a&0x40000000==0x40000000)
+  {
+    a-=0x40000000;  
+    a*=2;
+    a+=0x80000000;
+  } else
+    a*=2;
+  return a;
+}
+
+function shl(a,b) {
+  a=integer(a);
+  b=integer(b);
+  for (var i=0;i<b;i++) a=shl1(a);
+  return a;
+}
+
+function and(a,b) {
+  a=integer(a);
+  b=integer(b);
+  var t1=(a-0x80000000);
+  var t2=(b-0x80000000);
+  if (t1>=0) 
+    if (t2>=0) 
+      return ((t1&t2)+0x80000000);
+    else
+      return (t1&b);
+  else
+    if (t2>=0)
+      return (a&t2);
+    else
+      return (a&b);  
+}
+
+function or(a,b) {
+  a=integer(a);
+  b=integer(b);
+  var t1=(a-0x80000000);
+  var t2=(b-0x80000000);
+  if (t1>=0) 
+    if (t2>=0) 
+      return ((t1|t2)+0x80000000);
+    else
+      return ((t1|b)+0x80000000);
+  else
+    if (t2>=0)
+      return ((a|t2)+0x80000000);
+    else
+      return (a|b);  
+}
+
+function xor(a,b) {
+  a=integer(a);
+  b=integer(b);
+  var t1=(a-0x80000000);
+  var t2=(b-0x80000000);
+  if (t1>=0) 
+    if (t2>=0) 
+      return (t1^t2);
+    else
+      return ((t1^b)+0x80000000);
+  else
+    if (t2>=0)
+      return ((a^t2)+0x80000000);
+    else
+      return (a^b);  
+}
+
+function not(a) {
+  a=integer(a);
+  return (0xffffffff-a);
+}
+
+    var state = new array(4); 
+    var count = new array(2);
+	count[0] = 0;
+	count[1] = 0;                     
+    var buffer = new array(64); 
+    var transformBuffer = new array(16); 
+    var digestBits = new array(16);
+
+    var S11 = 7;
+    var S12 = 12;
+    var S13 = 17;
+    var S14 = 22;
+    var S21 = 5;
+    var S22 = 9;
+    var S23 = 14;
+    var S24 = 20;
+    var S31 = 4;
+    var S32 = 11;
+    var S33 = 16;
+    var S34 = 23;
+    var S41 = 6;
+    var S42 = 10;
+    var S43 = 15;
+    var S44 = 21;
+
+function F(x,y,z) {
+	return or(and(x,y),and(not(x),z));
+}
+
+function G(x,y,z) {
+	return or(and(x,z),and(y,not(z)));
+}
+
+function H(x,y,z) {
+	return xor(xor(x,y),z);
+}
+
+function I(x,y,z) {
+	return xor(y ,or(x , not(z)));
+}
+
+function rotateLeft(a,n) {
+	return or(shl(a, n),(shr(a,(32 - n))));
+}
+
+function FF(a,b,c,d,x,s,ac) {
+    a = a+F(b, c, d) + x + ac;
+	a = rotateLeft(a, s);
+	a = a+b;
+	return a;
+}
+
+function GG(a,b,c,d,x,s,ac) {
+	a = a+G(b, c, d) +x + ac;
+	a = rotateLeft(a, s);
+	a = a+b;
+	return a;
+}
+
+function HH(a,b,c,d,x,s,ac) {
+	a = a+H(b, c, d) + x + ac;
+	a = rotateLeft(a, s);
+	a = a+b;
+	return a;
+}
+
+function II(a,b,c,d,x,s,ac) {
+	a = a+I(b, c, d) + x + ac;
+	a = rotateLeft(a, s);
+	a = a+b;
+	return a;
+}
+
+function transform(buf,offset) { 
+	var a=0, b=0, c=0, d=0; 
+	var x = transformBuffer;
+	
+	a = state[0];
+	b = state[1];
+	c = state[2];
+	d = state[3];
+	
+	for (i = 0; i < 16; i++) {
+	    x[i] = and(buf[i*4+offset],0xff);
+	    for (j = 1; j < 4; j++) {
+		x[i]+=shl(and(buf[i*4+j+offset] ,0xff), j * 8);
+	    }
+	}
+
+	/* Round 1 */
+	a = FF ( a, b, c, d, x[ 0], S11, 0xd76aa478); /* 1 */
+	d = FF ( d, a, b, c, x[ 1], S12, 0xe8c7b756); /* 2 */
+	c = FF ( c, d, a, b, x[ 2], S13, 0x242070db); /* 3 */
+	b = FF ( b, c, d, a, x[ 3], S14, 0xc1bdceee); /* 4 */
+	a = FF ( a, b, c, d, x[ 4], S11, 0xf57c0faf); /* 5 */
+	d = FF ( d, a, b, c, x[ 5], S12, 0x4787c62a); /* 6 */
+	c = FF ( c, d, a, b, x[ 6], S13, 0xa8304613); /* 7 */
+	b = FF ( b, c, d, a, x[ 7], S14, 0xfd469501); /* 8 */
+	a = FF ( a, b, c, d, x[ 8], S11, 0x698098d8); /* 9 */
+	d = FF ( d, a, b, c, x[ 9], S12, 0x8b44f7af); /* 10 */
+	c = FF ( c, d, a, b, x[10], S13, 0xffff5bb1); /* 11 */
+	b = FF ( b, c, d, a, x[11], S14, 0x895cd7be); /* 12 */
+	a = FF ( a, b, c, d, x[12], S11, 0x6b901122); /* 13 */
+	d = FF ( d, a, b, c, x[13], S12, 0xfd987193); /* 14 */
+	c = FF ( c, d, a, b, x[14], S13, 0xa679438e); /* 15 */
+	b = FF ( b, c, d, a, x[15], S14, 0x49b40821); /* 16 */
+
+	/* Round 2 */
+	a = GG ( a, b, c, d, x[ 1], S21, 0xf61e2562); /* 17 */
+	d = GG ( d, a, b, c, x[ 6], S22, 0xc040b340); /* 18 */
+	c = GG ( c, d, a, b, x[11], S23, 0x265e5a51); /* 19 */
+	b = GG ( b, c, d, a, x[ 0], S24, 0xe9b6c7aa); /* 20 */
+	a = GG ( a, b, c, d, x[ 5], S21, 0xd62f105d); /* 21 */
+	d = GG ( d, a, b, c, x[10], S22,  0x2441453); /* 22 */
+	c = GG ( c, d, a, b, x[15], S23, 0xd8a1e681); /* 23 */
+	b = GG ( b, c, d, a, x[ 4], S24, 0xe7d3fbc8); /* 24 */
+	a = GG ( a, b, c, d, x[ 9], S21, 0x21e1cde6); /* 25 */
+	d = GG ( d, a, b, c, x[14], S22, 0xc33707d6); /* 26 */
+	c = GG ( c, d, a, b, x[ 3], S23, 0xf4d50d87); /* 27 */
+	b = GG ( b, c, d, a, x[ 8], S24, 0x455a14ed); /* 28 */
+	a = GG ( a, b, c, d, x[13], S21, 0xa9e3e905); /* 29 */
+	d = GG ( d, a, b, c, x[ 2], S22, 0xfcefa3f8); /* 30 */
+	c = GG ( c, d, a, b, x[ 7], S23, 0x676f02d9); /* 31 */
+	b = GG ( b, c, d, a, x[12], S24, 0x8d2a4c8a); /* 32 */
+
+	/* Round 3 */
+	a = HH ( a, b, c, d, x[ 5], S31, 0xfffa3942); /* 33 */
+	d = HH ( d, a, b, c, x[ 8], S32, 0x8771f681); /* 34 */
+	c = HH ( c, d, a, b, x[11], S33, 0x6d9d6122); /* 35 */
+	b = HH ( b, c, d, a, x[14], S34, 0xfde5380c); /* 36 */
+	a = HH ( a, b, c, d, x[ 1], S31, 0xa4beea44); /* 37 */
+	d = HH ( d, a, b, c, x[ 4], S32, 0x4bdecfa9); /* 38 */
+	c = HH ( c, d, a, b, x[ 7], S33, 0xf6bb4b60); /* 39 */
+	b = HH ( b, c, d, a, x[10], S34, 0xbebfbc70); /* 40 */
+	a = HH ( a, b, c, d, x[13], S31, 0x289b7ec6); /* 41 */
+	d = HH ( d, a, b, c, x[ 0], S32, 0xeaa127fa); /* 42 */
+	c = HH ( c, d, a, b, x[ 3], S33, 0xd4ef3085); /* 43 */
+	b = HH ( b, c, d, a, x[ 6], S34,  0x4881d05); /* 44 */
+	a = HH ( a, b, c, d, x[ 9], S31, 0xd9d4d039); /* 45 */
+	d = HH ( d, a, b, c, x[12], S32, 0xe6db99e5); /* 46 */
+	c = HH ( c, d, a, b, x[15], S33, 0x1fa27cf8); /* 47 */
+	b = HH ( b, c, d, a, x[ 2], S34, 0xc4ac5665); /* 48 */
+
+	/* Round 4 */
+	a = II ( a, b, c, d, x[ 0], S41, 0xf4292644); /* 49 */
+	d = II ( d, a, b, c, x[ 7], S42, 0x432aff97); /* 50 */
+	c = II ( c, d, a, b, x[14], S43, 0xab9423a7); /* 51 */
+	b = II ( b, c, d, a, x[ 5], S44, 0xfc93a039); /* 52 */
+	a = II ( a, b, c, d, x[12], S41, 0x655b59c3); /* 53 */
+	d = II ( d, a, b, c, x[ 3], S42, 0x8f0ccc92); /* 54 */
+	c = II ( c, d, a, b, x[10], S43, 0xffeff47d); /* 55 */
+	b = II ( b, c, d, a, x[ 1], S44, 0x85845dd1); /* 56 */
+	a = II ( a, b, c, d, x[ 8], S41, 0x6fa87e4f); /* 57 */
+	d = II ( d, a, b, c, x[15], S42, 0xfe2ce6e0); /* 58 */
+	c = II ( c, d, a, b, x[ 6], S43, 0xa3014314); /* 59 */
+	b = II ( b, c, d, a, x[13], S44, 0x4e0811a1); /* 60 */
+	a = II ( a, b, c, d, x[ 4], S41, 0xf7537e82); /* 61 */
+	d = II ( d, a, b, c, x[11], S42, 0xbd3af235); /* 62 */
+	c = II ( c, d, a, b, x[ 2], S43, 0x2ad7d2bb); /* 63 */
+	b = II ( b, c, d, a, x[ 9], S44, 0xeb86d391); /* 64 */
+
+	state[0] +=a;
+	state[1] +=b;
+	state[2] +=c;
+	state[3] +=d;
+}
+
+function init() {
+	count[0]=count[1] = 0;
+	state[0] = 0x67452301;
+	state[1] = 0xefcdab89;
+	state[2] = 0x98badcfe;
+	state[3] = 0x10325476;
+	for (i = 0; i < digestBits.length; i++)
+	    digestBits[i] = 0;
+}
+
+function update(b) { 
+	var index,i;
+	
+	index = and(shr(count[0],3) , 0x3f);
+	if (count[0]<0xffffffff-7) 
+	  count[0] += 8;
+        else {
+	  count[1]++;
+	  count[0]-=0xffffffff+1;
+          count[0]+=8;
+        }
+	buffer[index] = and(b,0xff);
+	if (index  >= 63) {
+	    transform(buffer, 0);
+	}
+}
+
+var wep_passphrase
+var key64,key128
+
+function generate_wep()
+{
+	wep_passphrase=MM_findObj('wep_passphrase');
+	key128=MM_findObj('wep_key128');
+	key64=new Array(4);
+	for (i=0;i<4;i++) key64[i]=MM_findObj('apcli_key'+(i+1));
+	
+	pp=wep_passphrase.value;
+	if (pp=='') {
+		key64[0].value=key64[1].value=key64[2].value=key64[3].value=key128.value='';
+	} else {
+		l=pp.length;
+		seed="";
+		for (i=0;i<64;i++) seed+=pp.charAt(i%l);
+		key128.value=MD5(seed).slice(0,26);
+		
+		rand=0;
+		for (i=0;i<l;i++) rand^=(pp.charCodeAt(i)<<((i%4)*8));
+
+		for (i=0;i<4;i++) {
+			s=""
+			for (j=0;j<5;j++) {
+				rand*=0x343fd;
+				rand+=0x269ec3;
+				rand&=0xffffffff;
+				s+=ToHex(rand>>16);
+			}
+			key64[i].value=s;
+		}
+	}
+	document.forms[0].WEPKey_Code[1].checked = true; //point to Hex	
+
+	if (document.getElementById("wep_encry").selectedIndex == 1){
+	    key64[0].value = key128.value;
+	    key64[1].value = key128.value;
+	    key64[2].value = key128.value;
+	    key64[3].value = key128.value;
+	}
+}
+
+</script>
+</head>
+<body onLoad="initValue()">
+<form onSubmit="return submit_apply()" method="post" name="wireless_apcli" action="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp">
+<% local sys_op_mode = uci:get("system","main","system_mode")%>
+<div id="tabs" style="word-break:break-all;(">
+  <ul>
+<% if sys_op_mode ~= "4" then%>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan5G" title="<%:General%>"><span><%:General%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_multissid5G" title="<%:more_ap%>"><span><%:more_ap%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanmacfilter5G" title="<%:mac_filter%>"><span><%:mac_filter%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanadvanced5G" title="<%:wireless_advance%>"><span><%:wireless_advance%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanqos5G" title="<%:wireless_qos%>"><span><%:wireless_qos%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwps5G" title="<%:wps%>"><span><%:wps%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanwpsstation5G" title="<%:wps_station%>"><span><%:wps_station%></span></a></li>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlanscheduling5G" title="<%:scheduling%>"><span><%:scheduling%></span></a></li>
+<% end %>
+<% if sys_op_mode ~= "1" and sys_op_mode ~= "2" then%>
+<% if sys_op_mode == "4" then%>
+    <li class="hightline"><a title="<%:General%>"><span><%:General%></span></a></li>
+<% else %>
+    <li class="hightline"><a title="<%:universal_repeater%>"><span><%:universal_repeater%></span></a></li>
+<% end %>
+    <li><a href="<%=controller%>/expert/configuration/network/wlan/wlan_apcli_wisp_ur_site_survey5G" title="<%:site_survey%>"><span><%:site_survey%></span></a></li>
+<% end %>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+<%
+local site_survey = luci.http.formvalue("site_survey")
+local site_ssid = luci.http.formvalue("site_ssid")
+local site_signal = luci.http.formvalue("site_signal")
+local site_channel = luci.http.formvalue("site_channel")
+local site_auth = luci.http.formvalue("site_auth")
+local site_encry = luci.http.formvalue("site_encry")
+local site_bssid = luci.http.formvalue("site_bssid")
+%>
+<div id="table">
+  <ul>
+	<li class="table_top"></li>
+	<li class="table_content">
+	 <div class="data">
+	  <ul>
+	    <li class='title' id='WISPTitle'><% if sys_op_mode == "3" then %><%:UR_Parameters%><% else %><%:WISP_Parameters%><% end %></li>
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="40%" id="APClientSSID">SSID</td>
+		<td><input type=text name="apcli_ssid" size=20 maxlength=32></td>
+		</tr>
+		</table>
+		</li>
+
+		<!--<span id = "site_survey_bssid" class = "off" >  -->
+		<!-- <td><input type=hidden name="apcli_channel0" size=20 maxlength=32></td>  -->
+		<td><input type=hidden name="apcli_bssid" size=20 maxlength=32></td>
+		<!--  </span>  -->
+
+		<!--<span id = "general_channel" class = "off" > -->
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td id ="GeneralChannelSelect" width="40%" nowrap><%:channel_select%></td>
+		<% local wireless_channel = uci:get("wireless", "ra0", "channel")%>
+		<td>
+		<select id="apcli_channel" name="apcli_channel" size="1">
+		<script language="javascript">
+                  {
+  			var channels = "<%=channels%>";
+ 			var selectedChannel = "<%=wireless_channel%>";
+			var channel = channels.split("-");
+			var i;
+			var freq; 
+			for(i=parseInt(channel[0]);i<=parseInt(channel[1]);i++){
+				if(i == selectedChannel){
+					document.write("  <option value='" + i + "' selected > ");
+				}
+				else{
+					document.write("  <option value='" + i + "'> ");
+				}
+				freq = 2412 + (i-1)*5; 
+         			document.writeln("Channel-" + i + " " + freq + "MHz");
+			}
+                  }
+                  </script>
+		</select>
+		<script language = "JavaScript">
+		  function channelValue()
+		  {
+			var Channel_value = document.forms[0].Channel_ID.value;
+			//alert(Channel_value)
+			document.forms[0].Channel_ID_index.value = Channel_value;
+		  }
+		</script>
+		<input name="Channel_ID_index" id="Channel_ID_index" type= "hidden" maxlength="15" size="15" value="<%=wireless_channel%>" />
+		</td>
+		</tr>
+		</table>
+		</li>
+		<!--  </span>  -->
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="40%" id="addprofSecureMode">Security Mode</td>
+		<td>
+		<select name="apcli_mode" id="apcli_mode" size="1" onchange="SecurityModeSwitch()">
+		<option value="OPEN" id="GeneralEncrypOpen">No Security</option>
+		<option value="SHARED" id="GeneralSharedKey">Static WEP</option>
+		<option value="WPAPSK" id="GeneralWPAPSK">WPA-PSK</option>
+		<option value="WPA2PSK" id="GeneralWPA2PSK">WPA2-PSK</option>
+		</select>
+		</td>
+		</tr>
+		</table>
+		</li>
+
+		<!-- WEP -->
+		<span id="div_wep" class="off">
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="40%" id="GeneralWEPPassPhrase">PassPhrase </td>
+		<td><input name="wep_passphrase" id="wep_passphrase" maxlength="26" value="" onKeyUp="setChange(1)">
+		<input type=button value="Generate" id="GeneralWEPGenerate" onclick="generate_wep()" ></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="40%" id="GeneralWEPEncryp">WEP Encryption</td>
+		<td>
+		<select name="wep_encry" id="wep_encry" size="1" onchange="wep_switch_key_length() doWEP64_128(this.selectedIndex)">
+		<option id="GeneralWEPEncryp64" value="0">64-bits </option>
+		<option id="GeneralWEPEncryp128" value="1">128-bits</option>
+		</select>
+		<input name="WEP64_128" id="WEP64_128" type= "hidden" maxlength="15" size="15" value="WEP64_128" />
+        <input name="wep_key128" id="wep_key128" type= "hidden" maxlength="15" value="">	
+		</td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="40%" id="GeneralAuthMethod">Authentication Method</td>
+		<td>
+		<select name="auth_method" id="auth_method" size="1" onchange="">
+		<option id="GeneralEncrypAuto" selected value="0">Open      </option>
+		<option id="GeneralEncrypSharedKey" value="1">Shared Key</option>
+		</select>
+		</td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td><span class="i_note" id="GeneralNote1_1">Note:</span></td>
+		</tr>
+		</table>
+		</li>
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td><span class="i_note_a" id="GeneralNote1_2">64-bit WEP: Enter 5 ASCII characters or 10 hexadecimal characters ("0-9", "A-F") for each Key (1-4).</span></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td><span class="i_note_a" id="GeneralNote1_3">128-bit WEP: Enter 13 ASCII characters or 26 hexadecimal characters ("0-9", "A-F") for each Key (1-4).</span></td>
+		</tr>
+		</table>
+		</li>
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td><span class="i_note_a" id="GeneralNote1_4">(Select one WEP key as an active key to encrypt wireless data transmission.)</span></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr>
+		<td width="10%"></td>
+		<td width="15%"></td>
+		<td>
+		<input type="radio" name="WEPKey_Code" value="1" onclick="wep_switch_key_length();" /><font id="GeneralWEPASCII">ASCII </font>
+		<input type="radio" name="WEPKey_Code" value="0" onclick="wep_switch_key_length();" /><font id="GeneralWEPHex">Hex</font></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr id="div_apcli_key1">
+		<td width="10%"></td>
+		<td width="15%" id="secureWEPKey1"><input type="radio" name="DefWEPKey" value="1"/><font id="GeneralWEPKEY1"> Key 1</font></td>
+		<td><input name="apcli_key1" id="apcli_key1" size="28" maxlength="26" value="" onKeyUp="setChange(1)"></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr id="div_apcli_key2">
+		<td width="10%"></td>
+		<td width="15%" id="secureWEPKey2"><input type="radio" name="DefWEPKey" value="2"/><font id="GeneralWEPKEY2"> Key 2</font></td>
+		<td><input name="apcli_key2" id="apcli_key2" size="28" maxlength="26" value="" onKeyUp="setChange(1)"></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr id="div_apcli_key3">
+		<td width="10%"></td>
+		<td width="15%" id="secureWEPKey3"><input type="radio" name="DefWEPKey" value="3"/><font id="GeneralWEPKEY3"> Key 3</font></td>
+		<td><input name="apcli_key3" id="apcli_key3" size="28" maxlength="26" value="" onKeyUp="setChange(1)"></td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr id="div_apcli_key4">
+		<td width="10%"></td>
+		<td width="15%" id="secureWEPKey4"><input type="radio" name="DefWEPKey" value="4"/><font id="GeneralWEPKEY4"> Key 4</font></td>
+		<td><input name="apcli_key4" id="apcli_key4" size="28" maxlength="26" value="" onKeyUp="setChange(1)"></td>
+		</tr>
+		</table>
+		</li>
+
+		</span>
+
+		<!-- WPA-PSK/ WPA2-PSK -->
+		<span id="div_wpa_psk" class="off">
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr id="div_wpa_algorithms" name="div_wpa_algorithms">
+		<td width="40%" class="head" id="addprofWPAAlg">Encryption Type</td>
+		<td>
+		<input type=radio name="cipher" id="cipher" value="0" checked><font id="addprofWPATKIP">TKIP </font>&nbsp;
+		<input type=radio name="cipher" id="cipher" value="1"><font id="addprofWPAAES">AES </font>&nbsp;
+		</td>
+		</tr>
+		</table>
+		</li>
+
+		<li class="w_text">
+		<table width="95%" border="0" align="center" cellpadding="0" cellspacing="0">
+		<tr id="div_apcli_wpapsk">
+		<td width="40%" id="wpapsk_Pass_Phrase">Pre-Shared Key</td>
+		<td><input type=text name="apcli_wpapsk" size=20 maxlength=64></td>
+		</tr>
+		</table>
+		</li>
+		</span>
+
+		<li></li>
+	  </ul>
+	 </div>
+	</li>
+	<center>
+	<li class="table_button">
+	<input name="apply" type=submit value="<%:apply%>" id="GeneralApply">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<input name="cancel" type=reset value="<%:cancel%>" id="GeneralReset" onClick="window.location.reload()">
+	</li>
+	</center>
+  </ul>
+</div>
+</form>
+
+</body>
+<script>
+showFullPath(' <%:Network%> > <%:wireless_apcli_survey%>');
+showWebMessage( 0, "<%:Message%>", "<%:Ready%>");
+</script>
+</html>

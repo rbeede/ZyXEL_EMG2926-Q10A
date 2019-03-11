@@ -1,0 +1,283 @@
+#!/bin/sh
+
+Folder="/tmp/wan_monitor"
+Raw_Data="$Folder/raw_data"
+COUNT="$Folder/count"
+Max_tx_Mbps_data="$Folder/max_tx"
+Max_rx_Mbps_data="$Folder/max_rx"
+Raw_Data_Index="$Folder/raw_index"
+first_raw_data="$Folder/tmp"
+Montior_Time=300
+Bps_to_Mbps=131072
+MAX=288
+
+create_file() {
+	if [ ! -d "$Folder" ]; then
+	   # directory /tmp/wan_monitor isn't exist
+		echo "Directory wan_monitor does not exists."
+		mkdir -p $Folder
+		echo "0" >>$COUNT
+		echo "0" >>$Raw_Data_Index
+		
+		txbyte=$(ifconfig $interface | grep 'TX bytes' | cut -d ':' -f 3 | cut -d ' ' -f 1) 
+		rxbyte=$(ifconfig $interface | grep 'RX bytes' | cut -d ':' -f 2 | cut -d ' ' -f 1)
+
+		if [ "$txbyte" == "" ]; then
+			txbyte=0
+		fi
+		if [ "$rxbyte" == "" ]; then
+			rxbyte=0
+		fi
+			
+		echo `date +"%Y/%m/%d %H:%M"` $txbyte $rxbyte  >>$first_raw_data
+		exit
+	fi
+}
+
+##select max tx_Mbps
+check_max_tx_Mbps() {
+	if [ -f $Max_tx_Mbps_data ]; then
+		Max_tx_data_count=$(cat $Max_tx_Mbps_data | wc -l)
+	else
+		Max_tx_data_count=0
+	fi
+	
+	if [ "$count" == "1" ]; then
+		local LINE=$(cat $Raw_Data)
+		Max_tx_data_count=$(($Max_tx_data_count+1))
+		echo $LINE > $Max_tx_Mbps_data
+	else
+		local LINE=$(cat $Raw_Data | tail -n 1)
+		compare_txMbps
+	fi
+}
+
+##select max rx_Mbps
+check_max_rx_Mbps() {
+	if [ -f $Max_rx_Mbps_data ]; then
+		Max_rx_data_count=$(cat $Max_rx_Mbps_data | wc -l)
+	else
+		Max_rx_data_count=0
+	fi
+	
+	if [ "$count" == "1" ]; then
+		local LINE=$(cat $Raw_Data)
+		Max_rx_data_count=$(($Max_rx_data_count+1))
+		echo $LINE > $Max_rx_Mbps_data
+			
+	else
+		local LINE=$(cat $Raw_Data | tail -n 1)
+		compare_rxMbps
+	fi
+}
+
+check_count() {
+	##check raw data count
+	if [ "$count" == "$MAX" ]; then
+		##check first raw exist in max_tx / max_rx table or not
+		local max_tx_index=$(head -1 $Max_tx_Mbps_data | awk '{print $7 }')
+		local old_raw_tx_index=$(head -1 $Raw_Data | awk '{print $7 }')
+		local max_rx_index=$(head -1 $Max_rx_Mbps_data | awk '{print $7 }')
+		local old_raw_rx_index=$(head -1 $Raw_Data | awk '{print $7 }')
+			
+		##delete raw data first row
+		sed -i '1d' $Raw_Data
+		
+		##delete Max_tx_Mbps_data first row
+		if [ "$max_tx_index" == "$old_raw_tx_index" ]; then
+			sed -i '1d' $Max_tx_Mbps_data
+			local Max_tx_data_count=$(cat $Max_tx_Mbps_data | wc -l)
+			if [ "$Max_tx_data_count" == "0" ]; then
+				scan_all_data tx
+			fi
+		fi
+		
+		##delete Max_rx_Mbps_data first row
+		if [ "$max_rx_index" == "$old_raw_rx_index" ]; then
+			sed -i '1d' $Max_rx_Mbps_data
+			local Max_rx_data_count=$(cat $Max_rx_Mbps_data | wc -l)
+			if [ "$Max_rx_data_count" == "0" ]; then
+				scan_all_data rx
+			fi
+			
+		fi
+		
+	fi
+}
+
+write_file() {
+	INDEX=$(cat $Raw_Data_Index)
+	INDEX=`expr $INDEX + 1`
+	echo $INDEX > $Raw_Data_Index
+	
+	if [ $count -lt $MAX ]; then
+		count=`expr $count + 1`
+		echo $count > $COUNT
+	fi
+
+	echo `date +"%Y/%m/%d %H:%M"` $new_txbyte $new_rxbyte $tx_Mbps $rx_Mbps $INDEX>>$Raw_Data
+}
+
+##gen new raw data
+gen_raw_data() {
+	count=$(cat $COUNT)
+	new_txbyte=$(ifconfig $interface | grep 'TX bytes' | cut -d ':' -f 3 | cut -d ' ' -f 1) 
+	new_rxbyte=$(ifconfig $interface | grep 'RX bytes' | cut -d ':' -f 2 | cut -d ' ' -f 1)
+	
+	[ -z $new_txbyte ] || [ -z $new_rxbyte ] && exit
+	
+	if [ $count == "0" ]; then
+		
+		old_txbyte=$(cat $first_raw_data | awk '{print $3 }') 
+		old_rxbyte=$(cat $first_raw_data | awk '{print $4 }')
+				
+		Tx_byte=`expr $new_txbyte - $old_txbyte`
+		Rx_byte=`expr $new_rxbyte - $old_rxbyte`
+				
+		#tx_Mbps=`expr $txbyte / 131072`
+		#rx_Mbps=`expr $rxbyte / 131072`
+		tx_Mbps=`awk 'BEGIN {printf("%.2f", ( '$Tx_byte' / '$Bps_to_Mbps' / '$Montior_Time' ))}'`
+		rx_Mbps=`awk 'BEGIN {printf("%.2f", ( '$Rx_byte' / '$Bps_to_Mbps' / '$Montior_Time' ))}'`
+				
+		rm $first_raw_data
+	else	
+		##check raw data count
+		check_count
+		
+		old_txbyte=$(tail -1 $Raw_Data | awk -F " " '{print $3}')
+		old_rxbyte=$(tail -1 $Raw_Data | awk -F " " '{print $4}')
+				
+		Tx_byte=`expr $new_txbyte - $old_txbyte`
+		Rx_byte=`expr $new_rxbyte - $old_rxbyte`
+				
+		#tx_Mbps=`expr $Tx_byte / 131072`
+		#rx_Mbps=`expr $Rx_byte / 131072`
+		tx_Mbps=`awk 'BEGIN {printf("%.2f", ( '$Tx_byte' / '$Bps_to_Mbps' / '$Montior_Time' ))}'`
+		rx_Mbps=`awk 'BEGIN {printf("%.2f", ( '$Rx_byte' / '$Bps_to_Mbps' / '$Montior_Time' ))}'`
+		
+	fi
+}
+
+compare_txMbps() {
+	local raw_tx_data=$(echo $LINE | awk '{print $5 }')
+	local max_tx_data=$(tail -1 $Max_tx_Mbps_data | awk '{print $5 }')
+	
+	if [ `expr $raw_tx_data \> $max_tx_data` == "0" ]; then
+	##maybe lt or eq
+		if [ $raw_tx_data == $max_tx_data ]; then
+			echo $LINE >> $Max_tx_Mbps_data
+			Max_tx_data_count=$(($Max_tx_data_count+1))
+		fi
+	elif [ `expr $raw_tx_data \> $max_tx_data` == "1" ]; then
+		echo $LINE > $Max_tx_Mbps_data
+		Max_tx_data_count=$(($Max_tx_data_count+1))
+	fi
+	############################## Take an integer 
+	# if [ $raw_tx_data -gt $max_tx_data ]; then
+		# echo $LINE > $Max_tx_Mbps_data
+		# Max_tx_data_count=$(($Max_tx_data_count+1))
+		# echo "168>>>>>>>>>"
+	# elif [ "$raw_tx_data" == "$max_tx_data" ]; then
+		# echo $LINE >> $Max_tx_Mbps_data
+		# Max_tx_data_count=$(($Max_tx_data_count+1))
+		# echo "172======="
+	# fi
+	##############################
+}
+
+compare_rxMbps() {
+	local raw_rx_data=$(echo $LINE | awk '{print $6 }')
+	local max_rx_data=$(tail -1 $Max_rx_Mbps_data | awk '{print $6 }')
+		
+	if [ `expr $raw_rx_data \> $max_rx_data` == "0" ]; then
+	##maybe lt or eq
+		if [ $raw_rx_data == $max_rx_data ]; then
+			echo $LINE >> $Max_rx_Mbps_data
+			Max_rx_data_count=$(($Max_rx_data_count+1))
+		fi
+	elif [ `expr $raw_rx_data \> $max_rx_data` == "1" ]; then
+		echo $LINE > $Max_rx_Mbps_data
+		Max_rx_data_count=$(($Max_rx_data_count+1))
+	fi
+	############################## Take an integer 
+	# if [ $raw_rx_data -gt $max_rx_data ]; then
+		# echo $LINE > $Max_rx_Mbps_data
+		# Max_rx_data_count=$(($Max_rx_data_count+1))
+		# echo "304>>>>>>>>>"
+	# elif [ "$raw_rx_data" == "$max_rx_data" ]; then
+		# echo $LINE >> $Max_rx_Mbps_data
+		# Max_rx_data_count=$(($Max_rx_data_count+1))
+		# echo "308======="
+	# fi
+	##############################
+}
+
+scan_all_data() {
+	local i=1
+	if [ "$1" == "tx" ]; then
+		while read LINE
+		do
+			if [ "$Max_tx_data_count" == "0" ]; then
+				Max_tx_data_count=$(($Max_tx_data_count+1))
+				echo $LINE > $Max_tx_Mbps_data
+				
+			else
+				compare_txMbps
+				
+			fi	
+			
+			i=$(($i+1)) 
+			
+		done   < $Raw_Data
+	else
+		while read LINE
+		do
+			##select max rx_Mbps
+			if [ "$Max_rx_data_count" == "0" ]; then
+				Max_rx_data_count=$(($Max_rx_data_count+1))
+				echo $LINE > $Max_rx_Mbps_data
+				
+			else
+				compare_rxMbps
+			fi
+			
+			i=$(($i+1)) 
+			
+		done   < $Raw_Data
+	fi	
+}
+
+###select default wan
+local defaultwan=$(uci get network.general.defaultWan)
+local proto=$(uci get network.$defaultwan.proto)
+if [ "$proto" == "dhcp" ] || [ "$proto" == "static" ]; then
+	interface="eth0"
+elif [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ]; then
+	interface="$proto"-$defaultwan
+fi
+
+###create file
+create_file
+
+###gen new raw data
+gen_raw_data
+
+###write file
+write_file
+
+####print lastest data
+#echo "new data	  txbyte     rxbyte     tx(Mbps)     rx(Mbps)     INDEX"
+#echo `date +"%Y/%m/%d %H:%M"` 	"$new_txbyte  $new_rxbyte    $tx_Mbps  $rx_Mbps   #$INDEX"
+
+check_max_tx_Mbps
+	
+check_max_rx_Mbps	
+
+
+#echo "raw data  txbyte    rxbyte     tx(Mbps)     rx(Mbps)    index"
+#cat $Raw_Data
+#echo "Max tx"
+#cat $Max_tx_Mbps_data
+#echo "Max rx"
+#cat $Max_rx_Mbps_data
+

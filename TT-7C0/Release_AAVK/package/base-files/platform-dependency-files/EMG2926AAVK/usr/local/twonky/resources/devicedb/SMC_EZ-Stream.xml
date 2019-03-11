@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>SMC EZ-Stream</DisplayName>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+	</DeviceQuirks>
+</Client>

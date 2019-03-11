@@ -1,0 +1,56 @@
+#!/bin/sh
+
+PROG=`basename $0`
+
+usage() {
+	echo "usage: $PROG"
+}
+
+# process_step return values
+FLAG_DONE=0
+FLAG_COMMA=1
+FLAG_NOTHING=2
+
+process_numbOfCurrentEventFlows() {
+	redis-cli LLEN eventdb:events | \
+	{
+		local setcomma=$FLAG_NOTHING
+		while read line; do
+			[ -z "$line" ] && continue
+			[ "$line" = "done" ] && return $FLAG_DONE
+			if [ $setcomma -eq $FLAG_NOTHING ]; then
+				# echo $comma
+				setcomma=$FLAG_COMMA
+			else
+				echo ,
+			fi
+			echo $line
+		done
+		return $setcomma
+	}
+}
+
+process_numOfPreCalculatedFlows() {
+	redis-cli LLEN eventdb:perDevicePrecalculated | \
+	{
+		local setcomma=$FLAG_NOTHING
+		while read line; do
+			[ -z "$line" ] && continue
+			[ "$line" = "done" ] && return $FLAG_DONE
+			if [ $setcomma -eq $FLAG_NOTHING ]; then
+				# echo $comma
+				setcomma=$FLAG_COMMA
+			else
+				echo ,
+			fi
+			echo $line
+		done
+		return $setcomma
+	}
+}
+
+echo "{\"numOfCurrentEventFlows\": "
+process_numbOfCurrentEventFlows
+echo ", \"numOfPreCalculatedFlows\" : "
+process_numOfPreCalculatedFlows
+echo "}"

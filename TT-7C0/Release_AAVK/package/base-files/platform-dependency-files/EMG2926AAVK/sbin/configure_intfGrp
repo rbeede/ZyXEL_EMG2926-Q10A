@@ -1,0 +1,282 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+sys_mag()
+{
+	echo "/sbin/configure_intfGrp : $1 " 1> /dev/null
+}
+
+
+set_iptables_rule(){
+
+	sys_mag "set_iptables_rule"
+
+	iptables -N IntfGrp
+	iptables -N IntfGrp_INPUT
+
+	iptables -F IntfGrp
+	iptables -F IntfGrp_INPUT
+	
+
+	#Setting IntfGrp chain
+
+	for iface in "" 1 2 3 4 
+	do	
+		grouped=$(uci get network.wan$iface.grouped)
+		wan_enabled=$(uci get network.wan$iface.enable)
+		default_iface=$(uci get network.wan$iface.default)
+		if [ "$wan_enabled" == "1" ] && [ "$grouped" != "1" ] ;then
+
+			local iface2=$(uci get network.wan$iface.proto)
+			if [ "$iface2" == "pppoe" ]; then
+				iface3=pppoe-wan"$iface"
+			else
+				iface3=$(uci get network.wan$iface.ifname)
+			fi
+		
+			iptables -D IntfGrp -i br+ -o $iface3 -j RETURN 2>/dev/null 
+			iptables -I IntfGrp -i br+ -o $iface3 -j RETURN 2>/dev/null 
+
+			sys_mag "iptables -D IntfGrp -i br+ -o $iface3 -j RETURN 2>/dev/null"
+			sys_mag "iptables -I IntfGrp -i br+ -o $iface3 -j RETURN 2>/dev/null "
+		
+		fi
+	done
+	
+	grouped_wan=$(uci get intfGrp.Default.wanint)
+	proto=$(uci get network.$grouped_wan.proto)
+	if [ "$proto" == "pppoe" ]; then
+		iface=pppoe-"$grouped_wan"
+	else
+		iface=$(uci get network.$grouped_wan.ifname)
+	fi
+	
+	iptables -D IntfGrp -i br-lan -o $iface -j RETURN 2>/dev/null 
+	iptables -I IntfGrp -i br-lan -o $iface -j RETURN 2>/dev/null
+	
+	sys_mag "iptables -D IntfGrp -i br-lan -o $iface -j RETURN 2>/dev/null"
+	sys_mag "iptables -I IntfGrp -i br-lan -o $iface -j RETURN 2>/dev/null"
+
+
+	iptables -D IntfGrp -i br-lan -o br-lan  -j RETURN 2>/dev/null 
+	iptables -I IntfGrp -i br-lan -o br-lan  -j RETURN 2>/dev/null
+	
+	sys_mag "iptables -D IntfGrp -i br-lan -o br-lan  -j RETURN 2>/dev/null"
+	sys_mag "iptables -I IntfGrp -i br-lan -o br-lan  -j RETURN 2>/dev/null"
+	
+	for i in `seq 4 1 7`
+	do 
+		grouped_wan=$(uci get intfGrp.Group$i.wanint)
+		group_vid=$(uci get intfGrp.Group$i.vlanid)
+		grouped=$(uci get network.$grouped_wan.grouped)
+
+		if [ ! -z "$grouped_wan" ] && [ "$grouped" == "1" ]; then  
+
+				wan_enabled=$(uci get network.$grouped_wan.enable)
+				proto=$(uci get network.$grouped_wan.proto)
+				if [ "$proto" == "pppoe" ]; then
+					iface=pppoe-"$grouped_wan"
+				else
+					iface=$(uci get network.$grouped_wan.ifname)
+				fi
+
+				iptables -D IntfGrp -i br-vlanth$group_vid -o $iface -j RETURN 2>/dev/null 
+				iptables -I IntfGrp -i br-vlanth$group_vid -o $iface -j RETURN 2>/dev/null
+				sys_mag "iptables -D IntfGrp -i br-vlanth$group_vid -o $iface -j RETURN 2>/dev/null"
+				sys_mag "iptables -I IntfGrp -i br-vlanth$group_vid -o $iface -j RETURN 2>/dev/null"
+
+				iptables -D IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j RETURN 2>/dev/null 
+				iptables -I IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j RETURN 2>/dev/null
+				sys_mag "iptables -D IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j RETURN 2>/dev/null"
+				sys_mag "iptables -I IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j RETURN 2>/dev/null"
+
+		fi
+	done
+	
+	iptables -A IntfGrp -i br+ -j DROP 2>/dev/null
+	
+
+	#Setting IntfGrp_INPUT chain
+	local LAN_ip=$(uci get network.lan.ipaddr)   
+
+	local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+	if [ "$Guest_24GWLAN" == "1" ]; then
+		local Guest_24GWLAN_IP=$(uci get wireless.ath3.guest_ip)
+		
+		iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+
+		iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null	
+
+		sys_mag "iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+		sys_mag "iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+
+		sys_mag "iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+		sys_mag "iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+	fi		
+	
+	local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+	if [ "$Guest_5GWLAN" == "1" ]; then
+		local Guest_5GWLAN_IP=$(uci get wireless.ath13.guest_ip)
+		
+		iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+
+		iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+		iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null	
+
+		sys_mag "iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+		sys_mag "iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+
+		sys_mag "iptables -D IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+		sys_mag "iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+	fi
+							
+    for i in `seq 4 1 7`
+    do 
+        local grouped_wan=$(uci get intfGrp.Group$i.wanint)
+        local group_vid=$(uci get intfGrp.Group$i.vlanid)
+
+        if [ ! -z "$grouped_wan" ]; then  
+
+           		local ifname=""
+			local WAN_PROTO=$(uci get network.$grouped_wan.proto)
+			if [ "$WAN_PROTO" == "pppoe" ]; then
+				ifname=pppoe-"$grouped_wan"
+			else
+				ifname=$(uci_get network $grouped_wan ifname)
+			fi
+
+			local Guest_24GWLAN=$(uci get wireless.ath3.enable_guest_wlan)
+			if [ "$Guest_24GWLAN" == "1" ]; then
+				local Guest_24GWLAN_IP=$(uci get wireless.ath3.guest_ip)
+				
+				for j in `seq 4  1 7`
+				do 
+					local grouped_wan3=$(uci get intfGrp.Group$j.wanint)
+
+					if [ ! -z "$grouped_wan3" ]; then  
+   
+						iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+
+						iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+						
+						sys_mag "iptables -D IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+						sys_mag "iptables -I IntfGrp_INPUT -s $Guest_24GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+
+						sys_mag "iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+						sys_mag "iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+					fi
+				done
+			fi
+			
+
+			local Guest_5GWLAN=$(uci get wireless.ath13.enable_guest_wlan)
+			if [ "$Guest_5GWLAN" == "1" ]; then
+				local Guest_5GWLAN_IP=$(uci get wireless.ath13.guest_ip)
+				
+				for j in `seq 4  1 7`
+				do 
+					local grouped_wan3=$(uci get intfGrp.Group$j.wanint)
+
+					if [ ! -z "$grouped_wan3" ]; then  
+						iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+
+						iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+						
+						sys_mag "iptables -D IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+						sys_mag "iptables -I IntfGrp_INPUT -s $Guest_5GWLAN_IP/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+
+						sys_mag "iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+						sys_mag "iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+					fi
+				done
+			fi
+
+			if [ "$Guest_5GWLAN" == "1" ] && [ "$Guest_24GWLAN" == "1" ]; then
+
+				iptables -D INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+				iptables -I INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+
+				iptables -D INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+				iptables -I INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+
+				sys_mag "iptables -D INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+				sys_mag "iptables -I INPUT -s $Guest_5GWLAN_IP/24 -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null"
+
+				sys_mag "iptables -D INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+				sys_mag "iptables -I INPUT -s $Guest_24GWLAN_IP/24 -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null"
+
+			fi
+
+			#iptables -I IntfGrp -i br-vlanth$group_vid -j DROP 2>/dev/null
+			#iptables -I IntfGrp -i br-vlanth$group_vid -o $ifname -j ACCEPT 2>/dev/null
+			#iptables -I IntfGrp -i br-vlanth$group_vid ! -o $ifname -j DROP 2>/dev/null
+			#iptables -I IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j ACCEPT 2>/dev/null
+
+			iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d $LAN_ip/24 -j DROP 2>/dev/null
+			iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null
+
+
+			#sys_mag "iptables -I IntfGrp -i br-vlanth$group_vid -j DROP 2>/dev/null"
+			#sys_mag "iptables -I IntfGrp -i br-vlanth$group_vid -o $ifname -j ACCEPT 2>/dev/null"
+			#sys_mag "iptables -I IntfGrp -i br-vlanth$group_vid ! -o $ifname -j DROP 2>/dev/null"
+			#sys_mag "iptables -I IntfGrp -i br-vlanth$group_vid -o br-vlanth$group_vid -j ACCEPT 2>/dev/null"
+
+			sys_mag "iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d $LAN_ip/24 -j DROP 2>/dev/null"
+			sys_mag "iptables -I IntfGrp_INPUT -s $LAN_ip/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null"
+			
+
+			for j in `seq 4  1 7`
+			do 
+				if [ "$j" -gt "$i" ]; then
+				
+					local grouped_wan2=$(uci get intfGrp.Group$j.wanint)
+
+					if [ ! -z "$grouped_wan2" ]; then  
+   
+						iptables -D IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null
+
+						iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null
+						iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null
+						
+						sys_mag "iptables -D IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+						sys_mag "iptables -I IntfGrp_INPUT -s 192.168.$i.0/24 -d 192.168.$j.0/24 -j DROP 2>/dev/null"
+
+						sys_mag "iptables -D IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null"
+						sys_mag "iptables -I IntfGrp_INPUT -s 192.168.$j.0/24 -d 192.168.$i.0/24 -j DROP 2>/dev/null"
+					fi
+				fi
+			done
+			
+        fi
+    done
+}
+
+
+
+case "$1" in 
+	boot)
+		boot
+	;;
+	start)
+		start
+	;;
+	restart)
+		restart
+	;;
+	stop)
+		stop
+	;;
+	*)
+		$1
+	;;
+esac
+

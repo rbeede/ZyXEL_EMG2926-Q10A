@@ -1,0 +1,21 @@
+#!/bin/sh
+
+##
+
+local redis_server_pid
+system_date=$(date)
+
+streamboost_enable=$(uci get appflow.tccontroller.enable_streamboost)
+
+if [ "$streamboost_enable" == "1"  ] ;then
+
+	# check redis-server daemon
+	redis_server_pid=$(ps | grep "/usr/bin/redis-server" | grep "grep" -v | awk '{print $1}')
+
+	if [ "$redis_server_pid" != "" ] ;then
+
+		/bin/dump_flow_precalculateFlow "$(date +%s)" 1 500 1 0
+
+	fi
+
+fi

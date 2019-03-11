@@ -1,0 +1,25 @@
+<Client>
+	<DeviceId>
+		<DisplayName>NOXON Audio</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>TerraTec</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOUTF8</Quirk>
+		<Quirk>FORCERES</Quirk>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>IGNORESORT</Quirk>
+	</DeviceQuirks>
+</Client>

@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Twonky NDS STB</DisplayName>
+		<HttpRecognition>
+			<HttpText>TwonkyMedia-NDS-STB</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DefaultView>ipodlike</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>NOPROXYURL</Quirk>
+	</DeviceQuirks>
+</Client>

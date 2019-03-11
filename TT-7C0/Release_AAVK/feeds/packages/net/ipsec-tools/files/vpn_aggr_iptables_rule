@@ -1,0 +1,73 @@
+#!/bin/sh
+set_aggr_ipt_rules() {
+        local r_ip=$1
+        local r_mask=$2
+        local l_ip=$3
+        local l_mask=$4
+        local lines
+        local ipt_src
+		local ipt_src_p
+        local ipt_dst
+		local ipt_dst_p
+		local match_rule
+		
+        lines=`iptables -t nat -nL vpn_rule | wc -l`
+		
+		[ $lines -lt 3 ] && {
+			iptables -t nat -I vpn_rule -s $r_ip/$r_mask -d $l_ip/$l_mask -j ACCEPT
+			iptables -A forward_vpn -s $l_ip/$l_mask -d $r_ip/$r_mask -j ACCEPT
+		}
+
+        for i in `seq 3 $lines`
+        do
+			
+			ipt_src_p=`iptables -t nat -nL vpn_rule | awk '{print $4}' | sed -n "$i"p | sed -n 's/^.*\///p'`
+			ipt_dst_p=`iptables -t nat -nL vpn_rule | awk '{print $5}' | sed -n "$i"p | sed -n 's/^.*\///p'`
+			
+			if [ -z $ipt_src_p ];then
+				ipt_src_p=32;
+				ipt_src=`iptables -t nat -nL vpn_rule | awk '{print $4}' | sed -n "$i"p`
+			else
+				ipt_src=`iptables -t nat -nL vpn_rule | awk '{print $4}' | sed -n "$i"p | sed -n 's/\/.*//p'`
+			fi
+			
+			if [ -z $ipt_dst_p ];then
+				ipt_dst_p=32;
+				ipt_dst=`iptables -t nat -nL vpn_rule | awk '{print $5}' | sed -n "$i"p`
+			else
+				ipt_dst=`iptables -t nat -nL vpn_rule | awk '{print $5}' | sed -n "$i"p | sed -n 's/\/.*//p'`
+			fi
+
+            if [ $ipt_src == $r_ip ] && [ $ipt_src_p == $r_mask ] && [ $ipt_dst == $l_ip ] && [ $ipt_dst_p == $l_mask ]; then
+				match_rule=1
+            fi
+        done
+		
+			if [ -z $match_rule ] && [ $lines -ge 3 ]; then
+				iptables -t nat -I vpn_rule -s $r_ip/$r_mask -d $l_ip/$l_mask -j ACCEPT
+				iptables -A forward_vpn -s $l_ip/$l_mask -d $r_ip/$r_mask -j ACCEPT
+			fi
+}
+
+
+del_aggr_ipt_rules() {
+        local r_ip=$1
+        local r_mask=$2
+        local l_ip=$3
+        local l_mask=$4
+
+        iptables -t nat -D vpn_rule -s $r_ip/$r_mask -d $l_ip/$l_mask -j ACCEPT
+        iptables -D forward_vpn -s $l_ip/$l_mask -d $r_ip/$r_mask -j ACCEPT
+
+}
+
+cmd=$1
+shift
+case "$cmd" in
+        start)
+        set_aggr_ipt_rules $1 $2 $3 $4
+        ;;
+        stop)
+        del_aggr_ipt_rules $1 $2 $3 $4
+        ;;
+esac

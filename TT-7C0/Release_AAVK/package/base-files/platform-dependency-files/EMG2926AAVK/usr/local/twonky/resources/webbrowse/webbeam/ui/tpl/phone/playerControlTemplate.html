@@ -1,0 +1,25 @@
+<div id="cb" class="controlbar" data-bind="css: {minimized: isMinimized()},slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="content" data-bind="style: {display: isMinimized() ? 'none' : 'block'}">
+    	<div class="headbox">
+    		<div id="Logo" class="logo"></div>
+    		<div id="btnMinimize" class="minmaxbutton min" data-bind="click: onMinimizeClick"></div>
+    	</div>
+        <div class="ctrlbox">
+            <div id="rbBtn" class="button rewind ctrlButton" data-bind="click: onRWDClick, css: { disabled: !hasPreviousItem() }"></div>
+            <div id="playPauseBtn" class="button play ctrlButton" data-bind="click: onPlayPauseClick, css: { pause: playerState() === PlayerState.Playing, play: playerState() !== PlayerState.Playing }"></div>
+            <div id="stopBtn" class="button stop ctrlButton" data-bind="click: onStopClick"></div>
+            <div id="ffBtn" class="button forward ctrlButton" data-bind="click: onFWDClick, css: { disabled: !hasNextItem() }"></div>
+            <div id="beamtoBtn" class="button beamto ctrlButton" data-bind="click: onChangePlayerClick"></div>
+        </div>
+        <div class="infobox">
+        	<div id="Duration" class="duration">
+		        <span data-bind="durationFormatter:position"></span> | <span data-bind="durationFormatter:duration"></span>
+		    </div>
+            <div class="progressContainer">
+                <div id="Title" class="title" data-bind="text: title"></div>
+                <input type="range" name="slider" id="progressSlider" value="0" min="0" max="100" data-highlight="true" data-mini="true" class="ui-hidden-accessible" data-bind="slider: controlProgress"/>
+                <div id="loadingIcon" class="loadingIcon" data-bind="visible:(playerState()===PlayerState.Buffering)||$parent.processing()"></div>
+            </div>
+        </div>
+    </div>
+</div>

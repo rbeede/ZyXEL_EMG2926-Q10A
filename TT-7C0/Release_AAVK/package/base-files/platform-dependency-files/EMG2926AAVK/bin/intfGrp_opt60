@@ -1,0 +1,218 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+change_group(){
+
+	local src_group=$1
+	local dst_group=$2
+	local port=$3
+
+	# check dest group port manber not include port
+	if [ "$port" -lt 5 ]; then
+
+		lan_port=$(uci get intfGrp.$dst_group.lanport)
+		dst_port_array=$(echo $lan_port | tr "," "\n")
+
+	else
+
+		wlan_port=$(uci get intfGrp.$dst_group.wlan)
+		dst_port_array=$(echo $wlan_port | tr "," "\n")
+
+	fi
+
+	for i in $dst_port_array
+	do
+		if [ "$i" == "$port" ]; then
+			exit $?
+		fi
+	done
+
+	# add port to destination group
+
+	if [ "$port" -lt 5 ]; then
+
+		local lan_port=$(uci get intfGrp.$dst_group.lanport)
+
+		if [ -z "$lan_port" ]; then
+			lan_port=$port
+		else
+			lan_port=$lan_port,$port
+		fi
+
+		uci set intfGrp.$dst_group.lanport=$lan_port
+
+		[ "$dst_group" == "Default" ] && uci set intfGrp.general.available=$lan_port
+
+	else
+
+		local wlan_port=$(uci get intfGrp.$dst_grou.wlan)
+
+		if [ -z "$wlan" ]; then
+			wlan_port=$port
+		else
+			wlan_port=$wlan_port,$port
+		fi
+
+		uci set intfGrp.$dst_group.wlan=$wlan_port
+
+	fi
+
+	if [ "$src_group" == "Default" ]; then
+
+		local opt60_port=$(uci get intfGrp.Default.option60del)
+
+		if [ -z "$opt60_port" ]; then
+			opt60_port=$port
+		else
+			opt60_port=$opt60_port,$port
+		fi
+
+		uci set intfGrp.Default.option60del=$opt60_port
+	fi
+
+	# remove port from source group
+
+	if [ "$port" -lt 5 ]; then
+
+		lan_port=$(uci get intfGrp.$src_group.lanport)
+		src_port_array=$(echo $lan_port | tr "," "\n")
+
+	else
+
+		wlan_port=$(uci get intfGrp.$src_group.wlan)
+		src_port_array=$(echo $wlan_port | tr "," "\n")
+
+	fi
+
+	lan_port_data=""
+	wlan_port_data=""
+
+	for i in $src_port_array
+	do
+
+		if [ "$i" != "$port" ]; then
+			if [ "$i" -lt 5 ]; then
+
+				if [ -z "$lan_port_data" ]; then
+					lan_port_data=$i
+				else
+					lan_port_data=$lan_port_data,$i
+				fi
+
+			else
+
+				if [ -z "$wlan_port_data" ]; then
+					wlan_port_data=$i
+				else
+					wlan_port_data=$wlan_port_data,$i
+				fi
+
+			fi
+		fi
+	done
+
+	if [ "$port" -lt 5 ]; then
+
+		[ "$lan_port" != "$lan_port_data" ] && uci set intfGrp.$src_group.lanport="$lan_port_data"
+		[ $src_group == "Default" ] && uci set intfGrp.general.available="$lan_port_data"
+
+	else
+
+		[ "$wlan_port" != "$wlan_port_data" ] && uci set intfGrp.$src_group.wlan="$wlan_port_data"
+
+
+	fi
+
+	uci commit intfGrp	
+
+}
+
+
+reset_group() {
+
+	local port=$1
+
+	local opt60_port=$(uci get intfGrp.Default.option60del)
+	
+	if [ -z "$opt60_port" ]; then
+		exit 0
+	fi
+
+	dst_port_array=$(echo $opt60_port | tr "," "\n")
+	for i in $dst_port_array
+	do
+		if [ "$i" == "$port" ]; then
+			for j in 4 5 6 7
+			do
+				local lan_port_t=$(uci get intfGrp.Group$j.lanport)
+				lan_port_t_array=$(echo $lan_port_t | tr "," "\n")
+				for k in $lan_port_t_array
+				do
+					if [ "$k" == "$port" ]; then
+						/bin/dhcp_option60_intfGrp add intfGrp.general.available $port
+						/bin/dhcp_option60_intfGrp add intfGrp.Default.lanport $port
+						/bin/dhcp_option60_intfGrp del intfGrp.Default.option60del $port
+						/bin/dhcp_option60_intfGrp del intfGrp.Group$j.lanport $port
+					fi				
+				done
+			done
+		fi
+	done
+}
+
+
+watch(){
+
+	op=$1
+
+	if [ "$op" == " " ]; then
+		exit $?
+	fi
+
+
+	if [ "$op" == "stop" ]; then
+		local lan_conf_pid=$(ps | grep "watch -tn 2 /bin/link_lan_monitor" | grep "grep" -v | awk '{print $1}')
+		if [ "$lan_conf_pid" != "" ]; then
+			kill -9 $lan_conf_pid
+		fi
+	fi
+
+	if [ "$op" == "start" ]; then
+		local check_watch=$(ps|grep "/bin/link_lan_monitor" |grep -v grep)
+		[ -z $check_watch ] && {
+			/bin/watch -tn 2 /bin/link_lan_monitor 1>/dev/null 2>&1 &
+		}
+	fi
+
+
+}
+
+
+cmd=$1
+	case "$cmd" in
+	change_group)
+		change_group $2 $3 $4
+		exit $?
+	;;
+	reset_group)
+		reset_group $2
+		exit $?
+	;;
+	reset_group_all)
+		reset_group 0
+		reset_group 1
+		reset_group 2
+		reset_group 3
+		exit $?
+	;;
+	watch)
+		watch $2 
+		exit $?
+	;;
+	*)
+		#Usage
+	;; 
+	esac
+
+exit $?

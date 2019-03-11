@@ -1,0 +1,443 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	 http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<style> 
+.on {display:on}
+.off {display:none}
+td {white-space: nowrap;}
+</style>
+<script type="text/javascript" src="<%=media%>/js/baseJS.js"></script>
+<script language="JavaScript" type="text/javascript">
+function initValue()
+{
+	showWebMessage( 0, "<%:Message%>", "<%:Ready%>");
+	var ipv6mode=document.forms[0].auto_config_select.value;
+	<%
+		local v6_Enable = uci.get("network","wan","ipv6Enable")
+	%>
+			
+	var IPv6_Enable = "<%=v6_Enable%>";
+	if( IPv6_Enable != "1" )
+	{
+		//document.ipv6lan.radio2.disabled=true;
+		//document.ipv6lan.radio3.disabled=true;
+		//document.ipv6lan.radio4.disabled=true;
+	}
+
+    if (document.ipv6lan.radio1.checked == true) //DHCP
+	{
+		show_div(true, "div_ra_period");
+		show_div(false, "div_static_addr");
+		show_div(false, "div_static_lenprefix");
+		show_div(false, "div_static_pref_lt");
+		show_div(false, "div_static_vali_lt");
+		show_div(false, "div_static_min_ra_intv");
+		show_div(false, "div_static_ra_m_flag");
+		show_div(true, "div_dhcp_state");
+	}
+    else if (document.ipv6lan.radio2.checked == true) //Static
+	{
+		show_div(true, "div_ra_period");
+		show_div(true, "div_static_addr");
+		show_div(true, "div_static_lenprefix");
+		show_div(true, "div_static_pref_lt");
+		show_div(true, "div_static_vali_lt");
+		show_div(false, "div_dhcp_state");
+//		show_div(true, "div_static_min_ra_intv");
+//		show_div(true, "div_static_ra_m_flag");
+	}
+    else if (document.ipv6lan.radio3.checked == true) //LinkLocal
+	{
+		show_div(false, "div_ra_period");
+		show_div(false, "div_static_addr");
+		show_div(false, "div_static_lenprefix");
+		show_div(false, "div_static_pref_lt");
+		show_div(false, "div_static_vali_lt");
+		show_div(false, "div_static_min_ra_intv");
+		show_div(false, "div_static_ra_m_flag");
+		show_div(false, "div_dhcp_state");
+	}
+	else if (document.ipv6lan.radio4.checked == true) //ULA
+	{
+		show_div(false, "div_ra_period");
+		show_div(false, "div_static_addr");
+		show_div(false, "div_static_lenprefix");
+		show_div(false, "div_static_pref_lt");
+		show_div(false, "div_static_vali_lt");
+		show_div(false, "div_static_min_ra_intv");
+		show_div(false, "div_static_ra_m_flag");
+		show_div(false, "div_dhcp_state");
+	}	
+     if( ipv6mode == "3" ) {
+		show_div(true, "stateful"); 
+     }
+	else{
+		show_div(false, "stateful");
+	}
+
+}
+function show_div(show,id) 
+{
+	if(show)
+		document.getElementById(id).className  = "on" ;
+    else
+    	document.getElementById(id).className  = "off" ;
+}
+
+function dostateful(selectedindex)
+{
+	 var ipv6mode=document.forms[0].auto_config_select.value;
+     if( ipv6mode == "3" ) {
+		show_div(true, "stateful"); 
+     }
+	else{
+		show_div(false, "stateful");
+	}
+}
+
+function doAddrConfig(para)
+{
+	if(para.value == "1" ) { //DHCP
+		show_div(true, "div_ra_period");
+		show_div(false, "div_static_addr");
+		show_div(false, "div_static_lenprefix");
+		show_div(false, "div_static_pref_lt");
+		show_div(false, "div_static_vali_lt");
+		show_div(false, "div_static_min_ra_intv");
+		show_div(false, "div_static_ra_m_flag");
+		show_div(true, "div_dhcp_state");
+	}
+	else if(para.value == "2" ) { //Static
+		show_div(true, "div_ra_period");
+		show_div(true, "div_static_addr");	
+		show_div(true, "div_static_lenprefix");
+		show_div(true, "div_static_pref_lt");
+		show_div(true, "div_static_vali_lt");
+		show_div(false, "div_dhcp_state");
+//		show_div(true, "div_static_min_ra_intv");
+//		show_div(true, "div_static_ra_m_flag");
+	}
+	else if(para.value == "3" ) { //LinkLocal
+		show_div(false, "div_ra_period");
+		show_div(false, "div_static_addr");
+		show_div(false, "div_static_lenprefix");
+		show_div(false, "div_static_pref_lt");
+		show_div(false, "div_static_vali_lt");
+		show_div(false, "div_static_min_ra_intv");
+		show_div(false, "div_static_ra_m_flag");
+		show_div(false, "div_dhcp_state");
+	}
+	else if(para.value == "4" ) { //ULA
+		show_div(false, "div_ra_period");
+		show_div(false, "div_static_addr");
+		show_div(false, "div_static_lenprefix");
+		show_div(false, "div_static_pref_lt");
+		show_div(false, "div_static_vali_lt");
+		show_div(false, "div_static_min_ra_intv");
+		show_div(false, "div_static_ra_m_flag");
+		show_div(false, "div_dhcp_state");
+	}
+}
+function checkIPFormat( value )
+{
+  return /^([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])(\.([0-9]|[1-9][0-9]|1[0-9][0-9]|2[0-4][0-9]|25[0-5])){3}$/.test( value );
+}
+
+function checkNetmaskFormat( value )
+{
+  return /^255\.255\.255\.(255|254|252|248|240|224|192|128|0)|255\.255\.(254|252|248|240|224|192|128|0)\.0|255\.(254|252|248|240|224|192|128|0)\.0\.0|(254|252|248|240|224|192|128)\.0\.0\.0$/.test( value );
+}
+
+function checkvalue()
+{
+	if (document.ipv6lan.MinRtrAdvInterval.value < 3 )
+	{
+		alert("<%:RA_period_alert%>");
+		return false;
+	}
+
+	if (document.ipv6lan.radio3.checked == true){
+		if (!confirm("IPv6 Address will be changed to Link Local Only on WAN/LAN.")){
+			return false;
+		}
+	}
+
+}
+ 
+function verifySubmitData()
+{
+	if (document.radio2.checked==true)
+	{
+		if (document.ipv6lan.ipv6prefixlen.value < 48 || document.ipv6lan.ipv6prefixlen.value > 64)
+		{
+			alert("<%:Invalid_Format%>");
+			document.ipv6lan.ipv6prefixlen.value = document.ipv6lan.ipv6prefixlen.defaultValue;
+			document.ipv6lan.ipv6prefixlen.focus();
+			return false;
+		}
+	}
+	
+	with ( document.forms[0] )
+	{
+		 if (alias1_enabled.checked==true)
+		 {
+		   if ( !checkIPFormat( alias1_ip.value ) )    
+		   {
+			  alert( "Invalid Alias 1 IP" );
+			  return false;
+		   }
+	 
+		   if ( !checkNetmaskFormat( alias1_netmask.value ) )
+		   {
+			  alert( "Invalid Alias 1 Netmask" );
+			  return false;
+		   }
+		 }
+
+		 if (alias2_enabled.checked==true)
+		 {
+		   if ( !checkIPFormat( alias2_ip.value ) )    
+		   {
+			  alert( "Invalid Alias 2 IP" );
+			  return false;
+		   }
+	 
+		   if ( !checkNetmaskFormat( alias2_netmask.value ) )
+		   {
+			  alert( "Invalid Alias 2 Netmask" );
+			  return false;
+		   }
+		 }
+	}
+  showWebMessage( 0, '<%:Message%>', '<%:msg_config%>' );  
+  return true;
+}
+</script> 
+</head>
+<body onLoad="initValue();">
+<form method="post" name="ipv6lan" action="<%=controller%>/expert/configuration/network/lan/ipv6LAN" onsubmit="return verifySubmitData()" >
+<div id="tabs">
+  <ul> 
+    <li><a href="<%=controller%>/expert/configuration/network/lan" title="<%:IP%>"><span><%:IP%></span></a></li> 
+    <li><a href="<%=controller%>/expert/configuration/network/lan/ipalias" title="<%:IP_Alias%>"><span><%:IP_Alias%></span></a></li>
+	<li class="hightline"><a title="IPv6 LAN"><span>IPv6 LAN</span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/network/lan/igmp_snooping" title="IGMP Snooping"><span>IGMP Snooping</span></a></li>
+  </ul> 
+  <br class="clearfloat" /> 
+</div>
+<%
+  local DEFAULT_VALUE = "0.0.0.0"
+  local MAX_ALIAS_NUMBER = 2
+  local alias = {}
+  
+  luci.model.uci.cursor():foreach( "network", "alias", function(section)
+    if not ( nil == section.ipaddr ) and not ( nil == section.netmask ) then
+      table.insert( alias, section )
+    else
+      table.insert( alias, {} )
+    end
+  end )
+%>
+<!-- Tab --> 
+  <div id="table"> 
+    <ul> 
+      <li class="table_top"></li> 
+      <li class="table_content"> 
+        <div class="data"> 
+          <ul>
+	    <span id="div_ra_period" class="off">
+            <div class="w_text">
+			<ul>
+                <li class="title" id="LAN_IPv6_Address_Assignment">
+	              <%:RA_advertisement_period%>
+	            </li>
+				<li class="left_table"><%:Minimal_RA_advertisement_period%> :</li>
+				<li class="right_table">
+	                <% local MinRtrAdvInterval = uci:get("radvd", "interface", "MinRtrAdvInterval") %>
+                    <input name="MinRtrAdvInterval" id="MinRtrAdvInterval" maxlength="40" size="10"  value="<%= MinRtrAdvInterval %>" />
+                 </li>
+			</ul>
+			</div>
+			<div class="space"></div>
+	    </span>
+			<div class="w_text">
+              <ul>
+                <li class="title" id="LAN_IPv6_Address_Assignment">
+	              <%:LAN_IPv6_Address_Assignment%>
+	            </li>
+                
+                <li>
+                  <%
+			local dhcpv6PDEnable = uci:get("network","general","dhcpv6pd")
+		    	local linkLocalOnlyEnable = uci:get("network","general","linkLocalOnly")
+		    	if not linkLocalOnlyEnable then
+				linkLocalOnlyEnable = "0"
+		    	end
+				local ULA = uci:get("network","general","ULA")
+		    	if not linkLocalOnlyEnable then
+					ULA = "0"
+		    	end
+		  %>
+                  <input name="PDEnable" id="radio1" type="radio" value="1" onclick="doAddrConfig(this)"
+                  <% if dhcpv6PDEnable ~= "0" and linkLocalOnlyEnable == "0" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Enable_DHCPv6_PD%>   
+                </li>
+				
+                <span id="div_dhcp_state" class="off">
+					<div class="w_text2">
+						<% 
+							local Mflag = uci:get("radvd", "interface", "AdvManagedFlag")
+							local Oflag = uci:get("radvd", "interface", "AdvOtherConfigFlag")
+							 if Mflag == "1" and Oflag == "1" then
+								auto_type="3"
+							 end
+							 if Mflag == "0" and Oflag == "1" then
+								auto_type="2"
+							 end
+							 if Mflag == "0" and Oflag == "0" then
+								auto_type="1"
+							 end
+						%>
+						<li class="left_table"><%:auto_config_type%> :</li>
+						<li class="right_table">
+							<select name="auto_config_select" size="1" onchange="dostateful(this.selectedIndex)">
+								<option value="1" <%if auto_type == "1" then%> selected="selected"<%end%>>SLAAC + RDNSS</option>
+								<option value="2" <%if auto_type == "2" then%> selected="selected" <%end%>>SLAAC + Stateless DHCPv6</option>
+								<option value="3" <%if auto_type == "3" then%> selected="selected" <%end%>>Stateful DHCPv6</option>
+							</select>
+						</li>					
+						<% local PD = luci.sys.exec("cat /tmp/Ipv6LANPD")%>
+						<span id="stateful" class="off">
+							<li class="left_table"><%:ipv6_range_start%> :</li>		
+							<li class="right_table">
+								<% local range_start = uci:get("dhcp6s", "basic", "addrstart") %>
+								<input name="range_start" id="range_start" maxlength="10" disabled=disabled size="20"  value="<%= PD %>" />
+								<font>::</font>
+								<input name="range_start" id="range_start" maxlength="10" size="5" <%if range_start then%> value="<%= range_start %>"<%else%>value="" <%end%> />
+							</li>
+							<li class="left_table"><%:ipv6_range_end%> :</li>		
+							<li class="right_table">
+								<% local range_end = uci:get("dhcp6s", "basic", "addrend") %>
+								<input name="range_start" id="range_start" maxlength="10" size="20" disabled=disabled value="<%= PD %>" />
+								<font>::</font>
+								<input name="range_end" id="range_end" maxlength="10" size="5" <%if range_end then%> value="<%= range_end %>"<%else%>value="" <%end%> />
+							</li>
+							<li class="left_table"><%:ipv6_lifetime%> :</li>		
+							<li class="right_table">
+								<% local lifetime = uci:get("dhcp6s", "basic", "lifetime") %>
+								<input name="lifetime" id="lifetime" maxlength="10" size="5" <%if lifetime then%> value="<%= lifetime %>"<%else%>value="" <%end%> />
+							</li>
+						</span>
+					</div>
+                </span>	
+                
+                <li>
+                  <input name="PDEnable" id="radio2" type="radio" value="2"  onclick="doAddrConfig(this)"
+                  <% if dhcpv6PDEnable == "0" and linkLocalOnlyEnable == "0" then %>checked="CHECKED"<% end %> /> &nbsp;<%:Static_IP_Address%>
+                </li>
+                
+                
+                <span id="div_static_addr" class="off">
+                  <li class="left_table"><%:LAN_IPv6_Address%></li>
+                  <li class="right_table">
+	                <% local ipv6addr = uci:get("default_lan_radvd", "basic", "address") %>
+                    <input name="ipv6address" id="ipv6address" maxlength="40" size="32" <%if ipv6addr then%> value="<%= ipv6addr %>"<%else%>value="" <%end%> />
+                  </li>
+                </span>
+                
+                <span id="div_static_lenprefix" class="off">
+                  <li class="left_table"><%:LAN_IPv6_Prefix_Length%> (48~64)</li>
+                  <li class="right_table">
+	                <% local ipv6preflen = uci:get("default_lan_radvd", "basic", "prefixlen") %>
+                    <input name="ipv6prefixlen" id="ipv6prefixlen" maxlength="40" size="10" <%if ipv6preflen then%> value="<%= ipv6preflen %>"<%else%>value="" <%end%> />
+                  </li>
+                </span>
+                
+                <span id="div_static_pref_lt" class="off">
+                  <li class="left_table"><%:Prefix_Preferred_Lifetime%></li>
+                  <li class="right_table">
+	                <% local pref_lt = uci:get("radvd", "prefix", "AdvPreferredLifetime") %>
+                    <input name="ipv6_pref_lt" id="ipv6_pref_lt" maxlength="40" size="10" <%if pref_lt then%> value="<%= pref_lt %>"<%else%>value="" <%end%> />
+                  </li>
+                </span>
+                
+                <span id="div_static_vali_lt" class="off">
+                  <li class="left_table"><%:Prefix_Valid_Lifetime%></li>
+                  <li class="right_table">
+	                <% local vali_lt = uci:get("radvd", "prefix", "AdvValidLifetime") %>
+                    <input name="ipv6_vali_lt" id="ipv6_vali_lt" maxlength="40" size="10" <%if vali_lt then%> value="<%= vali_lt %>"<%else%>value="" <%end%> />
+                  </li>
+                </span>
+                
+                <span id="div_static_min_ra_intv" class="off">
+                  <li class="left_table"><%:Min_RA_Interval%></li>
+                  <li class="right_table">
+	                <% local min_ra_intv = uci:get("radvd", "interface", "MinRtrAdvInterval") %>
+                    <input name="ipv6_min_ra_intv" id="ipv6_min_ra_intv" maxlength="40" size="10" <%if min_ra_intv then%> value="<%= min_ra_intv %>"<%else%>value="" <%end%> />
+                  </li>
+                </span>
+                
+                <span id="div_static_ra_m_flag" class="off">
+                  <li class="left_table"><%:RA_M_Flag%></li>
+                  <li class="right_table">
+	                <% local ra_m_flag = uci:get("radvd", "interface", "AdvManagedFlag") %>
+                    <input name="ipv6_ra_m_flag" id="ipv6_ra_m_flag" maxlength="40" size="10" <%if ra_m_flag then%> value="<%= ra_m_flag %>"<%else%>value="" <%end%> />
+                  </li>
+                </span>
+
+                <li>               
+                  <input name="PDEnable" id="radio3" type="radio" value="3" onclick="doAddrConfig(this)"
+                  <% if linkLocalOnlyEnable == "1" then %>checked="CHECKED"<% end %> /> &nbsp;<%:ipv6_link_local_only%>   
+                </li>
+				<li>               
+                  <input name="PDEnable" id="radio4" type="radio" value="4" onclick="doAddrConfig(this)"
+                  <% if ULA == "1" then %>checked="CHECKED"<% end %> /> &nbsp;ULA   
+                </li>
+                
+              </ul>
+            </div> 
+            <div class="spaceair"></div>	
+          </ul> 
+        </div> 
+      </li> 
+      <li class="table_button"> 
+        <div class="button" align="center"> 
+          <input name="apply" value="<%:Apply%>" type="submit" onclick="return checkvalue()"> 
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" /> 
+        </div> 
+      </li> 
+    </ul> 
+  </div> 
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Network%> > <%:LAN%> > ipv6LAN ');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

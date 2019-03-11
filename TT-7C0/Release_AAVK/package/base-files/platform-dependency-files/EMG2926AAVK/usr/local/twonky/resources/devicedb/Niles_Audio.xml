@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Niles Audio</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Niles Audio</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

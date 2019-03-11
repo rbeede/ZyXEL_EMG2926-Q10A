@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>AssetControl DS Control Point</DisplayName>
+		<HttpRecognition>
+			<HttpText>AssetControl/1.0, DLNADOC/1.50</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEGORG</Target>
+		</Scaling>
+		<SupportedMediaProfiles>
+			<Profile>AASCALE#JPEGORG</Profile>
+		</SupportedMediaProfiles>
+	</Capabilities>
+</Client>

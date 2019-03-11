@@ -1,0 +1,48 @@
+Source-Makefile: feeds/streamboost/jquery/Makefile
+Package: jquery
+Submenu: JavaScript
+Version: 1.7.2-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Fast, small, and feature-rich JavaScript library
+Maintainer: 
+Source: jquery-1.7.2.min.js
+Type: ipkg
+Description:   jQuery is a fast, small, and feature-rich JavaScript library. It makes
+  things like HTML document traversal and manipulation, event handling,
+  animation, and Ajax much simpler with an easy-to-use API that works
+  across a multitude of browsers. With a combination of versatility and
+  extensibility, jQuery has changed the way that millions of people write
+  JavaScript.
+http://jquery.com/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery
+	config jquery_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery
+		bool "Use custom package version"
+		default n
+	config jquery_CUSTOM_VERSION
+		depends on jquery_USE_CUSTOM_VERSION
+		string " version as string (default version: 1.7.2)"
+		default "1.7.2"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery
+	config jquery_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery
+		bool "Use custom source directory"
+		default n
+	config jquery_CUSTOM_SOURCE_DIR
+		depends on jquery_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

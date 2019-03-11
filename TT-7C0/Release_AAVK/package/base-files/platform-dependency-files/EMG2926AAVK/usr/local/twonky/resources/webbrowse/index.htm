@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="pragma" content="no-cache">
+    <title>Twonky Server</title>
+    <link rel="stylesheet" href="/resources/webbrowse/reset.css" type="text/css" media="screen">
+    <link rel="stylesheet" href="/resources/webbrowse/new.css" type="text/css" media="screen">
+    <link rel="stylesheet" href="/resources/webbrowse/newCustomized.css" type="text/css" media="screen" />
+    <link rel="shortcut icon" href="/resources/webbrowse/favicon.ico">
+    <script src="/resources/webbrowse/base64.js" type="text/javascript"></script>
+    <script type="text/javascript" src="/resources/webbrowse/browse.js"></script>
+    <script type="text/javascript" src="/resources/webbrowse/renderer.js"></script>
+    <script type="text/javascript" src="/resources/webbrowse/localDevice.js"></script>
+	<link type="text/css" href="/resources/webbrowse/jPlayer/skin/jplayer.blue.monday.css" rel="stylesheet" />
+    <script type="text/javascript" src="/resources/webbrowse/jquery-1.10.2.min.js"></script>
+	<script type="text/javascript" src="/resources/webbrowse/jPlayer/jquery.jplayer.min.js"></script>
+	<script type="text/javascript" src="/resources/webbrowse/jPlayer/jplayer.playlist.min.js"></script>
+    <!--[if IE 8]>
+    <script defer type="text/javascript" src="/resources/webbrowse/ie8_onload.js"></script>
+    <![endif]-->
+</head>
+<body onload="initPage()">
+<div id="headWrapper">
+    <div id="header">
+        <div id="logodiv">
+            <div id="logo"></div>
+        </div>
+        <div id="navigateto">
+            <ul id="nav">
+                <li><a id="video" onclick="navigateTo('video');"><span id="videotext" string="video">&nbsp;</span></a></li>
+                <li><a id="music" onclick="navigateTo('music');"><span id="musictext" string="music">&nbsp;</span></a></li>
+                <li><a id="picture" onclick="navigateTo('photo');"><span id="picturetext" string="photo">&nbsp;</span></a></li>
+                <li><a onclick="navigateTo('settings');"><span string="settings">&nbsp;</span></a></li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+        <div id="login" class="hide">
+            <ul id="loginul">
+                <li><a onclick="logout();"><span id="loginUser" >&nbsp;</span></a></li>
+            </ul>
+        </div>
+        <div class="clear"></div>
+    </div>
+</div>
+<div id="wrapper">
+    <div id="content">
+        <div id="accountForm" class="accountSettingsContainer">
+            <div class="serverSettingsWrapper">
+                <div id="licenseInfoPage" style="display:none"></div>
+				<table>
+					<tr><td>
+						<div id="leftContainer">
+							<div id="serversContainer" style="margin-top:20px"></div>
+							<div id="rendererContainer" style="margin-top:20px"></div>
+						</div>
+					</td><td>
+						<div id="serverSettingsContentWrapper" class="serverSettingsContentWrapper"></div>
+					</td></tr>
+				</table>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="twFooter">
+</div>
+<div id="dialogBox" class="dialogBox" style="display: none;"></div>
+<div id="dialogWrapper" class="dialogWrapper" style="display: none;">
+	<b class="dialogTop"><b class="d1"></b><b class="d2"></b><b class="d3"></b><b class="d4"></b></b>
+	<div id="dialogContentWrapper" class="dialogContentWrapper">
+		<div id="dialogContent" class="dialogContent">
+        	<div>
+        		<div class="boxHeader" style="height:26px"><span class="titleWrapper"><span id="dialogContentTitle" class="title"></span></span></div>
+                <div id="dialogBody"></div>
+            </div>
+			<div id="dialogButtonContainer" class="dialogButtonContainer">
+			</div>
+			<div class="clear"></div>
+		</div>
+	</div>
+	<b class="dialogBottom"><b class="d4"></b><b class="d3"></b><b class="d2"></b><b class="d1"></b></b>
+</div>
+</body>
+</html>

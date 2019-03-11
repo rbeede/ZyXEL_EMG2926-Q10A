@@ -1,0 +1,7 @@
+$(eval $(call PackageDir,alljoyn-services_common,alljoyn-services_common))
+$(eval $(call PackageDir,alljoyn-controlpanel,alljoyn-controlpanel))
+$(eval $(call PackageDir,alljoyn-config,alljoyn-config))
+$(eval $(call PackageDir,alljoyn,alljoyn))
+$(eval $(call PackageDir,alljoyn-notification,alljoyn-notification))
+$(eval $(call PackageDir,alljoyn-onboarding,alljoyn-onboarding))
+$(eval $(call PackageDir,alljoyn-sample_apps,alljoyn-sample_apps))

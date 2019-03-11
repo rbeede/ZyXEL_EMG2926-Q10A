@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/libnl-bf/Makefile
+Package: libnl-bf
+Version: g7d47666eb3c414feb8901970d35b96461214c2bf-3
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libpthread
+Menu-Depends: 
+Provides: libnl
+Build-Depends: libtool libintl libiconv
+Section: Bigfoot
+Category: Bandwidth Control
+Title: NetLink socket library with BF modifications
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: libnl-bf-g7d47666eb3c414feb8901970d35b96461214c2bf.tar.gz
+Type: ipkg
+Description:  This package contains a library for applications dealing with netlink sockets.
+ The standard libnl has been modified to suit Bigfoot purposes.
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_libnl-bf
+	config libnl-bf_USE_CUSTOM_VERSION
+		depends on PACKAGE_libnl-bf
+		bool "Use custom package version"
+		default n
+	config libnl-bf_CUSTOM_VERSION
+		depends on libnl-bf_USE_CUSTOM_VERSION
+		string " version as string (default version: g7d47666eb3c414feb8901970d35b96461214c2bf)"
+		default "g7d47666eb3c414feb8901970d35b96461214c2bf"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_libnl-bf
+	config libnl-bf_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_libnl-bf
+		bool "Use custom source directory"
+		default n
+	config libnl-bf_CUSTOM_SOURCE_DIR
+		depends on libnl-bf_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

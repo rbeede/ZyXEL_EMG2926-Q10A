@@ -1,0 +1,24 @@
+<Server>
+	<DeviceId>
+		<DisplayName>Twonky Server</DisplayName>
+		<HttpRecognition>
+			<HttpText field="User-Agent:">Twonky</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>TwonkyServer</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIXPC</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DefaultView>advanceddefault</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<!--Flush entire cache if shares have been removed, since server does not event all affected containers -->
+		<FlushForContainerIds>0$1,0$2,0$3</FlushForContainerIds>		
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>DATETIME</Quirk>
+		<Quirk>GIVE_ALL_KNOWN_RES</Quirk>
+	</DeviceQuirks>
+</Server>

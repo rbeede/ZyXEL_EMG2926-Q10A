@@ -1,0 +1,29 @@
+#!/bin/sh
+
+chk_state=$1
+failover=$(uci get ipsecFailOver.rule1.FailOver)
+[ "$failover" == "1" ] && cfg=ipsecFailOver || cfg=ipsec
+remote_gw_ip=$(uci get $cfg.rule1.remote_gw_ip)
+local_gw_ip=$(uci get $cfg.rule1.local_gw_ip)
+
+[ "$chk_state" == "1" ] && {
+	kill -9 `ps | grep "watch -tn 600 /sbin/chk_vpn" | grep "grep" -v | awk '{print $1}'`
+	sleep 60
+	chk_vpntunnel=$(ip xfrm state | grep "src $remote_gw_ip dst $local_gw_ip")
+	chk_vpntunnel2=$(ip xfrm state | grep "src $local_gw_ip dst $remote_gw_ip")
+	[ -n "$chk_vpntunnel" ] && [ -n "$chk_vpntunnel2" ] && {
+		watch -tn 600 /sbin/chk_vpn 2 2>&1 &
+	} || {
+		[ "$failover" == "1" ] && uci set ipsecFailOver.rule1.FailOver=0 && uci commit ipsecFailOver && /etc/init.d/vpn_daemon start
+		[ "$failover" == "0" ] && uci set ipsecFailOver.rule1.FailOver=1 && uci commit ipsecFailOver && /etc/init.d/vpn_daemon start
+	} 
+}
+
+[ "$chk_state" == "2" ] && {
+	chk_vpntunnel=$(ip xfrm state | grep "src $remote_gw_ip dst $local_gw_ip")
+	chk_vpntunnel2=$(ip xfrm state | grep "src $local_gw_ip dst $remote_gw_ip")
+	[ -n "$chk_vpntunnel" ] && [ -n "$chk_vpntunnel2" ] || {
+		[ "$failover" == "1" ] && uci set ipsecFailOver.rule1.FailOver=0 && uci commit ipsecFailOver && /etc/init.d/vpn_daemon start
+		[ "$failover" == "0" ] && uci set ipsecFailOver.rule1.FailOver=1 && uci commit ipsecFailOver && /etc/init.d/vpn_daemon start
+	}
+}

@@ -1,0 +1,20 @@
+config 'status' 'port1'
+        option 'speed' 'auto'
+        option 'duplex' 'auto'
+
+config 'status' 'port2'
+        option 'speed' 'auto'
+        option 'duplex' 'auto'
+
+config 'status' 'port3'
+        option 'speed' 'auto'
+        option 'duplex' 'auto'
+
+config 'status' 'port4'
+        option 'speed' 'auto'
+        option 'duplex' 'auto'
+
+config 'status' 'port5'
+        option 'speed' 'auto'
+        option 'duplex' 'auto'
+

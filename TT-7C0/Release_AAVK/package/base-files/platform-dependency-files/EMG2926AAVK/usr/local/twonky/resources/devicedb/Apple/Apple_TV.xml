@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Apple TV</DisplayName>
+		<DeviceDescriptionRecognition>
+            <DescriptionText>&lt;modelDescription&gt;Airplay&lt;/modelDescription&gt;</DescriptionText>
+            <DescriptionText>&lt;modelName&gt;AppleTV&lt;/modelName&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>Apple TV</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>USEDIRECTURL</Quirk>
+		<!-- Cannot wakeup AppleTV and also no pre-loading
+		     as there is no UPnP device description. -->
+		<Quirk>NOT_PERSISTENT</Quirk>
+	</DeviceQuirks>
+</Client>

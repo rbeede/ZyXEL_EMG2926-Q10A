@@ -1,0 +1,1128 @@
+--- a/net/netfilter/x_tables.c	2013-04-02 16:43:25.737752740 +0800
++++ b/net/netfilter/x_tables.c	2013-04-02 18:06:54.003226142 +0800
+@@ -416,9 +416,9 @@
+ 		ret = par->match->checkentry(par);
+ 		if (ret < 0)
+ 			return ret;
+-		else if (ret > 0)
+-			/* Flag up potential errors. */
+-			return -EIO;
++		/*else if (ret > 0)
++			
++			return -EIO;*/
+ 	}
+ 	return 0;
+ }
+@@ -589,9 +589,9 @@
+ 		ret = par->target->checkentry(par);
+ 		if (ret < 0)
+ 			return ret;
+-		else if (ret > 0)
+-			/* Flag up potential errors. */
+-			return -EIO;
++		/*else if (ret > 0)
++			
++			return -EIO;*/
+ 	}
+ 	return 0;
+ }
+@@ -1357,7 +1357,9 @@
+ };
+ 
+ static int __init xt_init(void)
+-{
++{	
++	
++
+ 	unsigned int i;
+ 	int rv;
+ 
+@@ -1382,12 +1384,14 @@
+ 	if (rv < 0)
+ 		kfree(xt);
+ 	return rv;
++
+ }
+ 
+ static void __exit xt_fini(void)
+ {
+ 	unregister_pernet_subsys(&xt_net_ops);
+ 	kfree(xt);
++	
+ }
+ 
+ module_init(xt_init);
+--- a/net/netfilter/Kconfig	2013-03-15 16:28:37.978068492 +0800
++++ b/net/netfilter/Kconfig	2013-03-15 16:21:25.859102078 +0800
+@@ -1139,6 +1139,17 @@
+ 
+ 	  Details and examples are in the kernel module source.
+ 
++config NETFILTER_XT_MATCH_WEBSTR
++	tristate  '"webstr" match support'
++	depends on NETFILTER_XTABLES
++	default m
++	---help---
++	  This option adds a `webstr' match, which allows you to look for
++	  pattern matchings in http stream.
++
++	  To compile it as a module, choose M here.  If unsure, say N.
++
++
+ endif # NETFILTER_XTABLES
+ 
+ endmenu
+--- a/net/netfilter/Makefile	2013-03-15 16:28:27.983878795 +0800
++++ b/net/netfilter/Makefile	2013-03-15 16:24:41.779114301 +0800
+@@ -108,6 +108,7 @@
+ obj-$(CONFIG_NETFILTER_XT_MATCH_LAYER7) += xt_layer7.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_STATISTIC) += xt_statistic.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_STRING) += xt_string.o
++obj-$(CONFIG_NETFILTER_XT_MATCH_WEBSTR) += xt_webstr.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_TCPMSS) += xt_tcpmss.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_TIME) += xt_time.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_U32) += xt_u32.o
+--- a/net/ipv4/netfilter/Kconfig	2012-06-01 15:16:13.000000000 +0800
++++ b/net/ipv4/netfilter/Kconfig	2013-03-15 16:15:42.218990616 +0800
+@@ -192,6 +192,15 @@
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
+ 
++config IP_NF_TARGET_PORTTRIGGER
++	tristate "Port Trigger target support"
++	depends on NF_NAT
++	default m
++	help
++	  Port Trigger is port forwarding with an on/off switch for the ports that have been forward.
++
++ 	  To compile it as a module, choose M here.  If unsure, say N.
++
+ config IP_NF_TARGET_REDIRECT
+ 	tristate "REDIRECT target support"
+ 	depends on NF_NAT
+--- a/net/ipv4/netfilter/Makefile	2013-03-15 16:01:01.761792746 +0800
++++ b/net/ipv4/netfilter/Makefile	2013-03-15 16:02:04.495677232 +0800
+@@ -60,6 +60,7 @@
+ obj-$(CONFIG_IP_NF_TARGET_REDIRECT) += ipt_REDIRECT.o
+ obj-$(CONFIG_IP_NF_TARGET_REJECT) += ipt_REJECT.o
+ obj-$(CONFIG_IP_NF_TARGET_ULOG) += ipt_ULOG.o
++obj-$(CONFIG_IP_NF_TARGET_PORTTRIGGER) += ipt_PORTTRIGGER.o
+ 
+ # generic ARP tables
+ obj-$(CONFIG_IP_NF_ARPTABLES) += arp_tables.o
+--- a/net/ipv4/netfilter/ipt_PORTTRIGGER.c	2013-03-15 20:37:45.397080435 +0800
++++ b/net/ipv4/netfilter/ipt_PORTTRIGGER.c	2013-03-15 20:07:51.000000000 +0800
+@@ -0,0 +1,439 @@
++//#include <linux/config.h>
++#include <linux/types.h>
++#include <linux/icmp.h>
++#include <linux/ip.h>
++#include <linux/timer.h>
++#include <linux/netfilter.h>
++#include <linux/netfilter_ipv4.h>
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/proc_fs.h>
++#include <linux/vmalloc.h>
++#include <net/checksum.h>
++#include <net/ip.h>
++#include <linux/stddef.h>
++#include <linux/sysctl.h>
++#include <linux/slab.h>
++#include <linux/random.h>
++#include <linux/jhash.h>
++#include <linux/err.h>
++#include <linux/percpu.h>
++#include <linux/moduleparam.h>
++#include <linux/notifier.h>
++#include <linux/tcp.h>
++#include <linux/udp.h>
++
++/* nf_conntrack_lock protects the main hash table, protocol/helper/expected
++   registrations, conntrack timers*/
++#define ASSERT_READ_LOCK(x)
++#define ASSERT_WRITE_LOCK(x)
++
++#include <net/netfilter/nf_conntrack.h>
++#include <net/netfilter/nf_conntrack_core.h>
++#include <net/netfilter/nf_nat_rule.h>
++#include <linux/netfilter/x_tables.h>
++#include <linux/netfilter_ipv4/ipt_PORTTRIGGER.h>
++
++MODULE_LICENSE("GPL");
++
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++#define ASSERT_READ_LOCK(x) //MUST_BE_READ_LOCKED(&nf_conntrack_lock)
++#define ASSERT_WRITE_LOCK(x) //MUST_BE_WRITE_LOCKED(&nf_conntrack_lock)
++
++static struct ipt_porttrigger {
++	struct list_head list;		
++	struct timer_list timeout;	
++	unsigned int src_ip;		
++	unsigned int dst_ip;		
++	unsigned short trigger_proto;
++	unsigned short forward_proto;
++	unsigned int timer;
++	struct ipt_mport trigger_ports;
++	struct ipt_mport forward_ports;
++	struct nf_nat_ipv4_range range;
++};
++
++static LIST_HEAD(trigger_list);
++
++static unsigned int
++del_porttrigger_rule(struct ipt_porttrigger *trigger)
++{
++	NF_CT_ASSERT(trigger);
++	spin_lock_bh(&nf_conntrack_lock);
++	DEBUGP("del rule src_ip=%d,proto=%d,dst_ip=%d,proto=%d\n",trigger->src_ip,trigger->trigger_proto,trigger->dst_ip,trigger->forward_proto);
++	list_del(&trigger->list);
++	spin_unlock_bh(&nf_conntrack_lock);
++	kfree(trigger);
++	return 0;
++}
++
++
++static void 
++refresh_timer(struct ipt_porttrigger *trigger, unsigned long extra_jiffies)
++{
++	NF_CT_ASSERT(trigger);
++	spin_lock_bh(&nf_conntrack_lock);
++
++	if(extra_jiffies == 0)
++		extra_jiffies = TRIGGER_TIMEOUT * HZ;
++
++	if (del_timer(&trigger->timeout)) {
++		trigger->timeout.expires = jiffies + extra_jiffies;
++		add_timer(&trigger->timeout);
++	}
++	spin_unlock_bh(&nf_conntrack_lock);
++}
++
++static void timer_timeout(unsigned long in_trigger)
++{
++	struct ipt_porttrigger *trigger= (void *) in_trigger;
++	spin_lock_bh(&nf_conntrack_lock);
++	del_porttrigger_rule(trigger);
++	spin_unlock_bh(&nf_conntrack_lock);
++	DEBUGP("timer out, del trigger rule\n");
++}
++
++
++static inline int
++ports_match(const struct ipt_mport *minfo, u_int16_t port)
++{
++	unsigned int i, m;
++	u_int16_t s, e;
++	u_int16_t pflags = minfo->pflags;
++	
++	for (i=0, m=1; i<IPT_MULTI_PORTS; i++, m<<=1) {
++		if (pflags & m  && minfo->ports[i] == 65535){
++			DEBUGP("port:%d don't match=%d\n",port,i);
++			return 0;
++		}	
++
++		s = minfo->ports[i];
++		if (pflags & m) {
++			e = minfo->ports[++i];
++			m <<= 1;
++		} else
++			e = s;
++
++		if ( port >= s && port <= e){ 
++			//DEBUGP("s=%x,e=%x\n",s,e);
++			return 1;
++		}	
++	}
++	DEBUGP("ports=%d don't match\n",port);
++	return 0;
++}
++
++
++static inline int 
++packet_in_match(const struct ipt_porttrigger *trigger,
++	const unsigned short proto, 
++	const unsigned short dport,
++	const unsigned int src_ip)
++{
++	/* 
++	  Modification: for protocol type==all(any) can't work
++     Modified by: ken_chiang 
++      Date:2007/8/21
++    */
++#if 0	
++	u_int16_t forward_proto = trigger->forward_proto;
++	
++	if (!forward_proto)
++		forward_proto = proto;
++	return ( (forward_proto == proto) && (ports_match(&trigger->forward_ports, dport)) );
++#else
++	u_int16_t forward_proto = trigger->forward_proto;
++	DEBUGP("src_ip=%d,trigger->src_ip=%d in match\n",src_ip,trigger->src_ip);
++	/* 
++	  Modification: for trigge port==incomeing port can't work
++     Modified by: ken_chiang 
++      Date:2007/9/7
++    */
++	if(src_ip==trigger->src_ip){
++		return 0;
++	}	
++	DEBUGP("proto=%d,dport=%d in match\n",proto,dport);
++	if (!forward_proto){
++		DEBUGP("forward_proto=null\n");
++		return ( ports_match(&trigger->forward_ports, dport) );
++	}
++	else{
++		DEBUGP("forward_proto=%d, trigger->forward_ports:%d, dport:%d\n",forward_proto, trigger->forward_ports.ports[0], dport);
++		return ( (trigger->forward_proto == proto) && (ports_match(&trigger->forward_ports, dport)) );
++	}	
++#endif
++}
++
++static inline int 
++packet_out_match(const struct ipt_porttrigger *trigger,
++	const unsigned short proto, 
++	unsigned short dport)
++{
++	/* 
++	  Modification: for protocol type==all(any) can't work
++     Modified by: ken_chiang 
++      Date:2007/8/21
++    */
++    u_int16_t trigger_proto = trigger->trigger_proto;
++    DEBUGP("proto=%d,dport=%d out match\n",proto,dport);
++	if (!trigger_proto){
++		DEBUGP("trigger_proto=null\n");
++		return ( ports_match(&trigger->trigger_ports, dport) );
++	}	
++	else{
++		DEBUGP("trigger_proto=%d\n",trigger_proto);
++		return ( (trigger->trigger_proto == proto) && (ports_match(&trigger->trigger_ports, dport)) );
++	}	
++}
++
++
++static unsigned int
++add_porttrigger_rule(struct ipt_porttrigger *trigger)
++{
++	struct ipt_porttrigger *rule;
++
++	spin_lock_bh(&nf_conntrack_lock);
++	rule = (struct ipt_porttrigger *)kmalloc(sizeof(struct ipt_porttrigger), GFP_ATOMIC);
++
++	if (!rule) {
++		spin_unlock_bh(&nf_conntrack_lock);
++		return -ENOMEM;
++	}
++
++	memset(rule, 0, sizeof(*trigger));
++	INIT_LIST_HEAD(&rule->list);
++	memcpy(rule, trigger, sizeof(*trigger));
++	DEBUGP("add rule src_ip=%d,proto=%d,dst_ip=%d,proto=%d\n\n\n",rule->src_ip,rule->trigger_proto,rule->dst_ip,rule->forward_proto);
++	list_add(&rule->list, &trigger_list);
++	init_timer(&rule->timeout);
++	rule->timeout.data = (unsigned long)rule;
++	rule->timeout.function = timer_timeout;
++	DEBUGP("rule->timer=%d\n",rule->timer);
++	DEBUGP("rule->src_ip=%d\n",rule->src_ip);
++	/* 
++	  Modification: for protocol type==all(any) sometime can't work if timer = 0
++     Modified by: ken_chiang 
++      Date:2007/8/31
++    */
++	if(rule->timer<600)
++		rule->timer =600;
++	DEBUGP("rule->timer2=%d\n",rule->timer);	
++	rule->timeout.expires = jiffies + (rule->timer * HZ);
++	add_timer(&rule->timeout);
++	spin_unlock_bh(&nf_conntrack_lock);
++	return 0;
++}
++
++
++static unsigned int
++porttrigger_nat(struct sk_buff *skb, const struct xt_action_param *par)
++{
++	struct nf_conn *ct;
++	enum ip_conntrack_info ctinfo;
++	const struct iphdr *iph = ip_hdr(skb);
++	struct tcphdr _tcph, *tcph;
++	struct nf_nat_ipv4_range newrange;
++	struct ipt_porttrigger *found;
++	struct udphdr _udph, *udph;
++	
++	tcph = skb_header_pointer(skb, ip_hdrlen(skb), sizeof(_tcph), &_tcph);
++	udph = skb_header_pointer(skb, ip_hdrlen(skb), sizeof(_udph), &_udph);
++
++	unsigned short dest;
++	if (iph->protocol == IPPROTO_TCP) {
++		dest = ntohs(tcph->dest);
++	} else if (iph->protocol == IPPROTO_UDP) {
++		dest = ntohs(udph->dest);
++	} else {
++		return XT_CONTINUE;
++	}
++
++	NF_CT_ASSERT(par->hooknum == NF_INET_PRE_ROUTING);
++	/* 
++	  Modification: for trigger port==incoming port can't work
++      Modified by: ken_chiang 
++      Date:2007/9/7
++    */
++	list_for_each_entry(found, &trigger_list, list) {
++		if (packet_in_match(found, iph->protocol, dest, ntohl(iph->saddr))) {
++			/* dipper Modification: DNAT ipAddr byte order ,20110225*/
++			//found->src_ip = ntohl(found->src_ip)
++			DEBUGP("DNAT, iph->protocol:%d, dest:%d, iph->saddr:%u.%u.%u.%u\n", iph->protocol, dest, NIPQUAD(iph->saddr));
++			//printk("<0>""porttrigger_nat--DNAT, iph->protocol:%d, dest:%d, iph->saddr:%u.%u.%u.%u\n", iph->protocol, dest, NIPQUAD(iph->saddr));
++			DEBUGP("DNAT: src IP %u.%u.%u.%u\n", NIPQUAD(found->src_ip));
++			//printk("<0>""porttrigger_nat--DNAT: src IP %u.%u.%u.%u\n", NIPQUAD(found->src_ip));
++			ct = nf_ct_get(skb, &ctinfo);
++			newrange = ((struct nf_nat_ipv4_range)
++				{ NF_NAT_RANGE_MAP_IPS, found->src_ip, found->src_ip,
++				found->range.min, found->range.max });
++
++			return nf_nat_setup_info(ct, &newrange, NF_NAT_MANIP_DST); 
++
++		}
++	}
++
++	return XT_CONTINUE;
++}
++
++
++static unsigned int
++porttrigger_forward(struct sk_buff *skb, const struct xt_action_param *par)
++{
++	const struct ipt_porttrigger_info *info = par->targinfo;
++	const struct iphdr *iph = ip_hdr(skb);
++	struct tcphdr _tcph, *tcph;
++	struct ipt_porttrigger trigger, *found, match;
++	struct udphdr _udph, *udph;
++
++	tcph = skb_header_pointer(skb, ip_hdrlen(skb), sizeof(_tcph), &_tcph);
++	udph = skb_header_pointer(skb, ip_hdrlen(skb), sizeof(_udph), &_udph);
++
++	unsigned short dest;
++	if (iph->protocol == IPPROTO_TCP) {
++		dest = ntohs(tcph->dest);
++	} else if (iph->protocol == IPPROTO_UDP) {
++		dest = ntohs(udph->dest);
++	} else {
++		return XT_CONTINUE;
++	}
++
++	switch(info->mode)
++	{
++		case MODE_FORWARD_IN:	
++			/* 
++	  			Modification: for trigge port==incomeing port can't work
++      			Modified by: ken_chiang 
++      			Date:2007/9/7
++    		*/
++			list_for_each_entry(found, &trigger_list, list) {
++				if (packet_in_match(found, iph->protocol, dest, ntohl(iph->saddr))) {
++					refresh_timer(found, info->timer * HZ);
++					DEBUGP("FORWARD_IN, iph->protocol:%d, dest:%d, iph->saddr:%u.%u.%u.%u\n", iph->protocol, dest, NIPQUAD(iph->saddr));
++					//printk("<0>""FORWARD_IN, iph->protocol:%d, dest:%d, iph->saddr:%u.%u.%u.%u\n", iph->protocol, dest, NIPQUAD(iph->saddr));
++					return NF_ACCEPT;
++				}
++			}
++			break;
++
++		case MODE_FORWARD_OUT:		
++			if (iph->protocol == IPPROTO_UDP)
++			DEBUGP("UDP_OUT, dest:%d, iph->saddr:%u.%u.%u.%u\n", dest, NIPQUAD(iph->saddr));
++			//printk("<0>""UDP_OUT, dest:%d, iph->saddr:%u.%u.%u.%u\n", dest, NIPQUAD(iph->saddr));
++			list_for_each_entry(found, &trigger_list, list) {
++				if (packet_out_match(found, iph->protocol, dest)) {
++					refresh_timer(found, info->timer * HZ);
++					//dipper--20110324
++					//found->src_ip = ntohl(iph->saddr)
++					found->src_ip = iph->saddr;
++					//printk("<0>""porttrigger_forward MODE_FORWARD_OUT--DNAT: src IP %u.%u.%u.%u\n", NIPQUAD(found->src_ip));
++					//DEBUGP("FORWARD_OUT found ip=%x\n",found->src_ip);
++				}
++			}
++
++			match.trigger_ports = info->trigger_ports;
++			match.trigger_proto = info->trigger_proto;
++				
++			if( packet_out_match(&match, iph->protocol, dest) ) {
++				DEBUGP("FORWARD_OUT_MATCH\n");
++				memset(&trigger, 0, sizeof(trigger));
++				//dipper--20110324 
++				//trigger.src_ip = ntohl(iph->saddr)
++				trigger.src_ip = iph->saddr;
++				//DEBUGP("FORWARD_OUT trigger ip=%x\n",trigger.src_ip);
++				trigger.trigger_proto = iph->protocol;					
++				trigger.forward_proto = info->forward_proto;
++				memcpy(&trigger.trigger_ports, &info->trigger_ports, sizeof(struct ipt_mport));
++				memcpy(&trigger.forward_ports, &info->forward_ports, sizeof(struct ipt_mport));
++				add_porttrigger_rule(&trigger);
++			}
++
++			break;
++	}
++
++	return XT_CONTINUE;
++}
++
++static unsigned int
++porttrigger_target(struct sk_buff *skb, const struct xt_action_param *par)
++{
++	const struct ipt_porttrigger_info *info = par->targinfo;
++	const struct iphdr *iph = ip_hdr(skb);
++
++	if ((iph->protocol != IPPROTO_TCP) && (iph->protocol != IPPROTO_UDP))
++		return XT_CONTINUE;
++
++	if (info->mode == MODE_DNAT)
++		return porttrigger_nat(skb, par);
++	else if (info->mode == MODE_FORWARD_OUT)
++		return porttrigger_forward(skb, par);
++	else if (info->mode == MODE_FORWARD_IN)
++		return porttrigger_forward(skb, par);
++
++	return XT_CONTINUE;
++}
++
++static bool porttrigger_check(const struct xt_tgchk_param *par)
++{
++	const struct ipt_porttrigger_info *info = par->targinfo;
++	struct list_head *cur, *tmp;
++
++	if( info->mode == MODE_DNAT && strcmp(par->table, "nat") != 0) {
++		DEBUGP("porttrigger_check: bad table `%s'.\n", par->table);
++		return false;
++	}
++/*	if (targinfosize != IPT_ALIGN(sizeof(*info))) {
++		DEBUGP("porttrigger_check: size %u != %u.\n",
++		       targinfosize, sizeof(*info));
++		return false;
++	}
++*/
++	if (par->hook_mask & ~((1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_FORWARD))) {
++		DEBUGP("porttrigger_check: bad hooks %x.\n", par->hook_mask);
++		return false;
++	}
++	if ( info->forward_proto != IPPROTO_TCP && info->forward_proto != IPPROTO_UDP && info->forward_proto != 0) {
++		DEBUGP("porttrigger_check: bad trigger proto.\n");
++		return false;
++	}
++
++	list_for_each_safe(cur, tmp, &trigger_list) {
++		struct ipt_porttrigger *trigger = (void *)cur;
++		del_timer(&trigger->timeout);
++		del_porttrigger_rule(trigger);
++	}
++
++	return true;
++}
++
++
++
++static struct xt_target porttrigger __read_mostly = {
++	.name		= "PORTTRIGGER",
++	.family		= NFPROTO_IPV4,
++	.target		= porttrigger_target,
++   .checkentry = porttrigger_check,
++	.targetsize	= sizeof(struct ipt_porttrigger_info),
++	//.table		= "nat",
++	.hooks		= ((1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_FORWARD)),
++	.me			= THIS_MODULE,
++};
++
++static int __init init(void)
++{
++	return xt_register_target(&porttrigger);
++}
++
++static void __exit fini(void)
++{
++	xt_unregister_target(&porttrigger);
++}
++
++module_init(init);
++module_exit(fini);
++
+--- a/include/linux/netfilter_ipv4/ipt_PORTTRIGGER.h	2013-03-15 20:54:26.226180730 +0800
++++ b/include/linux/netfilter_ipv4/ipt_PORTTRIGGER.h	2013-01-08 10:15:43.000000000 +0800
+@@ -0,0 +1,30 @@
++#ifndef _IPT_PORTTRIGGER_H_target
++#define _IPT_PORTTRIGGER_H_target
++
++#define TRIGGER_TIMEOUT 600
++#define IPT_MULTI_PORTS	15
++
++enum porttrigger_mode
++{
++	MODE_DNAT,
++	MODE_FORWARD_IN,
++	MODE_FORWARD_OUT
++};
++
++struct ipt_mport
++{
++	u_int16_t pflags;			/* Port flags */
++	u_int16_t ports[IPT_MULTI_PORTS];	/* Ports */
++};
++
++struct ipt_porttrigger_info {
++	u_int16_t mode;
++	u_int16_t trigger_proto;
++	u_int16_t forward_proto;
++	unsigned int timer;
++	struct ipt_mport trigger_ports;
++	struct ipt_mport forward_ports;
++};
++
++#endif /*_IPT_PORTTRIGGER_H_target*/
++
+--- a/user_headers/include/linux/netfilter_ipv4/ipt_PORTTRIGGER.h	2013-03-15 20:54:26.226180730 +0800
++++ b/user_headers/include/linux/netfilter_ipv4/ipt_PORTTRIGGER.h	2013-01-08 10:15:43.000000000 +0800
+@@ -0,0 +1,30 @@
++#ifndef _IPT_PORTTRIGGER_H_target
++#define _IPT_PORTTRIGGER_H_target
++
++#define TRIGGER_TIMEOUT 600
++#define IPT_MULTI_PORTS	15
++
++enum porttrigger_mode
++{
++	MODE_DNAT,
++	MODE_FORWARD_IN,
++	MODE_FORWARD_OUT
++};
++
++struct ipt_mport
++{
++	u_int16_t pflags;			/* Port flags */
++	u_int16_t ports[IPT_MULTI_PORTS];	/* Ports */
++};
++
++struct ipt_porttrigger_info {
++	u_int16_t mode;
++	u_int16_t trigger_proto;
++	u_int16_t forward_proto;
++	unsigned int timer;
++	struct ipt_mport trigger_ports;
++	struct ipt_mport forward_ports;
++};
++
++#endif /*_IPT_PORTTRIGGER_H_target*/
++
+--- a/net/netfilter/xt_webstr.c	2013-03-15 20:43:37.429044662 +0800
++++ b/net/netfilter/xt_webstr.c 10:15:43.000000000 +0800
+@@ -0,0 +1,443 @@
++/* Kernel module to match a string into a packet.
++ *
++ * Copyright (C) 2000 Emmanuel Roger  <winfield@freegates.be>
++ * 
++ * ChangeLog
++ *	19.02.2002: Gianni Tedesco <gianni@ecsc.co.uk>
++ *		Fixed SMP re-entrancy problem using per-cpu data areas
++ *		for the skip/shift tables.
++ *	02.05.2001: Gianni Tedesco <gianni@ecsc.co.uk>
++ *		Fixed kernel panic, due to overrunning boyer moore string
++ *		tables. Also slightly tweaked heuristic for deciding what
++ * 		search algo to use.
++ * 	27.01.2001: Gianni Tedesco <gianni@ecsc.co.uk>
++ * 		Implemented Boyer Moore Sublinear search algorithm
++ * 		alongside the existing linear search based on memcmp().
++ * 		Also a quick check to decide which method to use on a per
++ * 		packet basis.
++ */
++
++/* Kernel module to match a http header string into a packet.
++ *
++ * Copyright (C) 2003, CyberTAN Corporation
++ * All Rights Reserved.
++ *
++ * Description:
++ *   This is kernel module for web content inspection. It was derived from 
++ *   'string' match module, declared as above.
++ *
++ *   The module follows the Netfilter framework, called extended packet 
++ *   matching modules. 
++ */
++
++/* Linux Kernel 2.6 Port ( 2.4 ipt-> 2.6 xt)
++ * Copyright (C) 2008, Ralink Technology Corporation. 
++ * All Rights Reserved.
++ */
++
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter/x_tables.h>
++#include <linux/ip.h>
++#include <linux/tcp.h>
++#include <net/sock.h>
++#include <linux/netfilter_ipv4/ipt_webstr.h>
++MODULE_LICENSE("GPL");
++#define	isdigit(x) ((x) >= '0' && (x) <= '9')
++#define	isupper(x) (((unsigned)(x) >= 'A') && ((unsigned)(x) <= 'Z'))
++#define	islower(x) (((unsigned)(x) >= 'a') && ((unsigned)(x) <= 'z'))
++#define	isalpha(x) (isupper(x) || islower(x))
++#define	toupper(x) (isupper(x) ? (x) : (x) - 'a' + 'A')
++#define tolower(x) (isupper(x) ? ((x) - 'A' + 'a') : (x))
++
++#define split(word, wordlist, next, delim) \
++    for (next = wordlist, \
++	strncpy(word, next, sizeof(word)), \
++	word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
++	next = next ? next + sizeof(delim) - 1 : NULL ; \
++	strlen(word); \
++	next = next ? : "", \
++	strncpy(word, next, sizeof(word)), \
++	word[(next=strstr(next, delim)) ? strstr(word, delim) - word : sizeof(word) - 1] = '\0', \
++	next = next ? next + sizeof(delim) - 1 : NULL)
++
++#define BUFSIZE 	1024
++
++/* Flags for get_http_info() */
++#define HTTP_HOST	0x01
++#define HTTP_URL	0x02
++/* Flags for mangle_http_header() */
++#define HTTP_COOKIE	0x04
++
++#if 0
++#define SPARQ_LOG       printk
++#else
++#define SPARQ_LOG(format, args...)
++#endif
++
++typedef struct httpinfo {
++    char host[BUFSIZE + 1];
++    int hostlen;
++    char url[BUFSIZE + 1];
++    int urllen;
++} httpinfo_t;
++
++/* Return 1 for match, 0 for accept, -1 for partial. */
++static int find_pattern2(const char *data, size_t dlen,
++	const char *pattern, size_t plen,
++	char term,
++	unsigned int *numoff,
++	unsigned int *numlen)
++{
++    size_t i, j, k;
++    int state = 0;
++    *numoff = *numlen = 0;
++
++    SPARQ_LOG("%s: pattern = '%s', dlen = %u\n",__FUNCTION__, pattern, dlen);
++    if (dlen == 0)
++	return 0;
++
++    if (dlen <= plen) {	/* Short packet: try for partial? */
++	if (strnicmp(data, pattern, dlen) == 0)
++	    return -1;
++	else 
++	    return 0;
++    }
++    for (i = 0; i <= (dlen - plen); i++) {
++	/* DFA : \r\n\r\n :: 1234 */
++	if (*(data + i) == '\r') {
++	    if (!(state % 2)) state++;	/* forwarding move */
++	    else state = 0;		/* reset */
++	}
++	else if (*(data + i) == '\n') {
++	    if (state % 2) state++;
++	    else state = 0;
++	}
++	else state = 0;
++
++	if (state >= 4)
++	    break;
++
++	/* pattern compare */
++	if (memcmp(data + i, pattern, plen ) != 0)
++	    continue;
++
++	/* Here, it means patten match!! */
++	*numoff=i + plen;
++	for (j = *numoff, k = 0; data[j] != term; j++, k++)
++	    if (j > dlen) return -1 ;	/* no terminal char */
++
++	*numlen = k;
++	return 1;
++    }
++    return 0;
++}
++
++
++static int mangle_http_header(const struct sk_buff *skb, int flags)
++{
++    //struct iphdr *iph = (skb)->nh.iph;
++    struct iphdr *iph = ip_hdr(skb);
++    struct tcphdr *tcph = (void *)iph + iph->ihl*4;
++    unsigned char *data = (void *)tcph + tcph->doff*4;
++    //unsigned int datalen = (skb)->len - (iph->ihl*4) - (tcph->doff*4);
++    unsigned int datalen = ntohs(ip_hdr(skb)->tot_len);
++
++    int found, offset, len;
++    int ret = 0;
++
++
++    SPARQ_LOG("%s: seq=%u\n", __FUNCTION__, ntohl(tcph->seq));
++
++    /* Basic checking, is it HTTP packet? */
++    if (datalen < 10)
++	return ret;	/* Not enough length, ignore it */
++    if (memcmp(data, "GET ", sizeof("GET ") - 1) != 0 &&
++        memcmp(data, "POST ", sizeof("POST ") - 1) != 0 &&
++        memcmp(data, "HEAD ", sizeof("HEAD ") - 1) != 0) //zg add 2006.09.28 for cdrouter3.3 item 186(cdrouter_urlfilter_15)
++	return ret;	/* Pass it */
++
++    /* COOKIE modification */
++    if (flags & HTTP_COOKIE) {
++	found = find_pattern2(data, datalen, "Cookie: ", 
++		sizeof("Cookie: ")-1, '\r', &offset, &len);
++	if (found) {
++	    char c;
++	    offset -= (sizeof("Cookie: ") - 1);
++	    /* Swap the 2rd and 4th bit */
++	    c = *(data + offset + 2) ;
++	    *(data + offset + 2) = *(data + offset + 4) ;
++	    *(data + offset + 4) = c ;
++	    ret++;
++	}
++    }
++
++    return ret;
++}
++
++
++static int get_http_info(const struct sk_buff *skb, int flags, httpinfo_t *info)
++{
++//    struct iphdr *iph = (skb)->nh.iph;
++    struct iphdr *iph = ip_hdr(skb);
++    struct tcphdr *tcph = (void *)iph + iph->ihl*4;
++    unsigned char *data = (void *)tcph + tcph->doff*4;
++//    unsigned int datalen = (skb)->len - (iph->ihl*4) - (tcph->doff*4);
++    unsigned int datalen = ntohs(ip_hdr(skb)->tot_len);
++   
++
++    int found, offset;
++    int hostlen, pathlen;
++    int ret = 0;
++
++
++    SPARQ_LOG("%s: seq=%u\n", __FUNCTION__, ntohl(tcph->seq));
++
++    /* Basic checking, is it HTTP packet? */
++    if (datalen < 10)
++	return ret;	/* Not enough length, ignore it */
++    if (memcmp(data, "GET ", sizeof("GET ") - 1) != 0 &&
++        memcmp(data, "POST ", sizeof("POST ") - 1) != 0 &&
++        memcmp(data, "HEAD ", sizeof("HEAD ") - 1) != 0) //zg add 2006.09.28 for cdrouter3.3 item 186(cdrouter_urlfilter_15)
++	return ret;	/* Pass it */
++
++    if (!(flags & (HTTP_HOST | HTTP_URL)))
++	return ret;
++
++    /* find the 'Host: ' value */
++    found = find_pattern2(data, datalen, "Host: ", 
++	    sizeof("Host: ") - 1, '\r', &offset, &hostlen);
++    SPARQ_LOG("Host found=%d\n", found);
++
++    if (!found || !hostlen)
++	return ret;
++
++    ret++;	/* Host found, increase the return value */
++    hostlen = (hostlen < BUFSIZE) ? hostlen : BUFSIZE;
++    strncpy(info->host, data + offset, hostlen);
++    *(info->host + hostlen) = 0;		/* null-terminated */
++    info->hostlen = hostlen;
++    SPARQ_LOG("HOST=%s, hostlen=%d\n", info->host, info->hostlen);
++
++    if (!(flags & HTTP_URL))
++	return ret;
++
++    /* find the 'GET ' or 'POST ' or 'HEAD ' value */
++    found = find_pattern2(data, datalen, "GET ",
++	    sizeof("GET ") - 1, '\r', &offset, &pathlen);
++    if (!found)
++	found = find_pattern2(data, datalen, "POST ",
++		sizeof("POST ") - 1, '\r', &offset, &pathlen);
++    /******* zg add 2006.09.28 for cdrouter3.3 item 186(cdrouter_urlfilter_15) ******/
++    if (!found)
++        found = find_pattern2(data, datalen, "HEAD ",
++                sizeof("HEAD ") - 1, '\r', &offset, &pathlen);
++    /************************* zg end 2006.09.28 ****************************/
++    SPARQ_LOG("GET/POST found=%d\n", found);
++
++    if (!found || (pathlen -= (sizeof(" HTTP/x.x") - 1)) <= 0)/* ignor this field */
++	return ret;
++
++    ret++;	/* GET/POST/HEAD found, increase the return value */
++    pathlen = ((pathlen + hostlen) < BUFSIZE) ? pathlen : BUFSIZE - hostlen;
++    strncpy(info->url, info->host, hostlen);
++    strncpy(info->url + hostlen, data + offset, pathlen);
++    *(info->url + hostlen + pathlen) = 0;	/* null-terminated */
++    info->urllen = hostlen + pathlen;
++    SPARQ_LOG("URL=%s, urllen=%d\n", info->url, info->urllen);
++
++    return ret;
++}
++
++/* Linear string search based on memcmp() */
++static char *search_linear (char *needle, char *haystack, int needle_len, int haystack_len) 
++{
++	char *k = haystack + (haystack_len-needle_len);
++	char *t = haystack;
++	
++	SPARQ_LOG("%s: haystack=%s, needle=%s\n", __FUNCTION__, t, needle);
++	for(; t <= k; t++) {
++		//SPARQ_LOG("%s: haystack=%s, needle=%s\n", __FUNCTION__, t, needle);
++		if (strnicmp(t, needle, needle_len) == 0) return t;
++		//if ( memcmp(t, needle, needle_len) == 0 ) return t;
++	}
++
++	return NULL;
++}
++
++
++static bool match(const struct sk_buff *skb, const struct xt_action_param *par)
++{
++	const struct ipt_webstr_info *info = par->matchinfo;
++//	struct iphdr *ip = skb->nh.iph;
++	struct iphdr *ip = ip_hdr(skb);
++	proc_ipt_search search=search_linear;
++
++	char token[] = "<&nbsp;>";
++	char *wordlist = (char *)&info->string;
++	httpinfo_t htinfo;
++	int flags = 0;
++	int found = 0;
++	long int opt = 0;
++
++	if (!ip || info->len < 1)
++	    return 0;
++		
++	SPARQ_LOG("\n************************************************\n"
++		"%s: type=%s\n", __FUNCTION__, (info->type == IPT_WEBSTR_URL) 
++		? "IPT_WEBSTR_URL"  : (info->type == IPT_WEBSTR_HOST) 
++		? "IPT_WEBSTR_HOST" : "IPT_WEBSTR_CONTENT" );
++			
++	/* Determine the flags value for get_http_info(), and mangle packet 
++	 * if needed. */
++	 
++	switch(info->type)
++	{
++	    case IPT_WEBSTR_URL:	/* fall through */
++		flags |= HTTP_URL;
++
++	    case IPT_WEBSTR_HOST:
++		flags |= HTTP_HOST;
++		break;
++
++	    case IPT_WEBSTR_CONTENT:
++		opt = simple_strtol(wordlist, (char **)NULL, 10);
++		SPARQ_LOG("%s: string=%s, opt=%#lx\n", __FUNCTION__, wordlist, opt);
++
++		if (opt & (BLK_JAVA | BLK_ACTIVE | BLK_PROXY))
++		    flags |= HTTP_URL;
++		if (opt & BLK_PROXY)
++		    flags |= HTTP_HOST;
++
++		// Could we modify the packet payload in a "match" module?  --YY@Ralink
++		if (opt & BLK_COOKIE)
++		    mangle_http_header(skb, HTTP_COOKIE);
++
++		break;
++
++	    default:
++		printk("%s: Sorry! Cannot find this match option.\n", __FILE__);
++		return 0;
++	}
++	/* Get the http header info */
++	if (get_http_info(skb, flags, &htinfo) < 1)
++	    return 0;
++
++	/* Check if the http header content contains the forbidden keyword */
++	if (info->type == IPT_WEBSTR_HOST || info->type == IPT_WEBSTR_URL) {
++	    int nlen = 0, hlen = 0;
++	    char needle[BUFSIZE], *haystack = NULL;
++	    char *next;
++
++	    if (info->type == IPT_WEBSTR_HOST) {
++		haystack = htinfo.host;
++		hlen = htinfo.hostlen;
++	    }
++	    else {
++		haystack = htinfo.url;
++		hlen = htinfo.urllen;
++	    }
++	    split(needle, wordlist, next, token) {
++		nlen = strlen(needle);
++		SPARQ_LOG("keyword=%s, nlen=%d, hlen=%d\n", needle, nlen, hlen);
++		if (!nlen || !hlen || nlen > hlen) continue;
++		if (search(needle, haystack, nlen, hlen) != NULL) {
++		    found = 1;
++		    break;
++		}
++	    }
++	}
++	else {		/* IPT_WEBSTR_CONTENT */
++	    int vicelen;
++
++	    if (opt & BLK_JAVA) {
++		vicelen = sizeof(".js") - 1;
++		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".js", vicelen) == 0) {
++		    SPARQ_LOG("%s: MATCH....java\n", __FUNCTION__);
++		    found = 1;
++		    goto match_ret;
++		}
++		vicelen = sizeof(".class") - 1;
++		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".class", vicelen) == 0) {
++		    SPARQ_LOG("%s: MATCH....java\n", __FUNCTION__);
++		    found = 1;
++		    goto match_ret;
++		}
++	    }
++	    if (opt & BLK_ACTIVE){
++		vicelen = sizeof(".ocx") - 1;
++		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".ocx", vicelen) == 0) {
++		    SPARQ_LOG("%s: MATCH....activex\n", __FUNCTION__);
++		    found = 1;
++		    goto match_ret;
++		}
++		vicelen = sizeof(".cab") - 1;
++		if (strnicmp(htinfo.url + htinfo.urllen - vicelen, ".cab", vicelen) == 0) {
++		    SPARQ_LOG("%s: MATCH....activex\n", __FUNCTION__);
++		    found = 1;
++		    goto match_ret;
++		}
++	    }
++	    if (opt & BLK_PROXY){
++		if (strnicmp(htinfo.url + htinfo.hostlen, "http://", sizeof("http://") - 1) == 0) {
++		    SPARQ_LOG("%s: MATCH....proxy\n", __FUNCTION__);
++		    found = 1;
++		    goto match_ret;
++		}
++	    }
++	}
++
++match_ret:
++	SPARQ_LOG("%s: Verdict =======> %s \n",__FUNCTION__
++		, found ? "DROP" : "ACCEPT");
++
++	return (found ^ info->invert);
++	
++}
++
++static int
++checkentry(const char *tablename,
++	   const void *entry,
++	   const struct xt_match *match,
++           void *matchinfo,
++           unsigned int hook_mask)
++{
++#if 0
++       if (matchsize != IPT_ALIGN(sizeof(struct ipt_webstr_info)))
++               return 0;
++#endif
++       return 1;
++}
++
++static struct xt_match xt_webstr_match[] __read_mostly = {
++	{
++	.name		= "webstr",
++	.family		= NFPROTO_IPV4,
++	.match		= match,
++	.checkentry	= checkentry,
++	.matchsize	= sizeof(struct ipt_webstr_info),
++	.me		= THIS_MODULE
++	},
++	{
++	.name		= "webstr",
++	.family		= NFPROTO_IPV6,
++	.match		= match,
++	.checkentry	= checkentry,
++	.matchsize	= sizeof(struct ipt_webstr_info),
++	.me		= THIS_MODULE
++	},
++
++};
++
++static int __init init(void)
++{
++	return xt_register_matches(xt_webstr_match, ARRAY_SIZE(xt_webstr_match));
++}
++
++static void __exit fini(void)
++{
++	xt_unregister_matches(xt_webstr_match, ARRAY_SIZE(xt_webstr_match));
++}
++
++module_init(init);
++module_exit(fini);
+--- a/include/linux/netfilter_ipv4/ipt_webstr.h	2013-03-15 20:54:26.226180730 +0800
++++ b/include/linux/netfilter_ipv4/ipt_webstr.h	2013-01-08 10:15:43.000000000 +0800
+@@ -0,0 +1,28 @@
++#ifndef _IPT_WEBSTR_H
++#define _IPT_WEBSTR_H
++
++#define BM_MAX_NLEN 256
++#define BM_MAX_HLEN 1024
++
++#define BLK_JAVA		0x01
++#define BLK_ACTIVE		0x02
++#define BLK_COOKIE		0x04
++#define BLK_PROXY		0x08
++
++typedef char *(*proc_ipt_search) (char *, char *, int, int);
++
++struct ipt_webstr_info {
++    char string[BM_MAX_NLEN];
++    u_int16_t invert;
++    u_int16_t len;
++    u_int8_t type;
++};
++
++enum ipt_webstr_type
++{
++    IPT_WEBSTR_HOST,
++    IPT_WEBSTR_URL,
++    IPT_WEBSTR_CONTENT
++};
++
++#endif /* _IPT_WEBSTR_H */
+--- a/user_headers/include/linux/netfilter_ipv4/ipt_webstr.h	2013-03-15 20:54:26.226180730 +0800
++++ b/user_headers/include/linux/netfilter_ipv4/ipt_webstr.h	2013-01-08 10:15:43.000000000 +0800
+@@ -0,0 +1,28 @@
++#ifndef _IPT_WEBSTR_H
++#define _IPT_WEBSTR_H
++
++#define BM_MAX_NLEN 256
++#define BM_MAX_HLEN 1024
++
++#define BLK_JAVA		0x01
++#define BLK_ACTIVE		0x02
++#define BLK_COOKIE		0x04
++#define BLK_PROXY		0x08
++
++typedef char *(*proc_ipt_search) (char *, char *, int, int);
++
++struct ipt_webstr_info {
++    char string[BM_MAX_NLEN];
++    u_int16_t invert;
++    u_int16_t len;
++    u_int8_t type;
++};
++
++enum ipt_webstr_type
++{
++    IPT_WEBSTR_HOST,
++    IPT_WEBSTR_URL,
++    IPT_WEBSTR_CONTENT
++};
++
++#endif /* _IPT_WEBSTR_H */

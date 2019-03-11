@@ -1,0 +1,19 @@
+$HTTP["remoteip"] == "|LANIP|"{
+	$HTTP["url"] =~ "^/photobak($|/)" {
+		server.document-root = "/www/cgi-bin"
+		url.rewrite-once = (
+			"^/photobak/(.*)/(.*)\?(.*)" => "/photobak?cmd=$1&parm1=$2&$3",
+			"^/photobak/([a-zA-z0-9]+)/([a-zA-z0-9\-\.\_]+)" => "/photobak?cmd=$1&parm=$2",
+			"^/photobak/(.*)\?(.*)" => "/photobak?cmd=$1&$2",
+			"^/photobak/([a-zA-z0-9]+)" => "/photobak?cmd=$1",
+		)
+		fastcgi.server = ( 
+			"photobak" =>
+			((
+				"socket" => "/tmp/photobak.socket",
+				"bin-path" => "/www/cgi-bin/photobak",
+				"max-procs" => 2
+			))
+		)
+	}
+}

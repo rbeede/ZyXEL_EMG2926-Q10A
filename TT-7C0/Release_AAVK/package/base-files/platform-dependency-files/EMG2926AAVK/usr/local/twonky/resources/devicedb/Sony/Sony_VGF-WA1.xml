@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony VGF-WA1</DisplayName>
+		<HttpRecognition>
+			<HttpText>VGF-WA1</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>NOBITRATE</Quirk>
+	</DeviceQuirks>
+</Client>

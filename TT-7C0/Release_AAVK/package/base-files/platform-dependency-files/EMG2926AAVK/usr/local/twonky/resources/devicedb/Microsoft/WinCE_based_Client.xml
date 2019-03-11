@@ -1,0 +1,30 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WinCE based Client</DisplayName>
+		<HttpRecognition>
+			<HttpText>Windows CE</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG800x600</Target>
+		</Scaling>
+		<AudioTranscoding>
+			<Target>MP3</Target>
+			<Target>WAV</Target>
+		</AudioTranscoding>
+		<VideoTranscoding>
+			<Target>WMV</Target>
+		</VideoTranscoding>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<PretendServer>WMC</PretendServer>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+	</DeviceQuirks>
+</Client>

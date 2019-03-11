@@ -1,0 +1,54 @@
+#!/bin/sh
+
+fw_version=$(firmware_info | awk '/Firmware/{print $3}')
+#ex_fw_version=$(firmware_info | awk '/External/{print $4}')
+base_addr=$(fw_printenv ethaddr | awk -F"=" '{print $2}' |sed 's/"//g')
+first_addr_num=$(echo $base_addr | awk -F":" 'BEGIN{OFS=""}{print $1,$2,$3,$4,$5,$6}')
+serial_num=$(fw_printenv serialnum | awk -F"=" '{print $2}')
+fw_checksum=$(firmware_info | awk '/checksum/{print $3}')
+fw_project_name=$(firmware_info | awk '/Project/{print $3}')
+
+len=${#fw_checksum}
+case $len in
+        3) fw_checksum="0"$fw_checksum ;;
+        2) fw_checksum="00"$fw_checksum ;;
+        1) fw_checksum="000"$fw_checksum ;;
+esac
+
+countrycode=$(fw_printenv countrycode | awk -F"=" '{print $2}' | tr [a-f] [A-F])
+
+lastchar=$(echo $first_addr_num | cut -c 12-12)
+last_addr_num=$(echo $first_addr_num | cut -c 1-11)
+
+case $lastchar in
+"0")
+        last_addr_num=$last_addr_num"7"
+;;
+"8")
+        last_addr_num=$last_addr_num"F"
+;;
+esac
+
+loader_ver=$(cat /proc/cmdline | sed 's/^.*zld_ver=//g'|awk '{print $1}')
+
+rm -f /tmp/romchksum
+touch /tmp/romchksum
+for file in /etc/config/*
+do
+        chksum $file | grep "checksum" | awk '{print $4}' >> /tmp/romchksum
+done
+
+romfile_checksum=$(chksum /tmp/romchksum | grep "checksum" | awk '{print $4}')
+
+printf "LD   Version                 : $fw_version\n"
+#printf "External Version             : $ex_fw_version\n"
+printf "Project Name	             : $fw_project_name\n"
+printf "Bootbase Version             : $loader_ver\n"
+printf "Product Model                : $fw_project_name\n"
+printf "Serial Number                : $serial_num\n"
+printf "First MAC Address            : $first_addr_num\n"
+printf "Last MAC Address             : $last_addr_num\n"
+printf "MAC Address Quantity         : 08\n"
+printf "Default Country Code         : $countrycode\n"
+printf "Firmware Checksum            : $fw_checksum\n"
+printf "RomFile Checksum             : $romfile_checksum\n"

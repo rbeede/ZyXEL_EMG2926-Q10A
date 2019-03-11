@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Marantz DMP</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>marantz DMP</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>audio/x-wav</In>
+				<Out>audio/wav</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>	
+</Client>

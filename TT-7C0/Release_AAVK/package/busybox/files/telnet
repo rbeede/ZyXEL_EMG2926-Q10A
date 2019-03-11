@@ -1,0 +1,132 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006-2010 OpenWrt.org
+START=50
+
+has_root_pwd() {
+	local pwd=$([ -f "$1" ] && cat "$1")
+	      pwd="${pwd#*root:}"
+	      pwd="${pwd%%:*}"
+
+	test -n "${pwd#!}"
+}
+
+filter() {
+	config_load firewall
+	config_get telnet_port remote_telnet port
+	config_get telnet_inf remote_telnet interface
+	config_get telnet_client_check remote_telnet client_check
+	config_get telnet_client_addr remote_telnet client_addr
+
+	if [ "on" = "$1" ]; then
+		filter_type=" -I "
+	else
+		filter_type=" -D "
+	fi
+
+#	/usr/sbin/iptables -t filter $filter_type INPUT -p tcp --dport ${telnet_port:-23} -j ACCEPT
+
+		inf_cmd=""
+		
+		## insert DROP rule first 
+		case $telnet_inf in
+			0)
+			#disable
+			if [ "$telnet_client_check" = "0" ]; then
+				exit 0
+			fi
+			;;
+			2)
+			#lan
+			if [ "$telnet_client_check" = "0" ]; then
+				inf_cmd=" ! -i br-lan "
+			fi
+			;;
+			3)
+			#wan
+			if [ "$telnet_client_check" = "0" ]; then
+				inf_cmd=" -i br-lan "
+			fi
+			;;
+		esac
+		
+		if [ $telnet_inf -ne 1 -o $telnet_client_check -ne 0 ]; then
+			/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT $inf_cmd -p tcp --dport ${telnet_port:-23} -j DROP 2> /dev/null
+		fi
+		case $telnet_inf in
+			1)
+			# lan and wan
+			inf_cmd=""
+			;;
+			2)
+			#lan
+			inf_cmd=" -i br-lan "
+			;;
+			3)
+			#wan
+			#lan
+			inf_cmd=" ! -i br-lan "
+			;;
+		esac
+
+
+		if [ "$telnet_client_check" = "0" ]; then
+			addr_cmd=""
+		else
+			addr_cmd=" -s $telnet_client_addr "
+		fi
+
+		/usr/sbin/iptables -t filter $filter_type RMMG_TELNET_INPUT $inf_cmd $addr_cmd -p tcp --dport ${telnet_port:-23} -j ACCEPT 2> /dev/null
+}
+
+chk_remote_management(){
+	pwd=$(uci get system.main.pwd)
+
+	if [ "$pwd" == "1234" ]; then # default password
+		uci set firewall.remote_telnet.interface="2"
+		uci commit firewall
+	fi
+}
+
+start() {
+	#if ( ! has_root_pwd /etc/passwd && ! has_root_pwd /etc/shadow ) || \
+	#   ( [ ! -x /usr/sbin/dropbear ] && [ ! -x /usr/sbin/sshd ] );
+	if [ -e /etc/passwd ];	
+	then
+		config_load firewall
+		config_get telnet_inf remote_telnet interface
+		config_get check remote_telnet client_check
+		
+		if [ "$telnet_inf" = "0" ] && [ "$check" = "0" ]; then
+			#no access
+			echo disable telnet
+		else
+			chk_remote_management
+			config_get telnet_port remote_telnet port
+			telnetd -l /bin/login -p ${telnet_port:-23}
+			
+			##check mode,if AP/UR,exit
+			local sys_mode=$(get_sys_mode)
+			[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+			insmod x_tables  2>&- >&-
+			insmod ip_tables  2>&- >&-
+			insmod ip6_tables  2>&- >&-
+			insmod iptable_filter  2>&- >&-
+			insmod xt_tcpudp  2>&- >&-
+			
+			/usr/sbin/iptables -F RMMG_TELNET_INPUT
+			/usr/sbin/iptables -X RMMG_TELNET_INPUT
+			/usr/sbin/iptables -N RMMG_TELNET_INPUT
+
+			filter "on"
+			local changeToSer=$(uci_get nat general changeToSer)
+			[ "$changeToSer" = "1" ] && /sbin/nat apply
+		fi
+	fi
+}
+
+stop() {
+	killall telnetd 2>/dev/null
+	filter "off"
+}
+

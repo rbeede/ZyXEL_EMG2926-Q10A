@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Orange Music Player</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>decodeurhifi</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

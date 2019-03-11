@@ -1,0 +1,140 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js"></script>
+<script language="JavaScript" type="text/javascript">
+
+<%
+	local igmp_mode=uci:get("network", "lan", "igmpmode")
+%>	
+
+function submit_apply(){
+	showWebMessage( 1 , "<%:Message%>" , "<%:msg_config%>" );
+	return true;
+}
+function initPage()
+{
+	showWebMessage( 0 , "<%:Message%>" , "<%:Ready%>" );	
+}
+</script> 
+</head>
+<body onload="initPage()">
+
+<form onsubmit="return submit_apply();" method="post" name="IGMP_SNOOPING" action="<%=controller%>/expert/configuration/network/lan/igmp_snooping" >
+<div id="tabs">
+  <ul> 
+    <li><a href="<%=controller%>/expert/configuration/network/lan" title="<%:IP%>"><span><%:IP%></span></a></li> 
+	<li><a href="<%=controller%>/expert/configuration/network/lan/ipalias" title="<%:IP_Alias%>"><span><%:IP_Alias%></span></a></li>
+	<li><a href="<%=controller%>/expert/configuration/network/lan/ipv6LAN" title="<%:IPv6_LAN%>"><span><%:IPv6_LAN%></span></a></li> 
+        <li class="hightline"><a title="IGMP Snooping"><span>IGMP Snooping</span></a></li> 
+  </ul> 
+  <br class="clearfloat" /> 
+</div>
+
+<!-- Tab --> 
+<div id="table">
+
+    <ul> 
+      <li class="table_top"></li> 
+      <li class="table_content"> 
+          <div class="data"> 
+            <ul>
+
+
+
+
+		<div class="w_text"> 
+		<ul>
+			<li class="title">IGMP Snooping </li> 
+		</ul>
+		</div> 
+		
+		<%  local igmp_check;
+			local igmp_radio1;
+			local igmp_radio2;
+			if igmp_mode == "1" or igmp_mode == "2" then
+				igmp_check =  "checked=\"checked\""
+				if igmp_mode == "1" then
+					igmp_radio1 = "checked=\"checked\""
+					igmp_radio2 = ""			
+				else
+					igmp_radio2 = "checked=\"checked\""
+					igmp_radio1 = ""
+				end
+			else
+				igmp_check = ""
+				igmp_radio1 = "checked=\"checked\""
+				igmp_radio2 = ""
+			end
+		
+		%>
+		
+		<div class="w_text"> 
+		<ul>
+			<li class="left_table">Status :</li> 
+			
+			<li class="right_table">  
+			<input name="IGMP_SNOOPING" id="IGMP_SNOOPING" value="enabled" type="checkbox" <%=igmp_check %> /> Enable IGMP Snooping 
+			</li>  
+		</ul>
+		</div> 
+		
+		<div class="w_text"> 
+		<ul>
+			<li class="left_table">IGMP Mode :</li> 
+			<li class="right_table">  
+	        <input name="IGMPRadio" id="IGMPRadio" type="radio" value="1" <%=igmp_radio1 %> /> Standard Mode
+            <input name="IGMPRadio" id="IGMPRadio" type="radio" value="2" <%=igmp_radio2 %> /> Blocking Mode					  
+			</li>  
+		</ul>
+		</div> 
+
+              <div class="spaceair"></div>	
+            </ul> 
+        </div> 
+      </li> 
+
+   <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="igmpSubmit" value="<%:Apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div></li>
+    </ul>
+</div>
+
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Network%> > <%:LAN%> > IGMP Snooping ');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

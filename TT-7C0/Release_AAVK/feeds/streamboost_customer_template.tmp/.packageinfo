@@ -1,0 +1,120 @@
+Source-Makefile: feeds/streamboost_customer_template/customer-keys/Makefile
+Package: customer-keys
+Submenu: Utilities
+Version: 1-qualcomm-ap135-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Callhome Client Keys
+Maintainer: Earl Manning <earl.manning@qca.qualcomm.com>
+Source: 
+Type: ipkg-prebuilt
+Description: SSL keys and certificates for a specific customer
+Earl Manning <earl.manning@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost_customer_template/wopr-db/Makefile
+Package: wopr-db
+Submenu: Flow Detect
+Version: 20140619165349-gba7dcd5-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread 
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: WOPR database
+Maintainer: Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+Source: wopr-db-20140619165349-gba7dcd5-generic.tar.gz
+Type: ipkg-prebuilt
+Description: Flow definitions for drflocs
+Ryan Nowakowski <rnowakow@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_wopr-db
+	config wopr-db_USE_CUSTOM_VERSION
+		depends on PACKAGE_wopr-db
+		bool "Use custom package version"
+		default n
+	config wopr-db_CUSTOM_VERSION
+		depends on wopr-db_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140619165349-gba7dcd5-generic)"
+		default "20140619165349-gba7dcd5-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_wopr-db
+	config wopr-db_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_wopr-db
+		bool "Use custom source directory"
+		default n
+	config wopr-db_CUSTOM_SOURCE_DIR
+		depends on wopr-db_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+
+Source-Makefile: feeds/streamboost_customer_template/streamboost/Makefile
+Package: streamboost
+Version: 2.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +ozker +aperture +app-flow-scripts +callhomeclient +customer-keys +wopr-db +drflocs +smoketest +luci-app-streamboost +p0f-db +luci-theme-steelblue +flux +tresbar +streamboost-misc +opkg-curl +flowmark +qdiscman +flowman +nodedetectd +overlord +sbnamed +cape +redis-server +redis-cli +policy-redis +policy-reader +sbnoded +sbmacouid +jigglyp0f +p0f +sea +settings-loader +sbsaved +celes +dumpevents @TARGET_ar71xx
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: Streamboost configuration and master package
+Maintainer: Matthew McClintock <mmcclint@qca.qualcomm.com>
+Source: 
+Type: ipkg
+Description: Contains customer specific configuration files, and also
+dependencies for all other Streamboost packages
+Matthew McClintock <mmcclint@qca.qualcomm.com>
+@@
+
+
+Source-Makefile: feeds/streamboost_customer_template/policy-redis/Makefile
+Package: policy-redis
+Submenu: Flow Detect
+Version: 20140710141214-g725dc2f-generic-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +redis-cli +redis-server
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: policy database in Redis commands
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: policy-redis-20140710141214-g725dc2f-generic.tar.gz
+Type: ipkg-prebuilt
+Description: policy definitions to load into Redis
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_policy-redis
+	config policy-redis_USE_CUSTOM_VERSION
+		depends on PACKAGE_policy-redis
+		bool "Use custom package version"
+		default n
+	config policy-redis_CUSTOM_VERSION
+		depends on policy-redis_USE_CUSTOM_VERSION
+		string " version as string (default version: 20140710141214-g725dc2f-generic)"
+		default "20140710141214-g725dc2f-generic"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_policy-redis
+	config policy-redis_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_policy-redis
+		bool "Use custom source directory"
+		default n
+	config policy-redis_CUSTOM_SOURCE_DIR
+		depends on policy-redis_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

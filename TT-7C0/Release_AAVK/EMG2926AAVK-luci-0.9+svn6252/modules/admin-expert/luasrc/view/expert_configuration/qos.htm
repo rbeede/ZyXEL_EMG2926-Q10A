@@ -1,0 +1,187 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local http = require("luci.http")
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js"></script>
+<script language="JavaScript" type="text/javascript">
+function formCheck()
+{
+
+	var num = parseInt(document.getElementsByName( "UpstreamBandwidth" )[0].value);
+	if( "" != document.getElementsByName("UpstreamBandwidth")[0].value)
+	{
+		if(!(checkNumFormat(document.getElementsByName("UpstreamBandwidth")[0].value)))
+		{
+			alert("	Upstream Bandwidth " + document.getElementsByName("UpstreamBandwidth")[0].value + " should be between 0 and 1024000.");
+			document.getElementsByName( "UpstreamBandwidth" )[0].focus();
+			return false; 
+		}
+		
+		//var num = parseInt(document.getElementsByName( "RateLimit" )[0].value);
+		//if(( num > 1024000 ) || ( 0 > num ) )
+		if( 0 > num )
+		{
+			alert("	Upstream Bandwidth " + document.getElementsByName("UpstreamBandwidth")[0].value +" should be between 0 and 1024000.");
+			document.getElementsByName( "UpstreamBandwidth" )[0].focus();
+			return false; 
+		}
+	}
+	else
+	{
+		alert("	Invalid Upstream Bandwidth value.");
+		document.getElementsByName( "UpstreamBandwidth" )[0].focus();
+		return false; 
+	}
+	
+	
+	
+	var num = parseInt(document.getElementsByName( "DownstreamBandwidth" )[0].value);
+	if( "" != document.getElementsByName("DownstreamBandwidth")[0].value)
+	{
+		if(!(checkNumFormat(document.getElementsByName("DownstreamBandwidth")[0].value)))
+		{
+			alert("	Downstream Bandwidth " + document.getElementsByName("DownstreamBandwidth")[0].value + " should be between 0 and 1024000.");
+			document.getElementsByName( "DownstreamBandwidth" )[0].focus();
+			return false; 
+		}
+		
+		//var num = parseInt(document.getElementsByName( "RateLimit" )[0].value);
+		//if(( num > 1024000 ) || ( 0 > num ) )
+		if( 0 > num )
+		{
+			alert("	Downstream Bandwidth " + document.getElementsByName("DownstreamBandwidth")[0].value +" should be between 0 and 1024000.");
+			document.getElementsByName( "DownstreamBandwidth" )[0].focus();
+			return false; 
+		}
+	}
+	else
+	{
+		alert("	Invalid Downstream Bandwidth value.");
+		document.getElementsByName( "DownstreamBandwidth" )[0].focus();
+		return false; 
+	}
+	
+	return true;
+}
+
+function checkNumFormat( num )
+{
+	var re = /^[0-9]+$/;
+	if (!re.test(num)){
+		return false; 
+	}
+		return true;
+}
+
+</script>
+</head>
+<body>
+
+<form method="post" name="Qos" action="<%=controller%>/expert/configuration/management/qos/general" >
+<div id="tabs">
+   <ul>
+      <li class="hightline"><a title="General"><span>General</span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/qos/qos_queue" title="Queue Setup"><span>Queue Setup</span></a></li>
+      <li><a href="<%=controller%>/expert/configuration/management/qos/qos_classify" title="Class Setup"><span>Class Setup</span></a></li>
+	<!--<li><a href="<%=controller%>/expert/configuration/management/remote/tr069" title="Monitor"><span>Monitor</span></a></li>-->
+   </ul>
+   <br class="clearfloat" />
+</div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>     <li class="table_content">
+        <div class="data">
+        <ul>
+		<div class="title">QoS :</div>
+		<div class="w_text">
+			<ul>
+				<% local qos_enable = uci:get( "qos", "general", "enable") %>
+				<li class="left_table"><div class="title">QoS State :</div></li>
+                <li class="right_table">
+					<input name="qosEnable" id="radio" type="radio" value= 1 <% if "1" == qos_enable then %> checked="checked" <% end %> /> <%:Enable%>
+					<input name="qosEnable" id="radio2" type="radio" value= 0 <% if "0" == qos_enable then %> checked="checked" <% end %> /> <%:Disable%>(The Settings of QoS are invalid if you select this.)
+				</li>
+			</ul>
+		</div>
+		
+		<div class="spaceair"></div>
+
+		<div class="w_text">
+				<ul>
+                    <li class="left_table"><div class="title">WAN Managed Upstream Bandwidth :</div></li>
+					<li class="right_table">
+						<input name="UpstreamBandwidth" size="5" maxlength="6" value="<%= uci:get( "qos", "general", "upload" )%>" type="text" />
+						&nbsp;(kbit)
+					</li>
+				</ul>
+		</div>
+
+		<div class="spaceair"></div>
+		
+		<div class="w_text">
+				<ul>
+					<li class="left_table"><div class="title"> LAN Managed Downstream Bandwidth :</div></li>
+					<li class="right_table">
+						<input name="DownstreamBandwidth" size="5" maxlength="6" value="<%= uci:get( "qos", "general", "download" )%>" type="text" />
+						&nbsp;(kbit)
+					</li>
+				</ul>
+		</div>
+		
+		
+		<div class="spaceair"></div>
+		<div class="w_text"> <span class="i_note"><%:Note%>:</span></div>
+		<div class="w_text">
+			<span class="i_note_a">
+				<!--You can assign the upstream bandwidth manually. If the field is empty, the CPE sets the value automatically. <br />  -->
+				If the setting of WAN managed upstream bandwidth is greater than current WAN interface linkup rate, <br /> 
+				then the WAN managed upstream bandwidth will become current WAN interface linkup rate. 
+			</span>
+        </ul>
+ 	</div>
+	<div class="spaceair"></div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input name="apply" value="<%:Apply%>" onclick="return formCheck()" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Management%> > Bandwidth MGMT > General ');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

@@ -1,0 +1,15 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Samsung Phone</DisplayName>
+		<HttpRecognition>
+			<HttpText>GT-I8000</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+		<DeviceGroup>MOBILE</DeviceGroup>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

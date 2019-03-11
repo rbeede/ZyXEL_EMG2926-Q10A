@@ -1,0 +1,354 @@
+Index: linux-3.3.8/net/core/dev.c
+===================================================================
+--- linux-3.3.8.orig/net/core/dev.c	2017-10-05 12:32:50.975078243 +0800
++++ linux-3.3.8/net/core/dev.c	2017-10-05 12:35:07.363078469 +0800
+@@ -180,6 +180,25 @@
+ static struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
+ static struct list_head ptype_all __read_mostly;	/* Taps */
+ 
++#define ETH_WAN_NAME "eth0"
++#define CPU_IDLE_RATE_MIN 6
++#define	PKT_COUNT_MAX 2000
++
++extern u64 get_cpu_idle(void) ;
++extern bool check_mr_table(void); // false: mr table is emtpy ,true : not empty
++static volatile u64 cpu_idle_rate = 90 ;
++static volatile u16 wan_pkt_count = 0;
++static volatile u16 pkt_drop_count = 0;
++//static volatile u16 pkt_drop_th = 0 ; //packet drop threshold
++//static volatile u16 idle_rate_th = 6 ; //cpu idle rate threshold 
++static volatile bool iptv_streaming = false ;
++
++int cpu_idle_rate_min_threshold __read_mostly = CPU_IDLE_RATE_MIN ;
++int pkt_drop_interval  __read_mostly = PKT_COUNT_MAX ; //how many packet caclue
++int pkt_drop_cycle __read_mostly = 10 ; // how many packet drop
++int pkt_drop_rate __read_mostly = 9 ; // how many packet drop
++int wan_ingress_dropping __read_mostly = 0 ;
++
+ /*
+  * The @dev_base_head list is protected by @dev_base_lock and the rtnl
+  * semaphore.
+@@ -3228,6 +3247,7 @@
+ 	int ret = NET_RX_DROP;
+ 	__be16 type;
+ 	int (*fast_recv)(struct sk_buff *skb);
++	char *dev_name;
+ 
+ 	net_timestamp_check(!netdev_tstamp_prequeue, skb);
+ 
+@@ -3259,14 +3279,86 @@
+ 			goto out;
+ 	}
+ 
+-	fast_recv = rcu_dereference(athrs_fast_nat_recv);
+-	if (fast_recv) {
+-		if (fast_recv(skb)) {
+-			rcu_read_unlock();
+-			return NET_RX_SUCCESS;
++	/*eITS Ticket #170900948 USEJ - EPB - EMG3425 | Low Throughput when run IPTV */
++	/*usage:
++		proc/sys/net/core/Variables:
++		1.wan_ingress_droppong - BOOLEAN
++			0 - disabled (default)
++			not 0 - enabled
++		2.pkt_drop_interval - INTEGER
++		3.pkt_drop_cycle - INTEGER
++		4.pkt_drop_rate - INTEGER
++		5.cpu_idle_rate_min_threshold - INTEGER
++	*/
++
++	if(wan_ingress_dropping){
++
++		//Drop packet from WAN if low CUP usage.
++		dev_name=orig_dev ? skb->dev->name : "<NULL>";
++	
++		//check packet from WAN interface
++		if (strncmp(dev_name,ETH_WAN_NAME,4) == 0) {
++
++			//check CPU usage
++			//if( wan_pkt_count > PKT_COUNT_MAX ){
++        	        if( wan_pkt_count > pkt_drop_interval ){
++
++				//get CPU usage(CPU idle rate)
++				cpu_idle_rate = get_cpu_idle(); 
++
++                                //check iptv streamimg
++                                iptv_streaming = check_mr_table();
++
++				//pkt_drop_count = 0 ; 
++				//pkt_drop_th = 11  - cpu_idle_rate ;
++
++				//printk("%s: cpu_idle_rate   %llu   wan_pkt_count   %llu   wan_ingress_dropping  %d pkt_drop_interval %d \n",__FUNCTION__,cpu_idle_rate,wan_pkt_count,wan_ingress_dropping,pkt_drop_interval);
++
++				wan_pkt_count = 0 ;
++
++			}else{
++				wan_pkt_count++ ;
++			}
++
++			//bypass multicast packet.
++			if(skb->pkt_type != PACKET_MULTICAST){
++
++				//drop packet when cpu low usage and iptv playback
++				//if( iptv_streaming && cpu_idle_rate < CPU_IDLE_RATE_MIN ){
++				if( iptv_streaming && cpu_idle_rate < cpu_idle_rate_min_threshold ){
++
++					if( ip_hdr(skb)->protocol == IPPROTO_TCP ){
++
++						//printk("%s : cpu_idle_rate_min_threshold %d  pkt_drop_interval %d  pkt_drop_rate %d  wan_ingress_dropping %d pkt_drop_count %d  wan_pkt_count %d pkt_drop_cycle %d  \n",__FUNCTION__, cpu_idle_rate_min_threshold, pkt_drop_interval ,pkt_drop_rate,wan_ingress_dropping,pkt_drop_count,wan_pkt_count, pkt_drop_cycle );
++
++						if( pkt_drop_count  > pkt_drop_cycle ){
++							pkt_drop_count = 0 ;
++						}else if( pkt_drop_count  > pkt_drop_rate ){
++							pkt_drop_count++;
++						}else { // pkt_drop_count <  pkt_drop_th
++							//printk("%s:drop \n",__FUNCTION__ );
++
++							pkt_drop_count++;
++							ret = NET_RX_DROP;
++							atomic_long_inc(&skb->dev->rx_dropped);
++							kfree_skb(skb);
++							goto out;
++						}
++					}
++				}
++			}
+ 		}
+ 	}
+ 
++        fast_recv = rcu_dereference(athrs_fast_nat_recv);
++        if (fast_recv) {
++                if (fast_recv(skb)) {
++                        rcu_read_unlock();
++                        return NET_RX_SUCCESS;
++                }
++        }
++
++
+ #ifdef CONFIG_NET_CLS_ACT
+ 	if (skb->tc_verd & TC_NCLS) {
+ 		skb->tc_verd = CLR_TC_NCLS(skb->tc_verd);
+Index: linux-3.3.8/fs/proc/stat.c
+===================================================================
+--- linux-3.3.8.orig/fs/proc/stat.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/fs/proc/stat.c	2017-10-05 12:32:55.819078251 +0800
+@@ -22,6 +22,12 @@
+ #define arch_idle_time(cpu) 0
+ #endif
+ 
++static u64 p_idle = 0 ;
++static u64 p_total = 0 ;
++static u64 idle_rate = 100 ;
++static u64 p_idle_rate = 100 ;
++
++
+ static u64 get_idle_time(int cpu)
+ {
+ 	u64 idle, idle_time = get_cpu_idle_time_us(cpu, NULL);
+@@ -49,6 +55,71 @@
+ 	return iowait;
+ }
+ 
++
++u64 get_cpu_idle(void)
++{
++	int i;
++	u64 user, nice, system, idle, iowait, irq, softirq, steal ,total,cpu_idle;
++	u64 mod,tmp;
++
++	user = nice = system = idle = iowait = 
++		irq = softirq = steal = total = cpu_idle = mod = tmp = 0;
++
++	for_each_possible_cpu(i) {
++		user += kcpustat_cpu(i).cpustat[CPUTIME_USER];
++		nice += kcpustat_cpu(i).cpustat[CPUTIME_NICE];
++		system += kcpustat_cpu(i).cpustat[CPUTIME_SYSTEM];
++		idle += get_idle_time(i);
++		iowait += get_iowait_time(i);
++		irq += kcpustat_cpu(i).cpustat[CPUTIME_IRQ];
++		softirq += kcpustat_cpu(i).cpustat[CPUTIME_SOFTIRQ];
++		steal += kcpustat_cpu(i).cpustat[CPUTIME_STEAL];
++	}
++/*
++	printk(" %s cpu  %llu %llu %llu %llu %llu %llu %llu %llu %llu  %llu\n",__FUNCTION__ ,
++		(unsigned long long)cputime64_to_clock_t(user),
++		(unsigned long long)cputime64_to_clock_t(nice),
++		(unsigned long long)cputime64_to_clock_t(system),
++		(unsigned long long)cputime64_to_clock_t(idle),
++		(unsigned long long)cputime64_to_clock_t(iowait),
++		(unsigned long long)cputime64_to_clock_t(irq),
++		(unsigned long long)cputime64_to_clock_t(softirq),
++		(unsigned long long)cputime64_to_clock_t(steal),
++		(unsigned long long)cputime64_to_clock_t(guest),
++		(unsigned long long)cputime64_to_clock_t(guest_nice));
++
++	printk(" %s intr %llu \n",__FUNCTION__ ,(unsigned long long)sum);
++*/
++	total = user + nice + system + idle + iowait + irq + softirq + steal;
++	cpu_idle = (u64)100*(idle-p_idle);
++	tmp = total-p_total;
++
++	if( tmp != 0 ){	
++		mod = do_div ( cpu_idle,tmp );
++		idle_rate = cpu_idle ;
++/*
++		idle_rate = cpu_idle + p_idle_rate ;
++		mod = do_div ( idle_rate , 2 );
++		if(cpu_idle > 0  ){
++			p_idle_rate = cpu_idle ;
++		}else{
++	                printk(" %s  idle_rate %llu  cpu_idle %llu  idle %llu  p_idle %llu total %llu  p_total %llu  \n ", __FUNCTION__ ,(unsigned long long)idle_rate,(unsigned long long)cpu_idle, (unsigned long long)p_idle,(unsigned long long)p_idle,(unsigned long long)total ,(unsigned long long)p_total );
++			idle_rate = p_idle_rate ;
++		}
++		*/
++	        p_idle = idle;
++	        p_total = total;
++
++	}
++
++
++	return (u64)idle_rate;
++}
++
++EXPORT_SYMBOL(get_cpu_idle);
++
++
++
+ static int show_stat(struct seq_file *p, void *v)
+ {
+ 	int i, j;
+Index: linux-3.3.8/net/ipv4/ipmr.c
+===================================================================
+--- linux-3.3.8.orig/net/ipv4/ipmr.c	2017-10-05 12:32:50.835078243 +0800
++++ linux-3.3.8/net/ipv4/ipmr.c	2017-10-05 12:32:55.819078251 +0800
+@@ -134,6 +134,21 @@
+ 			      struct mfc_cache *c, struct rtmsg *rtm);
+ static void ipmr_expire_process(unsigned long arg);
+ 
++static volatile mr_group_count = 0;
++
++//count multicast routing rule,check IPTV streaming
++bool check_mr_table(void){
++
++	if( mr_group_count > 0 )
++		return true;
++
++	return false;
++
++}
++
++EXPORT_SYMBOL(check_mr_table);
++
++
+ #ifdef CONFIG_IP_MROUTE_MULTIPLE_TABLES
+ #define ipmr_for_each_table(mrt, net) \
+ 	list_for_each_entry_rcu(mrt, &net->ipv4.mr_tables, list)
+@@ -1054,6 +1069,36 @@
+ 	return -ENOENT;
+ }
+ 
++
++static void ipmr_visit_all_mfc( struct mr_table *mrt, struct mfcctl *mfc )
++{
++	int line;
++	struct mfc_cache  *c;
++	int count = 0; 
++
++	for (line = 0; line < MFC_LINES; line++) {
++		list_for_each_entry(c, &mrt->mfc_cache_array[line], list) {
++			switch((__force u32) c->mfc_mcastgrp)   
++			{
++				case 0xEFFFFFFA :  //239.255.255.250
++				case 0xEFFFFFFB :  //239.255.255.251
++					//exception case
++					break;  
++				default :
++		                        count++;
++					break;  
++			}
++			//printk(" %s : mfc_mcastgrp %08X mfc_origin %08X  line %d count %d  \n ",__FUNCTION__,(__force u32) c->mfc_mcastgrp,(__force u32) c->mfc_origin,line,count);
++		}	
++	}
++
++	//printk(" %s : mr_group_count %d   \n ",__FUNCTION__,mr_group_count);
++	mr_group_count=count;
++}
++
++
++
++
+ static int ipmr_mfc_add(struct net *net, struct mr_table *mrt,
+ 			struct mfcctl *mfc, int mrtsock)
+ {
+@@ -1268,6 +1313,9 @@
+ 		else
+ 			ret = ipmr_mfc_add(net, mrt, &mfc,
+ 					   sk == rtnl_dereference(mrt->mroute_sk));
++
++		ipmr_visit_all_mfc(mrt, &mfc);
++
+ 		rtnl_unlock();
+ 		return ret;
+ 		/*
+Index: linux-3.3.8/net/core/sysctl_net_core.c
+===================================================================
+--- linux-3.3.8.orig/net/core/sysctl_net_core.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/core/sysctl_net_core.c	2017-10-05 12:32:55.819078251 +0800
+@@ -128,6 +128,41 @@
+ 		.mode		= 0644,
+ 		.proc_handler	= proc_dointvec
+ 	},
++        {
++                .procname       = "wan_ingress_dropping",
++                .data           = &wan_ingress_dropping,
++                .maxlen         = sizeof(int),
++                .mode           = 0644,
++                .proc_handler   = proc_dointvec
++        },
++        {
++                .procname       = "pkt_drop_interval",
++                .data           = &pkt_drop_interval,
++                .maxlen         = sizeof(int),
++                .mode           = 0644,
++                .proc_handler   = proc_dointvec
++        },
++        {
++                .procname       = "cpu_idle_rate_min_threshold",
++                .data           = &cpu_idle_rate_min_threshold,
++                .maxlen         = sizeof(int),
++                .mode           = 0644,
++                .proc_handler   = proc_dointvec
++        },
++        {
++                .procname       = "pkt_drop_rate",
++                .data           = &pkt_drop_rate,
++                .maxlen         = sizeof(int),
++                .mode           = 0644,
++                .proc_handler   = proc_dointvec
++        },
++        {
++                .procname       = "pkt_drop_cycle",
++                .data           = &pkt_drop_cycle,
++                .maxlen         = sizeof(int),
++                .mode           = 0644,
++                .proc_handler   = proc_dointvec
++        },
+ #ifdef CONFIG_BPF_JIT
+ 	{
+ 		.procname	= "bpf_jit_enable",
+Index: linux-3.3.8/include/linux/netdevice.h
+===================================================================
+--- linux-3.3.8.orig/include/linux/netdevice.h	2017-10-05 12:32:50.971078243 +0800
++++ linux-3.3.8/include/linux/netdevice.h	2017-10-05 12:32:55.823078251 +0800
+@@ -2583,6 +2583,11 @@
+ extern struct rtnl_link_stats64 *dev_get_stats(struct net_device *dev,
+ 					       struct rtnl_link_stats64 *storage);
+ 
++extern int		cpu_idle_rate_min_threshold;
++extern int		pkt_drop_interval;
++extern int		pkt_drop_rate;
++extern int		pkt_drop_cycle;
++extern int		wan_ingress_dropping;
+ extern int		netdev_max_backlog;
+ extern int		netdev_tstamp_prequeue;
+ extern int		weight_p;

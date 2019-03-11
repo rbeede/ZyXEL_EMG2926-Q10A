@@ -1,0 +1,11 @@
+--- a/fw_env.c
++++ b/fw_env.c
+@@ -46,8 +46,6 @@
+ 
+ #include "fw_env.h"
+ 
+-#include <config.h>
+-
+ #define WHITESPACE(c) ((c == '\t') || (c == ' '))
+ 
+ #define min(x, y) ({				\

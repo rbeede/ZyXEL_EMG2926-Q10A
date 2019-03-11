@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/nodedetectd/Makefile
+Package: nodedetectd
+Submenu: Node Management
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Nodedetectd
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: nodedetectd-.tar.gz
+Type: ipkg
+Description: Nodedetectd computes node types using characteristics sensed by other daemons.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_nodedetectd
+	config nodedetectd_USE_CUSTOM_VERSION
+		depends on PACKAGE_nodedetectd
+		bool "Use custom package version"
+		default n
+	config nodedetectd_CUSTOM_VERSION
+		depends on nodedetectd_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_nodedetectd
+	config nodedetectd_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_nodedetectd
+		bool "Use custom source directory"
+		default n
+	config nodedetectd_CUSTOM_SOURCE_DIR
+		depends on nodedetectd_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

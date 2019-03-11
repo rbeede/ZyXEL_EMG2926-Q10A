@@ -1,0 +1,43 @@
+Source-Makefile: feeds/streamboost/sbsaved/Makefile
+Package: sbsaved
+Submenu: Utils
+Version: 1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +libsbdaemon +hiredis +libevent2
+Menu-Depends: 
+Provides: 
+Build-Depends: argp-standalone
+Section: opt
+Category: Bigfoot
+Title: Streamboost persistence daemon
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: sbsaved-.tar.gz
+Type: ipkg
+Description: sbsaved stores redis keys to a file, triggered by pubsub channels, and defined as a keyset and key patterns.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_sbsaved
+	config sbsaved_USE_CUSTOM_VERSION
+		depends on PACKAGE_sbsaved
+		bool "Use custom package version"
+		default n
+	config sbsaved_CUSTOM_VERSION
+		depends on sbsaved_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_sbsaved
+	config sbsaved_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_sbsaved
+		bool "Use custom source directory"
+		default n
+	config sbsaved_CUSTOM_SOURCE_DIR
+		depends on sbsaved_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

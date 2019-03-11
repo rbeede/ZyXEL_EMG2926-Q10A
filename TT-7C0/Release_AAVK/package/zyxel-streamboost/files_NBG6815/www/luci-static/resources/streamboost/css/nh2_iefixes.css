@@ -1,0 +1,98 @@
+
+.Left
+{
+	height: 100%;
+	width: 30%;
+	position: relative;
+	display:
+	inline-table;
+	margin-left: 0;
+	margin-top: 0;
+	margin-right: -4px;
+}
+.Right
+{
+	/*height: 100%;*/
+	width: 70%;
+	position: absolute;
+	display: inline-table;
+	right: auto;
+	/*margin-left: -4px;
+	margin-top: 0;
+	margin-right: 0;
+	padding-right: 100%;*/
+}
+.TopLeft
+{
+	position: relative;
+	display: block;
+
+	filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='/luci-static/resources/streamboost/images/nhii-topleft.png', sizingMethod='scale');
+	-ms-filter: "progid:DXImageTransform.Microsoft.AlphaImageLoader(src='/luci-static/resources/streamboost/images/nhii-topleft.png', sizingMethod='scale')";
+
+	height: 79px;
+	width: 100%;
+	padding-top: 0px;
+	/*[empty]border-top:;*/
+}
+.LeftMenu
+{
+    background-size: cover;
+    /* the relative url is relative to the html document, not the css file */
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+.BottomLeft
+{
+	/*height: 1024px;*/
+	width: 100%;
+	height: auto;
+}
+.TopRight
+{
+	padding-top: 20px;
+	margin-bottom: -20px;
+}
+.RightMenu
+{
+    background-size: cover;
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+.BottomlRight
+{
+    background-size: cover;
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+
+.wzItem_Current
+{
+    background-size: cover;
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+#Login
+{
+    background-size: cover;
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+#LoginPane
+{
+    background-size: cover;
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+#WizardPane
+{
+    background-size: cover;
+    -ms-behavior: url(/luci-static/resources/streamboost/js/backgroundsize.min.htc);
+}
+
+#clonebutton
+{
+	top:0;
+}
+
+#chart_div {
+  width: 840px;
+  min-height:0;
+  height: 100%;
+}
+
+body:nth-of-type(1) #clonebutton{top:0px;}

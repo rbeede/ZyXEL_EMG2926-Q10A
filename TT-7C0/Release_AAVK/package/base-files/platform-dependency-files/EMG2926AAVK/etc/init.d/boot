@@ -1,0 +1,177 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2006 OpenWrt.org
+
+START=10
+STOP=98
+
+system_config() {
+	local cfg="$1"
+#	local RedirectIP="0.0.0.0"
+	local RedirectIP=$(uci_get network lan ipaddr)
+	local hostname conloglevel timezone
+
+	config_get hostname "$cfg" hostname 'OpenWrt'
+	echo "$hostname" > /proc/sys/kernel/hostname
+	echo "$RedirectIP $hostname" > /etc/hosts
+	echo "$RedirectIP myrouter" >> /etc/hosts
+	echo "127.0.0.1 localhost" >> /etc/hosts
+
+	config_get conloglevel "$cfg" conloglevel
+	config_get buffersize "$cfg" buffersize
+	[ -z "$conloglevel" -a -z "$buffersize" ] || dmesg ${conloglevel:+-n $conloglevel} ${buffersize:+-s $buffersize}
+	
+	#config_get timezone "$cfg" timezone 'UTC'
+	time_mode=$(uci get time.main.mode)
+	if [ "$time_mode" = "manual" ] ; then
+		timezone=$(uci get time.main.timezone)
+	else
+		config_get timezone "$cfg" timezone 'UTC'
+	fi
+	echo "$timezone" > /tmp/TZ
+
+	if [ -x /sbin/syslogd ]; then
+		local log_ip log_size log_port log_type log_file
+		config_get log_ip "$cfg" log_ip 
+		config_get log_size "$cfg" log_size 16
+		config_get log_port "$cfg" log_port 514
+		config_get log_type "$cfg" log_type circular
+		config_get log_file "$cfg" log_file "/var/log/messages"
+		if [ "$log_type" = "file" ]; then
+			syslogd -s $log_size -O $log_file ${log_ip:+-L -R ${log_ip}:${log_port}} -S
+		else
+			syslogd -C${log_size} ${log_ip:+-L -R ${log_ip}:${log_port}}
+		fi
+	fi
+	config_get klogconloglevel "$cfg" klogconloglevel
+	[ -x /sbin/klogd ] && klogd ${klogconloglevel:+-c $klogconloglevel}
+}
+
+apply_uci_config() {
+	sh -c '. /etc/functions.sh; include /lib/config; uci_apply_defaults'
+}
+
+WLAN_ENABLED_GPIO_NO=1
+
+start() {
+	## bootflag
+	echo 1 > /tmp/bootflag
+
+	[ -f /proc/mounts ] || /sbin/mount_root
+	[ -f /proc/jffs2_bbc ] && echo "S" > /proc/jffs2_bbc
+	[ -f /proc/net/vlan/config ] && vconfig set_name_type DEV_PLUS_VID_NO_PAD
+
+	apply_uci_config
+	config_load system
+	config_foreach system_config system
+	
+#	local mode_status=$(uci_get system main system_mode)
+#
+#	if [ "$mode_status" == "2" ] ; then	
+#		uci set appflow.tccontroller.enable_streamboost=0
+#	else
+#		old_enable_streamboost=$(uci get appflow.tccontroller.old_enable_streamboost)	
+#		if [ -n "$old_enable_streamboost" ] ; then
+#			uci set appflow.tccontroller.enable_streamboost="$old_enable_streamboost"
+#			uci set appflow.tccontroller.old_enable_streamboost=""
+#		fi
+#	fi
+	
+#	uci commit appflow	
+	
+	mkdir -p /var/run
+	mkdir -p /var/log
+	mkdir -p /var/lock
+	mkdir -p /var/state
+	mkdir -p /tmp/.uci
+	chmod 0700 /tmp/.uci
+	touch /var/log/wtmp
+	touch /var/log/lastlog
+	touch /tmp/resolv.conf.auto
+	ln -sf /tmp/resolv.conf.auto /tmp/resolv.conf
+	grep -q debugfs /proc/filesystems && mount -t debugfs debugfs /sys/kernel/debug
+	[ "$FAILSAFE" = "true" ] && touch /tmp/.failsafe
+
+	killall -q hotplug2
+	[ -x /sbin/hotplug2 ] && /sbin/hotplug2 --override --persistent \
+			--set-worker /lib/hotplug2/worker_fork.so \
+			--set-rules-file /etc/hotplug2.rules \
+			--max-children 1 >/dev/null 2>&1 &
+
+	# the coldplugging of network interfaces needs to happen later, so we do it manually here
+	for iface in $(awk -F: '/:/ {print $1}' /proc/net/dev); do
+		/usr/bin/env -i ACTION=add INTERFACE="$iface" /sbin/hotplug-call net
+	done
+
+	# create /dev/root if it doesn't exist
+	[ -e /dev/root ] || {
+		rootdev=$(awk 'BEGIN { RS=" "; FS="="; } $1 == "root" { print $2 }' < /proc/cmdline)
+		[ -n "$rootdev" ] && ln -s "$rootdev" /dev/root
+	}
+
+	#Export WLAN_ENABLE gpio pin
+        rmmod gpio_button_hotplug
+        echo $WLAN_ENABLED_GPIO_NO > /sys/class/gpio/export
+        flag=$(cat /sys/class/gpio/gpio${WLAN_ENABLED_GPIO_NO}/value)
+        echo $WLAN_ENABLED_GPIO_NO > /sys/class/gpio/unexport
+	
+	wifi_button=$(uci get wireless.wifi.button_useful)
+		
+	if [ "$wifi_button" == "1" ]; then 
+		if [ "$flag" == "0" ];then
+			echo 0 >/tmp/wlan_on
+		else
+			echo 1 >/tmp/wlan_on
+		fi
+	else
+		echo 1 >/tmp/wlan_on
+	fi
+
+	##skip insert wifi kernel modules and change to wifi initial script to control
+	local ckWifiModule=$(cat /etc/modules.d/25-qca-wifi)
+	[ -n "$ckWifiModule" ] && echo > /etc/modules.d/25-qca-wifi
+
+	load_modules /etc/modules.d/*
+        sleep 5
+
+	# another round of USB coldplugging to kick devices into operation which lacked drivers before
+	for dev in /sys/bus/usb/devices/*/uevent; do
+		[ -e "$dev" ] && echo -n add > "$dev"
+	done
+	
+	#deEncrypt username and password on account file
+	Encrypt=$(uci get account.general.encrypt)
+	customer_id=$(uci get system.main.customerId) 
+	if [ "$Encrypt" == "1" ] ; then
+		for i in 0 1 2 3 4
+		do
+			local username=$(uci get account.@account[$i].username)
+			local password=$(uci get account.@account[$i].password)
+			#customer auto gen account password,it doesn't need to Decrypted 
+			if [ -n "$customer_id" ] && [ "$i" == "1" ]; then 
+				user1_enc=$(echo "$username" | openssl bf -a -d -pass pass:EMG3425AAYJ1234)
+				uci set account.@account[$i].username="$user1_enc"
+				uci set system.main.customerId=""
+				uci commit system
+			else
+				user1_enc=$(echo "$username" | openssl bf -a -d -pass pass:EMG3425AAYJ1234)
+				user1_pw_enc=$(echo "$password" | openssl bf -a -d -pass pass:EMG3425AAYJ5678)
+				uci set account.@account[$i].username="$user1_enc"
+				uci set account.@account[$i].password="$user1_pw_enc"
+			fi	
+			
+			uci set account.general.encrypt="0"
+			uci commit account
+		done
+	fi
+
+}
+
+stop() {
+        killall -9 syslogd 2> /dev/null
+	#time_record
+	time_mode=$(uci get time.main.mode)
+	if [ "$time_mode" = "manual" ] ; then
+	        date "+%Y.%m.%d-%H:%M:%S" > /etc/time_record
+	fi
+}
+

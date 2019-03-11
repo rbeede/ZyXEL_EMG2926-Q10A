@@ -1,0 +1,215 @@
+#!/bin/sh
+. /etc/functions.sh
+include /lib/config
+
+print_log()
+{
+	echo "========= print log ==========>  $1 " 1> /dev/null
+	#echo "========= print log ==========>  $1 " 
+}
+
+
+LAN="br+"
+
+
+#proto=`uci get network.wan.proto`
+
+local ath3_disabled_24G=$(uci_get wireless ath3 disabled)
+local ath13_disabled_5G=$(uci_get wireless ath13 disabled)
+local guest_wlan_24G_enabled=$(uci_get wireless ath3 enable_guest_wlan)
+local guest_wlan_5G_enabled=$(uci_get wireless ath13 enable_guest_wlan)
+
+local defaultWan=$(uci get network.general.defaultWan)
+local proto=$(uci get network.$defaultWan.proto)
+local default_int=""
+local d_gw=""
+
+if [ "$proto" == "static" ]; then
+	d_gw=$(uci get network.$defaultWan.gateway)
+else
+	d_gw=$(uci get network.$defaultWan.isp_gw)
+fi
+
+if [ "$proto" == "pppoe" ] || [ "$proto" == "pptp" ];then
+	default_int=$proto-$defaultWan
+
+	rm /tmp/wan_route5
+	d_gw=""
+	route -n | grep  $default_int | grep 255.255  > /tmp/wan_route5
+	exec < /tmp/wan_route5
+	while read line
+	do
+	local test=$(echo $line | awk '{print $8}' )	
+		if [ "$test" == "$default_int" ] ;then
+			d_gw=$(echo $line | awk '{print $1}' | tr -d '\n')
+		fi		
+	done
+
+	#d_gw=$(route -n | grep  $default_int | grep 255.255  | awk '{print $1}' | tr -d '\n')
+
+	if [ "$d_gw" == "" ] ;then
+		d_gw="0.0.0.0"
+	fi		
+else
+	default_int=$(uci get network.$defaultWan.ifname)	
+fi
+
+
+for iface in ath3 ath13
+do
+
+	#echo "iface=$iface" >> /tmp/debug_log
+	#iptables -D FORWARD -i $iface -o vlan10 -j ACCEPT 2>/dev/null
+	iptables -D FORWARD -i $iface ! -o $LAN -j ACCEPT 2>/dev/null
+	iptables -D INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+	iptables -D INPUT -i $iface -p icmp --icmp-type 8 -j DROP
+	iptables -D INPUT -i $iface -j ACCEPT
+	iptables -D FORWARD -i $iface -o $LAN -j DROP
+
+	ipaddr=$(uci_get wireless $iface guest_ip)
+	iptables -D INPUT -i $iface -p tcp -d $ipaddr -j DROP
+
+	print_log "iptables -D FORWARD -i $iface ! -o $LAN -j ACCEPT 2>/dev/null"
+	print_log "iptables -D INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT"
+	print_log "iptables -D INPUT -i $iface -j ACCEPT"
+	print_log "iptables -D FORWARD -i $iface -o $LAN -j DROP"
+	print_log "iptables -D INPUT -i $iface -p icmp --icmp-type 8 -j DROP"
+	print_log "iptables -D INPUT -i $iface -p tcp -d $ipaddr -j DROP"
+	
+##
+	local LAN_ip=$(uci get network.lan.ipaddr) 
+	local Guest_24GWLAN_IP=$(uci get wireless.ath3.guest_ip)
+	local Guest_5GWLAN_IP=$(uci get wireless.ath13.guest_ip)
+	
+	iptables -D INPUT -i $iface -d $LAN_ip/24 -j DROP 2>/dev/null
+	iptables -D INPUT -i $iface -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+	iptables -D INPUT -i $iface -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+	
+	for j in `seq 4  1 7`
+	do 
+		local grouped_wan1=$(uci get intfGrp.Group$j.wanint)
+
+		if [ ! -z "$grouped_wan1" ]; then  
+			iptables -D INPUT -i $iface -d 192.168.$j.0/24 -j DROP 2>/dev/null
+		fi
+	done
+##
+
+	if [ "$ath3_disabled_24G" == "0" ] && [ "$iface" == "ath3" ] && [ "$guest_wlan_24G_enabled" == "1" ]; then
+		#ip route delete table 2
+		#ip rule delete from 192.168.2.0/24 lookup IP_GROUP2
+		print_log "==========  iface=$iface  2  Start!!!"
+		
+		echo "$iface (2.4G) guest wlan add iptables!! " >> /tmp/debug_log
+		
+		iptables -D FORWARD -i $iface ! -o $LAN -j ACCEPT	
+		iptables -A FORWARD -i $iface ! -o $LAN -j ACCEPT
+		iptables -D INPUT -i $iface -j ACCEPT
+		iptables -I INPUT -i $iface -j ACCEPT
+		iptables -D INPUT -i $iface -p icmp --icmp-type 8 -j DROP
+		iptables -I INPUT -i $iface -p icmp --icmp-type 8 -j DROP
+		iptables -D INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+		iptables -I INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+		iptables -D FORWARD -i $iface -o $LAN -j DROP
+		iptables -I FORWARD -i $iface -o $LAN -j DROP
+		iptables -D INPUT -i $iface -p tcp -d $ipaddr -j DROP
+		iptables -I INPUT -i $iface -p tcp -d $ipaddr -j DROP
+
+		
+		print_log "iptables -A FORWARD -i $iface ! -o $LAN -j ACCEPT"
+		print_log "iptables -I INPUT -i $iface -j ACCEPT"
+		print_log "iptables -I INPUT -i $iface -p icmp --icmp-type 8 -j DROP"
+		print_log "iptables -I INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT"
+		print_log "iptables -I FORWARD -i $iface -o $LAN -j DROP"
+		print_log "iptables -I INPUT -i $iface -p tcp -d $ipaddr -j DROP"
+
+		##Add Interface Group rule	
+		echo "2 IP_GROUP2" >> /etc/iproute2/rt_tables
+
+		#ip route add 192.168.2.0/24  table 2
+		#ip route add default via $d_gw dev $default_int table 2
+		#ip rule add from 192.168.2.0/24 table 2 pref 100
+		#ip rule add to 192.168.2.0/24 table 2 pref 100
+		#ip route flush cache
+
+		if [ "$ath13_disabled_5G" == "0" ] && [ "$guest_wlan_5G_enabled" == "1" ]; then
+			local Guest_5GWLAN_IP=$(uci get wireless.ath13.guest_ip)
+			iptables -D INPUT -i $iface -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+			iptables -I INPUT -i $iface -d $Guest_5GWLAN_IP/24 -j DROP 2>/dev/null
+		fi
+		
+
+		local LAN_ip=$(uci get network.lan.ipaddr) 
+
+		iptables -D INPUT -i $iface -d $LAN_ip/24 -j DROP 2>/dev/null		
+		iptables -I INPUT -i $iface -d $LAN_ip/24 -j DROP 2>/dev/null
+				
+		for j in `seq 4  1 7`
+		do 
+			local grouped_wan2=$(uci get intfGrp.Group$j.wanint)
+
+			if [ ! -z "$grouped_wan2" ]; then  
+				iptables -D INPUT -i $iface -d 192.168.$j.0/24 -j DROP 2>/dev/null
+				iptables -I INPUT -i $iface -d 192.168.$j.0/24 -j DROP 2>/dev/null
+			fi
+		done
+
+	fi
+
+	if [ "$ath13_disabled_5G" == "0" ] && [ "$iface" == "ath13" ] && [ "$guest_wlan_5G_enabled" == "1" ]; then
+		#ip route delete table 3
+		#ip rule delete from 192.168.3.0/24 lookup IP_GROUP3
+
+		echo "$iface (5G) guest wlan add iptables!! " >> /tmp/debug_log
+		iptables -D FORWARD -i $iface ! -o $LAN -j ACCEPT
+		iptables -A FORWARD -i $iface ! -o $LAN -j ACCEPT
+		iptables -D INPUT -i $iface -j ACCEPT
+		iptables -I INPUT -i $iface -j ACCEPT
+		iptables -D INPUT -i $iface -p icmp --icmp-type 8 -j DROP
+		iptables -I INPUT -i $iface -p icmp --icmp-type 8 -j DROP
+		iptables -D INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+		iptables -I INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT
+		iptables -D FORWARD -i $iface -o $LAN -j DROP
+		iptables -I FORWARD -i $iface -o $LAN -j DROP
+		iptables -D INPUT -i $iface -p tcp -d $ipaddr -j DROP
+		iptables -I INPUT -i $iface -p tcp -d $ipaddr -j DROP
+
+		print_log "iptables -A FORWARD -i $iface ! -o $LAN -j ACCEPT"
+		print_log "iptables -I INPUT -i $iface -j ACCEPT"
+		print_log "iptables -I INPUT -i $iface -p icmp --icmp-type 8 -j DROP"
+		print_log "iptables -I INPUT -i $iface -p udp --sport 68 --dport 67 -j ACCEPT"
+		print_log "iptables -I FORWARD -i $iface -o $LAN -j DROP"
+		print_log "iptables -I INPUT -i $iface -p tcp -d $ipaddr -j DROP"
+		
+		##Add Interface Group rule	
+		#echo "3 IP_GROUP3" >> /etc/iproute2/rt_tables
+
+		#ip route add 192.168.3.0/24  table 3
+		#ip route add default via $d_gw dev $default_int table 3
+		#ip rule add from 192.168.3.0/24 table 3 pref 100
+		#ip rule add to 192.168.3.0/24 table 3 pref 100
+		#ip route flush cache	
+		
+		if [ "$ath3_disabled_24G" == "0" ] && [ "$guest_wlan_24G_enabled" == "1" ]; then
+			local Guest_24GWLAN_IP=$(uci get wireless.ath3.guest_ip)
+			iptables -D INPUT -i $iface -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+			iptables -I INPUT -i $iface -d $Guest_24GWLAN_IP/24 -j DROP 2>/dev/null
+		fi
+
+		local LAN_ip=$(uci get network.lan.ipaddr) 
+
+		iptables -D INPUT -i $iface -d $LAN_ip/24 -j DROP 2>/dev/null		
+		iptables -I INPUT -i $iface -d $LAN_ip/24 -j DROP 2>/dev/null
+				
+		for j in `seq 4  1 7`
+		do 
+			local grouped_wan3=$(uci get intfGrp.Group$j.wanint)
+
+			if [ ! -z "$grouped_wan3" ]; then  
+				iptables -D INPUT -i $iface -d 192.168.$j.0/24 -j DROP 2>/dev/null
+				iptables -I INPUT -i $iface -d 192.168.$j.0/24 -j DROP 2>/dev/null
+			fi
+		done
+	fi
+done
+

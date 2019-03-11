@@ -1,0 +1,238 @@
+#!/bin/sh
+
+#local WAN_IF=eth2
+#export RTL8367RB_MDIO_IF=eth2
+
+
+Usage(){
+        echo "Usage:"
+        echo "      port_config w [Port] [Speed] [Duplex] [restart]"
+        echo "      port_config r [Port]"
+        echo "==============================================="
+        echo "      Speed : 10 , 100, 1000, auto"
+        echo "      Duplex: half , full , auto"
+        echo "==============================================="
+        echo ""
+}
+
+print_log()
+{
+	echo "========= intfGrp log ==========>  $1 " 1> /dev/null
+}
+
+# This function is for mapping hardware design GMAC and PHY.
+port_mapping(){
+
+	port=$1
+	case "$port" in
+		1)
+			port_num_bit=0x0
+			;;
+		2)
+			port_num_bit=0x200000
+			;;
+		3)
+			port_num_bit=0x400000
+			;;
+		4)
+			port_num_bit=0x600000
+			;;
+		5)
+			port_num_bit=0x800000
+			;;
+	esac
+}
+
+print_log "/bin/port_config $1 $2 $3 $4 $5"
+
+port_num_bit=0x0
+
+cmd=$1
+case "$cmd" in
+        w)
+		port_mapping $2
+
+		# Check port reset request 
+		if [ "$5" = "1" ]; then
+		    reset_bit=0x800
+		else
+		    reset_bit=0x000
+		fi
+
+# NO CASE :   Speed:1000  Duplex: HALF ,  Speed:AUTO  Duplex: HALF 
+					
+		if [ "$4" = "full" -o "$4" = "FULL" -o "$4" = "auto" -o "$4" = "AUTO" ]; then 
+			uci set port_status.port$2.speed=$3
+			uci set port_status.port$2.duplex=$4
+			uci commit port_status
+
+			# Qualcomm QCA8337 regster setting
+			if [ "$3" = "1000" ] || [ "$3" = "auto" -o "$3" = "AUTO" ]; then    # Speed:1000  Duplex: AUTO ,Speed:1000  Duplex: FULL , Speed:AUTO  Duplex: AUTO, Speed:AUTO  Duplex: FULL 
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+				if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 12544 ]; then
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo  $((0xC8040000|port_num_bit)) > /proc/driver/ar8216/regVal
+					if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 7649 ]; then
+						print_log "section 1 : This Port do not need to set!"
+					#	exit
+					fi
+				fi
+
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0003100|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+				sleep 1
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0003100|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal                                                     
+
+				#echo $((0xC0041C01|port_num_bit)) > /proc/driver/ar8216/regVal
+
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0041DE1|port_num_bit)) > /proc/driver/ar8216/regVal
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0090200|port_num_bit)) > /proc/driver/ar8216/regVal
+				print_log "section 1 : $((0xC0003100|port_num_bit&0xfffff7ff)) , $((0xC0041DE1|port_num_bit)) , $((0xC0090200|port_num_bit)) "
+
+			elif [ "$3" = "100" ]; then
+
+				if [ "$4" = "full" -o "$4" = "FULL" ]; then     # Speed:100  Duplex: FULL
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+					if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 8448 ]; then
+						print_log "section 2 : This Port do not need to set!"
+					#	exit
+					fi
+
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0090000|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+					sleep 1
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0003300|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0002100|port_num_bit)) > /proc/driver/ar8216/regVal  
+					print_log "section 2 : $((0xC0003300|port_num_bit&0xfffff7ff)) , $((0xC0002100|port_num_bit)) "
+
+				else # Speed:100  Duplex: AUTO
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+					if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 12544 ]; then
+						echo 0x003c > /proc/driver/ar8216/regAddr
+						echo  $((0xC8040000|port_num_bit)) > /proc/driver/ar8216/regVal
+						if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 7553 ]; then
+							print_log "section 3 : This Port do not need to set!"
+					#		exit
+						fi
+					fi
+
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0003100|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+					sleep 1
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0003100|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0041D81|port_num_bit)) > /proc/driver/ar8216/regVal
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0090000|port_num_bit)) > /proc/driver/ar8216/regVal
+					print_log "section 3 : $((0xC0003100|port_num_bit&0xfffff7ff)) , $((0xC0041D81|port_num_bit)) , $((0xC0090000|port_num_bit))"
+				fi                    
+
+			elif [ "$3" = "10" ]; then
+
+				if [ "$4" = "full" -o "$4" = "FULL" ]; then   # Speed:10  Duplex: FULL
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+					if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 256 ]; then
+						print_log "section 4 : This Port do not need to set!"
+					#	exit
+					fi
+
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0000100|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+					sleep 1
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0000100|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal
+					print_log "section 4 : $((0xC0000100|port_num_bit&0xfffff7ff)) "
+					
+				else  ##IF Auto,suport Auto 10F           # Speed:10  Duplex: AUTO
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+					if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 12544 ]; then
+						echo 0x003c > /proc/driver/ar8216/regAddr
+						echo  $((0xC8040000|port_num_bit)) > /proc/driver/ar8216/regVal
+						if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 7265 ]; then
+							print_log "section 5 : This Port do not need to set!"
+					#		exit
+						fi
+					fi
+
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0003100|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+					sleep 1
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0003100|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0041C61|port_num_bit)) > /proc/driver/ar8216/regVal
+					echo 0x003c > /proc/driver/ar8216/regAddr
+					echo $((0xC0090000|port_num_bit)) > /proc/driver/ar8216/regVal
+					print_log "section 5 : $((0xC0003100|port_num_bit&0xfffff7ff)) , $((0xC0041C61|port_num_bit)) , $((0xC0090000|port_num_bit)) "
+				fi
+
+			fi
+
+		elif [ "$4" = "half" -o "$4" = "HALF" ]; then
+			uci set port_status.port$2.speed=$3
+			uci set port_status.port$2.duplex=$4
+			uci commit port_status
+
+			# Qualcomm QCA8337 regster setting
+			if [ "$3" = "100" ]; then     # Speed:100  Duplex: HALF
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+				if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 8192 ]; then
+					print_log "section 6 : This Port do not need to set!"
+				#	exit
+				fi
+
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0090000|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+				sleep 1
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0003300|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0002000|port_num_bit)) > /proc/driver/ar8216/regVal
+				print_log "section 6 : $((0xC0003300|port_num_bit&0xfffff7ff)) ,$((0xC0002000|port_num_bit)) "
+			elif [ "$3" = "10" ]; then     # Speed:10  Duplex: HALF
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo  $((0xC8000000|port_num_bit)) > /proc/driver/ar8216/regVal
+				if [ $(( $(cat /proc/driver/ar8216/regVal)& 0x0000FFFF )) == 0 ]; then
+					print_log "section 7 : This Port do not need to set!"
+				#	exit
+				fi
+
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0000000|port_num_bit|reset_bit)) > /proc/driver/ar8216/regVal
+				sleep 1
+				echo 0x003c > /proc/driver/ar8216/regAddr
+				echo $((0xC0000000|port_num_bit&0xfffff7ff)) > /proc/driver/ar8216/regVal
+				print_log "section 7 : $((0xC0000000|port_num_bit&0xfffff7ff))"
+			fi
+		fi
+		
+		exit $?
+		;;
+	r)
+		# Qualcomm API port0 and port6 is CPU port.
+		if [ "$2" -gt 0 ] && [ "$2" -lt 6 ]; then
+			#rtl8367rb-tool port_config r $port_num
+			msg=$(swconfig dev eth0 port $2 show | grep link: | sed 's/^.*link://g' | sed 's/auto.*$//g')
+			echo "link:$msg"
+		else
+			echo "No such Port number!"
+		fi
+		exit $?        
+		;;
+	*)
+		Usage
+		esac
+exit $?
+

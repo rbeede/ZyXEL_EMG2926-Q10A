@@ -1,0 +1,18 @@
+Source-Makefile: feeds/alljoyn/alljoyn-onboarding/Makefile
+Package: alljoyn-onboarding
+Version: 14.06.00-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread alljoyn wpa-supplicant +alljoyn-about +alljoyn-config +alljoyn-services_common +hostapd +wpa-cli
+Menu-Depends: 
+Provides: 
+Section: net
+Category: Network
+Title: AllJoyn onboarding service library
+Maintainer: AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+Source: alljoyn-onboarding-14.06.00-src.tar.gz
+Type: ipkg
+Description: AllJoyn onboarding service.
+http://www.allseenalliance.org
+AllSeen Alliance <allseen-core@lists.allseenalliance.org>
+@@
+
+

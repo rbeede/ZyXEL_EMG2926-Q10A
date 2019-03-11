@@ -1,0 +1,10 @@
+<webdav-config>
+  <folders>
+    <folder>
+      <name>/</name>
+      <user>admin</user>
+      <path>/home/admin</path>
+      <mode>r/w</mode>
+    </folder>
+  </folders>
+</webdav-config>

@@ -1,0 +1,53 @@
+#!/bin/sh
+
+PROG=`basename $0`
+
+usage() {
+	echo "usage: $PROG timestamp deltaDays accOfIndex outputType verbose"
+}
+
+if [ $# -lt 5 ]; then
+	usage
+	exit 1
+fi
+
+timestamp=$1
+deltaDays=$2
+accOfIndex=$3
+outputType=$4
+showVerbose=$5
+
+# process_step return values
+FLAG_DONE=0
+FLAG_COMMA=1
+FLAG_NOTHING=2
+FLAG_WRITECALCULATION=1
+
+process_step() {
+	redis-cli -s /var/run/appflow/redis.sock --eval /bin/precalculateFlow.lua preCalculation logCalculation $timestamp $deltaDays $accOfIndex "$(date +%s)" "$(date +%z)" $outputType  | \
+	{
+		if [ $showVerbose -eq $FLAG_WRITECALCULATION ]; then
+			local setcomma=$FLAG_NOTHING
+			while read line; do
+				[ -z "$line" ] && continue
+				[ "$line" = "done" ] && return $FLAG_DONE
+				if [ $setcomma -eq $FLAG_NOTHING ]; then
+					echo $comma
+					setcomma=$FLAG_COMMA
+				else
+					echo ,
+				fi
+				echo $line
+			done
+			return $setcomma
+		fi
+	}
+}
+
+if [ $showVerbose -eq $FLAG_WRITECALCULATION ]; then
+	echo "{\"preCalculatedTimestamp\":"
+fi
+process_step
+if [ $showVerbose -eq $FLAG_WRITECALCULATION ]; then
+echo "}"
+fi

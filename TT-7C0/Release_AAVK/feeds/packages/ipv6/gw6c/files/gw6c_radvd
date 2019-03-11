@@ -1,0 +1,9 @@
+#!/bin/sh
+
+#When gw6c needs to reconnect to gogo6 server, it should kill the radvd process.
+
+radvd=$(ps | grep radvd | grep -v grep)
+
+if [ "$radvd" != "" ]; then
+        killall radvd
+fi

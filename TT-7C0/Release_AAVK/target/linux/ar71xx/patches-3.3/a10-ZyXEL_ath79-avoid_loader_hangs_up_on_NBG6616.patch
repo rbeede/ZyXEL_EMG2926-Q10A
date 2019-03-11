@@ -1,0 +1,17 @@
+Index: linux-3.3.8/arch/mips/ath79/common.c
+===================================================================
+--- linux-3.3.8.orig/arch/mips/ath79/common.c	2014-02-24 13:38:27.804349851 +0800
++++ linux-3.3.8/arch/mips/ath79/common.c	2014-02-24 19:04:09.625252853 +0800
+@@ -79,8 +79,12 @@
+ 		BUG();
+ 
+ 	spin_lock_irqsave(&ath79_device_reset_lock, flags);
++if (mask == AR71XX_RESET_FULL_CHIP) {
++	for (;;) ath79_reset_wr(reg, AR71XX_RESET_FULL_CHIP);
++} else {
+ 	t = ath79_reset_rr(reg);
+ 	ath79_reset_wr(reg, t | mask);
++}
+ 	spin_unlock_irqrestore(&ath79_device_reset_lock, flags);
+ }
+ EXPORT_SYMBOL_GPL(ath79_device_reset_set);

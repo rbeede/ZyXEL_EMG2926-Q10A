@@ -1,0 +1,88 @@
+#!/bin/sh
+
+. ${STREAMBOOST_CFGDIR:-/etc/appflow}/rc.appflow
+
+# number of pcaps to save and upload
+PCAP_NUM=4
+# if you're looking for a way to control the ultimate size of the pcap files,
+# this value is specified in woprdb as "fcap_file_size", defaulted to 1MB.
+BINARY="handle_incoming_pcaps"
+DISPLAY_NAME="flowcap"
+CRON_LINE="0 * * * * cull_incoming_pcaps"
+
+big_storage_for_pcaps() {
+	# for qa, put the pcaps on the USB disk so we can collect a ton
+	mkdir -p /pcaps
+	ln -s /pcaps $RUNDIR/pcaps
+	mkdir -p $INCOMING_DIR
+	mkdir -p $ENQUEUE_DIR
+	mkdir -p $UPLOADABLE_DIR
+	rm -f $INCOMING_DIR/*
+	rm -f $ENQUEUE_DIR/*
+	rm -f $UPLOADABLE_DIR/*
+}
+
+start() {
+	# initialize drflocs with PCAP_NUM available pcaps for capture
+	#big_storage_for_pcaps # for pre-release QA pcaps collection
+
+	add_to_cron "${CRON_LINE}"
+
+	[ ! -e "${FCAP_CMD_FIFO}" ] && {
+		mkfifo ${FCAP_CMD_FIFO}
+	}
+	mkdir -p $INCOMING_DIR
+	fsmon $INCOMING_DIR | handle_incoming_pcaps &
+
+	# note: cameo env. doesn't have the seq utility.  or expr.  or bc
+	local i=1
+	while [ "$i" -le "${PCAP_NUM}" ];
+	do
+		queue_to_drflocs $i.pcap
+		let i=i+1
+	done
+}
+
+status() {
+	local count=0
+	crontab -l 2>/dev/null | grep -qF "${CRON_LINE}"
+	if [ "$?" = "0" ]; then
+		STATUS="crontab ok"
+		let count++
+	else
+		STATUS="crontab not configured"
+	fi
+	PID_FSMON=$(pidof fsmon)
+	if [ -n "$PID_FSMON" ]; then
+		STATUS="${STATUS}, fsmon: $PID_FSMON"
+		let count++
+	else
+		STATUS="${STATUS}, fsmon down"
+	fi
+	PID_HIP=$(pidof handle_incoming_pcaps)
+	if [ -n "$PID_HIP" ]; then
+		STATUS="${STATUS}, handle_incoming_pcaps: $PID_HIP"
+		let count++
+	else
+		STATUS="${STATUS}, handle_incoming_pcaps down"
+	fi
+	if [ "$count" = "3" ]; then
+		echo "$DISPLAY_NAME is up ($STATUS)"
+	else
+		echo "$DISPLAY_NAME is down ($STATUS)"
+		return 1
+	fi
+}
+
+boot() {
+	start
+}
+
+stop() {
+	killall fsmon
+	killall handle_incoming_pcaps
+	crontab -l 2>/dev/null | grep -vF "${CRON_LINE}" | crontab -
+}
+
+action "$@"
+exit $?

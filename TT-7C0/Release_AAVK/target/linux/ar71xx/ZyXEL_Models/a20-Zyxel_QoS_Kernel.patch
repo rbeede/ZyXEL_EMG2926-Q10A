@@ -1,0 +1,1273 @@
+Index: linux-3.3.8/include/linux/netfilter/xt_ether.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.3.8/include/linux/netfilter/xt_ether.h	2014-12-03 17:44:14.974755195 +0800
+@@ -0,0 +1,23 @@
++#ifndef _XT_ETHER_H
++#define _XT_ETHER_H
++
++//#include <linux/types.h>
++#define XT_8021Q_MAX 4096
++#define XT_8021P_MAX 8
++
++#define XT_8021P_MATCH 0X01
++#define XT_8021Q_MATCH 0X02
++
++#define XT_8021P_INV_FLAG 0X01
++#define XT_8021Q_INV_FLAG 0X02
++
++/* match info */
++struct xt_ether_info {
++        __u16 vid;
++        __u8 pcp;
++        __u8 invflags;
++        __u8 mode;
++};
++
++#endif /* _XT_ETHER_H */
++
+Index: linux-3.3.8/include/linux/netfilter/xt_mac.h
+===================================================================
+--- linux-3.3.8.orig/include/linux/netfilter/xt_mac.h	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/include/linux/netfilter/xt_mac.h	2014-12-03 17:44:14.974755195 +0800
+@@ -1,8 +1,19 @@
+ #ifndef _XT_MAC_H
+ #define _XT_MAC_H
+ 
++#define XT_SRC_MAC 0x01
++#define XT_DST_MAC 0x02
++
++#define XT_SRC_MAC_INV_FLAG 0x01
++#define XT_DST_MAC_INV_FLAG 0x02
++
+ struct xt_mac_info {
+     unsigned char srcaddr[ETH_ALEN];
+-    int invert;
++    unsigned char dstaddr[ETH_ALEN];
++    unsigned char srcmask[ETH_ALEN];
++    unsigned char dstmask[ETH_ALEN];
++    __u8 bitmask;
++    __u8 invflags;
+ };
++
+ #endif /*_XT_MAC_H*/
+Index: linux-3.3.8/include/linux/netfilter/xt_mark.h
+===================================================================
+--- linux-3.3.8.orig/include/linux/netfilter/xt_mark.h	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/include/linux/netfilter/xt_mark.h	2014-12-03 17:44:14.979198640 +0800
+@@ -3,8 +3,19 @@
+ 
+ #include <linux/types.h>
+ 
++#define XT_MARK_SET 0X01
++#define XT_XMARK_SET 0X02
++#define XT_MARK_AND 0X04
++#define XT_MARK_OR 0X08
++#define XT_MARK_XOR 0X10
++#define XT_VTAG_SET 0X20
++
++
++#define XT_SET_MARK   (XT_XMARK_SET | XT_MARK_SET | XT_MARK_AND | XT_MARK_OR | XT_MARK_XOR)
++
+ struct xt_mark_tginfo2 {
+ 	__u32 mark, mask;
++	__u8 mode;	
+ };
+ 
+ struct xt_mark_mtinfo1 {
+Index: linux-3.3.8/include/linux/netfilter_bridge/ebt_ftos_t.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.3.8/include/linux/netfilter_bridge/ebt_ftos_t.h	2014-12-03 17:44:14.979198640 +0800
+@@ -0,0 +1,36 @@
++#ifndef __LINUX_BRIDGE_EBT_FTOS_T_H
++#define __LINUX_BRIDGE_EBT_FTOS_T_H
++
++struct ebt_ftos_t_info
++{
++	//int           ftos_set;
++	uint16_t ftos_set;
++	//unsigned char ftos;
++	uint8_t ftos;
++	// EBT_ACCEPT, EBT_DROP or EBT_CONTINUE or EBT_RETURN
++	int target;
++};
++//#define EBT_FTOS_TARGET "ftos"
++
++#define FTOS_TARGET       0x01
++#define FTOS_SETFTOS      0x02
++#define FTOS_WMMFTOS      0x04
++#define FTOS_DSCPFTOS	0x08
++#define FTOS_8021PFTOS	0x10
++#define FTOS_8021QFTOS    0x20
++
++#define DSCP_MARK_SHIFT   2
++
++/*
++#define DSCP_MASK_SHIFT   5
++#define ETHERPRI_MARK_SHIFT   12
++#define PRIO_LOC_NFMARK   16
++#define PRIO_LOC_NFMASK   7
++
++unsigned short  ftos_automap[2][8]={
++		{0,0,0,1,2,3,4,7}, //802.1p mapping to DSCP
++		{0,3,4,5,6,7,7,7},//DSCP mapping to 8021P
++};
++
++*/
++#endif
+Index: linux-3.3.8/include/linux/netfilter_bridge/ebt_ip.h
+===================================================================
+--- linux-3.3.8.orig/include/linux/netfilter_bridge/ebt_ip.h	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/include/linux/netfilter_bridge/ebt_ip.h	2014-12-03 17:44:14.979198640 +0800
+@@ -23,10 +23,75 @@
+ #define EBT_IP_PROTO 0x08
+ #define EBT_IP_SPORT 0x10
+ #define EBT_IP_DPORT 0x20
++
++#define EBT_IP_LENGTH 0X40
++#define EBT_IP_TCP_FLAGS 0X80
++#define EBT_IP_DHCP_OPT60 0x100
++#define EBT_IP_DHCP_OPT61 0x200
++#define EBT_IP_DHCP_OPT77 0x400
++#define EBT_IP_DHCP_OPT125 0x800
++#define EBT_IP_DSCP 0x1000
++
+ #define EBT_IP_MASK (EBT_IP_SOURCE | EBT_IP_DEST | EBT_IP_TOS | EBT_IP_PROTO |\
+- EBT_IP_SPORT | EBT_IP_DPORT )
++ EBT_IP_SPORT | EBT_IP_DPORT | EBT_IP_LENGTH | EBT_IP_TCP_FLAGS | EBT_IP_DHCP_OPT60|\
++ EBT_IP_DHCP_OPT61 | EBT_IP_DHCP_OPT77 | EBT_IP_DHCP_OPT125| EBT_IP_DSCP )
+ #define EBT_IP_MATCH "ip"
+ 
++
++/*Defined for DHCP Option*/
++#define DHCP_OPTION_MAX_LEN 556 /* IP header(20) + UDP header(8)+ DHCP header(528) */
++
++#define DHCP_PADDING				0x00      
++#define DHCP_VENDOR				0x3c	/*option 60 */
++#define DHCP_CLIENT_ID				0x3d	/*option 61 */
++#define DHCP_USER_CLASS_ID			0x4d	/*option 77 */
++#define DHCP_VENDOR_IDENTIFYING	0x7d	/*option 125 */
++#define DHCP_OPTION_OVER			0x34
++#define DHCP_END					0xFF
++
++#define OPTION_FIELD		0
++#define FILE_FIELD		1
++#define SNAME_FIELD		2
++
++
++
++/* miscellaneous defines */
++#define OPT_CODE 0
++#define OPT_LEN 1
++#define OPT_DATA 2
++
++#define OPTION_MAC_ENTRY 64
++
++#define False 0
++#define True 1
++
++/* each option data shift length */
++#define DHCP_OPT_LEN_FIELD_LEN  1
++#define DHCP_OPT125_ENTERPRISE_NUM_LEN 4
++#define DHCP_OPT125_DATA_SHIFT DHCP_OPT125_ENTERPRISE_NUM_LEN + DHCP_OPT_LEN_FIELD_LEN 
++struct cfgopt{
++	uint8_t len;
++	char cfgdata[254];
++};
++struct dhcpMessage {
++	uint8_t op;
++	uint8_t htype;
++	uint8_t hlen;
++	uint8_t hops;
++	uint32_t xid;
++	uint16_t secs;
++	uint16_t flags;
++	uint32_t ciaddr;
++	uint32_t yiaddr;
++	uint32_t siaddr;
++	uint32_t giaddr;
++	uint8_t chaddr[16];
++	uint8_t sname[64];
++	uint8_t file[128];
++	uint32_t cookie;
++	uint8_t options[308]; /* 312 - cookie */
++};
++
+ /* the same values are used for the invflags */
+ struct ebt_ip_info {
+ 	__be32 saddr;
+@@ -34,11 +99,20 @@
+ 	__be32 smsk;
+ 	__be32 dmsk;
+ 	__u8  tos;
++	uint8_t  dscp; 	
+ 	__u8  protocol;
+-	__u8  bitmask;
+-	__u8  invflags;
++	__u16  bitmask;
++	__u16  invflags;
++	uint8_t  tcp_flg_mask;
++	uint8_t  tcp_flg_cmp;	
+ 	__u16 sport[2];
+ 	__u16 dport[2];
++	uint16_t length[2];
++	struct cfgopt cfg60; //option 60
++   	struct cfgopt cfg61; //option 61
++	struct cfgopt cfg77; //option 77
++	struct cfgopt cfg125; //option 125
++	char SrcMacArray[OPTION_MAC_ENTRY][ETH_ALEN];	
+ };
+ 
+ #endif
+Index: linux-3.3.8/include/linux/netfilter_bridge/ebt_mark_t.h
+===================================================================
+--- linux-3.3.8.orig/include/linux/netfilter_bridge/ebt_mark_t.h	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/include/linux/netfilter_bridge/ebt_mark_t.h	2014-12-03 17:44:14.979198640 +0800
+@@ -12,6 +12,7 @@
+ #define MARK_OR_VALUE  (0xffffffe0)
+ #define MARK_AND_VALUE (0xffffffd0)
+ #define MARK_XOR_VALUE (0xffffffc0)
++#define VTAG_SET_VALUE (0xffffffb0)
+ 
+ struct ebt_mark_t_info {
+ 	unsigned long mark;
+Index: linux-3.3.8/include/linux/skbuff.h
+===================================================================
+--- linux-3.3.8.orig/include/linux/skbuff.h	2014-12-03 17:44:14.887044134 +0800
++++ linux-3.3.8/include/linux/skbuff.h	2014-12-03 17:44:14.979198640 +0800
+@@ -474,6 +474,12 @@
+ 
+ 	__u16			vlan_tci;
+ 
++#if 1 //CONFIG_ZyXEL_QOS
++	__u32			vtag;
++	__u32			vtag_save;
++	int				iifindex;//ZyXEL, For ZLD Session Matching 
++#endif
++
+ 	sk_buff_data_t		transport_header;
+ 	sk_buff_data_t		network_header;
+ 	sk_buff_data_t		mac_header;
+Index: linux-3.3.8/net/bridge/netfilter/ebtables.c
+===================================================================
+--- linux-3.3.8.orig/net/bridge/netfilter/ebtables.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/bridge/netfilter/ebtables.c	2014-12-03 17:44:14.979198640 +0800
+@@ -136,13 +136,21 @@
+ 		ethproto = htons(ETH_P_8021Q);
+ 	else
+ 		ethproto = h->h_proto;
+-
++	
++	/* In order to filter vlan ID by skb->vtag_save	*/
+ 	if (e->bitmask & EBT_802_3) {
+ 		if (FWINV2(ntohs(ethproto) >= 1536, EBT_IPROTO))
+ 			return 1;
+-	} else if (!(e->bitmask & EBT_NOPROTO) &&
+-	   FWINV2(e->ethproto != ethproto, EBT_IPROTO))
+-		return 1;
++	} else if (!(e->bitmask & EBT_NOPROTO))
++	{
++		if(e->ethproto == ETH_P_8021Q && h->h_proto!=ETH_P_8021Q) {/*If protocol type of rule is 802.1q and packet header is not 802.1q*/
++			if(FWINV2(!(skb->vtag_save), EBT_IPROTO))
++				return 1;
++		}else{
++			if(FWINV2(e->ethproto != h->h_proto, EBT_IPROTO))
++				return 1;
++		}
++	}
+ 
+ 	if (FWINV2(ebt_dev_check(e->in, in), EBT_IIN))
+ 		return 1;
+Index: linux-3.3.8/net/bridge/netfilter/ebt_ftos.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.3.8/net/bridge/netfilter/ebt_ftos.c	2014-12-03 17:44:14.979198640 +0800
+@@ -0,0 +1,210 @@
++/*
++ *	ebt_ftos
++ *
++ *	Authors:
++ *
++ *	January, 2014
++ *
++ */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <net/dsfield.h>
++#include <linux/if_vlan.h>
++
++//#include <net/checksum.h>
++#include <linux/netfilter/x_tables.h>
++#include <linux/netfilter_bridge/ebtables.h>
++#include <linux/netfilter_bridge/ebt_ftos_t.h>
++
++static unsigned int 
++ebt_ftos_tg(struct sk_buff *skb, const struct xt_action_param *par)
++{
++	const struct ebt_ftos_t_info *ftosinfo = par->targinfo;
++
++	if (ftosinfo->ftos_set & FTOS_SETFTOS) {
++
++		/*f not IP header, do nothing. */
++		if (skb->protocol == htons(ETH_P_IP)){
++			if((ip_hdr(skb))==NULL){
++				return ftosinfo->target;
++			}
++		}
++		/* if VLAN frame, we need to get correct network header */
++		else if (skb->protocol == __constant_htons(ETH_P_8021Q)){
++
++			if((vlan_eth_hdr(skb)->h_vlan_encapsulated_proto)==htons(ETH_P_IP)){
++				if((ip_hdr(skb))==NULL){
++					return ftosinfo->target;
++				}
++			}
++		}
++		else
++		{
++			return ftosinfo->target;
++		}
++
++		u_int8_t tos = ipv4_get_dsfield(ip_hdr(skb));
++
++		if (tos != ftosinfo->ftos){
++
++			if (!skb_make_writable(skb, sizeof(struct iphdr))){
++				return EBT_DROP;
++			}
++
++			ipv4_change_dsfield(ip_hdr(skb), 0, ftosinfo->ftos);
++
++			//printk("ebt_target_ftos:FTOS_SETFTOS  0x%08x .....\n", ftosinfo->ftos);
++
++		}
++
++
++	}else if (ftosinfo->ftos_set & FTOS_DSCPFTOS) {
++
++		/* if not IP header, do nothing. */
++		if (skb->protocol == htons(ETH_P_IP)){
++			if((ip_hdr(skb))==NULL){
++				return ftosinfo->target;
++			}
++		}
++		/* if VLAN frame, we need to get correct network header */
++		else if (skb->protocol == __constant_htons(ETH_P_8021Q)){
++
++			if((vlan_eth_hdr(skb)->h_vlan_encapsulated_proto)==htons(ETH_P_IP)){
++				if((ip_hdr(skb))==NULL){
++					return ftosinfo->target;
++				}
++			}
++		}
++		else
++		{
++			return ftosinfo->target;
++		}
++
++		u_int8_t dscp = ipv4_get_dsfield(ip_hdr(skb)) >> DSCP_MARK_SHIFT;
++
++		//printk("ebt_target_ftos:current dscp fild   0x%08x .....\n", dscp);
++
++
++		if (dscp != ftosinfo->ftos) {
++
++			if (!skb_make_writable(skb, sizeof(struct iphdr)))
++				return EBT_DROP;
++
++			ipv4_change_dsfield(ip_hdr(skb), (__u8)(~DSCP_MARK_SHIFT),ftosinfo->ftos << DSCP_MARK_SHIFT);
++
++			//printk("ebt_target_ftos:FTOS_DSCPFTOS  0x%08x .....\n", ftosinfo->ftos);
++
++			//dscp = ipv4_get_dsfield(ip_hdr(skb)) >> DSCP_MARK_SHIFT;
++
++			//printk("ebt_target_ftos:modifity dscp fild   0x%08x .....\n", dscp);
++
++		}
++
++
++	}
++
++	return ftosinfo->target;
++
++}
++
++
++
++
++/*
++static int ebt_target_ftos_check(const char *tablename, unsigned int hookmask,
++   const struct ebt_entry *e, void *data, unsigned int datalen)
++{
++	struct ebt_ftos_t_info *info = (struct ebt_ftos_t_info *)data;
++
++	if (datalen != sizeof(struct ebt_ftos_t_info))
++		return -EINVAL;
++	if (BASE_CHAIN && info->target == EBT_RETURN)
++		return -EINVAL;
++	CLEAR_BASE_CHAIN_BIT;
++	if (INVALID_TARGET)
++		return -EINVAL;
++	return 0;
++}
++*/
++
++
++//static int ebt_ftos_mt_check(const struct xt_mtchk_param *par)
++static bool ebt_ftos_tg_check(const struct xt_tgchk_param *par)
++{
++	const struct ebt_ftos_t_info *info = par->targinfo ;
++
++	if (BASE_CHAIN && info->target == EBT_RETURN)
++		return false;
++
++	//CLEAR_BASE_CHAIN_BIT;
++	if (INVALID_TARGET)
++		return false;
++
++	return true;
++}
++
++/*
++static struct ebt_target ftos_target =
++{
++        .name           = EBT_FTOS_TARGET,
++        .target         = ebt_target_ftos,
++        .check          = ebt_target_ftos_check,
++        .me             = THIS_MODULE,
++};
++
++static int __init init(void)
++{
++	return ebt_register_target(&ftos_target);
++}
++
++
++static void __exit fini(void)
++{
++	ebt_unregister_target(&ftos_target);
++}
++*/
++
++//static struct xt_match ebt_ftos_mt_reg __read_mostly = {
++static struct xt_target ebt_ftos_tg_reg __read_mostly = {
++
++	.name		= "ftos",
++	.revision	= 0,
++	.family		= NFPROTO_BRIDGE,
++	//.match		= ebt_ftos_mt,
++	.target		= ebt_ftos_tg,
++	//.checkentry	= ebt_ftos_mt_check,
++	.checkentry	= ebt_ftos_tg_check,
++//	.matchsize	= sizeof(struct ebt_ftos_t_info),
++	.targetsize	= sizeof(struct ebt_ftos_t_info),
++	.me		= THIS_MODULE,
++};
++
++static int __init ebt_ftos_init(void)
++{
++	//return xt_register_match(&ebt_ftos_mt_reg);
++	int ret;
++	ret = xt_register_target(&ebt_ftos_tg_reg);
++
++	if(ret == 0)
++		//printk(KERN_INFO "ebt_ftos registered\n");
++
++	return ret;
++}
++
++static void __exit ebt_ftos_fini(void)
++{
++	//xt_unregister_match(&ebt_ftos_mt_reg);
++	xt_unregister_target(&ebt_ftos_tg_reg);
++}
++
++
++
++
++//module_init(init);
++//module_exit(fini);
++module_init(ebt_ftos_init);
++module_exit(ebt_ftos_fini);
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("");
++MODULE_DESCRIPTION("Target to overwrite the full TOS byte in IP header");
+Index: linux-3.3.8/net/bridge/netfilter/ebt_ip.c
+===================================================================
+--- linux-3.3.8.orig/net/bridge/netfilter/ebt_ip.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/bridge/netfilter/ebt_ip.c	2014-12-03 17:44:14.979198640 +0800
+@@ -13,17 +13,211 @@
+  */
+ #include <linux/ip.h>
+ #include <net/ip.h>
++#include <linux/tcp.h>
++#include <linux/udp.h>
+ #include <linux/in.h>
+ #include <linux/module.h>
+ #include <linux/netfilter/x_tables.h>
+ #include <linux/netfilter_bridge/ebtables.h>
+ #include <linux/netfilter_bridge/ebt_ip.h>
+ 
++static unsigned char *get_DhcpOption(struct dhcpMessage *packet, int code);
++
++static unsigned char *get_DhcpOption(struct dhcpMessage *packet, int code);
++
++
+ struct tcpudphdr {
+ 	__be16 src;
+ 	__be16 dst;
+ };
+ 
++/* get an option with bounds checking (warning, not aligned). */
++static unsigned char *get_DhcpOption(struct dhcpMessage *packet, int code)
++{
++        int i, length;
++        unsigned char *optionptr;
++        int over = 0, done = 0, curr = OPTION_FIELD;
++
++        optionptr = packet->options;
++        i = 0;
++        length = 308;
++
++        while (!done) {
++                if (i >= length){
++                        //LOG(LOG_WARNING, err);
++                        return NULL;
++                }
++                if (optionptr[i + OPT_CODE] == code) {
++                        if (i + 1 + optionptr[i + OPT_LEN] >= length) {
++                                //LOG(LOG_WARNING, err);
++                                return NULL;
++                        }
++                        return optionptr + i + 2;
++                }
++                switch (optionptr[i + OPT_CODE]) {
++                case DHCP_PADDING:
++                        i++;
++                        break;
++                case DHCP_OPTION_OVER:
++                        if (i + 1 + optionptr[i + OPT_LEN] >= length) {
++                                //LOG(LOG_WARNING, err);
++                                return NULL;
++                        }
++                        over = optionptr[i + 3];
++                        i += optionptr[OPT_LEN] + 2;
++                        break;
++                case DHCP_END:
++                        if (curr == OPTION_FIELD && over & FILE_FIELD) {
++                                optionptr = packet->file;
++                                i = 0;
++                                length = 128;
++                                curr = FILE_FIELD;
++                        } else if (curr == FILE_FIELD && over & SNAME_FIELD) {
++                                optionptr = packet->sname;
++                                i = 0;
++                                length = 64;
++                                curr = SNAME_FIELD;
++                        } else done = 1;
++                        break;
++                default:
++                        i += optionptr[OPT_LEN + i] + 2;
++                }
++        }
++        return NULL;
++}
++
++static int cmp_option60(char *optval60, const struct ebt_ip_info *info)
++{
++	int len;
++	char optionData[254];
++	const struct cfgopt *cfgptr = NULL;
++
++	if (optval60 == NULL) 
++		return False;
++
++	cfgptr = &(info->cfg60);
++
++	/* Compare option data length */
++	len = (int)(*((unsigned char *)optval60 - 1));
++	if(len != cfgptr->len)
++		return False;
++	
++	/* Compare option data content */	
++	memset(optionData, 0, 254);
++	strncpy(optionData, optval60, len);
++	//printk("cmp_option60  cfgptr->cfgdata  %s  optionData %s \n",cfgptr->cfgdata, optionData);
++	if(strcmp(cfgptr->cfgdata, optionData) == 0)
++	{
++		//printk("option60 match \n");
++		return True;
++	}	
++	return False;
++}
++
++
++/* If match, return value is 0 */
++static int cmp_option61(char *optval61, const struct ebt_ip_info *info)
++{
++	int len;
++	char optionData[254];
++	const struct cfgopt *cfgptr = NULL;
++
++
++	if (optval61 == NULL) 
++		return False;
++
++	cfgptr = &(info->cfg61);
++
++	/* Compare option data length */
++	len = (int)(*((unsigned char *)optval61 - 1));
++
++	if(len != cfgptr->len)
++		return False;
++	
++	/* Compare option data content */	
++	memset(optionData, 0, 254);
++	memcpy(optionData, optval61, len);
++
++	if(!memcmp(cfgptr->cfgdata, optionData, len))
++		return True;
++	
++	return False;
++}
++
++/* If match, return value is 0 */
++static int cmp_option77(char *optval77, const struct ebt_ip_info *info)
++{
++	uint8_t len = 0, total_len = 0, current_len = 0;
++	char optionData[254];
++	const struct cfgopt *cfgptr = NULL;
++
++
++	if (optval77 == NULL) 
++		return False;
++
++	cfgptr = &(info->cfg77);
++
++	/* Record option 77 total length */
++	total_len = (uint8_t)(*((unsigned char *)optval77 - 1));
++	
++	while(total_len != current_len){
++		len = (uint8_t)*((unsigned char *)optval77);	/* For option 77, one data length */
++
++		if(len != cfgptr->len) 
++			return False;
++		
++		/* Compare option data content */	
++		memset(optionData, 0, 254);
++		memcpy(optionData, optval77 + DHCP_OPT_LEN_FIELD_LEN, len );
++		//printk(" cmp_option77 optionData = %s , cfgptr->cfgdata = %s \n  ",optionData,cfgptr->cfgdata);
++		if(!memcmp(cfgptr->cfgdata, optionData, len))
++			return True;
++
++		/* shift to next vendor class data in option 125 */
++		current_len += (len + DHCP_OPT_LEN_FIELD_LEN);
++		optval77 += (len + DHCP_OPT_LEN_FIELD_LEN);
++	}
++	return False;
++}
++
++/* If match, return value is 0 */
++static int cmp_option125(char *optval125, const struct ebt_ip_info *info)
++{
++	int len = 0,  total_len = 0, current_len = 0;
++	char optionData[254];
++	const struct cfgopt *cfgptr = NULL;
++
++	if (optval125 == NULL) 
++		return False;
++
++	cfgptr = &(info->cfg125);
++	
++	/* Record option 125 total length */
++	total_len = (int)(*((unsigned char *)optval125 - 1));
++
++	while(total_len != current_len){
++
++		len = (int)(*((unsigned char *)optval125 +DHCP_OPT125_ENTERPRISE_NUM_LEN));	/* For option 125, one data length */
++
++	
++		if(len + DHCP_OPT125_DATA_SHIFT != cfgptr->len) /* Add 5 is for enterprise-number(4 bytes) and data length represent(1 byte) */
++			return False;
++		
++		/* Compare option data content */	
++		memset(optionData, 0, 254);
++		memcpy(optionData, optval125, len + DHCP_OPT125_DATA_SHIFT);
++
++
++		if(!memcmp(cfgptr->cfgdata, optionData, len + DHCP_OPT125_DATA_SHIFT))
++			return True;
++
++		/* shift to next vendor class data in option 125 */
++		current_len += (len + DHCP_OPT125_DATA_SHIFT);
++		optval125 += (len + DHCP_OPT125_DATA_SHIFT);
++	}
++	return False;
++}
++
+ static bool
+ ebt_ip_mt(const struct sk_buff *skb, struct xt_action_param *par)
+ {
+@@ -32,13 +226,17 @@
+ 	struct iphdr _iph;
+ 	const struct tcpudphdr *pptr;
+ 	struct tcpudphdr _ports;
+-
++	struct tcphdr _tcph, *th;
++	
+ 	ih = skb_header_pointer(skb, 0, sizeof(_iph), &_iph);
+ 	if (ih == NULL)
+ 		return false;
+ 	if (info->bitmask & EBT_IP_TOS &&
+ 	   FWINV(info->tos != ih->tos, EBT_IP_TOS))
+ 		return false;
++	if (info->bitmask & EBT_IP_DSCP &&
++	   FWINV(info->dscp != (ih->tos & 0xFC), EBT_IP_DSCP))
++		return false;		
+ 	if (info->bitmask & EBT_IP_SOURCE &&
+ 	   FWINV((ih->saddr & info->smsk) !=
+ 	   info->saddr, EBT_IP_SOURCE))
+@@ -47,16 +245,24 @@
+ 	   FWINV((ih->daddr & info->dmsk) !=
+ 	   info->daddr, EBT_IP_DEST))
+ 		return false;
++	if(info->bitmask & EBT_IP_LENGTH) { /* IP Length */
++		u16 len = ntohs(ih->tot_len);
++			if (FWINV(len < info->length[0] ||
++					  len > info->length[1],
++					  EBT_IP_LENGTH))
++		//return EBT_NOMATCH;
++		return false;
++	}		
+ 	if (info->bitmask & EBT_IP_PROTO) {
+ 		if (FWINV(info->protocol != ih->protocol, EBT_IP_PROTO))
+ 			return false;
+ 		if (!(info->bitmask & EBT_IP_DPORT) &&
+-		    !(info->bitmask & EBT_IP_SPORT))
++		    !(info->bitmask & EBT_IP_SPORT) &&
++		    !(info->bitmask & EBT_IP_TCP_FLAGS))
+ 			return true;
+ 		if (ntohs(ih->frag_off) & IP_OFFSET)
+ 			return false;
+-		pptr = skb_header_pointer(skb, ih->ihl*4,
+-					  sizeof(_ports), &_ports);
++		pptr = skb_header_pointer(skb, ih->ihl*4,sizeof(_ports), &_ports);
+ 		if (pptr == NULL)
+ 			return false;
+ 		if (info->bitmask & EBT_IP_DPORT) {
+@@ -73,7 +279,136 @@
+ 				  EBT_IP_SPORT))
+ 			return false;
+ 		}
++		if (info->bitmask & EBT_IP_TCP_FLAGS) {
++			th = skb_header_pointer(skb, ih->ihl*4, sizeof(_tcph), &_tcph);
++			if (th == NULL) {
++				/* We've been asked to examine this packet, and we
++				   can't.  Hence, no choice but to drop. */
++				//printk("Dropping evil TCP offset=0 tinygram.\n");
++				return 0;
++		}
++		if (FWINV((((unsigned char *)th)[13] & info->tcp_flg_mask) != info->tcp_flg_cmp, EBT_IP_TCP_FLAGS))
++			return false;
++		}		
+ 	}
++	if((info->bitmask & EBT_IP_DHCP_OPT60)||(info->bitmask & EBT_IP_DHCP_OPT61)||
++			(info->bitmask & EBT_IP_DHCP_OPT77)||(info->bitmask & EBT_IP_DHCP_OPT125))
++	{
++		  unsigned char payload[DHCP_OPTION_MAX_LEN];
++		  struct dhcpMessage *dhcpPtr;
++		  //struct iphdr _iph, *ih;
++		  //struct tcpudphdr _ports, *pptr;
++		  int 	skb_data_len=0, i, LastEntry = -1;
++		  bool OptMatch = False;
++		  char TmpMac[ETH_ALEN];
++
++		  memset(TmpMac , 0, sizeof(TmpMac));
++
++		  //ih = skb_header_pointer(skb, 0, sizeof(_iph), &_iph);
++		  //if (ih == NULL)
++			  //return EBT_NOMATCH;
++			  //return false;
++
++		  pptr = skb_header_pointer(skb, ih->ihl*4,  sizeof(_ports), &_ports);
++		  if (pptr == NULL)
++			  return false;
++
++
++		  //printk("DHCP cmp\n ");
++		  u32 src = ntohs(pptr->src);
++		  u32 dst = ntohs(pptr->dst);
++			  
++		  /* match dhcp port(67 or 68)*/
++		  if(src!=67 && src!=68 && dst!=67 && dst!=68){
++			 // printk("dhcp option compare src mac\n ");
++
++			  for(i=0;i<OPTION_MAC_ENTRY;i++){
++				  if(!compare_ether_addr(eth_hdr(skb)->h_source, info->SrcMacArray[i])){
++					  //return EBT_MATCH;
++					  return true;
++				  }
++				  if(!memcmp(TmpMac,info->SrcMacArray[i],ETH_ALEN)){
++					  break;
++				  }
++			  }
++			  /*
++			    *If packet is not a dhcp packet and to match recored MAC.
++			    */
++			  //return EBT_NOMATCH;
++			  return false;
++		  }else{	
++			  /*
++			    *If packet is dhcp packet
++			    */
++
++
++			  memset(payload, 0, sizeof(payload));
++			  skb_data_len = skb->len;
++
++			  if (skb_copy_bits(skb, 0, payload, skb_data_len))
++			  {
++				  printk("Copy packet is failed by ebtables of filtering DHCP Option\n\r");
++			  }
++
++			  dhcpPtr = (struct dhcpMessage *)(payload + sizeof(struct iphdr) + sizeof(struct udphdr));
++			  
++			  if(info->bitmask & EBT_IP_DHCP_OPT60){
++				  char *opt60 = get_DhcpOption(dhcpPtr, DHCP_VENDOR);
++				  //printk("option 60  DHCP_VENDOR \n ");
++				  if(cmp_option60(opt60, info)^ !!(info->invflags & EBT_IP_DHCP_OPT60))
++					  OptMatch = True;
++			  }
++
++			  if(info->bitmask & EBT_IP_DHCP_OPT61){
++				  char *opt61 = get_DhcpOption(dhcpPtr, DHCP_CLIENT_ID);
++				  if(cmp_option61(opt61, info)^ !!(info->invflags & EBT_IP_DHCP_OPT61))
++					  OptMatch = True;
++			  }
++
++			  if(info->bitmask & EBT_IP_DHCP_OPT77){
++				  char *opt77 = get_DhcpOption(dhcpPtr, DHCP_USER_CLASS_ID);
++				  if(cmp_option77(opt77, info)^ !!(info->invflags & EBT_IP_DHCP_OPT77))
++					  OptMatch = True;
++			  }
++
++			  if(info->bitmask & EBT_IP_DHCP_OPT125){
++				  char *opt125 = get_DhcpOption(dhcpPtr, DHCP_VENDOR_IDENTIFYING);
++				  if(cmp_option125(opt125, info)^ !!(info->invflags & EBT_IP_DHCP_OPT125))
++					  OptMatch = True;
++			  }
++
++    //				printk("\nOptMatch is %d\n",OptMatch);
++
++			  if(OptMatch==True){
++				  //printk(" DHCP option OptMatch==True \n  ");
++				  for(i=0;i<OPTION_MAC_ENTRY;i++){						
++					  if(!memcmp(TmpMac,info->SrcMacArray[i],ETH_ALEN)){
++						  memcpy(info->SrcMacArray[i], eth_hdr(skb)->h_source, ETH_ALEN);
++						  break;
++					  }else if(!memcmp(eth_hdr(skb)->h_source, info->SrcMacArray[i], ETH_ALEN)){
++						  break;
++					  }
++				  }
++			  }else{
++				  //printk(" DHCP option OptMatch==False \n  ");
++				  for(i=0;i<OPTION_MAC_ENTRY;i++){						
++					  if(!memcmp(TmpMac,info->SrcMacArray[i],ETH_ALEN)){
++						  if(LastEntry!=-1){
++							  memcpy( info->SrcMacArray[LastEntry],  info->SrcMacArray[i-1], ETH_ALEN);
++							  memset(info->SrcMacArray[i-1], 0, ETH_ALEN);
++						  }
++						  break;
++					  }else if(!memcmp(eth_hdr(skb)->h_source, info->SrcMacArray[i], ETH_ALEN)){
++						  LastEntry = i;//Record clear entry							
++					  }
++				  }
++		  
++				  //return EBT_NOMATCH;
++				  return false;
++			  }
++		  }
++		
++	}	
+ 	return true;
+ }
+ 
+@@ -101,6 +436,8 @@
+ 		return -EINVAL;
+ 	if (info->bitmask & EBT_IP_SPORT && info->sport[0] > info->sport[1])
+ 		return -EINVAL;
++	if (info->bitmask & EBT_IP_LENGTH && info->length[0] > info->length[1])
++		return -EINVAL;			
+ 	return 0;
+ }
+ 
+Index: linux-3.3.8/net/bridge/netfilter/ebt_mark.c
+===================================================================
+--- linux-3.3.8.orig/net/bridge/netfilter/ebt_mark.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/bridge/netfilter/ebt_mark.c	2014-12-03 17:44:14.979198640 +0800
+@@ -30,8 +30,10 @@
+ 		skb->mark |= info->mark;
+ 	else if (action == MARK_AND_VALUE)
+ 		skb->mark &= info->mark;
+-	else
++	else if (action == MARK_XOR_VALUE)
+ 		skb->mark ^= info->mark;
++	else if (action == VTAG_SET_VALUE)
++		skb->vtag = (unsigned short)(info->mark);
+ 
+ 	return info->target | ~EBT_VERDICT_BITS;
+ }
+@@ -48,7 +50,8 @@
+ 		return -EINVAL;
+ 	tmp = info->target & ~EBT_VERDICT_BITS;
+ 	if (tmp != MARK_SET_VALUE && tmp != MARK_OR_VALUE &&
+-	    tmp != MARK_AND_VALUE && tmp != MARK_XOR_VALUE)
++	    tmp != MARK_AND_VALUE && tmp != MARK_XOR_VALUE &&
++            tmp != VTAG_SET_VALUE)
+ 		return -EINVAL;
+ 	return 0;
+ }
+Index: linux-3.3.8/net/bridge/netfilter/ebt_vlan.c
+===================================================================
+--- linux-3.3.8.orig/net/bridge/netfilter/ebt_vlan.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/bridge/netfilter/ebt_vlan.c	2014-12-03 17:44:14.979198640 +0800
+@@ -52,13 +52,21 @@
+ 	} else {
+ 		const struct vlan_hdr *fp;
+ 		struct vlan_hdr _frame;
+-
+-		fp = skb_header_pointer(skb, 0, sizeof(_frame), &_frame);
+-		if (fp == NULL)
+-			return false;
+-
+-		TCI = ntohs(fp->h_vlan_TCI);
+-		encap = fp->h_vlan_encapsulated_proto;
++		
++		if(skb->vtag_save==0)
++		{
++		      fp = skb_header_pointer(skb, 0, sizeof(_frame), &_frame);
++		      if (fp == NULL)
++			      return false;
++
++		      TCI = ntohs(fp->h_vlan_TCI);
++		      encap = fp->h_vlan_encapsulated_proto;
++		}else
++		{
++		    TCI = skb->vtag_save;
++		    id = TCI & VLAN_VID_MASK;
++		    prio = (TCI >> 13) & 0x7;
++		}		
+ 	}
+ 
+ 	/* Tag Control Information (TCI) consists of the following elements:
+Index: linux-3.3.8/net/bridge/netfilter/Kconfig
+===================================================================
+--- linux-3.3.8.orig/net/bridge/netfilter/Kconfig	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/bridge/netfilter/Kconfig	2014-12-03 17:44:14.979198640 +0800
+@@ -177,6 +177,15 @@
+ 	  source address of frames.
+ 
+ 	  To compile it as a module, choose M here.  If unsure, say N.
++
++config BRIDGE_EBT_FTOS_T
++	tristate "ebt: ftos target support"
++	help
++	  This option adds the ftos target, which allows altering the full TOS byte
++	  in IP frames.
++
++	  To compile it as a module, choose M here.  If unsure, say N.
++
+ #
+ # watchers
+ #
+Index: linux-3.3.8/net/bridge/netfilter/Makefile
+===================================================================
+--- linux-3.3.8.orig/net/bridge/netfilter/Makefile	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/bridge/netfilter/Makefile	2014-12-03 17:44:14.982549277 +0800
+@@ -27,6 +27,7 @@
+ obj-$(CONFIG_BRIDGE_EBT_DNAT) += ebt_dnat.o
+ obj-$(CONFIG_BRIDGE_EBT_REDIRECT) += ebt_redirect.o
+ obj-$(CONFIG_BRIDGE_EBT_SNAT) += ebt_snat.o
++obj-$(CONFIG_BRIDGE_EBT_FTOS_T) += ebt_ftos.o
+ 
+ # watchers
+ obj-$(CONFIG_BRIDGE_EBT_LOG) += ebt_log.o
+Index: linux-3.3.8/net/core/skbuff.c
+===================================================================
+--- linux-3.3.8.orig/net/core/skbuff.c	2014-12-03 17:44:14.911554385 +0800
++++ linux-3.3.8/net/core/skbuff.c	2014-12-03 17:44:14.982549277 +0800
+@@ -846,6 +846,11 @@
+ #endif
+ 	new->vlan_tci		= old->vlan_tci;
+ 
++#if 1 //CONFIG_ZyXEL_QOS
++	new->vtag = old->vtag;
++	new->vtag_save = old->vtag_save;
++#endif
++
+ 	skb_copy_secmark(new, old);
+ }
+ 
+Index: linux-3.3.8/net/netfilter/Kconfig
+===================================================================
+--- linux-3.3.8.orig/net/netfilter/Kconfig	2014-12-03 17:44:14.922619516 +0800
++++ linux-3.3.8/net/netfilter/Kconfig	2014-12-03 17:44:14.982549277 +0800
+@@ -803,6 +803,14 @@
+ 
+ 	To compile it as a module, choose M here. If unsure, say N.
+ 
++config NETFILTER_XT_MATCH_ETHER
++        tristate '"ether" match support'
++        depends on NETFILTER_ADVANCED
++        help
++          This match extension allows you to match a option of 802.1Q/802.1P field.
++
++          To compile it as a module, choose M here.  If unsure, say N.
++
+ config NETFILTER_XT_MATCH_ESP
+ 	tristate '"esp" match support'
+ 	depends on NETFILTER_ADVANCED
+Index: linux-3.3.8/net/netfilter/Makefile
+===================================================================
+--- linux-3.3.8.orig/net/netfilter/Makefile	2014-12-03 17:44:14.922619516 +0800
++++ linux-3.3.8/net/netfilter/Makefile	2014-12-03 17:44:14.982549277 +0800
+@@ -82,6 +82,7 @@
+ obj-$(CONFIG_NETFILTER_XT_MATCH_DEVGROUP) += xt_devgroup.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_DSCP) += xt_dscp.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_ECN) += xt_ecn.o
++obj-$(CONFIG_NETFILTER_XT_MATCH_ETHER) += xt_ether.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_ESP) += xt_esp.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_HASHLIMIT) += xt_hashlimit.o
+ obj-$(CONFIG_NETFILTER_XT_MATCH_HELPER) += xt_helper.o
+Index: linux-3.3.8/net/netfilter/xt_ether.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ linux-3.3.8/net/netfilter/xt_ether.c	2014-12-03 17:44:14.982549277 +0800
+@@ -0,0 +1,129 @@
++/* IP tables module for matching the value of the 802.1Q/802.1P field
++ *
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License version 2 as
++ * published by the Free Software Foundation.
++ */
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++#include <linux/module.h>
++#include <linux/skbuff.h>
++//#include <linux/ip.h>
++//#include <linux/ipv6.h>
++#include <linux/if_ether.h>
++#include <linux/if_vlan.h>
++
++
++#include <linux/netfilter/x_tables.h>
++#include <linux/netfilter/xt_ether.h>
++
++MODULE_AUTHOR("non");
++MODULE_DESCRIPTION("Xtables: 802.1P/802.1Q field match");
++MODULE_LICENSE("GPL");
++MODULE_ALIAS("ipt_ether");
++
++static bool ether_mt(const struct sk_buff *skb, struct xt_action_param *par)
++{
++        const struct xt_ether_info *info = par->matchinfo;
++        const struct vlan_hdr *fp;
++        struct vlan_hdr _frame;
++
++        unsigned short TCI;     /* Whole TCI, given from parsed frame */
++        unsigned short vid;      /* VLAN ID, given from frame TCI */
++        unsigned char prio;     /* user_priority, given from frame TCI */
++	bool ret = true;
++
++	//printk("%s: 1  skb->protocol %4hx  ETH_P_8021Q %4hx htons(ETH_P_8021Q)  %4hx  skb->vtag_save %4hx   info->vid %d   info->pcp %d \n",__FUNCTION__, skb->protocol, ETH_P_8021Q, htons(ETH_P_8021Q) ,skb->vtag_save , info->vid , info->pcp );
++
++	if(skb->vtag_save==0){
++	        if (skb->protocol == htons(ETH_P_8021Q)){
++
++		        //printk("%s: 2 skb->protocol %4hx \n",__FUNCTION__, skb->protocol );
++
++			fp = skb_header_pointer(skb, 0, sizeof(_frame), &_frame);
++			if (fp == NULL){
++	                        //printk("%s: 2-1 skb->protocol %4hx \n",__FUNCTION__, skb->protocol );
++				return false;
++			}
++	 		TCI = ntohs(fp->h_vlan_TCI);
++
++			//printk("%s: TCI %d  ntohs(fp->h_vlan_TCI) %d fp->h_vlan_TCI  %d  \n",__FUNCTION__, skb->protocol,TCI,ntohs(fp->h_vlan_TCI),fp->h_vlan_TCI );
++	       }
++	       else{
++                	               //printk("%s: 2-1 skb->protocol %4hx \n",__FUNCTION__, skb->protocol );
++        	       return false;
++	       }
++
++
++
++	}else{
++		TCI = skb->vtag_save;
++	}
++
++
++
++	vid = TCI & VLAN_VID_MASK;
++	prio = (TCI >> 13) & 0x7;
++	//printk("xt_ether: vtag_save is %d  TCI is %d   vid is %d pcp is %d  \n",skb->vtag_save,vid,prio);
++
++
++        if(info->mode & XT_8021Q_MATCH){
++		vid = TCI & VLAN_VID_MASK;
++		ret &= ((vid == info->vid) ^((info->invflags & XT_8021Q_INV_FLAG)!= 0 ));
++	}
++
++        if(info->mode & XT_8021P_MATCH ){
++	        prio = (TCI >> 13) & 0x7;
++		ret &= ((prio == info->pcp) ^((info->invflags & XT_8021P_INV_FLAG)!= 0 ));
++	}
++
++	return ret;
++}
++
++
++static int ether_mt_check(const struct xt_mtchk_param *par)
++{
++        const struct xt_ether_info *info = par->matchinfo;
++
++        if(info->mode & XT_8021Q_MATCH){
++                if (info->vid > XT_8021Q_MAX ) {
++                        pr_info("802.1Q %x out of range\n", info->vid);
++                        return -EDOM;
++                }
++
++        }
++
++        if(info->mode & XT_8021P_MATCH){
++                if (info->pcp > XT_8021P_MAX ) {
++                        pr_info("VID %x out of range\n", info->pcp);
++                        return -EDOM;
++                }
++        }
++
++        return 0;
++}
++
++static struct xt_match ether_mt_reg[] __read_mostly = {
++        {
++                .name           = "ether",
++                .family         = NFPROTO_IPV4,
++                .checkentry     = ether_mt_check,
++                .match          = ether_mt,
++                .matchsize      = sizeof(struct xt_ether_info),
++                .me             = THIS_MODULE,
++        }
++};
++
++static int __init ether_mt_init(void)
++{
++        return xt_register_match(&ether_mt_reg);
++}
++
++static void __exit ether_mt_exit(void)
++{
++        xt_unregister_match(&ether_mt_reg);
++}
++
++module_init(ether_mt_init);
++module_exit(ether_mt_exit);
++
+Index: linux-3.3.8/net/netfilter/xt_mac.c
+===================================================================
+--- linux-3.3.8.orig/net/netfilter/xt_mac.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/netfilter/xt_mac.c	2014-12-03 17:44:14.982549277 +0800
+@@ -28,7 +28,9 @@
+ static bool mac_mt(const struct sk_buff *skb, struct xt_action_param *par)
+ {
+ 	const struct xt_mac_info *info = par->matchinfo;
+-	bool ret;
++	bool ret= true;
++	int i = 0;
++	int verdict ;
+ 
+ 	if (skb->dev == NULL || skb->dev->type != ARPHRD_ETHER)
+ 		return false;
+@@ -36,8 +38,31 @@
+ 		return false;
+ 	if (skb_mac_header(skb) + ETH_HLEN > skb->data)
+ 		return false;
+-	ret  = compare_ether_addr(eth_hdr(skb)->h_source, info->srcaddr) == 0;
+-	ret ^= info->invert;
++
++        if (info->bitmask & XT_SRC_MAC)
++        {
++		verdict = 0;
++
++	        for (i = 0; i < ETH_ALEN; i++) {
++			verdict |= (eth_hdr(skb)->h_source[i] ^ info->srcaddr[i]) & info->srcmask[i];
++	        }
++
++                ret &= ((verdict == 0) ^((info->invflags & XT_SRC_MAC_INV_FLAG)!= 0 ));
++	}
++
++        if (info->bitmask & XT_DST_MAC)
++        {
++
++		verdict = 0;
++
++                for (i = 0; i < ETH_ALEN; i++) {
++                        verdict |= (eth_hdr(skb)->h_dest[i] ^ info->dstaddr[i]) & info->dstmask[i];
++                }
++
++                ret &= ((verdict == 0) ^ ((info->invflags & XT_DST_MAC_INV_FLAG) != 0));
++
++	}
++	
+ 	return ret;
+ }
+ 
+@@ -48,7 +73,7 @@
+ 	.match     = mac_mt,
+ 	.matchsize = sizeof(struct xt_mac_info),
+ 	.hooks     = (1 << NF_INET_PRE_ROUTING) | (1 << NF_INET_LOCAL_IN) |
+-	             (1 << NF_INET_FORWARD),
++	             (1 << NF_INET_FORWARD) | (1 << NF_INET_POST_ROUTING),
+ 	.me        = THIS_MODULE,
+ };
+ 
+Index: linux-3.3.8/net/netfilter/xt_mark.c
+===================================================================
+--- linux-3.3.8.orig/net/netfilter/xt_mark.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/netfilter/xt_mark.c	2014-12-03 17:44:14.982549277 +0800
+@@ -28,8 +28,17 @@
+ mark_tg(struct sk_buff *skb, const struct xt_action_param *par)
+ {
+ 	const struct xt_mark_tginfo2 *info = par->targinfo;
+-
+-	skb->mark = (skb->mark & ~info->mask) ^ info->mark;
++	
++	if(info->mode & XT_VTAG_SET)
++	{
++	        skb->vtag = info->mark ;
++		//printk(" VTAG_SET skb->vtag %d  skb->vtag_save %d   skb->mark  %d  info->mark %d  info->mode %d \n",skb->vtag,skb->vtag_save  , skb->mark,info->mark,info->mode );
++	}
++	else
++	{		
++	    skb->mark = (skb->mark & ~info->mask) ^ info->mark;
++		//printk(" MARK_SET skb->vtag %d  skb->vtag_save %d skb->mark  %d  info->mark %d  info->mode %d \n",skb->vtag,skb->vtag_save  , skb->mark,info->mark,info->mode );
++	}
+ 	return XT_CONTINUE;
+ }
+ 
+Index: linux-3.3.8/net/8021q/vlan_core.c
+===================================================================
+--- linux-3.3.8.orig/net/8021q/vlan_core.c	2012-06-01 15:16:13.000000000 +0800
++++ linux-3.3.8/net/8021q/vlan_core.c	2014-12-03 17:45:16.594558836 +0800
+@@ -12,6 +12,9 @@
+ 	struct net_device *vlan_dev;
+ 	struct vlan_pcpu_stats *rx_stats;
+ 
++	skb->vtag_save = 0;
++	skb->vtag_save = skb->vlan_tci;
++
+ 	vlan_dev = vlan_find_dev(skb->dev, vlan_id);
+ 	if (!vlan_dev) {
+ 		/* Only the last call to vlan_do_receive() should change

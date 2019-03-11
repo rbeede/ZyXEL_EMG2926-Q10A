@@ -1,0 +1,13 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+#defaultwan=$(uci get network.general.defaultWan)
+
+if [ "$ACTION" = "ifup" ]; then
+	if [ "${INTERFACE:0:3}" = "wan" ]; then
+		iptables -t nat -F PREROUTING
+		/sbin/nat reload
+	fi
+fi

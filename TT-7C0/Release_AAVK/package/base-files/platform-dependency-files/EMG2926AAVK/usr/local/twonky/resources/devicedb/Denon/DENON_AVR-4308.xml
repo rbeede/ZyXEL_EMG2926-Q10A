@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>DENON AVR-4308</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>AVR-4308</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<DeviceQuirks>
+		<Quirk>CANNOTREGISTERDEVICE</Quirk>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

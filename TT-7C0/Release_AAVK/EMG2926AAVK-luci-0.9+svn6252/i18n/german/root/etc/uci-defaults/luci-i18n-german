@@ -1,0 +1,7 @@
+#!/bin/sh
+
+. /etc/functions.sh
+include /lib/config
+
+uci_set luci languages de Deutsch
+uci_commit luci

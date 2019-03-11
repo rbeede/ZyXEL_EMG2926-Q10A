@@ -1,0 +1,129 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+
+function onSubmitCheck()
+{
+	if (!confirm("<%:rst_err1%>"))
+		return false;
+	return true;
+}
+
+function redirect()
+{
+	top.location.href="/";
+}
+
+function CountDown()
+{
+	CountDownSecond = document.theForm.timer.value;
+	if ( CountDownSecond !=0 ) {
+		document.theForm.timer.value = CountDownSecond - 1;
+		setTimeout('CountDown()',1000);
+	}
+	else {
+		redirect();
+	}
+}
+</script>
+</head>
+<body >
+<div id="tabs">
+  <ul>
+    <li class="hightline"><a title="<%:sys_rst%>"><span><%:sys_rst%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<!-- Tab -->
+<% if rebootsystem == 1 then %>
+<form name="theForm">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:restarting%></div>
+          <div class="w_text"><%:bak_remind1%>
+            <input name="timer"  size="3" type="text" value=140 style="border:0;background:transparent" readonly=true />
+            <%:seconds%>.
+          </div>
+          <div class="spaceair"></div> 
+        </ul> 
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<script language="JavaScript">
+	CountDown();
+</script>
+<% else %>
+<form method="post" name="Systemrebooting" action="<%=controller%>/expert/maintenance/Systemrebooting" enctype="multipart/form-data">
+  <div id="table">
+    <ul>
+      <li class="table_top"></li>
+      <li class="table_content">
+        <div class="data">
+          <ul>
+            <li id="title" class="title"><%:sys_rst%></li>
+            <li class="w_text">
+              <table align="center" border="0" cellpadding="0" cellspacing="0" width="95%">
+                <tbody>
+                  <tr>
+                    <td id="introduction" height="40"><%:rst_info1%></td>
+                  </tr>
+                </tbody>
+              </table>
+            </li>
+            <li></li>
+            <li></li>
+          </ul>
+        </div>
+      </li>
+      <li class="table_button">
+        <div class="button">
+	  <center>
+            <input value="<%:Systemrebooting%>" id="restart" name="restartsystem" onclick="return onSubmitCheck();" type="submit">
+          </center>
+        </div>
+      </li>
+    </ul>
+  </div>
+</form> 
+<% end %>
+<script>
+	showFullPath(' <%:maintenance%> > <%:Systemrebooting%>');
+</script> 
+</body>
+</html>

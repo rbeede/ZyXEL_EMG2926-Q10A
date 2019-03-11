@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>omnifi DMS1</DisplayName>
+		<HttpRecognition>
+			<HttpText>Linux/2.4.18-rmk7</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNANO</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

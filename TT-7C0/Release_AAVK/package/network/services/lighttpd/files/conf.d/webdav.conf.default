@@ -1,0 +1,36 @@
+
+server.modules += ( 
+	"mod_webdav"
+)
+
+$HTTP["remoteip"] == "|LANIP|" {
+	$HTTP["url"] =~ "^/webdav($|/)" {
+
+		# $HTTP["scheme"] == "http" {
+		#  $HTTP["host"] =~ ".*" {
+		#   url.redirect = (".*" => "https://%0$0")
+		#  }
+		# }
+		
+		webdav.activate = "enable"
+		webdav.is-readonly = "disable"
+		dir-listing.activate = "enable"
+		webdav.sqlite-db-name = "/var/run/lighttpd-webdav-lock.db"
+		# auth.require = ( "/webdav/user1" => (
+		# 			"method" => "basic",
+		# 			"realm" => "",
+		# 			"require" => "user=user1"
+		# 			),
+		# 		 "/webdav/user2" => (
+		# 			"method" => "basic",
+		# 			"realm" => "",
+		# 			"require" => "user=user2"
+		# 			),
+		# 		 "/webdav/share" => (
+		# 			"method" => "basic",
+		# 			"realm" => "",
+		# 			"require" => "valid-user"
+		# 			)
+		# 		)
+	}
+}

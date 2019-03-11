@@ -1,0 +1,60 @@
+#!/bin/sh
+
+local addr_str=$1
+local count=1
+local eth_addr=""
+
+len=${#addr_str}
+
+if [ "$len" != "12" ]; then
+	echo "address length is not equal 12"
+   	exit 1
+fi
+
+lastchar=$(echo $addr_str | cut -c $len-$len)
+
+if [ "$lastchar" != "0" ] && [ "$lastchar" != "4" ] && [ "$lastchar" != "8" ] && [ "$lastchar" != "c" ] && [ "$lastchar" != "C" ]; then
+        echo "The last character should be '0', '4', '8' or 'c'"
+        exit 1
+fi
+
+express=$(echo $addr_str | grep '[0-9,a-f,A-F]\{12\}')
+if [ "$express" == "" ]; then
+   echo "Wrong address value, the value should be 0~9,a(A),b(B),c(C),d(D),e(E),f(F)"
+   exit 1
+fi
+
+i=1
+while [ "$i" != "13" ]
+do
+   	c=$(echo $addr_str | cut -c $i-$i)
+
+   	if [ "$i" != "12" ]; then
+     		if [ "$count" == "2" ]; then
+        		eth_addr=$eth_addr$c:
+        		count=1
+      		else
+        		eth_addr=$eth_addr$c
+        		count=$(($count+1))
+      		fi
+   	else
+     		eth_addr=$eth_addr$c
+   	fi
+   	i=$(($i+1))
+done
+
+if [ "$2" != "" ]; then
+  code=$(echo $2 | grep "[0-9,a-f,A-F][0-9,a-f,A-F]")
+  if [ "$code" == "" ]; then
+     echo "Wrong type for country code"
+  else
+     echo "set country code $2"
+     fw_setenv countrycode $2
+  fi
+else
+   echo "No enter country code, use the default value 'ff'"
+fi
+
+echo "Set address $eth_addr ok"
+fw_setenv ethaddr $eth_addr
+. /bin/setmac

@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>YAMAHA RXV473</DisplayName>
+		<DeviceDescriptionRecognition>
+            <DescriptionText>&lt;manufacturer&gt;YAMAHA CORPORATION&lt;/manufacturer&gt;</DescriptionText>
+            <DescriptionText>&lt;modelName&gt;RX-V473&lt;/modelName&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+		<Quirk>NEED_NO_PLAY_4_SETAVT</Quirk>
+	</DeviceQuirks>
+</Client>

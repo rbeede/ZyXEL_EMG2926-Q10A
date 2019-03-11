@@ -1,0 +1,213 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta http-equiv='content-type' content='text/html;charset=utf-8;IE=9'>
+<META HTTP-EQUIV="Pragma" CONTENT="no-cache">
+
+<link href="<%=media%>/css/inside.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/table.css" rel="stylesheet" type="text/css" />
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript" type="text/javascript"></script>
+<style type="text/css"></style>
+
+	<script language="javascript" type="text/javascript" src="/js/fxEnvironment.js"></script>
+	<script language="javascript" type="text/javascript" src="/js/fxPageMenu.js"></script>	
+
+    <!-- include the prerequisite libraries for the flux kit-->
+	<script src="/js/excanvas.min.js" type="text/javascript"></script>	 
+	<script src="/js/jquery.min.js" type="text/javascript"></script>
+	<script src="/js/jquery-ui-1.8.21.custom.min.js" type="text/javascript"></script>
+	<script src="/js/jquery.contextMenu.js" type="text/javascript"></script>
+	<link href="/css/jquery.contextMenu.css" rel="stylesheet" type="text/css" /> 
+
+    <!-- include flux itself-->
+    <script language="javascript" type="text/javascript" src="/js/fxData.js"></script>
+    <script language="javascript" type="text/javascript" src="/js/fxStats.js"></script>	
+	
+    <!--[if lte IE 8]><script src="<%=resource%>/streamboost/js/fxTopByTimeFlot.js"></script><![endif]-->
+    <!--[if gte IE 9]><!-->
+        <script src="/js/fxTopByTimeSVG.js"></script>
+    <!--<![endif]-->
+    <script type="text/javascript" src="/js/fxTranslate.js"></script>
+	
+    <script>
+	
+	function verifyReadyData()
+	{
+	    showWebMessage( 0 , '<%:Message%>' , '<%:Ready%>' );
+
+		<% enable_streamboost = uci:get("appflow","tccontroller","enable_streamboost") 
+		if enable_streamboost == "0" then 
+		%>   
+		  alert("<%:Streamboost_on_warning%>");
+		<% end %>
+	}	
+	
+    //set the global streamboost depent variable
+    var g_bIsStreamboost = true;
+
+    function graphTopByTime(dateStart, dateEnd, node) {
+
+        //create the stats object
+        var stats = new fxStats();
+
+        //init the stat class and draw the page when its ready
+        stats.init( function()
+        {
+            // get the top flows by download
+            var topData;
+            if (node != "") {
+              topData = stats.getFlows(fxType.time, [node], dateStart, dateEnd);
+            } else {
+              topData = stats.getFlows(fxType.time, [], dateStart, dateEnd);
+            }
+
+            var chart = new fxTopByTime("#chart_div", topData, stats);
+        });
+    }	
+
+    function handleFilterChange() {
+      var dateRange = $('.dateRangeFilter option:selected');
+      var node = $('.nodeFilter option:selected');
+      var msecs_per_day = 24 * 60 * 60 * 1000;
+      var msecs = {
+        day: msecs_per_day,
+        week: 7 * msecs_per_day,
+        month: 30 * msecs_per_day
+      };
+
+      end = new Date();
+      start = new Date(end - msecs[dateRange.val()]);
+      $('.chartTitle').text("Top 5 Flows In The " + dateRange.text() + " For " + node.text());
+      graphTopByTime(start, end, node.val());
+    }
+
+    function setupNodeFilter(callback) {
+      $.getJSON('/cgi-bin/ozker/api/nodes', function(data) {
+        $('.nodeFilter').html('<option value="">All LAN Hosts</option>');
+        $.each(data['nodes'], function(i, node) {
+          if (node['Pipeline']['name'] != null) {
+            text = node['Pipeline']['name'];
+          } else {
+            text = node['Pipeline']['ip_addr'];
+          }
+          value = node['Pipeline']['mac_addr'];
+          $('.nodeFilter').append('<option value="' + value + '">' + text + '</option>');
+        });
+        callback();
+      });
+    }
+
+
+    <!-- code to start the page -->
+    $(function() {
+	
+	  var isSBEnabled = "<%= uci:get("appflow","tccontroller","enable_streamboost")%>";
+			  
+      //if streamboost is on we can draw the page
+      if(isSBEnabled == "1")
+      {
+          $('.dateRangeFilter').change(handleFilterChange);
+          $('.nodeFilter').change(handleFilterChange);
+          setupNodeFilter(function() {
+            $('.dateRangeFilter').trigger('change');
+          });
+      }
+      else
+      {
+        $("#maincontent").hide();
+      }
+	  
+    });
+
+    </script>
+
+</head>
+<body onload="verifyReadyData();">
+
+	<div id="tabs">
+	  <ul>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost" title="Bandwidth"><span><%:Bandwidth%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_network" title="Network"><span><%:Network%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_priorities" title="Priorities"><span><%:Priorities%></span></a></li>
+		<li class="hightline"><a title="UpTime"><span><%:Up_Time%></span></a></li>
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_bytes" title="Bytes"><span><%:Byetes%></span></a></li>	
+		<li><a href="<%=controller%>/expert/configuration/management/streamboost/streamboost_allevents" title="AllEvents"><span><%:All_Events%></span></a></li>	
+	  </ul>
+	  <br class="clearfloat" />
+	</div>
+
+	<div id="table">
+	
+		<li class="table_content">	
+
+		  <div class="data">
+			<ul>
+			
+			  <li class="w_text" >
+			    <h1 align="center" class="chartTitle">Top 5 Flows By Time</h1>
+			  </li>
+		
+			  <li class="w_text" >			
+				<div align="right" class="chartOptions">
+				  <div>
+					<select class="dateRangeFilter">
+					  <option value="day">Last Day</option>
+					  <option value="week">Last Week</option>
+					  <option value="month">Last Month</option>
+					</select>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				  </div>
+				</div>  
+			  </li>
+			  
+			  <li class="w_text" >
+			    <div align="right" class="chartOptions">
+				  <div>
+					<select class="nodeFilter">
+					</select>
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				  </div>
+				</div>
+			  </li>
+			  
+			  <div id="chart_div" ></div>
+			  
+			</ul>
+		  </div>
+		  
+		</li>
+		
+	</div>
+	
+</body>
+
+<script language="JavaScript">
+	showFullPath(' <%:Management%> > <%:Streamboost%> > <%:Up_Time%>');
+</script>
+
+</html>

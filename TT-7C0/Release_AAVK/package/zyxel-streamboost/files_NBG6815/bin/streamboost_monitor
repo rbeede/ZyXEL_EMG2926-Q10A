@@ -1,0 +1,114 @@
+#!/bin/sh
+
+## streamboost monitor
+
+	local redis_server_pid
+	local qdiscman_pid
+	local overlord_pid
+	local flowman_pid
+	local drflocs_pid	
+	local p0f_pid
+	local ozker_pid	
+	system_date=$(date)
+	
+	streamboost_enable=$(uci get appflow.tccontroller.enable_streamboost)
+	
+	if [ "$streamboost_enable" == "1"  ] ;then
+	
+		# check redis-server daemon			
+		redis_server_pid=$(ps | grep "/usr/bin/redis-server" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$redis_server_pid" == "" ] ;then
+
+			#echo "$system_date redis_server_process_die" >> /tmp/streamboost_monitor_log
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+
+		# check qdiscman daemon			
+		qdiscman_pid=$(ps | grep "/usr/sbin/qdiscman" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$qdiscman_pid" == "" ] ;then
+	
+			#echo "$system_date  qdiscman_process_die" >> /tmp/streamboost_monitor_log	
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+		
+		# check overlord daemon			
+		overlord_pid=$(ps | grep "/usr/sbin/overlord" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$overlord_pid" == "" ] ;then
+	
+			#echo "$system_date  overlord_process_die" >> /tmp/streamboost_monitor_log	
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+		
+		# check flowman daemon			
+		flowman_pid=$(ps | grep "/usr/sbin/flowman" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$flowman_pid" == "" ] ;then
+	
+			#echo "$system_date  flowman_process_die" >> /tmp/streamboost_monitor_log	
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+						
+		# check drflocs daemon			
+		drflocs_pid=$(ps | grep "/usr/sbin/drflocs" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$drflocs_pid" == "" ] ;then	
+			
+			#echo "$system_date  drflocs_process_die" >> /tmp/streamboost_monitor_log
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+		
+		# check p0f daemon			
+		p0f_pid=$(ps | grep "/usr/sbin/p0f" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$p0f_pid" == "" ] ;then
+	
+			#echo "$system_date  p0f_pid" >> /tmp/streamboost_monitor_log	
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+
+		# check ozker daemon			
+		ozker_pid=$(ps | grep "/usr/sbin/ozker" | grep "grep" -v | awk '{print $1}')
+			
+		if [ "$ozker_pid" == "" ] ;then	
+			
+			#echo "$system_date  ozker_process_die" >> /tmp/streamboost_monitor_log
+
+			/usr/local/bin/check_apply_appflow
+			
+		fi
+
+                #check redis-server-VSZ
+                local radis_pid
+                local parser_words
+                radis_pid=$( cat /tmp/run/appflow/redis.pid)
+                top -n 1 > /tmp/redis-server-VSZ_log &
+                sleep 1
+
+                parser_words=$( cat /tmp/redis-server-VSZ_log | grep "$radis_pid" | sed '2,100d' | awk '{print $5}' | grep -r m )
+                parser_number=${parser_words/m/};
+                result=$(($parser_number - 170));
+
+                if [ $result -ge 0 ]; then
+                        echo "$parser_words" >> /tmp/redis-VSZ_recorder
+                        /usr/local/bin/check_apply_appflow
+                fi
+
+                rm /tmp/redis-server-VSZ_log
+
+		
+	fi

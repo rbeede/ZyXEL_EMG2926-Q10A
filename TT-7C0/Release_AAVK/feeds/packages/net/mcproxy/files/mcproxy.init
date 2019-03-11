@@ -1,0 +1,193 @@
+#!/bin/sh /etc/rc.common
+# Copyright (c) 2014 The Linux Foundation. All rights reserved.
+# Copyright (C) 2010-2014 OpenWrt.org
+
+START=99
+STOP=10
+
+SERVICE_DAEMONIZE=1
+SERVICE_WRITE_PID=1
+IPV4_CONF_FILE="/etc/ipv4_mcproxy.conf"
+IPV6_CONF_FILE="/etc/ipv6_mcproxy.conf"
+
+#mcproxy_pinstance() {
+#	local instname upstream downstreams
+#	config_get instname $1 name
+#	config_get upstream $1 upstream
+#	config_get downstreams $1 downstreams
+#
+#	#section name as instance name
+#	[ -n "$instname" ] || {
+#		instname=$1
+#	}
+#
+#	#default WAN
+#	[ -n "$upstream" ] || {
+#		upstream=$(uci_get_state network wan ifname wan)
+#	}
+#
+#	#default LAN
+#        [ -n "$downstreams" ] || {
+#		downstreams=$(uci_get_state network lan ifname lan)
+#        }
+
+#	if [[ $igmpEnabled != "NONE" && $2 != "IPv6" ]]; then
+#	
+#		echo "pinstance $instname: \"$upstream\" ==> \"$downstreams\";" >>$IPV4_CONF_FILE
+#
+#		#ignore UPNP group from the downstream side
+#		echo "" >>$IPV4_CONF_FILE
+#		echo "table upnp{" >>$IPV4_CONF_FILE	
+#		echo "  (239.255.255.250|*)" >>$IPV4_CONF_FILE
+#		echo "};" >>$IPV4_CONF_FILE
+#		
+#		echo "" >>$IPV4_CONF_FILE
+#		for downif in $downstreams; do
+#			echo "pinstance $instname downstream \"$downif\" in blacklist table upnp;" >>$IPV4_CONF_FILE
+#		done
+#	fi
+#	
+#	if [[ $mldEnabled != "NONE" && $2 != "IPv4" ]]; then
+#		echo "pinstance $instname: \"$upstream\" ==> \"$downstreams\";" >>$IPV6_CONF_FILE
+#		
+#		#ignore UPNP group from the downstream side
+#		echo "" >>$IPV6_CONF_FILE
+#		echo "table upnp{" >>$IPV6_CONF_FILE	
+#		echo "  (ff02::c|*)" >>$IPV6_CONF_FILE
+#		echo "  (ff05::c|*)" >>$IPV6_CONF_FILE
+#		echo "  (ff08::c|*)" >>$IPV6_CONF_FILE
+#		echo "  (ff0e::c|*)" >>$IPV6_CONF_FILE
+#		echo "};" >>$IPV6_CONF_FILE
+#		
+#		echo "" >>$IPV6_CONF_FILE
+#		for downif in $downstreams; do
+#			echo "pinstance $instname downstream \"$downif\" in blacklist table upnp;" >>$IPV6_CONF_FILE
+#		done
+#		
+#		if [ $mldEnabled == "MLDv1" ]; then
+#			echo 1 > /proc/sys/net/ipv6/conf/eth0/force_mld_version
+#			echo 1 > /proc/sys/net/ipv6/conf/br-lan/force_mld_version
+#		else
+#			echo 0 > /proc/sys/net/ipv6/conf/eth0/force_mld_version
+#			echo 0 > /proc/sys/net/ipv6/conf/br-lan/force_mld_version
+#		fi
+#	fi	
+#}
+
+start() {
+	local igmpGeneralSwitch igmpEnabled
+	local mldGeneralSwitch mldEnabled
+	local instname interface upstream downstream
+	
+	#1st: IPv4 IGMP	
+	igmpGeneralSwitch=$(uci_get mcproxy general igmpEnabled)
+	
+	if [ "$igmpGeneralSwitch" == "disable" ]; then
+		service_stop /usr/sbin/ipv4_mcproxy
+	else
+		
+		for i in "" 1 2 3 4
+		do	
+			igmpEnabled=$(uci_get mcproxy wan$i ipv4_protocol)
+			if [ $igmpEnabled != "NONE" ]; then
+				interface=wan$i
+				upstream=$(uci_get_state network wan$i ifname wan$i)
+				downstream=$(uci_get_state network lan ifname lan)
+				instname=$(uci_get mcproxy wan$i instancename)
+				
+				if [ $igmpEnabled == "IGMPv2" ]; then
+					echo 2 > /proc/sys/net/ipv4/conf/$upstream/force_igmp_version
+					echo 2 > /proc/sys/net/ipv4/conf/$downstream/force_igmp_version
+				else
+					echo 0 > /proc/sys/net/ipv4/conf/$upstream/force_igmp_version
+					echo 0 > /proc/sys/net/ipv4/conf/$downstream/force_igmp_version
+				fi
+				
+				#start writing configuration
+				echo "protocol $igmpEnabled;" >$IPV4_CONF_FILE				
+				echo "pinstance $instname: \"$upstream\" ==> \"$downstream\";" >>$IPV4_CONF_FILE
+				#ignore UPNP group from the downstream side
+				echo "" >>$IPV4_CONF_FILE
+				echo "table upnp{" >>$IPV4_CONF_FILE	
+				echo "  (239.255.255.250|*)" >>$IPV4_CONF_FILE
+				echo "};" >>$IPV4_CONF_FILE				
+				echo "" >>$IPV4_CONF_FILE				
+				echo "pinstance $instname downstream \"$downstream\" in blacklist table upnp;" >>$IPV4_CONF_FILE				
+		
+				service_start /usr/sbin/ipv4_mcproxy -f $IPV4_CONF_FILE
+				break
+			fi
+		done
+		
+		#in case all interfaces are disabled
+		if [ $igmpEnabled == "NONE" ]; then			
+			service_stop /usr/sbin/ipv4_mcproxy
+		fi
+	fi		
+
+	## iptables app reorder (need to bypass multicast stream on DoS)
+	/lib/firewall/iptables_app_order
+	
+	#2nd: IPv6 MLD
+	mldGeneralSwitch=$(uci_get mcproxy general mldEnabled)
+	
+	if [ "$mldGeneralSwitch" == "disable" ]; then
+		service_stop /usr/sbin/ipv6_mcproxy
+	else
+		
+		for i in "" 1 2 3 4
+		do	
+			mldEnabled=$(uci_get mcproxy wan$i ipv6_protocol)
+			if [ $mldEnabled != "NONE" ]; then
+				interface=wan$i
+				upstream=$(uci_get_state network wan$i ifname wan$i)
+				downstream=$(uci_get_state network lan ifname lan)
+				instname=$(uci_get mcproxy wan$i instancename)
+				
+				if [ $mldEnabled == "MLDv1" ]; then
+					echo 1 > /proc/sys/net/ipv6/conf/$upstream/force_mld_version
+					echo 1 > /proc/sys/net/ipv6/conf/$downstream/force_mld_version
+				else
+					echo 0 > /proc/sys/net/ipv6/conf/$upstream/force_mld_version
+					echo 0 > /proc/sys/net/ipv6/conf/$downstream/force_mld_version
+				fi
+				
+				#config_get protocol config protocol
+				echo "protocol $mldEnabled;" >$IPV6_CONF_FILE
+				
+				echo "pinstance $instname: \"$upstream\" ==> \"$downstream\";" >>$IPV6_CONF_FILE
+
+				#ignore UPNP group from the downstream side
+				echo "" >>$IPV6_CONF_FILE
+				echo "table upnp{" >>$IPV6_CONF_FILE	
+				echo "  (ff02::c|*)" >>$IPV6_CONF_FILE
+				echo "  (ff05::c|*)" >>$IPV6_CONF_FILE
+				echo "  (ff08::c|*)" >>$IPV6_CONF_FILE
+				echo "  (ff0e::c|*)" >>$IPV6_CONF_FILE
+				echo "};" >>$IPV6_CONF_FILE
+				
+				echo "" >>$IPV6_CONF_FILE				
+				echo "pinstance $instname downstream \"$downstream\" in blacklist table upnp;" >>$IPV6_CONF_FILE				
+			
+				service_start /usr/sbin/ipv6_mcproxy -f $IPV6_CONF_FILE
+				break
+			fi
+		done
+		
+		#in case all interfaces are disabled
+		if [ $mldEnabled == "NONE" ]; then			
+			service_stop /usr/sbin/ipv6_mcproxy
+		fi
+	fi
+	
+}
+
+stop() {
+	service_stop /usr/sbin/ipv4_mcproxy
+	service_stop /usr/sbin/ipv6_mcproxy
+}
+
+restart() {
+	stop
+	start
+}

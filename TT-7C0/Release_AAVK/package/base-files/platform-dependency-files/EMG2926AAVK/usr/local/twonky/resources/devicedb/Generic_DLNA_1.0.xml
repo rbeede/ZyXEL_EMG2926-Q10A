@@ -1,0 +1,17 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Generic DLNA 1.0</DisplayName>
+		<HttpRecognition>
+			<HttpText>DLNADOC/1.00</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>AUTO</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+</Client>

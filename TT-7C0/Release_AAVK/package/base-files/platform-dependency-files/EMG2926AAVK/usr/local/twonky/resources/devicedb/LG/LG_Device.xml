@@ -1,0 +1,62 @@
+<Client>
+	<DeviceId>
+		<!-- Originally added for LG BP620 -->
+		<DisplayName>LG TV</DisplayName>
+		<HttpRecognition>
+			<HttpText>LGE_DLNA_SDK</HttpText>
+			<HttpText>LG_UA</HttpText>
+		</HttpRecognition>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>&lt;manufacturer&gt;LG Electronics&lt;/manufacturer&gt;</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG1920x1080</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>application/x-srt</In>
+				<Out>text/srt</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>application/x-sub</In>
+				<Out>text/sub</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>application/smil</In>
+				<Out>text/smi</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>application/x-ssa</In>
+				<Out>text/ssa</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+			<In>application/x-psb</In>
+			<Out>text/psb</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+				<In>application/x-ass</In>
+				<Out>text/ass</Out>
+			</MimeTypeMapping>
+			<MimeTypeMapping>
+	                        <In>video/3gpp</In>
+	                        <Out>video/avi</Out>
+	                </MimeTypeMapping>
+			<MimeTypeSuppress>image/tiff</MimeTypeSuppress>
+			<MimeTypeSuppress>image/bmp</MimeTypeSuppress>
+			<MimeTypeSuppress>image/gif</MimeTypeSuppress>
+			<MimeTypeSuppress>image/png</MimeTypeSuppress>
+			<ExtraProtocolInfo>http-get:*:video/x-msvideo:*,http-get:*:video/flv:*</ExtraProtocolInfo>
+		</MimeTranslations>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+	</DeviceQuirks>
+</Client>

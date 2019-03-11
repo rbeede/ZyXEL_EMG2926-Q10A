@@ -1,0 +1,102 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require "luci.sys"
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+
+local autoIpEnabled = uci:get("network","general","auto_ip_change")
+-%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body  >
+<script type="text/javascript">
+function btnApply()
+{
+	var submit_url = '<%=luci.dispatcher.build_url("expert","configuration","network","wan","advanced")%>';
+	var loc = submit_url + '?apply=Apply';
+	
+	with ( document.forms[0] ){
+		if((autoIpChangeEnabled.checked == true && 0 == <%=autoIpEnabled%>) || (autoIpChangeEnabled.checked == false && 1 == <%=autoIpEnabled%>)){
+			loc += '&apply_ip_change=Apply';
+			if(autoIpChangeEnabled.checked == true){
+				loc += '&ipChangeEnabled=' + 1; 
+			}
+			else{
+				loc += '&ipChangeEnabled=' + 0;
+			}
+		}
+
+		
+		var code = 'location="' + loc + '"';
+     	eval(code);
+	}
+}
+function verifySubmitData()
+{
+   showWebMessage( 1 , "<%:Message%>", "<%:msg_config%>" );
+}
+</script>
+<form method="post" name="lanCfg">
+<div id="tabs"><ul>
+    <li><a href="<%=controller%>/expert/configuration/network/wan" title="<%:Broadband%>"><span><%:Broadband%></span></a></li>
+    <!-- <li><a href="<=controller%>/expert/configuration/network/wan/ipv6" title="IPv6"><span>IPv6</span></a></li> -->
+    <li class="hightline"><a title="<%:Advanced%>"><span><%:Advanced%></span></a></li>
+</ul><br class="clearfloat" /></div>
+<div id="table">
+  <ul>
+    <li class="table_top"></li> 
+    <li class="table_content">
+        <div class="data">
+          <ul>
+            <div class="title"><%:Auto_Subnet_Configuration%></div>
+            <div class="w_text">
+              <ul>
+                 <li class="left_table"><input type="checkbox" name="autoIpChangeEnabled" value=1 <%if autoIpEnabled == "1" then%>checked<%end%> ><font id="WolOverWAN"><%:Enable_Auto_IP_Change_Mode%></font></li>
+            	 <li class="right_table"></li>      
+              </ul>
+            </div>
+            <div class="spaceair"></div>
+          </ul>
+        </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <center>
+          <input type="button" name="apply" value="<%:Apply%>" onClick="btnApply()" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+        </center>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:Network%> > <%:Broadband%> > <%:Advanced%> ');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

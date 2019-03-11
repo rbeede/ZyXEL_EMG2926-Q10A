@@ -1,0 +1,9 @@
+#!/bin/sh
+
+exit 1
+
+#/usr/sbin/streamboost status_monit
+#action=$?
+
+#[ "$action" -eq 1 ] && /usr/sbin/streamboost stop --noref
+#[ "$action" -gt 1 ] && /usr/sbin/streamboost restart --noref

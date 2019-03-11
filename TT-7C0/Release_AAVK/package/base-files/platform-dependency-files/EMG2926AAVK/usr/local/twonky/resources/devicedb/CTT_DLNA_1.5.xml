@@ -1,0 +1,39 @@
+<Client>
+	<DeviceId>
+		<DisplayName>CTT DLNA 1.5</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>ACME SPECIAL</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<HttpRecognition>
+			<HttpText>CTT:</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC1</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<Scaling>
+			<Target>JPEG160x160</Target>
+			<Target>JPEG640x480</Target>
+			<Target>JPEGORG</Target>
+		</Scaling>
+	</Capabilities>
+	<Adaptations>
+		<DefaultView>byfolder</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>RESTRICTEDUPLOAD</Quirk>
+		<Quirk>VALIDATEDSEARCHCRITERIA</Quirk>
+		<Quirk>VALIDATEDSORT</Quirk>
+		<Quirk>NOEMBEDDEDALBUMART</Quirk>
+		<Quirk>HTTPCONTINUEWITHOUTLENGTH</Quirk>
+		<Quirk>STRICTTIMESEEKRANGEANDDURATION</Quirk>
+		<Quirk>STRICTJPEGPROFILES</Quirk>
+		<Quirk>NOT_PERSISTENT</Quirk>
+		<Quirk>DLNASTRICT</Quirk>
+	</DeviceQuirks>
+</Client>

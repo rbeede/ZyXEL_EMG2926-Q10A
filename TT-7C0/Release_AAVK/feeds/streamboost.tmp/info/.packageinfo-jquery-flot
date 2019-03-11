@@ -1,0 +1,44 @@
+Source-Makefile: feeds/streamboost/jquery-flot/Makefile
+Package: jquery-flot
+Submenu: JavaScript
+Version: 0.8.0-1
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jquery
+Menu-Depends: 
+Provides: 
+Section: language-javascript
+Category: Languages
+Title: Flot is a pure JavaScript plotting library for jQuery
+Maintainer: 
+Source: flot-0.8.0.zip
+Type: ipkg
+Description:   Flot is a pure JavaScript plotting library for jQuery, with a focus
+  on simple usage, attractive looks and interactive features.
+http://www.flotcharts.org/
+
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jquery-flot
+	config jquery-flot_USE_CUSTOM_VERSION
+		depends on PACKAGE_jquery-flot
+		bool "Use custom package version"
+		default n
+	config jquery-flot_CUSTOM_VERSION
+		depends on jquery-flot_USE_CUSTOM_VERSION
+		string " version as string (default version: 0.8.0)"
+		default "0.8.0"
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jquery-flot
+	config jquery-flot_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jquery-flot
+		bool "Use custom source directory"
+		default n
+	config jquery-flot_CUSTOM_SOURCE_DIR
+		depends on jquery-flot_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

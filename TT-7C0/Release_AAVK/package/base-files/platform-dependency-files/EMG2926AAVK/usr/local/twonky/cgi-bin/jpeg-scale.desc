@@ -1,0 +1,9 @@
+# rescale jpeg images
+#(c) 2015 by Lynx Technology
+exec: cgi-jpegscale $infile $outfile $targetwidth $targetheight $targetrotation $scalemode
+# capabilities
+from=image/jpeg
+to=image/jpeg
+scale
+synchronous
+order=0

@@ -1,0 +1,81 @@
+#!/bin/sh /etc/rc.common
+
+GUEST_CONFIG=/etc/dhcp.guest.conf
+
+DISPLAY_NAME="DHCP Guest Server"
+RUNDIR="/var/run/appflow"
+PIDFILE="${RUNDIR}/dhcp.guest.pid"
+OLDINFO="${RUNDIR}/dhcp.guest.info"
+DAEMON_BIN="/usr/sbin/dnsmasq -u root"
+CFGFILE="${RUNDIR}/dnsmasq.guest.conf"
+DHCPORIG="/var/dnsmasq.conf"
+
+guest_setup() {
+
+	echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
+	
+	LAN_ip_addr=$(uci get network.lan.ipaddr)
+	LAN_netmask=$(uci get network.lan.netmask)
+	GUEST_LAN_ip_addr=$(uci get network.guest_network.ip_addr)
+	GUEST_LAN_netmask=$(uci get network.guest_network.netmask)
+	chk_raw_prerouting_rule=$(iptables -t raw -vnL prerouting_rule_guest | grep "physdev-in $1")
+	chk_nat_prerouting_rule=$(iptables -t nat -vnL prerouting_rule_guest | grep "physdev-in $1")
+	chk_nat_postrouting_rule=$(iptables -t nat -vnL postrouting_rule_guest | grep $GUEST_DHCP_IPADDR)
+	chk_input_rule=$(iptables -vnL BLOCK_GUEST_NETWORK | grep "physdev-in $1")
+	chk_forward_out_rule=$(iptables -vnL BLOCK_GUEST_NETWORK_FW | grep "physdev-out $1")
+	chk_forward_in_rule=$(iptables -vnL BLOCK_GUEST_NETWORK_FW | grep "physdev-in $1")
+	chk_forward_allow_guest_ip=$(iptables -vnL BLOCK_GUEST_NETWORK_FW | grep "RETURN" | grep "$1")
+	[ -n "$chk_raw_prerouting_rule" ] || iptables -t raw -I prerouting_rule_guest 1 -i "$GUEST_DHCP_BRIDGE" -m physdev --physdev-in "$1" -p udp --dport 67 -j RAWDNAT --to-destination 0.255.255.255
+	[ -n "$chk_nat_prerouting_rule" ] || iptables -t nat -I prerouting_rule_guest 1 -i "$GUEST_DHCP_BRIDGE" -m physdev --physdev-in "$1" -p udp --dport 67 -d 0.255.255.255 -j DNAT --to-destination 255.255.255.255:6700
+	[ -n "$chk_nat_postrouting_rule" ] || iptables -t nat -I postrouting_rule_guest 1 -o "$GUEST_DHCP_BRIDGE" -p udp --sport 6700 --dport 68 -j SNAT --to-source "$GUEST_DHCP_IPADDR":67
+	[ -n "$chk_forward_out_rule" ] || iptables -I BLOCK_GUEST_NETWORK_FW -m physdev --physdev-out "$1" -s "$LAN_ip_addr"/"$LAN_netmask" -j DROP
+	[ -n "$chk_forward_in_rule" ] || iptables -I BLOCK_GUEST_NETWORK_FW -m physdev --physdev-in "$1" -d "$LAN_ip_addr"/"$LAN_netmask" -j DROP
+	[ -n "$chk_forward_allow_guest_ip" ] || {
+		iptables -A BLOCK_GUEST_NETWORK_FW -m physdev --physdev-in "$1" -s $GUEST_LAN_ip_addr/$GUEST_LAN_netmask -j RETURN
+		iptables -A BLOCK_GUEST_NETWORK_FW -m physdev --physdev-in "$1" -j DROP
+	}
+	[ -n "$chk_input_rule" ] || {
+		iptables -A BLOCK_GUEST_NETWORK -m physdev --physdev-in "$1" -j DROP
+		iptables -I BLOCK_GUEST_NETWORK -m physdev --physdev-in "$1" -p udp --sport 67:68 -j ACCEPT
+	}
+}
+
+guest_teardown() {
+	LAN_ip_addr=$(uci get network.lan.ipaddr)
+	LAN_netmask=$(uci get network.lan.netmask)
+	GUEST_LAN_ip_addr=$(uci get network.guest_network.ip_addr)
+	GUEST_LAN_netmask=$(uci get network.guest_network.netmask)
+	iptables -D BLOCK_GUEST_NETWORK_FW -m physdev --physdev-in "$1" -s $GUEST_LAN_ip_addr/$GUEST_LAN_netmask -j RETURN
+	iptables -D BLOCK_GUEST_NETWORK_FW -m physdev --physdev-in "$1" -j DROP
+	iptables -D BLOCK_GUEST_NETWORK_FW -m physdev --physdev-out "$1" -s "$LAN_ip_addr"/"$LAN_netmask" -j DROP
+	iptables -D BLOCK_GUEST_NETWORK_FW -m physdev --physdev-in "$1" -d "$LAN_ip_addr"/"$LAN_netmask" -j DROP
+	iptables -D BLOCK_GUEST_NETWORK -m physdev --physdev-in "$1" -p udp --sport 67:68 -j ACCEPT
+	iptables -D BLOCK_GUEST_NETWORK -m physdev --physdev-in "$1" -j DROP	
+	iptables -t raw -D prerouting_rule_guest -i "$GUEST_DHCP_BRIDGE" -m physdev --physdev-in "$1" -p udp --dport 67 -j RAWDNAT --to-destination 0.255.255.255
+	iptables -t nat -D prerouting_rule_guest -i "$GUEST_DHCP_BRIDGE" -m physdev --physdev-in "$1" -p udp --dport 67 -d 0.255.255.255 -j DNAT --to-destination 255.255.255.255:6700
+
+}
+
+start() {
+
+	[ -f "$GUEST_CONFIG" ] || {
+		echo "Config file $GUEST_CONFIG missing, can't start $DISPLAY_NAME"
+		return 1
+	}
+	. "$GUEST_CONFIG"
+	guest_setup $1 
+
+	retval=$?
+	[ $retval -eq 0 ] && echo OK || echo FAIL
+	return $retval
+	
+}
+
+stop() {
+
+	. "$GUEST_CONFIG"
+	guest_teardown $1
+	
+	return 0
+}
+

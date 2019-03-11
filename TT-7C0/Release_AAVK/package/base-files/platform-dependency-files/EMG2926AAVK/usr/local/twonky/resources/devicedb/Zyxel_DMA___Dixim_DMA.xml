@@ -1,0 +1,23 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Zyxel DMA / Dixim DMA</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>dixim</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<MimeTranslations>
+			<MimeTypeMapping>
+				<In>video/x-msvideo</In>
+				<Out>video/avi</Out>
+			</MimeTypeMapping>
+		</MimeTranslations>
+	</Adaptations>
+</Client>

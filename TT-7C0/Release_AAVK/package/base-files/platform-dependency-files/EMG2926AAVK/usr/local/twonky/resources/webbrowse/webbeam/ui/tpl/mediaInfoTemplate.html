@@ -1,0 +1,20 @@
+<div id="mediaInfo" class="popup medium" data-bind="slide:visible,preSliding:$parent.preSliding,postSliding:$parent.postSliding">
+    <div class="popup_header_line"></div>
+    <div class="thumbnail">
+        <img class="thumbnailImg" data-bind="attr: {src: thumbnail() ? thumbnail() : './res/defaultImage.png'}" />
+    </div>
+    <div class="metadatacontainer">
+        <div class="popuptitle" data-bind="text: title"></div>
+        <ul class="metadata" data-bind="foreach: metadataItems">
+            <li class="metadataitem"><span class="metadataKey" data-bind="text: key"></span> <span data-bind="text: value"></span></li>
+        </ul>
+    </div>
+    <div class="beamingToButtonContainer" data-bind="visible:!!beamingTo()">
+        <p class="metadataitem metadataKey" data-bind="html: beamingToLabel"></p>
+        <div class="boxButton largeButton svgGradient" data-bind="click: onBeamingToClick">
+            <div class="playericon" data-bind="style: { background: 'url(\'' + playerIcon() + '\') -0px -0px no-repeat'}"></div>
+            <div class="playerTitle" data-bind="text: beamingTo"></div>
+            <div class="playerSelector"></div>
+        </div>
+    </div>
+</div>

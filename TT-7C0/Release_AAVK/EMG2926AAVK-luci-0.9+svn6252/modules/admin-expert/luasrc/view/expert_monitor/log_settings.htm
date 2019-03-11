@@ -1,0 +1,144 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("application/xhtml+xml")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+</head>
+<body  >
+<%
+local logList = {}; alertList = {}
+
+--table.insert( logList, { i18n.translate("log_list1"), "SysMaintenance" } ) -- for hide message, EMG2926-Q10A, wen-hsiang, 2011/11/03
+table.insert( logList, { i18n.translate("log_list2"),      "SysErrs" } )
+--table.insert( logList, { i18n.translate("log_list4"),     "Firmware" } ) -- wen-hsiang 2011/09/16. --
+table.insert( logList, { i18n.translate("log_list3"), "AccessCtrl"} )
+--table.insert( logList, { "Upnp",               "Upnp" } )
+--table.insert( logList, { "Forward Web Sites",  "FwdWebSites" } )
+--table.insert( logList, { "Blocked Web Sites",  "BlkedWebSites" } )
+--table.insert( logList, { "Attacks",            "Attacks" } )
+--table.insert( logList, { "Any IP",             "AnyIP" } )
+--table.insert( logList, { "802.1X",             "802_1X" } )
+
+--table.insert( alertList, { "System Erroes",     "SysErrs" } )
+--table.insert( alertList, { "Access Control",    "AccessCtrl" } )
+--table.insert( alertList, { "Blocked Web Sites", "BlkedWebSites" } )
+--table.insert( alertList, { "Blocked Java Etc.", "BlkedJavaEtc" } )
+--table.insert( alertList, { "Attacks",           "Attacks" } )
+--table.insert( alertList, { "IPSec",             "IPSec" } )
+--table.insert( alertList, { "IKE",               "IKE" } )
+%>
+
+<script type="text/javascript">
+function submitData()
+{
+	showWebMessage( 0, '<%:Message%>', '<%:msg_config%>' );
+	return true;
+}
+</script>
+<div id="tabs">
+  <ul>
+    <li ><a href="<%=controller%>/expert/monitor/log" title="<%:view_log%>"><span><%:view_log%></span></a></li>
+    <li class="hightline"><a title="<%:log_setting%>"><span><%:log_setting%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+</div>
+<form name="LogSettingForm">
+  <div id="table">
+    <ul>
+      <li class="table_top"></li>
+      <li class="table_content">
+        <div class="data">
+          <ul>
+            <div class="title"><%:active_log_alert%></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><b><%:log%></b></li>
+                <li class="right_table"><b><!--Send Immediate Alert--></b> </li>
+              </ul>
+            </div>
+          <%
+          for row = 1, math.max( #logList, #alertList ) do
+          %>
+            <div class="w_text">
+              <ul>
+                <li class="left_table">
+                <%
+                if not ( logList[row] == nil ) then
+                %>
+                  <input name="Log<%= logList[row][2] %>" type="checkbox" <% local value = uci:get( "syslogd", "setting", "log" .. logList[row][2] ) if "1" == value or "2" == value then %>checked="checked"<% end %> />
+                  &nbsp;<%= logList[row][1] %>
+                <%
+                else
+                %>
+                  &nbsp;
+                <%
+                end
+                %>
+                </li>
+                <li class="right_table">
+                  <span class="left_table">
+                  <%
+                  if not ( alertList[row] == nil ) then
+                  %>
+                    <input name="Alert<%= alertList[row][2] %>" type="checkbox" <% local value = uci:get( "syslogd", "setting", "alert" .. alertList[row][2] ) if "1" == value or "2" == value then %>checked="checked"<% end %> />
+                  &nbsp;<%= alertList[row][1] %>
+                  <%
+                  else
+                  %>
+                    &nbsp;
+                  <%
+                  end
+                  %>
+                  </span>
+                </li>
+              </ul>
+            </div>
+          <%
+          end
+          %>
+            <div class="spaceair"></div>
+          </ul>
+        </div>
+      </li>
+      <li class="table_button">
+        <div class="button" align="center">
+          <input name="apply" value="<%:apply%>" type="submit" onclick="return submitData()" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:cancel%>" type="reset" />
+        </div>
+      </li>
+    </ul>
+  </div>
+</form>      
+</body>
+<script language="JavaScript">
+   showFullPath(' <%:monitor%> > <%:log%> > <%:log_setting%>');
+   showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+</script>
+</html>

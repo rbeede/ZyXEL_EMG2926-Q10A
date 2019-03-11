@@ -1,0 +1,18 @@
+<Client>
+	<DeviceId>
+		<DisplayName>ONKYO</DisplayName>
+		<DeviceDescriptionRecognition BoolOp="OR">
+			<DescriptionText>ONKYO</DescriptionText>
+			<DescriptionText>Onkyo</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA15</Version>
+		</DLNA>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>FORCE_4TH_FIELD</Quirk>
+	</DeviceQuirks>
+</Client>

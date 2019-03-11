@@ -1,0 +1,14 @@
+<Client>
+	<DeviceId>
+		<DisplayName>WAS7000</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>WAS7000</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+</Client>

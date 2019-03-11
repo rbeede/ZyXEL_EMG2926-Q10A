@@ -1,0 +1,38 @@
+<Client>
+	<DeviceId>
+		<!-- This entry for WMP 12 on Win7 if its renderer is activated -->
+		<DisplayName>Windows Media Player</DisplayName>
+		<DeviceDescriptionRecognition>
+			<DescriptionText>Windows Media Player</DescriptionText>
+		</DeviceDescriptionRecognition>
+		<!-- If remote control is disabled, WMP is only fired up as player, not as renderer -->
+		<HttpRecognition>
+			<HttpText>Windows-Media-Player</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIXPC3</MappingUpdatePolicy>
+	</DeviceId>
+	<Adaptations>
+		<DefaultView>flat</DefaultView>
+		<DLNA>
+			<Version>DLNA15</Version>
+			<DescriptionFile>devicedescription-win7.xml</DescriptionFile>
+		</DLNA>
+		<HTTP>
+			<HttpSetting>chunked</HttpSetting>
+		</HTTP>
+		<!-- WMP does not event all affected container IDs for playlist changes -->
+		<FlushForContainerIds>F,11,10,13</FlushForContainerIds>
+	</Adaptations>
+	<DeviceQuirks>
+		<Quirk>STOP_WORKAROUND</Quirk>
+		<Quirk>UNLIMITED</Quirk>
+		<Quirk>FILTER_BAD_CHARS</Quirk>
+		<Quirk>BROWSE_METADATA_ON_EMPTY_RESULT</Quirk>
+		<!-- This is for WMP on Win10 only, but unfortunately it has the same model number:
+			 Basically SetNext works, but the playback is immediately stopped when setting
+			 as next URL/metadata an empty set to clear the fields. This may happen when
+			 an item or the entire queue is cleared and is allowed. -->
+		<Quirk>BROKEN_SETNEXT</Quirk>
+		<Quirk>CDS_NOUPLOAD_NOSEARCH</Quirk>
+	</DeviceQuirks>
+</Client>

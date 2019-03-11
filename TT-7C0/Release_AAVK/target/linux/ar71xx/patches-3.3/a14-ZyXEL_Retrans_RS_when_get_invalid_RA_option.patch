@@ -1,0 +1,15 @@
+--- linux-3.3.8/net/ipv6/addrconf.c	2016-01-07 10:38:56.957673917 +0800
++++ linux-3.3.8/net/ipv6/addrconf.c	2016-01-06 15:39:40.096766300 +0800
+@@ -2870,8 +2870,10 @@
+ 	read_lock(&idev->lock);
+ 	if (idev->dead || !(idev->if_flags & IF_READY))
+ 		goto out;
+-
+-	if (idev->cnf.forwarding)
++	/*Kerker
++	 *		Retrans RS
++	 */
++	if (idev->cnf.forwarding==1)
+ 		goto out;
+ 
+ 	/* Announcement received after solicitation was sent */

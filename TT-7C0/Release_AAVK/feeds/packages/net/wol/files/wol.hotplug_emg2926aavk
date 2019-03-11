@@ -1,0 +1,14 @@
+#!/bin/sh
+
+##check mode,if AP/UR,exit
+local sys_mode=$(get_sys_mode)
+[ "$sys_mode" == "2" -o "$sys_mode" == "3" ] && exit 0
+
+defaultwan=$(uci get network.general.defaultWan)
+
+. /etc/functions.sh
+include /lib/config
+
+if [ "$ACTION" = "ifup" -a "$INTERFACE" = "$defaultwan" ]; then
+        /etc/init.d/wol restart
+fi

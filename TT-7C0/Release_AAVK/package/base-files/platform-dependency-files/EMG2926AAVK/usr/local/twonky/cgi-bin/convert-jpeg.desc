@@ -1,0 +1,9 @@
+# convert to JPG and resize images
+#(c) 2015 by Lynx Technology
+exec: convert $infile -sample $targetgeometry> -auto-orient $outfile
+# capabilities
+from=image/all
+to=image/jpeg
+scale
+synchronous
+order=1000

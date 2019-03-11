@@ -1,0 +1,132 @@
+#!/bin/sh
+
+
+local opt60_port=$(uci get intfGrp.Default.option60del)
+index=0
+
+opt60_array=$(echo $opt60_port | tr "," "\n")
+for i in $opt60_array
+do
+
+	if [ "$i" == "0" ]; then
+
+		#if [ -f "/tmp/lan1_link_status" ] ;then
+		#	echo "/tmp/lan1_link_status found." > /dev/null
+		#else
+		#	echo 0 > /tmp/lan1_link_status
+		#fi
+
+		[ -f "/tmp/lan1_link_status" ] || echo 0 > /tmp/lan1_link_status
+
+
+		lan1_link_status=$(/bin/port_config r 1 | grep down)
+		lan1_link_ckeck=$(cat /tmp/lan1_link_status)
+
+		if [ -z "$lan1_link_status" -a "$lan1_link_ckeck" == "0" ] ;then
+			echo 1 > /tmp/lan1_link_status
+		elif [ -n "$lan1_link_status" -a "$lan1_link_ckeck" == "1"  ] ;then
+
+			#echo 0 > /tmp/lan1_link_status
+			rm /tmp/lan1_link_status
+
+			index=1
+
+			/bin/intfGrp_opt60 reset_group 0
+
+		fi
+
+	fi
+
+	if [ "$i" == "1" ]; then
+
+		#if [ -f "/tmp/lan2_link_status" ] ;then
+		#	echo "/tmp/lan1_link_status found." > /dev/null
+		#else
+		#	echo 0 > /tmp/lan2_link_status
+		#fi
+
+		[ -f "/tmp/lan2_link_status" ] || echo 0 > /tmp/lan2_link_status
+
+		lan2_link_status=$(/bin/port_config r 2 | grep down)
+		lan2_link_ckeck=$(cat /tmp/lan2_link_status)
+
+		if [ -z "$lan2_link_status" -a "$lan2_link_ckeck" == "0" ] ;then
+			echo 1 > /tmp/lan2_link_status
+		elif [ -n "$lan2_link_status" -a "$lan2_link_ckeck" == "1"  ] ;then
+
+			#echo 0 > /tmp/lan2_link_status
+			rm /tmp/lan2_link_status
+
+			index=1
+
+			/bin/intfGrp_opt60 reset_group 1
+	
+		fi
+	fi
+
+	if [ "$i" == "2" ]; then
+
+		#if [ -f "/tmp/lan3_link_status" ] ;then
+		#	echo "/tmp/lan1_link_status found." > /dev/null
+		#else
+		#	echo 0 > /tmp/lan3_link_status
+		#fi
+
+		[ -f "/tmp/lan3_link_status" ] || echo 0 > /tmp/lan3_link_status
+
+		lan3_link_status=$(/bin/port_config r 3 | grep down)
+		lan3_link_ckeck=$(cat /tmp/lan3_link_status)
+
+		if [ -z "$lan3_link_status" -a "$lan3_link_ckeck" == "0" ] ;then
+			echo 1 > /tmp/lan3_link_status
+		elif [ -n "$lan3_link_status" -a "$lan3_link_ckeck" == "1"  ] ;then
+
+			#echo 0 > /tmp/lan3_link_status
+			rm /tmp/lan3_link_status
+
+			index=1
+	
+			/bin/intfGrp_opt60 reset_group 2
+		
+		fi
+
+	fi
+
+	if [ "$i" == "3" ]; then
+
+		#if [ -f "/tmp/lan4_link_status" ] ;then
+		#	echo "/tmp/lan1_link_status found." > /dev/null
+		#else
+		#	echo 0 > /tmp/lan4_link_status
+		#fi
+
+		[ -f "/tmp/lan4_link_status" ] || echo 0 > /tmp/lan4_link_status
+
+		lan4_link_status=$(/bin/port_config r 4 | grep down)
+		lan4_link_ckeck=$(cat /tmp/lan4_link_status)
+
+		if [ -z "$lan4_link_status" -a "$lan4_link_ckeck" == "0" ] ;then
+			echo 1 > /tmp/lan4_link_status
+		elif [ -n "$lan4_link_status" -a "$lan4_link_ckeck" == "1"  ] ;then
+
+			#echo 0 > /tmp/lan4_link_status
+			rm /tmp/lan4_link_status
+
+			index=1	
+
+			/bin/intfGrp_opt60 reset_group 3	
+		fi
+	fi
+
+done
+
+if [ "$index" == "1" ]; then
+	/etc/init.d/intfGrp restart
+fi
+
+
+local opt60_port=$(uci get intfGrp.Default.option60del)
+if [ -z "$opt60_port" ]; then
+	/bin/intfGrp_opt60 watch stop
+fi
+

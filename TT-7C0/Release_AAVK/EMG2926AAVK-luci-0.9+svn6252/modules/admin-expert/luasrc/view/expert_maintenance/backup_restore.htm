@@ -1,0 +1,191 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+--require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+  if not lang then
+     lang = "en"
+  end
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+function redirect()
+{
+	top.location.href="http://192.168.1.1";
+}
+
+function CountDown()
+{
+	CountDownSecond = document.theForm.timer.value;
+	if ( CountDownSecond !=0 ) {
+		document.theForm.timer.value = CountDownSecond - 1;
+		setTimeout('CountDown()',1000);
+	}
+	else {
+		redirect();
+	}
+}
+
+function AdmFormCheck()
+{
+	if (document.BAKUP_RESTORE.RstFile.value == "") {
+		alert("Please specify the file name.");
+		return false;
+	}
+	if (document.BAKUP_RESTORE.RstFile.files[0].size > 2048000){
+                alert("File size error.");
+                return false;
+        }
+	return true;
+}
+
+</script>
+</head>
+<%
+   
+   local uname = luci.dispatcher.context.authuser
+   local privilege
+   if uname ~= nil then
+   	privilege = uci:get("account",uname,"privilege")
+   end
+   if not privilege then
+	privilege = "1"
+   end
+%>
+
+<body  >
+<div id="tabs">
+
+<% if not ( privilege == "1") then %>
+  <ul>
+    <li class="hightline"><a title="<%:bak_rst%>"><span><%:bak_rst%></span></a></li>
+  </ul>
+  <br class="clearfloat" />
+  
+<% else %>
+   <ul>
+	  <li class="hightline"><a title="<%:bak_rst%>"><span><%:bak_rst%></span></a></li>  
+      <li><a href="<%=controller%>/expert/maintenance/bakrestore/romd" title="<%:romd%>"><span><%:romd%></span></a></li>
+	 
+   </ul>
+<% end %>
+ 
+</div>
+<!-- Tab -->
+<% if rebootsystem == 1 then %>
+<form name="theForm">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:restarting%></div>
+          <div class="w_text"><%:bak_remind1%>
+            <input name="timer"  size="3" type="text" value=140 style="border:0;background:transparent" readonly=true />
+            <%:seconds%>.
+          </div>
+          <div class="spaceair"></div> 
+        </ul> 
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<script language="JavaScript">
+	CountDown();
+</script>
+<% elseif rebootsystem == 2 then %>
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:bak_remind3%></div>
+          <div class="w_text">
+            <%:bak_remind4%><br>
+	    <%=errmsg%>	
+          </div>
+          <div class="spaceair"></div>
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+<% else %>
+<form method="post" name="BAKUP_RESTORE" action="<%=controller%>/expert/maintenance/bakrestore" enctype="multipart/form-data">
+<div id="table">
+  <ul>
+    <li class="table_top"></li>
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><%:bak_configure%></div>
+          <div class="w_text"><%:bak_remind2%> 
+            <input name="Backup" value="<%:backup%>" type="submit" />
+          </div>
+	  <div class="space"></div>
+          <div class="title"><%:rst_configure%></div>
+          <div class="w_text">
+          <%:rst_remind1%>
+          </div>
+          <div class="w_text"><%:file_path%> :
+            <input name="RstFile"  size="20" maxlength="128" type="file" />
+            <input name="Restore" value="<%:file_upload%>" type="submit" onClick="return AdmFormCheck()" />
+          </div>
+          <div class="space"></div>
+          <div class="title"><%:factory_default%></div>
+          <div class="w_text">
+          <%:factory_remind1%>
+          </div>
+          <div class="w_text"> - <%:factory_pwd%> 1234 </div>
+          <div class="w_text"> - <%:factory_lan_ip%> 192.168.1.1  </div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><span style="font-weight: 400;">- <%:factory_dhcp%></span></li>
+              <li class="right_table">
+                <input name="Reset" value="<%:factory_reset%>" type="submit" />
+              </li>
+            </ul>
+          </div>
+	  <div class="spaceair"></div>	
+        </ul>
+      </div>
+    </li>
+    <li class="table_button"></li>
+  </ul>
+</div>
+</form>
+<% end %>
+</body>
+<script language="JavaScript">
+	showFullPath(' <%:maintenance%> > <%:bak_rst%>');
+</script>
+</html>

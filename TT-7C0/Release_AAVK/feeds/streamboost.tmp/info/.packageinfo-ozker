@@ -1,0 +1,50 @@
+Source-Makefile: feeds/streamboost/ozker/Makefile
+Package: ozker
+Submenu: Web UI
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +libcurl +fcgi +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: 
+Build-Variant: fcgi
+Build-Depends: jansson argp-standalone
+Section: opt
+Category: Bigfoot
+Title: FastCGI Gateway for the Web UI
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: ozker-.tar.gz
+Type: ipkg
+Description: ozKer is the descendant of Oz and Aker (guardian to the Egyptian
+underworld and remover of death causes). Or, you could call it The Web
+UI Gateway Which Validates User Input.
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+       select PACKAGE_app-flow-scripts if !PACKAGE_app-flow-scripts-noload
+@@
+
+Package: ozker-nofcgi
+Submenu: Web UI
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +jansson +libcurl +fcgi +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: ozker
+Build-Variant: nofcgi
+Build-Depends: jansson argp-standalone
+Section: opt
+Category: Bigfoot
+Title: FastCGI Gateway for the Web UI
+Maintainer: Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+Source: ozker-.tar.gz
+Type: ipkg
+Description: ozKer is the descendant of Oz and Aker (guardian to the Egyptian
+underworld and remover of death causes). Or, you could call it The Web
+UI Gateway Which Validates User Input.
+
+This is the variant that works without fcgi
+Cristian Prundeanu <prundeanu@qca.qualcomm.com>
+@@
+Config:
+       select PACKAGE_app-flow-scripts if !PACKAGE_app-flow-scripts-noload
+@@
+
+

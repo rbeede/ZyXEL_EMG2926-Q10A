@@ -1,0 +1,242 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+require("luci.http").prepare_content("text/html")
+local i18n = require("luci.i18n")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>.::<%:welcome_to_emg2926q10a%>::.</title>
+<link href="<%=media%>/css/brick.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script type="text/JavaScript">
+function MM_goToURL() { //v3.0
+  var i, args=MM_goToURL.arguments; document.MM_returnValue = false;
+  for (i=0; i<(args.length-1); i+=2) eval(args[i]+".location='"+args[i+1]+"'");
+}
+
+function changeSec()
+{
+	with ( document.forms[0] ){
+		if(wlanSec.selectedIndex != 0){
+			document.getElementById("div_password_id").style.display = 'block';
+		}
+		else{
+			document.getElementById("div_password_id").style.display = 'none';
+		}
+	}
+}
+function changeRadio()
+{
+	with ( document.forms[0] ){
+		/* 2.4G */
+		//if(wlanRadio.selectedIndex == 0){
+
+			<%
+			if not SSID then
+				local mac_24g=luci.sys.exec("fw_printenv ethaddr | awk -F'=' '{print $2}' |sed 's/\"//g' | sed 's/://g'|cut -c 7-12")
+				local mac_ssid_24g=string.match( mac_24g,"%x+")
+				SSID="ZyXEL" .. mac_ssid_24g
+			end
+			%>
+			wlanSSID.value = "<%=SSID%>";
+			<%
+				if security == "OPEN" then
+			%>
+				wlanSec.selectedIndex = 0;
+			<%
+				elseif security == "WPA2PSK" then
+			%>
+				wlanSec.selectedIndex = 1;
+			
+			<% end
+			   -- Modify the display errors of "wireless security password" for eaZy123, EMG2926-Q10A, WenHsiang, 2012/04/30
+               -- The ¡y"¡z character and the ¡y\¡z character will lead to some display errors.
+               -- We must use the escape characters to avoid some display errors.
+			   if pwd then
+				  pwd = pwd:gsub("\\","\\\\")
+				  pwd = pwd:gsub("\"", "\\\"")
+			   end
+            %>
+			
+			wlanPwd.value = "<%=pwd%>";
+
+		changeSec();
+	}
+}
+
+function checkPSK(str)
+{
+        var len = str.length;
+
+        if( len == 0 )
+                return false;
+
+        if( len < 8 )
+                return false;
+
+        if( len > 64 )
+                return false;
+
+        if ( len == 64 ){
+                re=/^[a-fA-F0-9]{64}$/;
+                if (re.test(str))
+                        return true;
+                else
+                        return false;
+        }
+        /*  Modify check "wireless security password" for eaZy123, EMG2926-Q10A, WenHsiang, 2012/02/16
+        if( len >= 8 && len <=63 ){
+                re=/^[a-zA-Z0-9]{8,63}$/;
+                if (re.test(str))
+                        return true;
+                else
+                        return false;
+        }
+		*/
+}
+
+function btnNext()
+{	
+    with ( document.forms[0] ){  // Using this syntax, you can omit form name("Wireless_Scurity") in the follow syntaxes.
+
+   	    if (wlanSSID.value == "")
+		{
+		    alert("Please enter SSID!");
+		    return false;
+		}
+		
+		if (wlanSec.selectedIndex != 0 && checkPSK(wlanPwd.value) == false)
+		{
+			alert('Please enter 8~63 ASCII or 8~64 Hex characters in Pre-Shared Key.');
+			return false;
+		}		
+				
+		if (wlanSec.selectedIndex != 0 && wlanPwd.value != wlanValidatePwd.value)
+		{
+			alert("password validation error!! Please re-configure again!!");
+			return false;
+		}
+		
+		return true;
+	}
+}
+</script>
+</head>
+<body onLoad="changeRadio();">
+<form method="post" name="Wireless_Scurity" action="<%=controller%>/easy/eaZy123/genie5" onSubmit="return btnNext();">
+<div id="wrapper">
+<div class="top_image"></div>
+<div id="close"><a href="#"onclick="MM_showHideLayers('popup','','show','popup3_table','','show')" title="Exit"></a></div>
+<div class="unit_eazy"></div>
+<div class="unit_title" id="g2-2easy123">eaZy 123</div>
+<div class="genie_logo"></div>
+<div class="genie_color"></div>
+<div class="set"><ul><li class="g_ed"><%:connect_to_internet%><div class="set_now"><ul><li>1<span></span></li>
+</ul></div></li><li class="g_arrow"></li><li class="g_ed"><%:router_password%><div class="set_now2"><ul><li>2<span></span></li>
+</ul></div></li> <li class="g_arrow"></li><li class="g_ing"><%:net_map_wireless_security%><div class="set_now3"><ul><li>3</li></ul></div></li></ul></div>
+
+<div class="g_word">
+<table width="100%" border="0">
+<div class="input_bn2">
+
+  <table width="98%" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td style="font-size:16px; font-weight:bold; color:#6398ca"><%:eaZy123_4_note_1%></td>
+    </tr>
+    <tr>
+      <td ><%:eaZy123_4_note_2%><br/><%:eaZy123_4_note_3%></td>
+    </tr>
+	<tr>
+	  <td>
+		<br>
+	  </td>
+	</tr>
+  </table>
+		
+  <table width="98%" border="0" cellpadding="0" cellspacing="0">
+	<input type="hidden" name="wlanRadio" value="2.4G" />
+    <!-- 
+	<tr>
+      <td width="300" class="b_txt"><%:easy_wireless_radio%> :</td>
+      <td >
+	    <label>
+            <select name="wlanRadio" class="board2" onChange="changeRadio()">
+              <option value="2.4G" selected="selected"><%:easy_wlan_24G%></option>
+              <option value="5G"><%:easy_wlan_5G%></option>
+            </select>
+        </label>
+	  </td>
+    </tr>
+	-->
+    <tr>
+      <td width="300" class="b_txt"><%:easy_wlan_name%> :</td>
+      <td><input name="wlanSSID" maxlength="32" type="text" class="board2" size="28" /></td>
+    </tr>
+	
+    <tr>
+      <td width="300" class="b_txt"><%:security_mode%> :</td>
+      <td >
+	    <label>
+            <select name="wlanSec" class="board2" onChange="changeSec()">
+              <option value="none" selected="selected"><%:no_security%></option>
+              <option value="WPA2-PSK">WPA2-PSK</option>
+            </select>
+        </label>
+	  </td>
+    </tr>
+  </table>
+  
+<span id="div_password_id">
+  <table width="98%" border="0" cellpadding="0" cellspacing="0"> <!-- Modify display errors for Firefox & Chrome -->
+    <tr>
+      <td width="300" class="b_txt"><%:easy_wlan_password%> :</td>
+      <td><input name="wlanPwd" type="password" class="board2" size="28" /></td>
+    </tr>
+    <tr>
+      <td width="300" class="b_txt"><%:easy_verify_password%> :</td>
+      <td><input name="wlanValidatePwd" type="password" class="board2" size="28" /></td>
+    </tr>
+  </table> <!-- Modify display errors for Firefox & Chrome -->
+</span>
+
+</div>
+</table>
+   <div class="gbutton2">
+     <div align="right">
+       <input name="button" type="button" onclick="MM_goToURL('parent','<%=controller%>/easy/logout');return document.MM_returnValue" value="<%:eaZy123_exit%>" />
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	   <input type="button" onclick="MM_goToURL('parent','<%=controller%>/easy/eaZy123/genie3');return document.MM_returnValue" value="<%:eaZy123_back%>" />
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+       <input name="genie4_apply" type="submit" value="<%:eaZy123_next%>" />
+     </div>
+   </div> 
+<div class="index_bg" id="index_bg"></div>
+<div class="in_line" id="topline" ></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_left.gif);width:9px;height:501px;z-index: 1;top: 0px;"></div>
+<div style="position:absolute;background:url(<%=media%>/easy/images/frame_right.gif);width:9px;height:501px;right:-2px;z-index: 1;top: 0px;"></div>
+<div class="copyright" id="copyright"><%:copy_right%></div>
+</div>
+</form>
+</body>
+</html>

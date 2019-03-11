@@ -1,0 +1,589 @@
+<%
+
+local uci = require("luci.model.uci").cursor()
+local i18n = require("luci.i18n")
+local lang = uci:get("system","main","language") 
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<%local stEnable = luci.http.formvalue("stEnable")%>
+<%local KeepAlive = luci.http.formvalue("KeepAlive")%>
+<%local NatTraversal = luci.http.formvalue("NatTraversal")%>
+<%local keyMode = luci.http.formvalue("keyMode")%>
+<%local localIP = luci.http.formvalue("localIP")%>
+<%local localNetMask = luci.http.formvalue("localNetMask")%>
+<%local peerIP = luci.http.formvalue("peerIP")%>
+<%local peerNetMask = luci.http.formvalue("peerNetMask")%>
+<%local localGwIP = luci.http.formvalue("localGwIP")%>
+<%local my_identifier_type = luci.http.formvalue("my_identifier_type")%>
+<%local my_identifier = luci.http.formvalue("my_identifier")%>
+<%local remoteGwIP = luci.http.formvalue("remoteGwIP")%>
+<%local peers_identifier_type = luci.http.formvalue("peers_identifier_type")%>
+<%local peers_identifier = luci.http.formvalue("peers_identifier")%>
+<%local preSharedKey = luci.http.formvalue("preSharedKey")%>
+<%local mode = luci.http.formvalue("mode")%>
+<%local spi = luci.http.formvalue("spi")%>
+<%local enAlgo = luci.http.formvalue("enAlgo")%>
+<%local enKeyy = luci.http.formvalue("enKeyy")%>
+<%local authAlgo = luci.http.formvalue("authAlgo")%>
+<%local authKeyy = luci.http.formvalue("authKeyy")%>
+<%local lifeTime = luci.http.formvalue("lifeTime")%>
+<%local keyyGroup = luci.http.formvalue("keyyGroup")%>
+<%local enMode = luci.http.formvalue("enMode")%>
+<%local protocol = luci.http.formvalue("protocol")%>
+<%local enAlgo2 = luci.http.formvalue("enAlgo2")%>
+<%local authAlgo2 = luci.http.formvalue("authAlgo2")%>
+<%local lifeTime2 = luci.http.formvalue("lifeTime2")%>
+<%local keyyGroup2 = luci.http.formvalue("keyyGroup2")%>
+<%local rules = luci.http.formvalue("rules")%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8"  />
+<title>.::Welcome to the Web-Based Configurator::.</title>
+<link href="<%=media%>/css/expert.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="<%=media%>/js/baseJS.js" ></script>
+<script language="JavaScript">
+
+function show_div(show,id) {
+	if(show)
+		document.getElementById(id).style.display="inline";
+	else
+    	   	document.getElementById(id).style.display="none";
+}
+
+function keyModeSelect(form)
+{
+	var newIndex=form.keyModeSelect.selectedIndex;
+	form.keyModeSelect.value=form.keyModeSelect.options[newIndex].value;
+	switch(newIndex) {
+	case 0:        
+        	show_div(true, "IKE_1");    
+		show_div(true, "IKE_2");    
+		show_div(true, "IKE_3");    
+		show_div(true, "IKE_4");    
+		show_div(true, "IKE_5");    
+		show_div(true, "IKE_6");    
+		show_div(false, "manual_1");    
+		show_div(false, "manual_2");    
+		show_div(false, "manual_3");
+        	break;
+  	case 1:
+        	show_div(false, "IKE_1");    
+		show_div(false, "IKE_2");    
+		show_div(false, "IKE_3");    
+		show_div(false, "IKE_4");    
+		show_div(false, "IKE_5");    
+		show_div(false, "IKE_6");    
+		show_div(true, "manual_1");    
+		show_div(true, "manual_2");    
+		show_div(true, "manual_3"); 
+                break;
+	default:
+		break;
+	}
+}
+
+function copyto()
+{
+	keyModeSelect(document.forms[0]);
+}
+
+function init()
+{
+	keyModeSelect(document.forms[0]);
+	var newIndex2=document.forms[0].localContentSelect.selectedIndex;
+	document.forms[0].localContentSelect.value=document.forms[0].localContentSelect.options[newIndex2].value;
+
+	var newIndex3=document.forms[0].remoteContentSelect.selectedIndex;
+	document.forms[0].remoteContentSelect.value=document.forms[0].remoteContentSelect.options[newIndex3].value;
+
+	var newIndex4=document.forms[0].encapModeSelect.selectedIndex;
+	document.forms[0].encapModeSelect.value=document.forms[0].encapModeSelect.options[newIndex4].value;
+
+	var newIndex5=document.forms[0].protocolSelect.selectedIndex;
+	document.forms[0].protocolSelect.value=document.forms[0].protocolSelect.options[newIndex5].value;
+
+	var newIndex6=document.forms[0].encapAlgSelect.selectedIndex;
+	document.forms[0].encapAlgSelect.value=document.forms[0].encapAlgSelect.options[newIndex6].value;
+
+	var newIndex7=document.forms[0].authAlgSelect.selectedIndex;
+	document.forms[0].authAlgSelect.value=document.forms[0].authAlgSelect.options[newIndex7].value;
+
+	var newIndex8=document.forms[0].modeSelect.selectedIndex;
+	document.forms[0].modeSelect.value=document.forms[0].modeSelect.options[newIndex8].value;
+
+	var newIndex9=document.forms[0].keyGroup.selectedIndex;
+	document.forms[0].keyGroup.value=document.forms[0].keyGroup.options[newIndex9].value;
+
+	var newIndex10=document.forms[0].encapAlgSelect2.selectedIndex;
+	document.forms[0].encapAlgSelect2.value=document.forms[0].encapAlgSelect2.options[newIndex10].value;
+
+	var newIndex11=document.forms[0].authAlgSelect2.selectedIndex;
+	document.forms[0].authAlgSelect2.value=document.forms[0].authAlgSelect2.options[newIndex11].value;
+
+	var newIndex12=document.forms[0].keyGroup2.selectedIndex;
+	document.forms[0].keyGroup2.value=document.forms[0].keyGroup2.options[newIndex12].value;
+
+	<%local localAddrType = uci:get("ipsec", rules, "LocalAddrType")%>
+	<%local remoteAddrType = uci:get("ipsec", rules, "RemoteAddrType")%>
+
+	<%if localAddrType=="0" then%>
+		document.forms[0].IPSecSourceAddrMask.disabled=true;
+	<%elseif localAddrType=="1" then%>
+		document.forms[0].IPSecSourceAddrMask.disabled=false;
+	<%else%>
+		document.forms[0].IPSecSourceAddrMask.disabled=true;
+		document.forms[0].IPSecSourceAddrMask.value = "255.255.255.255"
+	<%end%>
+
+	<%if remoteAddrType=="0" then%>
+		document.forms[0].IPSecDestAddrMask.disabled=true;
+	<%elseif remoteAddrType=="1" then%>
+		document.forms[0].IPSecDestAddrMask.disabled=false;
+	<%else%>
+		document.forms[0].IPSecDestAddrMask.disabled=true;
+		document.forms[0].IPSecDestAddrMask.value = "255.255.255.255";
+	<%end%>
+	showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+}
+
+function check_ip_format(ip_addr)
+{
+	var ip = ip_addr.split(".");
+	if(ip.length!= 4) {
+		return false;
+	}
+	else {
+		for (i = 0; i < ip.length; i++) {                           
+			if ( isNaN(ip[i]) == true || ip[i] > 255 || ip[i] < 0)  
+				return false;                                          
+		}
+	}
+}
+
+function LocalTypeChange(selectedindex)
+{
+        if ( selectedindex == 0 ) {
+		document.forms[0].IPSecSourceAddrMask.value = "255.255.255.255";
+                document.forms[0].IPSecSourceAddrMask.disabled=true;
+	}
+        else
+                document.forms[0].IPSecSourceAddrMask.disabled=false;
+}
+function MainModeCheck(selectedindex)
+{
+	if (selectedindex == 0) {
+		document.forms[0].localContentSelect.selectedIndex = 0;
+		document.forms[0].remoteContentSelect.selectedIndex = 0;
+	}
+
+}
+
+function RemoteTypeChange(selectedindex)
+{
+        if ( selectedindex == 0 ) {
+		document.forms[0].IPSecDestAddrMask.value = "255.255.255.255";
+                document.forms[0].IPSecDestAddrMask.disabled=true;
+	}
+        else
+                document.forms[0].IPSecDestAddrMask.disabled=false;
+}
+
+function submit_apply()
+{
+	var local_policy_type = document.forms[0].localContentSelect.value;
+	var remote_policy_type = document.forms[0].remoteContentSelect.value;
+	var key_Mode_Select = document.forms[0].keyModeSelect.value;
+
+	if ( key_Mode_Select == "00000000" ) {	
+		if ( local_policy_type == "00000000" ) {
+			var local_content = document.forms[0].localContent.value;
+			if ( check_ip_format(local_content) == false ) {
+				showWebMessage( 1, '<%:Message%>', 'Invalid IP value in Local Content field.' );
+				return false;
+			} 
+		}	
+
+		if ( remote_policy_type == "00000000" ) {
+			var remote_content = document.forms[0].remoteContent.value;
+			if ( check_ip_format(remote_content) == false ) {
+				showWebMessage( 1, '<%:Message%>', 'Invalid IP value in Remote Content field.' );
+				return false;
+			}
+		}
+    }
+	if (document.forms[0].modeSelect.selectedIndex == 0) {
+		if (document.forms[0].localContentSelect.selectedIndex != 0){
+			document.forms[0].localContentSelect.focus();
+			showWebMessage( 1, '<%:Message%>', 'Main mode with preshared key can only be identified by the IP.' );
+			return false;
+		}
+		if (document.forms[0].remoteContentSelect.selectedIndex != 0){
+			document.forms[0].remoteContentSelect.focus();
+			showWebMessage( 1, '<%:Message%>', 'Main mode with preshared key can only be identified by the IP.' );
+			return false;
+		}
+	}
+
+	showWebMessage( 0, '<%:Message%>', '<%:Ready%>' );
+	return true;
+}
+</script>
+</head>
+<body onload="init()">
+<form onSubmit="return submit_apply()" method="post" name="IPsec_VPN_Edit" action="<%=controller%>/expert/configuration/security/vpn/vpn_edit" >
+<div id="table">
+  <ul>
+    <li class="table_top"></li>     
+    <li class="table_content">
+      <div class="data">
+        <ul>
+          <div class="title"><span class="cTitle"><%:Property%></span></div>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:Property%>  :</li>
+              <li class="right_table">
+                <input name="ssid_state" id="radio" type="radio" value="enable" <% if stEnable=="enable" or not stEnable then%>checked="checked"<%end%> />
+                <%:Enable%>
+                <input name="ssid_state" id="radio2" type="radio" value="disable" <% if stEnable=="disable" then%>checked="checked"<%end%> />
+                <%:Disable%>
+              </li>
+            </ul>
+          </div>  
+          <span id = "IKE_1" >
+            <div class="w_text">
+              <ul>
+                <li class="all_table">
+                  <input name="IPSecNatTraversal" type="checkbox" <% if NatTraversal=="on" then%>checked="checked"<%end%> />
+                  <%:NAT_Traversal%> </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="all_table">
+                  <input name="IPSecKeepAlive" type="checkbox" <% if KeepAlive=="on" then%>checked="checked"<%end%>/>
+                  <%:Keep_Alive%>
+                </li>
+              </ul>
+            </div>	
+          </span>
+          <div class="w_text">
+            <ul>
+              <li class="left_table"><%:IPSec_Keying_Mode%> : </li>
+              <li class="right_table">
+                <select name="keyModeSelect" size="1" rpgetrtr="IPSecKeyingModeGet" onChange="copyto()">
+                  <option value="00000000" <% if keyMode=="IKE" then%>selected="selected"<%end%>>IKE </option>
+                  <option value="00000001" <% if keyMode=="manual" then%>selected="selected"<%end%>><%:Manual%> </option>
+                </select>
+              </li>
+            </ul>
+          </div>
+          <div class="space"></div>
+          <div class="title"><%:Local_Policy%></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Address_Type%> : </li>
+                <li class="right_table">
+                  <select name="LocalAddressTypeSelect" size="1" onChange="LocalTypeChange(this.selectedIndex);">
+                    <option value="0" <%if localAddrType=="0" then%>selected="selected"<%end%>><%:Single_Address%></option>
+                    <option value="1" <%if localAddrType=="1" then%>selected="selected"<%end%>><%:Subnet_Address%></option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+   	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Local_Address%> : </li>
+                <li class="right_table">
+                  <input name="IPSecSourceAddrStart" size="15" maxlength="15" <%if localIP then%> value="<%=localIP%>" <%else%>value="0.0.0.0"<%end%> type="text" />
+                </li>
+              </ul>
+            </div>
+   	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Local_Address_End_Mask%> :</li>
+                <li class="right_table">
+                  <input name="IPSecSourceAddrMask" size="15" maxlength="15" <%if localNetMask then%> value="<%=localNetMask%>" <%else%>value="255.255.255.0"<%end%> type="text" />
+                </li>
+              </ul>
+            </div>
+   	    <div class="space"></div>
+   	    <div class="title"><%:Remote_Policy%></div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Address_Type%> : </li>
+                <li class="right_table">
+                  <select name="RemoteAddressTypeSelect" size="1" onChange="RemoteTypeChange(this.selectedIndex);">
+                    <option value="0" <%if remoteAddrType=="0" then%>selected="selected"<%end%>><%:Single_Address%></option>
+                    <option value="1" <%if remoteAddrType=="1" then%>selected="selected"<%end%>><%:Subnet_Address%></option>
+                  </select>
+                </li>
+              </ul>
+            </div> 
+   	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Remote_Address%> : </li>
+                <li class="right_table">
+                  <input name="IPSecDestAddrStart" size="15" maxlength="15" <%if peerIP then%> value="<%=peerIP%>" <%else%>value="0.0.0.0"<%end%> type="text" />
+                </li>
+              </ul>
+            </div>
+   	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Remote_Address_End_Mask%> : </li>
+                <li class="right_table">
+                  <input name="IPSecDestAddrMask" size="15" maxlength="15" <%if peerNetMask then%> value="<%=peerNetMask%>" <%else%>value="255.255.255.0"<%end%> type="text" />
+                </li>
+              </ul>
+            </div>
+   	    <div class="space"></div>
+   	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:My_IP_Address%> : </li>
+                <li class="right_table">
+                  <input name="localPublicIP" size="31" maxlength="64" <%if localGwIP then%> value="<%=localGwIP%>" <%else%>value="0.0.0.0"<%end%> type="text" /> (<%:Domain_Name_or_IP_Address%>)
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Secure_Gateway_Address%> : </li>
+                <li class="right_table">
+                  <input name="remotePublicIP" size="31" maxlength="64" <%if remoteGwIP then%> value="<%=remoteGwIP%>" <%else%>value="0.0.0.0"<%end%> type="text" /> (<%:Domain_Name_or_IP_Address%>)
+                </li>
+              </ul>
+            </div>
+            <div class="space"></div>
+            <div class="title"><%:Authentication_Method%></div>
+            <span id = "IKE_2" >
+   	      <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Local_ID_Type%> : </li>
+                  <li class="right_table">
+                    <select name="localContentSelect" size="1" rpgetrtr="IPSecLocalIdTypeGet" onchange="this.form.LocalContent.focus();">
+                      <option value="00000000" <%if my_identifier_type=="address" then%>selected="selected"<%end%> ><%:IP%> </option>
+                      <option value="00000001" <%if my_identifier_type=="fqdn" then%>selected="selected"<%end%>><%:Domain_Name%> </option>
+                      <option value="00000002" <%if my_identifier_type=="user_fqdn" then%>selected="selected"<%end%>><%:E_Mail%> </option>
+                    </select>
+                  </li>
+                </ul>
+              </div>
+   	      <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Local_Content%> : </li>
+                  <li class="right_table">
+                    <input name="localContent" size="31" maxlength="64" <%if my_identifier then%> value="<%=my_identifier%>" <%else%>value=""<%end%> type="text" />
+                  </li>
+                </ul>
+              </div>
+            </span>
+            <span id = "IKE_3" >
+   	      <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Peer_ID_Type%> : </li>
+                  <li class="right_table">
+                    <select name="remoteContentSelect" size="1" rpgetrtr="IPSecLocalIdTypeGet" onchange="this.form.LocalContent.focus();">
+                      <option value="00000000" <%if peers_identifier_type=="address" then%>selected="selected"<%end%> ><%:IP%> </option>
+                      <option value="00000001" <%if peers_identifier_type=="fqdn" then%>selected="selected"<%end%>><%:Domain_Name%> </option>
+                      <option value="00000002" <%if peers_identifier_type=="user_fqdn" then%>selected="selected"<%end%>><%:E_Mail%> </option>
+                    </select>
+                  </li>
+                </ul>
+              </div>
+   	      <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Peer_Content%> : </li>
+                  <li class="right_table">
+                    <input name="remoteContent" size="31" maxlength="64" <%if peers_identifier then%> value="<%=peers_identifier%>" <%else%>value=""<%end%> type="text" />
+                  </li>
+                </ul>
+              </div>
+            </span>
+   	    <div class="space"></div>
+   	    <div class="title"><%:IPSec_Algorithm%></div>
+   	    <span id = "IKE_4" >
+   	      <div class="w_text"><%:Phase_1%></div>
+   	      <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Pre_Shared_Key%> : </li>
+                  <li class="right_table">
+                    <input name="IPSecPreSharedKey" size="32" maxlength="64" <%if preSharedKey then%> value="<%=preSharedKey%>" <%else%>value=""<%end%> type="text" />
+                  </li>
+                </ul>
+              </div>
+              <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Mode%> : </li>
+                  <li class="right_table">
+                    <select name="modeSelect" size="1" rpgetrtr="IPSecEncrypAlgmGet" onChange="MainModeCheck(this.selectedIndex);">
+                      <option value="00000000" <%if mode=="main" then%>selected="selected"<%end%>><%:Main%></option>
+                      <option value="00000001" <%if mode=="aggressive" then%>selected="selected"<%end%>><%:Aggressive%> </option>
+		      <option value="00000002" <%if mode=="main, aggressive" then%>selected="selected"<%end%>>Main, Aggressive</option>
+                    </select>
+                  </li>
+                </ul>
+              </div>
+            </span>
+            <span id = "manual_1" >
+              <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:SPI%> : </li>
+                  <li class="right_table">
+                    <input name="IPSecSPI" size="8" maxlength="64" <%if spi then%> value="<%=spi%>" <%else%>value="101"<%end%> type="text" />(<%:Hex%> 100-FFFFFFFF)
+                  </li>
+                </ul>
+              </div>
+            </span>
+   	    <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Encryption_Algorithm%> : </li>
+                <li class="right_table">
+                  <select name="encapAlgSelect" size="1" rpgetrtr="IPSecEncrypAlgmGet">
+                    <option value="00000000" <%if enAlgo=="des-cbc" then%>selected="selected"<%end%>>DES</option>
+                    <option value="00000001" <%if enAlgo=="3des-cbc" then%>selected="selected"<%end%>>3DES</option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            <span id = "manual_2" >
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Encryption_Key%> : </li>
+                <li class="right_table">
+                  <input name="encrypKey" size="50" maxlength="100" <%if enKeyy then%> value="<%=enKeyy%>" <%else%>value=""<%end%> type="text" />(DES: <%:16_digit_Hex%>,3DES: <%:48_digit_Hex%>)
+                </li>
+              </ul>
+            </div>
+            </span>
+   	      <div class="w_text">
+                <ul>
+                  <li class="left_table"><%:Authentication_Algorithm%>  : </li>
+                  <li class="right_table">
+                    <select name="authAlgSelect" size="1" rpgetrtr="IPSecAuthAlgmGet">
+                      <option value="00000000" <%if authAlgo=="hmac-md5" then%>selected="selected"<%end%>>MD5</option>
+                      <option value="00000001" <%if authAlgo=="hmac-sha1" then%>selected="selected"<%end%>>SHA1 </option>
+                    </select>
+                  </li>
+                </ul>
+              </div>
+            <span id = "manual_3" >
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Authentication_Key%> : </li>
+                <li class="right_table">
+                  <input name="authKey" size="50" maxlength="100" <%if authKeyy then%> value="<%=authKeyy%>" <%else%>value=""<%end%> type="text" />(MD5: <%:32_digit_Hex%>,SHA1:<%:40_digit_Hex%>)
+                </li>
+              </ul>
+            </div>
+            </span>
+            <span id = "IKE_5" >
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:SA_Life_Time%> : </li>
+                <li class="right_table">
+                  <input name="saLifeTime" size="32" maxlength="64" <%if lifeTime then%> value="<%=lifeTime%>" <%else%>value="3600"<%end%> type="text" />(<%:Seconds%>)
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Key_Group%> : </li>
+                <li class="right_table">
+                  <select name="keyGroup" size="1" rpgetrtr="IPSecAuthAlgmGet">
+                    <option value="00000000" <%if keyyGroup=="modp768" then%>selected="selected"<%end%>>DH1</option>
+                    <option value="00000001" <%if keyyGroup=="modp1024" then%>selected="selected"<%end%>>DH2 </option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text"><%:Phase_2%></div>
+            </span>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Encapsulation_Mode%>  : </li>
+                <li class="right_table">
+                  <select name="encapModeSelect" size="1" rpgetrtr="IPSecEncapModeGet">
+                    <option value="00000000" <%if enMode=="tunnel" then%>selected="selected"<%end%>><%:Tunnel%></option>
+                    <option value="00000001" <%if enMode=="transport" then%>selected="selected"<%end%>><%:Transport%> </option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:IPSec_Protocol%>  : </li>
+                <li class="right_table">
+                  <select name="protocolSelect" size="1" rpgetrtr="IPSecProtocolGet" onclick="doIPSecProto(this.selectedIndex);">
+                    <option value="00000000" <%if protocol=="esp" then%>selected="selected"<%end%>>ESP</option>
+                    <option value="00000001" <%if protocol=="ah" then%>selected="selected"<%end%>>AH </option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            <span id = "IKE_6" >
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Encryption_Algorithm%> : </li>
+                <li class="right_table">
+                  <select name="encapAlgSelect2" size="1" rpgetrtr="IPSecEncrypAlgmGet">
+                    <option value="00000000" <%if enAlgo2=="des-cbc" then%>selected="selected"<%end%>>DES</option>
+                    <option value="00000001" <%if enAlgo2=="3des-cbc" then%>selected="selected"<%end%>>3DES </option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Authentication_Algorithm%>  : </li>
+                <li class="right_table">
+                  <select name="authAlgSelect2" size="1" rpgetrtr="IPSecAuthAlgmGet">
+                    <option value="00000000" <%if authAlgo2=="hmac-md5" then%>selected="selected"<%end%>>MD5</option>
+                    <option value="00000001" <%if authAlgo2=="hmac-sha1" then%>selected="selected"<%end%>>SHA1 </option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+              <div class="w_text">
+              <ul>
+                <li class="left_table"><%:SA_Life_Time%> : </li>
+                <li class="right_table">
+                  <input name="saLifeTime2" size="32" maxlength="64" <%if lifeTime2 then%> value="<%=lifeTime2%>" <%else%>value="3600"<%end%> type="text" />(<%:Seconds%>)
+                </li>
+              </ul>
+            </div>
+            <div class="w_text">
+              <ul>
+                <li class="left_table"><%:Key_Group%> : </li>
+                <li class="right_table">
+                  <select name="keyGroup2" size="1" rpgetrtr="IPSecAuthAlgmGet">
+                    <option value="00000000" <%if keyyGroup2=="modp768" then%>selected="selected"<%end%>>DH1</option>
+                    <option value="00000001" <%if keyyGroup2=="modp1024" then%>selected="selected"<%end%>>DH2 </option>
+                  </select>
+                </li>
+              </ul>
+            </div>
+            </span>
+   	    <div class="spaceair"></div>
+          </ul>
+      </div>
+    </li>
+    <li class="table_button">
+      <div class="button">
+        <div align="center">
+          <input name="Back" type="submit" id="Back" onclick="MM_goToURL('parent.frames[\'mainFrame\']','<%=controller%>/expert/configuration/security/vpn');return document.MM_returnValue"value="<%:Back%>" />&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="sysSubmit" value="<%:Apply%>" type="submit" />
+          &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;
+          <input name="Cancel" value="<%:Cancel%>" type="reset" />
+          <input name="rules" <%if rules then%> value="<%=rules%>"<%end%> type="hidden" />
+        </div>
+      </div>
+    </li>
+  </ul>
+</div>
+</form>
+</body>
+<script language="JavaScript"> showFullPath('<%:Security%> > <%:VPN%>');</script>
+</html>

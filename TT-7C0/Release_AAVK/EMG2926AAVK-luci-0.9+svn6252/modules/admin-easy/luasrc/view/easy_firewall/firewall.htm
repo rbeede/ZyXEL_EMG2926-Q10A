@@ -1,0 +1,46 @@
+<%#
+LuCI - Lua Configuration Interface
+Copyright 2008 Steven Barth <steven@midlink.org>
+Copyright 2008 Jo-Philipp Wich <xm@leipzig.freifunk.net>
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+$Id: header.htm 4891 2009-06-22 10:23:21Z jow $
+
+-%>
+<%
+require("luci.i18n").loadc("default")
+local i18n = require("luci.i18n")
+require("luci.http").prepare_content("text/html")
+local uci = require("luci.model.uci").cursor()
+local lang = uci:get("system","main","language")
+i18n.load("admin-core",lang)
+i18n.setlanguage(lang)
+-%>
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>Untitled Document</title>
+<link href="<%=media%>/easy/images/popup.css" rel="stylesheet" type="text/css" />
+</head>
+<body class="bandwidth_bg">
+<div class="wrapper">
+<div class="bandwidth_d"><ul><li>
+  <div>
+    <div><%:easy_firewall_remind1%>&#13;</div>
+    <div></div>
+  </div>
+  </li>
+</ul>
+</div>
+<div class="button"><ul><li><a href="<%=controller%>/easy/networkmap"target="_parent" title="<%:easy_firewall_ok%>"><span><%:easy_firewall_ok%></span></a></li><li></li>
+</ul></div>
+</div>
+</body>
+</html>

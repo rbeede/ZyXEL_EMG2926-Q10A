@@ -1,0 +1,19 @@
+Source-Makefile: feeds/packages/admin/nagios-plugins/Makefile
+Package: nagios-plugins
+Version: 1.4.14-2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +uclibcxx +libpq
+Menu-Depends: 
+Provides: 
+Build-Depends: libtool libintl libiconv
+Section: admin
+Category: Administration
+Title: plugins for Nagios checks
+Maintainer: 
+Source: nagios-plugins-1.4.14.tar.gz
+Type: ipkg
+Description: plugins for Nagios checks
+http://nagiosplug.sourceforge.net/
+
+@@
+
+

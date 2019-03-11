@@ -1,0 +1,8 @@
+#!/bin/sh
+
+serial_num=$(fw_printenv serialnum | awk -F"=" '{print $2}')
+
+psk=$(gen_psk ra0 $serial_num | grep sharedKey_final | grep "TRANSFER" -v | awk -F"=" '{print $2}')
+
+echo $psk > /tmp/tmppsk
+echo $psk > /tmp/psk_auto

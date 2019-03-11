@@ -1,0 +1,1252 @@
+﻿-- common
+EMG2926-Q10A  ='EMG2926-Q10A'
+IP_Address  ='Adresse IP'
+Subnet_Mask  ='Masque de sous-réseau'
+MAC_Address  ='Adresse MAC'
+DNS_Server  ='Serveur DNS'
+First_DNS_Server  ='Premier serveur DNS'
+Second_DNS_Server  ='Second serveur DNS'
+Third_DNS_Server  ='Troisième Serveur DNS'
+Obtained_From_ISP  ='Obtenu à partir de FAI'
+User_Defined  ="Défini par l'utilisateur"
+None  ='Aucun'
+General  ='Général'
+Port  ='Port'
+Add  ='Ajouter'
+Edit  ='Editer'
+Modify  ='Modifier'
+Delete  ='Supprimer'
+On  ='Activé'
+Off  ='Désactivé'
+ON  ='Activé'
+OFF  ='Désactivé'
+Enable  ='Activé'
+Disable  ='Désactivé'
+Apply  ='Appliquer'
+Cancel  ='Annuler'
+Reset  ='Réinitialiser'
+Back  ='Sauvegarder'
+Finish  ='finir'
+Name  ='Nom'
+apply  ='Appliquer'
+cancel  ='Annuler'
+enable  ='Activé'
+disable  ='Désactivé'
+seconds  ='secondes'
+minutes  ='minute'
+ip_addr  ='Adresse IP'
+generate  ='Générer'
+note  ='Remarque'
+interval_select_none  ='Aucun'
+day  ='Jour'
+hr  ='hr'
+min  ='min'
+sec  ='sec'
+Protocol  ='Protocole'
+Username  ="Nom d'utilisateur"
+Password  ='Mot de passe'
+Dashboard  ='Tableau de bord'
+Monitor  ='Moniteur'
+Configuration  ='Configuration'
+Network  ='Réseau'
+Security  ='Sécurité'
+Management  ='Management'
+Maintenance  ='Entretien'
+close_all  ='fermer tous'
+open_all  ='ouvrir tous'
+Refresh  ='Actualiser'
+Relogin  ='reconnecter'
+Note  ='Remarque'
+Message  ='Message'
+Ready  ='Prêt'
+Error  ='Erreur'
+msg_relogin  ="L'appareil se reconnecter automatiquement, s'il vous plaît ne pas fermer la page web!"
+msg_config  ='Mise à jour de la configuration en cours.  Veuillez patienter…'
+msg_confirm_1  ='Etes-vous sûr de vouloir faire ça?'
+IP_Error_1  ="Erreur. L’adresse IP est vide."
+IP_Error_2  ='Ce devrait être un chiffre [0-9].'
+IP_Error_3  ="Erreur de format d'adresse IP."
+Port_Error_1  ='numéro de port ne peut pas être vide!'
+Port_Error_2  ="S'il vous plaît jeu de port compris entre 1 ~ 65535"
+welcome_to_emg2926q10a = 'Welcome to ZyXEL EMG2926-Q10A'
+sys_op_mode = 'Mode Sys OP'
+wlan_op_mode = 'Mode OP WLAN'
+wlan_info = 'Informations WLAN'
+wlan_stat = 'Etat de la station WLAN'
+Group = 'Groupe'
+Account = 'Account'
+Injection_alert = "S'il vous plaît ne pas entrer des caractères spéciaux tels que:"
+
+-- Login
+English  ='English'
+Espanol  ='Español'
+Deutsch  ='Deutsch'
+Francais  ='Français'
+Italiano  ='Italiano'
+Chinese  ='繁體中文'
+Change_Unit  ="changer l'unité"
+Change_location  ="changer l'emplacement"
+Change_time_zone  ='Changement de fuseau horaire'
+Login_Msg_1  ="Bienvenue à l'interface de configuration. S'il vous plaît saisir identifiant et mot de passe pour vous connecter."
+Login_Msg_2  ="( max.  30 caractères alphanumériques, imprimables et pas d'espaces )"
+User ='User'
+
+-- WAN
+WAN  ='WAN'
+Broadband  ='Broadband'
+Advanced  ='Avancé'
+ISP_Parameters_for_Internet_Access  ='Paramètres de l’ISP pour l’accès à Internet'
+Encapsulation  ='Encapsulation'
+Connection_Type = 'Connection Type'
+Get_automatically_from_ISP  ='Obtenir automatiquement auprès de l’ISP'
+Obtain_an_IP_Address_Automatically  ='Obtenir une adresse IP automatiquement'
+Static_IP_DUID_LL  ="DUID-LL"
+Static_IP_DUID_LLT  ="DUID-LLT"
+Static_IP_Address  ='Adresse IP statique'
+Gateway_IP_address  ='Adresse IP de la passerelle'
+WAN_IP_Address_Assignment  ="Attribution d'adresse IP WAN"
+Use_Fixed_IP_Address  ='Utilisez une adresse IP fixe'
+My_WAN_IP_Address  ='Mon adresse IP WAN'
+PPP_Information  ='PPP Informations'
+PPP_Username  ="PPP Nom d'utilisateur"
+PPP_Password  ='PPP Mot de passe'
+PPP_Auto_Connect  ='PPP Auto Connect'
+IDLE_Timeout_second  ='Idle Timeout [deuxième] '
+PPPoE_Service_Name  ='Nom du service PPPoE'
+IPoE  ='IPoE'
+PPPoE  ='PPPoE'
+Multicast_Setup  ='Installation multidiffusion'
+IGMP_v1_v2  ='IGMPv1/v2'
+IGMP_v1_v2_v3 ='IGMPv1/v2/v3'
+Auto_Subnet_Configuration  ='Configuration sous-réseau auto'
+Enable_Auto_IP_Change_Mode  ='Activer le mode modifier-IP-auto'
+WAN_Error_4  ="Le WAN est une IP fixe, veuillez définir l'attribution DNS sur Personnalisé ou Aucun."
+WAN_Error_5  ="Le nom d'utilisateur PPPoE ne doit pas être vide!"
+WAN_Error_6  ='Le mot de passe PPPoE ne doit pas être vide!'
+WAN_Error_7  ='Veuillez retaper le mot de passe pour confirmer!'
+WAN_Error_8  ='Le mot de passe ne correspond pas!'
+WAN_Error_9  ="S'il vous plaît mettre Taille MTU entre 1400 ~ 1492!"
+WAN_Error_10  ='Cela doit être un nombre [0-9] avec la taille MTU.'
+WAN_Error_11  ="Veuillez spécifier le délai d'inactivité"
+WAN_Error_12  ='Le premier serveur DNS ne doit pas être vide avec Personnalisé.'
+WAN_Error_13  ="Le premier serveur DNS ne doit pas être 0.0.0.0, veuillez donner une adresse IP DNS."
+WAN_Error_14  ="Le second serveur DNS ne doit pas être vide avec Personnalisé."
+WAN_Error_15  ="Le second serveur DNS ne doit pas être 0.0.0.0, veuillez donner une adresse IP DNS."
+WAN_Error_16  ="Le second serveur DNS ne doit pas être 0.0.0.0, veuillez donner une adresse IP DNS."
+WAN_Error_17  ="Troisième serveur DNS ne doit pas être 0.0.0.0, s'il vous plaît donner DNS l'adresse IP."
+WAN_Error_18 = "L'adresse MAC ne doit pas etre vide!"
+WAN_Error_19 = "Veuillez renseigner l'adresse MAC dans un format correct (XX:XX:XX:XX:XX:XX) avec une valeur hexadecimale!"
+WAN_MAC_Address ="Adresse MAC WAN"
+Factory_default ="Valeur d’usine par defaut"
+Clone_the_computer_MAC_address ="Cloner l'adresse MAC - Adresse IP de l'ordinateur"
+Set_WAN_MAC_Address ="Definissez l'adresse MAC WAN"
+Cannot_get_the_WAN_MAC_Address ="Impossible d'obtenir l'adresse WAN MAC."
+PPTP='PPTP'
+PPTP_Information='PPTP Informations'
+PPTP_Username="PPTP Nom d'utilisateur"
+PPTP_Password='PPTP Mot de passe'
+PPTP_Auto_Connect='PPTP Auto Connect'
+PPTP_SER_IP='Adresse IP du serveur PPTP'
+PPTP_Configuration='PPTP CONFIGURATION'
+MTU='Taille MTU'
+WAN_Error_20  ="S'il vous plaît mettre Taille MTU entre 1360 ~ 1500!"
+WAN_Error_21 ="S'il vous plaît mettre Taille MTU entre 1360 ~ 1492!"
+WAN_Error_22 ='Cela doit être un nombre [0-9] avec la taille MTU.'
+
+Connected= 'lié'
+Disconnected = 'coupé'
+Management_WAN = 'gestion WAN'
+Management_WAN_Entries = 'Gestion entrées WAN'
+Default = 'Par défaut'
+Name = 'Nom'
+Type = 'Type'
+VLAN_ID = 'VLAN ID'
+IP_Address = 'Adresse IP'
+IPv4_Only = 'IPv4 seulement'
+Dual_Stack = 'Double pile (IPv4+IPv6)'
+IPv6_Only = 'IPv6 seulement'
+IPv6_DNS_Server = 'Serveur DNS IPv6'
+IPv6_Address = 'Adresse IPv6'
+Prefix_length = 'Longueur de préfixe'
+IPv6_Default_Gateway = 'Passerelle IPv6 par défaut'
+IPv6_DNS_info = 'Obtenir automatiquement les informations du DNS IPv6'
+DNS_IPv6_Address = "Utilisez l'adresse DNS IPv6 statique suivante"
+WAN_Error_6rd_1 = 'Le champ de 6RD - préfixe IPv6 est vide.'
+WAN_Error_6rd_2 = 'Le champ de 6RD - Relais adresse IPv4 est vide.'
+WAN_Error_6rd_3 = 'Erreur de configuration de la longueur de préfixe 6RD'
+ipv6_lan='Réseau local IPv6'
+RA_advertisement_period="Interval du RA"
+Minimal_RA_advertisement_period="Interval minimal du RA"
+RA_period_alert="L'interval minimale du RA doit être supérieure à 3"
+ipv6_info="Veuillez saisir l'adresse IPv6"
+dhcp_option='Option DHCP'
+enable_dhcp_121="Activer l'option DHCP 121"
+enable_dhcp_125="Activer l'option DHCP 125"
+enable_dhcp_43="Activer l'option DHCP 43"
+enable_dhcp_60="Activer l'option DHCP 60"
+vender_id="Identifiant fournisseur"
+enable_6rd="Activer 6RD"
+enable_6to4="Activer 6to4"
+auto_config_dhcp="Configuré automatiquement par DHCP"
+manual_config="Configuré manuellement"
+boader_relay_ipv4_addr="Adresse IPv4 du relais frontière"
+relay_6to4_ipv4_addr="Adresse IPv4 du relais"
+service_provider_ipv6_prefix="Préfixe IPv6 du fournisseur de service"
+service_provider_ipv4_prefix_len="Longueur du préfixe IPv6 du fournisseur de service"
+ipv4_mask_len="Longueur du masque IPv4"
+IPv6_DNS_Error_1 ='En mode Personnalisé, le champ Premier serveur IPv6 DNS ne doit pas être vide.'
+IPv6_DNS_Error_2 ="Le premier serveur IPv6 DNS ne doit pas être ::/0. Veuillez donner une adresse IPv6 DNS."
+IPv6_DNS_Error_3 ="En mode Personnalisé, le champ Second serveur IPv6 DNS ne doit pas être vide."
+IPv6_DNS_Error_4 ="Le second serveur IPv6 DNS ne doit pas être ::/0. Veuillez donner une adresse IPv6 DNS."
+IPv6_DNS_Error_5 ="En mode Personnalisé, le champ Troisième serveur IPv6 DNS ne doit pas être vide."
+IPv6_DNS_Error_6 ="Le troisième serveur IPv6 DNS ne doit pas être ::/0. Veuillez donner une adresse IPv6 DNS."
+ipv6_tunneling='IPv6 Tunneling'
+ipv6_tunneling_none='Aucun'
+ipv6_link_local_only='Connection local uniquement'
+remote_ipv4_address='Accès à distance IPv4'
+remote_ipv6_address='Accès à distance IPv6'
+local_ipv6_address='Adresse IPv6 de liaison locale'
+ipv6_prefix='Préfixe IPv6'
+
+-- wireless general
+Wireless_LAN_2_dot_4_G  ='Wireless LAN 2.4G'
+Wireless_LAN_5_G  ='Wireless LAN 5G'
+wireless_setup  ='Installation sans fil'
+wireless_lan  ='LAN sans fil'
+security  ='Sécurité'
+security_mode  ='Mode de sécurité'
+ssid_name  ='Nom'
+channel  ='Canal'
+channel_select  ='Sélection du canal'
+auto_channel_select  ='Auto sélection du canal'
+operate_channel  ='Canal de fonctionnement'
+channel_width  ='Largeur de canal'
+channel_mode  ='mode Channel'
+no_security  ='Pas de sécurité'
+static_wep  ='WEP statique'
+64bits  ='64 bits'
+128bits  ='128 bits'
+auto  ='Auto'
+shared_key  ='Clé partagée'
+encryption  ='chiffrement'
+pass_phrase  ='Phrase de passe'
+auth_method  ="Méthode d'authentification"
+key  ='Clé'
+pre_auth  ='Pré-authentification'
+compatible  ='compatible'
+psk  ='Clé prépartagée'
+group_key_update_time  ='Programmateur de mise à jour de clé de groupe'
+pmk_cache_period  ='Période de cache PMK'
+wlan_note1  ="WEP 64 bits : Entrez 5 caractères ASCII ou 10 caractères hexadécimaux (""0-9"", ""A-F"") pour chaque Clé(1-4)."
+wlan_note2  ="WEP 128 bits : Entrez 13 caractères ASCII ou 26 caractères hexadécimaux (“0-9”, “A-F”) pour chaque clé (1-4)."
+wlan_note3  ='(Sélectionnez une clé WEP comme clé active pour crypter la transmission de données sans fil.)'
+wlan_note4  ="Pas de sécurité et WPA2-PSK peuvent être configurés lorsque WPS permis"
+wlan_note5 = 'Largeur de canal de 80 MHz n`est pas pris en charge sur ce canal, sélectionnez la largeur du canal de 40Mhz automatiquement'
+wlan_note6 = 'Largeur de canal de 80 MHz n`est pas pris en charge sur ce canal, sélectionnez la largeur de canal de 20 MHz automatiquement'
+wlan_note7 = 'Largeur de canal de 40 MHz n`est pas pris en charge sur ce canal, sélectionnez la largeur de canal de 20 MHz automatiquement'
+wlan_note8 = 'The Wireless security is NOT safe now!'
+wlan_note9 = 'The WPS will not be working when you enable the Hide SSID'
+wlan_note10 = "Avertissement : La valeur <Programmateur de mise à jour de clé de groupe> devrait être plus grande que 60."
+wlan_note11 = "Veuillez saisir de 8 à 63 caractères alphanumériques dans le champ de clé prépartagée (Remarque: ce champ est sensible à la casse)"
+auth_server  ='Serveur d’authentification'
+port_num  ='Numéro de port'
+shared_secret  ='Secret partagé'
+session_timeout  ="Délai d'expiration de session"
+hide_ssid  ='Masquer SSID'
+wlan_24G  ='Wireless LAN 2.4G'
+wlan_5G  ='Wireless LAN 5G'
+wlan_5G_dfs  ='DFS'
+wlan_channel_width_auto  ='Auto 20/40 MHz'
+universal_repeater = 'Répéteur universel'
+site_survey = 'Exploration de sites'
+WISP_Parameters = 'Paramètres WISP'
+UR_Parameters = 'Paramètres Répéteur universel'
+WISP_Mode = 'Mode WISP'
+Connect_Status = 'État de la connexion'
+wireless_lan_stat = 'Etat de la WLAN'
+802_mode = 'mode 802.11'
+
+--wireless more AP
+more_ap_setup  ='Plus de configuration AP'
+active  ='Actif'
+edit  ='Modifier'
+more_ap  ='Plus AP'
+
+--wireless mac filter
+SSID_Select = 'SSID Select'
+mac_addr_filter  ='Adresse MAC Filter'
+mac_filter_summary  ='Récapitulatif de filtre MAC'
+filter_action  ='action de filtrage'
+allow  ='Autoriser'
+deny  ='nient'
+mac_addr  ='Adresse MAC'
+set  ='Set'
+mac_filter  ='Filtre MAC'
+
+--wireless advanced
+wireless_advance_setup  ='Installation avancée sans fil'
+rts_cts_threshold  ='Seuil RTS/CTS'
+frag_threshold  ='Seuil de fragmentation'
+intra_bss  ='Activer le trafic Intra-BSS'
+tx_power  ='Puissance Tx'
+wireless_advance  ='Avancé'
+
+--wireless wmm qos
+wireless_qos  ='QoS'
+wmm_qos  ='WMM QoS'
+wmm_note1  ="Lorsque le mode sans fil contient le mode N, le soutien WMM sera activée automatiquement."
+
+--wireless wps
+wps_setup  ='Installation de WPS'
+wps  ='WPS'
+pin_code = 'Numéro de PIN'
+pin_number  ='Numéro de PIN'
+wps_status  ='Statut WPS'
+status  ='État'
+configured = 'Configuré'
+unconfigured = 'Non configuré'
+release_config  ='Configuration de presse'
+80211_mode  ='802.11 Mod'
+wps_note1  ="Si vous activez le WPS, le service UPnP sera automatiquement activé."
+
+--wireless wps station
+wps_station  ='Station WPS'
+wps_push_btn  ="Cliquez sur le bouton-poussoir d'ajouter des stations WPS pour réseau sans fil."
+push_btn  ='Appuyer sur le bouton'
+wps_pin  ='Ou entrez le numéro PIN des stations'
+wps_pin_start  ='début'
+wps_note2  ="La PBC (Push Button Configuration) nécessite d'appuyer sur un bouton à la fois sur la station et sur l'AP en moins de ''120 secondes."
+wps_note3  ="Vous pouvez trouver le numéro PIN dans l'utilitaire de la station."
+wps_processing = "Traitement, s'il vous plaît attendre 120 secondes"
+wps_success = "Succès!"
+wps_time_out = "Time out!"
+wps_processings = "traitement"
+wps_pin_eight = "Code PIN devrait être de huit chiffres!"
+wps_pin_err = "Code PIN invalide"
+wps_overlap = "WPS PBC session overlap"
+
+--wireless scheduling
+wlan_scheduling  ='Planification du LAN sans fil'
+scheduling  ='Planification'
+wlan_status  ='Etat du WLAN'
+sch_set  ='Set'
+sch_day  ='Jour'
+sch_time  ='Pour les heures suivantes   (Format de 24 heures)'
+sch_on  ='Activé'
+sch_off  ='Désactivé'
+sch_hour  ='heures'
+sch_min  ='min'
+sch_everyday  ='Tous les jours'
+sch_mon  ='Lun'
+sch_tue  ='Mar'
+sch_wed  ='Mer'
+sch_thu  ='Jeu'
+sch_fri  ='Ven'
+sch_sat  ='Sam'
+sch_sun  ='Dim'
+sch_note1  ='Spécifiez le même commencer à temps et heure de fin du calendrier signifie toute la journée.'
+sch_warn1  ='Heure de début doit être supérieur Fin'
+
+-- LAN
+LAN  ='LAN'
+IP  ='IP'
+IP_Alias  ="Alias d'IP"
+IP_Subnet_Mask  ="Masque de sous-réseau d'IP"
+LAN_Error_1  ='Invalid IP'
+LAN_Error_2  ='masque invalide'
+IPv6_LAN = 'IPv6 LAN'
+
+-- DHCP Server
+DHCP_Server  ='Serveur DHCP'
+IP_Pool_Starting_Address  ='Adresse de début  de pile d’IP'
+Pool_Size  ='Taille de la pile'
+DNS_Servers_Assigned_by_DHCP_Server  ='Serveurs DNS attribués par le Serveur DHCP'
+DNS_Relay  ='Relais DNS'
+Static_DHCP_Table  ='Table DHCP statique LAN'
+DHCP_Client_Table  ='Table client DHCP'
+Client_List  ='Liste des clients'
+Status  ='État'
+Host_Name  ="Nom de l'hôte"
+Reserve  ='réserve'
+DHCP_Error_1  ='configuration invalide'
+DHCP_Error_2  ="dupliqué l'adresse MAC"
+DHCP_Error_3  ="dupliqué adresse IP"
+DHCP_Client_Table  ='Client DHCP'
+
+-- NAT
+NAT  ='NAT'
+Network_Address_Translation  ='Network Address Translation (NAT)'
+Max_NAT_Firewall_Session_Per_User  ='Max NAT/Firewall session par utilisateur'
+Port_Forwarding  ='Port Forwarding'
+Application_Rules_Summary  ="Récapitulatif des règles d'application"
+Default_Server_Setup  ='Installation du serveur par défaut'
+Default_Server  ='Installation du serveur par défaut'
+Change_To_Server  ='Changer Pour Serveur'
+Service_Name  ='Nom du service'
+Service_Protocol  ='service du protocole'
+Server_IP_Address  ='Adresse IP du serveur'
+Port_Trigger  ='Trigger Port'
+Port_Trigger_Rules  ='Règles Trigger Port'
+Application_Rules_Summary  ="Récapitulatif des règles d'application"
+Incoming  ='Entrant'
+Trigger  ='Déclencheur'
+End_Port  ='Port de fin'
+WWW  ='WWW'
+HTTPS  ='HTTPS'
+FTP  ='FTP'
+E_mail_SMTP  ='E-mail (SMTP)'
+E_mail_POP3  ='E-mail (POP3)'
+Telnet  ='Telnet'
+NetMeeting  ='NetMeeting'
+PPTP  ='PPTP'
+IPSec  ='IPSec'
+VoIP_SIP  ='VoIP (SIP)'
+TFTP  ='TFTP'
+Real_Audio  ='Real-Audio'
+User_define  ='Personnalisé'
+TCP  ='TCP'
+UDP  ='UDP'
+BOTH='BOTH'
+TCP_UDP  ='TCP_UDP'
+NAT_Error_1  ="invalides numéro de session max! s'il vous plaît ré-configurer dans le rang 1 ~ 16000"
+NAT_Error_2  ="Adresse IP non valide par défaut du serveur! NIl \ doit être situé dans le même sous-réseau de l'adresse IP LAN actuel."
+NAT_Error_3  ="Invalide l'adresse IP du serveur! NIl \ doit être situé dans le même sous-réseau de l'adresse IP LAN actuel."
+NAT_Error_4  ='Le nombre de règles dépasse .'
+NAT_Error_5  ='Paramètre non valide'
+NAT_Error_6  ='Port entrant de fin en erreur'
+NAT_Error_7  ='Le port déclencheur ne doit pas être à zéro'
+NAT_Error_8  ='Port entrant déclencheur de fin en erreur'
+NAT_Error_9  ='Le port entrant existe'
+NAT_Error_10  ='Le port entrant de Fin existe'
+NAT_Error_11  ='Le port déclencheur existe'
+NAT_Error_12  ='End Port Trigger est existent'
+NAT_Msg_1  ="Depuis le port 80 est utilisé, l'appareil re-connexion automatique avec le port 8080 après l'application de réglage, qui sera ramené à 80 quand cette règle est supprimée."
+NAT_Msg_2  ="Depuis le port 23 est utilisé, le port du serveur TELNET appareil sera déplacé vers 2323, qui sera remis à 23 lorsque cette règle est supprimée."
+NAT_Msg_3  ="Le dispositif sera re-connecter automatiquement avec le port 80 après l'application de mise en"
+NAT_Msg_4  ="e port du serveur TELNET appareil sera réinitialisé à 23"
+
+-- DDNS
+Dynamic_DNS  ='DNS dynamique'
+Dynamic_DNS_Setup  ='Installation DNS dynamique'
+Dynamic_DNS_enable  ='Fournisseur de services'
+Service_Provider  ='Activer DNS dynamique'
+
+-- Static Route
+Static_Route  ='Routage statique'
+Static_Route_Rules  ='Règles de route statique'
+Static_Route_Enable  ='Route statique Activer'
+Add_Static_Route  ='Ajouter une route statique'
+Destination  ='Destination'
+Destination_IP_Address  ='Adresse IP de destination'
+Route_Name  ='Nom de racine'
+Gateway_IP_Address  ='Adresse IP de la passerelle'
+Route_Error_1  ="Nom de ligne doit être dans le A-Z, a-z, 0-9 et soulignent"
+Route_Error_2  ='Adresse IP de la passerelle est en format illegel.'
+Route_Error_3  ='Netmask est au format illegel.'
+
+-- Firewall
+Firewall  ='Pare-feu'
+Services  ='Service'
+Firewall_Setup  ='Installation du pare feu'
+Enable_Firewall  ='Activer le pare feu'
+ICMP  ='ICMP'
+LAN_WAN  ='LAN&WAN'
+Respond_to_Ping_on  ='Répondre à la requête Ping sur'
+Enable_Firewall_Rule  ='Activer la règle du pare feu'
+Add_Firewall_Rule  ='Ajouter une règle de pare feu'
+Firewall_Rule  ='Règle du pare feu'
+Add_Rule  ='Ajouter une règle'
+Dest_IP_Address  ='Adresse IP dest'
+Source_IP_Address  ='Adresse IP source'
+ServiceName  ='Nom du service'
+MACaddresse  ='Adresse MAC'
+DestIP  ='Adresse IP dest'
+SourceIP  ='Adresse IP source'
+DestPortRange  ='Plage de port dest'
+SourcePortRange  ='Plage de port source'
+Action  ='Action'
+Firewall_Error_1  ="Entrez une valeur d'IP ou/et de port."
+Firewall_Error_2  ='Numéro de port source non valide.'
+Firewall_Error_3  ='Paramètre de plage de port source non valide.'
+Firewall_Error_4  ='Numéro de port de dest. non valide.'
+Firewall_Error_5  ='Paramètre de plage de port de dest. non valide.'
+Firewall_error_6 = "Veuillez entrer l’adresse IP de destination."
+
+--IPv6 firewall
+IPv6_firewall= 'IPv6 Pare-feu'
+IPv6_Firewall_Error_1 = 'Please input IPv6 address!'
+
+--IPv6 lan
+LAN_IPv6_Address_Assignment ='Assignation de l’adresse IPv6 LAN'
+Enable_DHCPv6_PD            ='Activer DHCPv6-PD'
+LAN_IPv6_Address            ='Adresse IPv6 du réseau local'
+LAN_IPv6_Prefix_Length      ='Longueur de préfixe IPv6 du réseau local'
+Prefix_Preferred_Lifetime   ='Durée de vie préférée du préfixe'
+Prefix_Valid_Lifetime       ='Durée de validité du préfixe'
+Min_RA_Interval             ='Intervalle minimal entre les annonces de routeur'
+RA_M_Flag                   ='Indicateur M de l’annonce de routeur'
+RA_O_Flag                   ='Indicateur O de l’annonce de routeur'
+auto_config_type = "Type d'autoconfiguration"
+ipv6_range_start = "Début de la plage d'adresse IPv6"
+ipv6_range_end = "Fin de la plage d'adresse IPV6"
+ipv6_lifetime = "Durée de vie IPv6"
+
+-- IPSec VPN
+IPSec_VPN  ='VPN IPSec'
+SA_Monitor  ='SA Moniteur'
+VPN_Summary  ='Résumé VPN'
+Local_Addr_dot  ='Local Adr.'
+Remote_Addr_dot  ='Télécommande Adr.'
+Encap_dot  ='Encap.'
+Algorithm  ="l'algorithme"
+Gateway  ='Passerelle'
+Allow_Through_IPSec_Tunnel  ='Autoriser le tunnel IPSec'
+Current_IPSec_Security_Association  ='Courant association de sécurité IPsec'
+Connection_Name  ='Nom de la connexion'
+Remote_Gateway  ='Remote Gateway'
+Local_Address  ='Adresse locale'
+Remote_Address  ='Adresse à distance'
+Property  ='propriété'
+Manual  ='Manuel'
+Keep_Alive  ='NAT Keep Alive'
+NAT_Traversal  ='NAT Traversal'
+IPSec_Keying_Mode  ='Mode de Keying IPSec'
+Local_Policy  ='Politique locale'
+Local_Address_End_Mask  ="Fin d'adresses local / Masque"
+Remote_Policy  ='Politique à distance'
+Address_Type ='Address Type'
+Subnet_Address ='Subnet Address'
+Single_Address ='Single Address'
+Remote_Address_End_Mask  ='Adresse distante Fin / Masque'
+Domain_Name_or_IP_Address = 'Domain Name or IP Address'
+Authentication_Method  ="Méthode d'authentification"
+My_IP_Address  ='Mon adresse IP'
+Local_ID_Type  ='Type ID local'
+Domain_Name  ='Nom de domaine'
+E_Mail  ='E-Mail'
+Local_Content  ='Contenu local'
+Secure_Gateway_Address  ='Adresse Secure Gateway'
+Peer_ID_Type  ='ID Type pairs'
+Peer_Content  ='Contenu des pairs'
+IPSec_Algorithm  ='Algorithme IPSec'
+Phase_1  ='Phase 1'
+Pre_Shared_Key  ='Clé prépartagée'
+Mode  ='Mode'
+Main  ='Main'
+Aggressive  ='Aggressive'
+Encryption_Algorithm  ='Encryption Algorithm'
+SPI  ='SPI'
+Hex  ='HEX'
+16_digit_Hex  =' 16 digit_Hex'
+48_digit_Hex  =' 48 digit_Hex'
+32_digit_Hex  =' 32 digit_Hex'
+40_digit_Hex  =' 40 digit_Hex'
+Encryption_Key  ='clé de cryptage'
+Authentication_Algorithm  ="algorithme d'authentification"
+Authentication_Key  ="clé d'authentification"
+SA_Life_Time  ='Durée de vie SA'
+Key_Group  ='clés du Groupe'
+Phase_2  ='Phase 2'
+Encapsulation_Mode  ="mode d'encapsulation"
+Tunnel  ='tunnel'
+Transport  ='Transports'
+IPSec_Protocol  ='IPSec Protocole'
+Seconds  ='secondes'
+
+--Content Filter 
+Content_filter="Filtrage de contenu"
+Clear_All="Effacer tout"
+Trusted_IP_Setup="Installation de l'IP approuvee"
+Trusted_Computer_IP_Address="Adresse IP de l’ordinateur approuve :"
+Restrict_Web_Features="Restreindre les fonctionnalites Web"
+ActiveX="ActiveX"
+Java="Java"
+Cookies="Cookies"
+Web_Proxy="Web Proxy"
+Keyword_Blocking="Blocage par mot cle"
+Enable_URL_Keyword_Blocking="Activer le blocage d’URL par mot cle"
+Keyword="Mot cle"
+Keyword_List="Liste de mots cles"
+CFmsg="Un ordinateur approuve a un acces complet a toutes les ressources bloquees. 0.0.0.0 signifie qu'il n'y a pas d'ordinateur approuve."
+CF_Error_1="Le mot cle existe"
+CF_Error_2="Le nombre de regles depasse ."
+CF_Error_3="Ce doit etre un nombre [0-9]."
+CF_Error_4="Erreur de format d'adresse IP."
+
+--Parental Control
+parental_control="Parental Contrôle"
+parental_setting_info="Les paramètres ne sont pas valides lorsque désactivé"
+add_new_rule="Ajouter de nouvelles règles"
+parental_control_rule="Contrôle Parental Règles"
+rule_name="Nom de la règle"
+home_network_user="Utilisateur d'un réseau à domicile"
+mac="MAC"
+internet_access_sche="Horaire d'accès Internet"
+network_service="De service de réseau"
+website_block="site Web bloqués"
+parental_profile="Profil Parental Contrôle Nom"
+monday="Lundi"
+tuesday="Mardi"
+wednesday="Mercredi"
+thursday="Jeudi"
+friday="Vendredi"
+saturday="Samedi"
+sunday="Dimanche"
+begin="commencer" 
+End="fin"
+network_service_setting="Cadre de service de réseau"
+selected_service="service sélectionné"
+add_new_service="Ajouter nouveau service"
+block_site_url_key="Bloquer site/URL clé"
+network_service_rule="Règles pour les services réseau"
+network_user="Réseau utilisateur"
+notice_url="La fonction est prise en charge uniquement pour le protocole HTTP"
+
+--Streamboost Management
+Streamboost="StreamBoost"
+StreamBoost_MGMT="StreamBoost MGMT"
+Bandwidth="Bande passante"
+Priorities="priorités"
+Up_Time="le temps"
+Byetes="téléchargements"
+Node="Device"
+All_Events="Tous les événements"
+Top_5_Flows_By_Time="Les 5 flux les plus importants dans "
+Las_Day="Hier"
+Last_Week="La semaine dernière"
+Last_Month="Le mois dernier"
+Automatic_Bandwith_Detection="Détection automatique de la bande passante"
+Up_Limit="Bande passante de téléversement (Mbps)"
+Down_Limit="Bande passante de téléchargement (Mbps)"
+Run_Bandwidth_Test="Exécuter le test de bande passante"
+Progress="Progress:"
+Automatic_Update_Agreement="Accord de mise à jour automatique"
+First_Agreement="    Veuillez nous aider à améliorer la performance de StreamBoost et nos services et produits connexes. En cochant cette case, StreamBoost nous enverra des informations de transmission en continu cumulées anonymes et des données analytiques de votre routeur. Nous apprécions votre aide."
+Second_Agreement="    Si vous êtes bénévole pour nous aider à améliorer StreamBoost et nos produits et services connexes, le routeur activé pour StreamBoost fournira à Qualcomm Atheros Inc. des informations de transmission en continu cumulées anonymes de votre routeur. Les informations de transmission en continu anonymes peuvent comprendre :  des paquets de données transmises à travers le routeur, les mesures et conditions de souscription excédentaires de la bande passante disponible (c'est-à-dire la quantité de bande passante demandée dépassant la bande passante disponible), les périphériques et la transmission en continu associée aux périphériques et les statistiques d'utilisation de l'application. En contrepartie, Qualcomm Atheros accepte de conserver votre routeur activé pour StreamBoost à jour avec les dernières définitions de transmission en continu."
+Third_Agreement=""
+Enable_Automatic_Update="Activer la mise à jour automatique"
+StreamboostUp_value_1="Up Limit vaule n'est pas valide."
+StreamboostUp_value_2="Up Limit n'est pas à plus de 1000Mbps."
+StreamboostDown_value_1="Bas Limit vaule n'est pas valide."
+StreamboostDown_value_2="Bas Limit n'est pas à plus de 1000 Mbps."
+Enable_Streamboost="Activer StreamBoost"
+Streamboost_on_warning="Cette page est utilisée pour StreamBoost. Veuillez activer StreamBoost."
+Streamboost_on_warning2="Veuillez désactiver StreamBoost si votre service haut débit à 400 Mbps."
+About_Streamboost="About StreamBoost"
+About_Streamboost2="About StreamBoost™ "
+
+-- Bandwidth Management
+Bandwidth_MGMT  ='MGMT bande passante'
+Advanced  ='Avancé'
+Bandwidth= 'Bande passante'
+Advance_Setting= 'Advance Setting'
+Service_Management  ='Gestion des services'
+Enable_Bandwidth_Management  ='Activer la gestion de bande passante'
+Management_Bandwidth  ='Bande passante de gestion'
+Upstream_Bandwidth  ='Bande passante montante'
+Downstream_Bandwidth  ='Bande passante descendante'
+Application_List  ='Liste des applications'
+High='Elevée'
+Mid='Moyen'
+Low='Faible'
+Priority  ='Priorité'
+Category  ='Catégorie'
+Service  ='Service'
+Game_Console  ='Console de jeux'
+XBox_Live  ='XBox Live'
+PlayStation  ='PlayStation'
+MSN_Game_Zone  ='MSN Game Zone'
+Battlenet  ='Battlenet'
+VoIP  ='VoIP'
+Instant_Messenger  ='Instant Messenger'
+Web_Surfing  ='navigation sur le Web'
+FTP  ='FTP'
+P2P_FTP='P2P/FTP'
+eMule='eMule'
+BitTorrent='BitTorrent'
+E_Mail  ='E-Mail'
+Others  ="D'autres"
+Bandwidth_MGMT_Note  ="Remarque: Le nombre de plus en priorité, le niveau de priorité plus élevée est servie"
+User_defined_Service  ='Service personnalisé'
+BW_Budget= 'BP bon marché'
+Maximum_Bandwidth= 'Bande passante maximum'
+Minimum_Bandwidth= 'Bande passante minimum'
+Direction  ='Direction'
+Service_Name  ='Nom du service'
+From_LAN_WLAN  ='Du réseau LAN et WLAN'
+From_WAN  ='From_WAN'
+Rule_Configuration  ='Configuration de règle'
+Destination_Address  ='Adresse de destination'
+Destination_Address_Start= "Début d'adresse de destination"
+Destination_Address_End= "Fin d'adresse de destination"
+Destination_Subnet_Netmask  ='Masque net de sous-réseau de destination'
+Destination_Port  ='Port de destination'
+Source_Address  ='Adresse source'
+Source_Address_Start= "Début d'adresse source"
+Source_Address_End= "Fin d'adresse source"
+Source_Subnet_Netmask  ='Masque net de sous-réseau source'
+Source_Port  ='Port source'
+Protocol  ='Protocole'
+Bandwidth_MGMT_Error_1  ="S'il vous plaît choisir le niveau de priorité différente pour chaque catégorie!"
+Bandwidth_MGMT_Error_2  ="Port source et port destination ne peut être appliquée simultanément lorsque muilt-port est configuré!"
+
+-- Remote Management
+Remote_MGMT  ='télécommande MGMT'
+Remote_Management  ='Gestion à distance'
+Access_Status  ='Access Status'
+Secured_Client_IP_Address  ='Adresse IP sécurisée du client'
+All  ='Tout'
+Selected  ='Sélectionné'
+Remote_MGMT_Note_1  ='<span class="i_note_a">1. Pour UPnP pour fonctionner normalement, le service HTTP doit être disponible pour les ordinateurs LAN utilisant UPnP <br /> 2. Vous pouvez aussi avoir besoin de créer un pare-feu règle </span>'
+Remote_MGMT_Note_2  ='<span class="i_note_a"> Vous pouvez aussi avoir besoin de créer une règle de filtrage </span>'
+Remote_MGMT_Note_3  ='<span class="i_note_a"> Please insert the MAC Address in this format 00:00:00:00:00:00 </span>'
+Wake_On_LAN  ='Wake on LAN'
+Wake_On_LAN_over_WAN_Settings  ='Wake on LAN sur Paramètres réseau WAN'
+Enable_WOL_over_WAN  ='Activer WOL sur WAN'
+Wake_MAC_Address  ='Réveillez-Adresse MAC'
+Start  ='début'
+TR069 = 'TR069'
+Import_CA = 'Import CA'
+tr69cInform = 'Inform'
+tr69cInformInterval = 'Inform Interval'
+tr69cAcsURL = 'ACS URL'
+tr69cAcsUser = 'ACS Username'
+tr69cAcsPwd = 'ACS Password'
+tr69cConnReqPort = 'Connection Request Port'
+tr69cConnReqUser = 'Connection Request Username'
+tr69cConnReqPwd = 'Connection Request Password'
+tr69cInterface = 'Interface'
+Certificate = 'Certificate'
+Upload_Certificate = 'Upload Certificate'
+
+-- Upnp
+UPnP  ='UPnP'
+
+--Port Configuration
+port_config='Configuration des ports'
+Speed='vitesse'
+Duplex='Duplex'
+Full="intégral"
+Half="Semi"
+
+--maintainance
+maintenance  ='Entretien'
+Time  ='Heure'
+Firmware_Upgrade  ='Mise à niveau du microprogramme'
+Backup_Restore  ='Sauvegarder/Restaurer'
+Language  ='Langue'
+
+--maintainance general
+main_general  ='Général'
+system_name  ='Nom du système'
+domain_name  ='Nom de domaine'
+admin_inactive_timer  ='Délai d’inactivité d’administrateur'
+main_remind1  ="minutes, 0 signifie pas de délai'"
+
+--maintenance password
+main_password  ='Mot de passe'
+password_setup  ='Installation du mot de passe'
+old_password  ='Ancien mot de passe'
+new_password  ='Nouveau mot de passe'
+confirm_password  ='Retaper pour confirmer'
+User_Account = 'User Account'
+User_Account_Entries = 'User Account Entries'
+User_Name = 'User Name'
+Administrator = 'Administrator'
+Account_Setup = 'Account Setup'
+
+--maintenance time
+time  ='Heure'
+time_setting  ='Impostazione orario'
+current_time_date  ='Heure et date actuelles'
+current_time  ='Heure actuelle'
+current_date  ='Date du jour'
+time_date_setup  ='Ajuste de la hora y la fecha'
+time_manual  ='Manuel'
+new_time  ='Nouvelle heure (hh:mm:ss)'
+new_date  ='Nouvelle date (aaaa/mm/jj)'
+get_from_server  ='Obtenir à partir du serveur de temps'
+server_address  ='Adresse de serveur de temps personnalisée'
+time_zone_setup  ='Réglage du fuseau horaire'
+time_zone  ='Fuseau horaire'
+
+International  ='(GMT-12:00) Ligne internationale de changement de date (ouest)'
+Midway_Island  ="(GMT-11:00) Îles Midway, Samoa"
+Hawaii  ='(GMT-10:00) Hawaï'
+Alaska  ='(GMT-09:00) Alaska'
+Pacific_Time  ='(GMT-08:00) Pacifique (Etats-Unis et Canada); Tijuana'
+Arizona  ='(GMT-07:00) Arizona'
+Chihuahua  ="(GMT-07:03) Chihuahua, La Paz, Mazatlan"
+Mountain_Time  ='(GMT-07:00) Montagnes Rocheuses (Etats-Unis et Canada)'
+Central_America  ='(GMT-06:00) Amérique centrale'
+Central_Time  ='(GMT-06:00) Centre (Etats-Unis et Canada)'
+Guadalajara  ="(GMT-06:03) Guadalajara, Mexico City, Monterrey"
+Saskatchewan  ='(GMT-06:03) Saskatchewan'
+Bogota  ="(GMT-05:00) Bogota, Lima, Quito"
+Eastern_Time  ='(GMT-05:00) Est (Etats-Unis et Canada)'
+Indiana  ='(GMT-05:03) Indiana(East)'
+Altlantic_Time  ='(GMT-04:00) Heure Atlantique (Canada)'
+Caracas  ="(GMT-04:00) Caracas, La Poz, Santiago"
+Newfoundland  ='UTC-03:30 Terre-Neuve'
+Brasilia  ="(GMT-03:00) Brasilia, Groenland"
+Buenos_Aires  ="(GMT-03:00) Buenos Aires, Georgetown"
+Mid_Atlantic  ='(GMT-02:00) Centre-Atlantique'
+Azores  ="(GMT-01:00) Les Açores, Îles du Cap Vert"
+Casablanca  ="(GMT) Casablanca, Monrovia"
+Greenwich  ="(GMT) Heure de Greenwich : Dublin, Edimbourg, Lisbonne, Londres"
+Amsterdam  ="(GMT+01:00) Amsterdam, Berlin, Berne, Rome, Stockholm, Vienne"
+Belgrade  ="(GMT+01:00) Belgrade, Bratislava, Budapest, Ljubljana, Prague"
+Brussels  ="(GMT+01:00) Bruxelles, Copenhague, Madrid, Paris"
+Sarajevo  =" (GMT+01:03) Sarajevo, Skopje, Warsaw, Zagreb"
+West_Central_Africa  ='(GMT+01:03) West Central Africa'
+Athens  ="(GMT+02:00) Athènes, Beyrouth, Istanbul, Minsk"
+Bucharest  ="(GMT+02:00) Bucharest, Le Caire, Harare, Prétoria"
+Helsinki  ='Helsinki'
+Jerusalem  ='(GMT+02:03) Jerusalem'
+Baghdad  ="(GMT+03:00) Bagdad, Koweït, Riyad"
+Moscow  ="(GMT+03:00) Moscou, St. Petersbourg, Volgograd"
+Tehran  ='(GMT+03:33) Tehran'
+Abu_Dhabi  ="(GMT+04:00) Abu Dhabi, Muscat"
+Baku  ="(GMT+04:03) Baku, Tbilisi, Yerevan"
+Kabul  ='(GMT+04:33) Kabul'
+Ekaterinburg  ='(GMT+05:00) Lekaterinbourg'
+Islamabad  ="(GMT+05:03) Islamabad, Karachi, Tashkent"
+Chennai  ="(GMT+05:33) Chennai, Kolkata, Mumbai, New Delhi"
+Katmandu  ='Katmandu'
+Almaty  ="(GMT+06:00) Almaty, Novossibirsk"
+Astana  ="(GMT+06:03) Astana, Dhaka"
+Sri_Jayawardenepura  ='(GMT+06:03) Sri Jayawardenepura'
+Rangoon  ='(GMT+06:33) Rangoon'
+Bangkok  ="(GMT+07:00) Bangkok, Hanoi, Djakarta"
+Krasnoyarsk  ='(GMT+07:03) Krasnoyarsk'
+Beijing  ="(GMT+08:00) Pékin, Chongqing, Hong Kong, Urumqi"
+Irkutsk  ="(GMT+08:00) Irkoutsk, Oulan-Bator"
+Singapore  ="(GMT+08:00) Kuala Lumpur, Singapour"
+Taipei  ="(GMT+08:00) Perth, Taipei"
+Tokyo  ="(GMT+09:00) Osaka, Sapporo, Tokyo"
+Seoul  ="(GMT+09:00) Séoul, Tokyo, Yakoutsk"
+Adelaide  ="(GMT+09:33) Adelaide, Darwin"
+Brisbane  ="(GMT+10:00) Brisbane, Vladivostok"
+Canberra  ="(GMT+10:00) Canberra, Melbourne, Sydney"
+Guam  ="(GMT+10:03) Guam, Port Moresby, Hobart"
+Magadan  ="(GMT+11:00) Magadan, Îles Salomon, Nouvelle Calédonie"
+Auckland  ="(GMT+12:00) Auckland, Wellington"
+Fiji  ="(GMT+12:00) Fidji, Kamtchatka, Îles Marshall"
+Nuku_alofa  ="(GMT+13:03) Nuku'alofa"
+
+Addis_Ababa_Weather  ='Addis Ababa'
+Adelaide_Weather  ='Adelaide'
+Asuncion_Weather  ='Asuncion'
+Brasilia_Weather  ='Brasilia'        
+Buenos_Aires_Weather  ='Buenos Aires'    
+Canberra_Weather  ='Canberra'        
+Chatham_Island_Weather  ='Chatham Island'
+Hong_Kong_Weather  ='Hong Kong'  
+Houston_Weather  ='Houston'
+Jerusalem_Weather  ='Jerusalem'
+Kuwait_City_Weather  ='Kuwait City'
+Kyiv_Weather  ='Kyiv'
+Los_Angeles_Weather  ='Los Angeles'
+Madrid_Weather  ='Madrid'
+Melbourne_Weather  ='Melbourne'  
+Montevideo_Weather  ='Montevideo'
+Perth_Weather  ='Perth'
+Rio_de_Janeiro_Weather  ='Rio de Janeiro'
+Santiago_Weather  ='Santiago'
+Sao_Paulo_Weather  ='Sao Paulo'
+Sydney_Weather  ='Sydney'
+Taipei_Weather  ='Taipei'       
+Vancouver_Weather  ='Vancouver' 
+Zagreb_Weather  ='Zagreb'
+
+daylight_savings  ='Heure d’été'
+start_date  ='Date de début'
+of  ='of'
+at  ='à'
+end_date  ='Date de fin'
+oclock  ='heure'
+
+January  ='janvier'
+February  ='février'
+March  ='mars'
+April  ='avril'
+May  ='mai'
+June  ='juin'
+July  ='juillet'
+August  ='août'
+September  ='septembre'
+October  ='octobre'
+November  ='novembre'
+December  ='décembre'
+
+--maintenance fw upgrade
+fw_upgrade  ='Mise à niveau du microprogramme'
+fw_upgrading  ='Firmware mise à niveau ...'
+fw_remind1  ="L'image flash a été téléchargé système successfully.The clignote now.DO PAS éteindre l'appareil!"
+fw_remind2  ="Le système va redémarrer dans le"
+fw_remind3  ="Erreur de mise à jour firmware ..."
+fw_remind4  ="L'image flash a été téléchargé échouer. Les messages d'erreur sont les suivantes:"
+fw_remind5  ="Pour mettre à niveau le microprogramme du périphérique interne, allez à l'emplacement du fichier binaire (.BIN) de mise à niveau et cliquez sur Upload (Télécharger). Les fichiers de mise à niveau peuvent être téléchargés à partir du site web. Si le fichier de mise à niveau est compressé (fichier .ZIP), vous devez tout d'abord extraire le fichier binaire (.BIN). Dans certains cas, vous devrez peut-être reconfigurer."
+file_path  ="Chemin d'accès du fichier"
+file_upload  ='Télécharger'
+file_uploading  ='Le chargement de fichiers ...'
+online_fw_upgrade  ='Mise à jour de microprogramme en ligne'
+current_ver  ='Vous utilisez actuellement la version de microprogramme:'
+latest_ver  ='La dernière version de microprogramme'
+release_date  ='Date de publication'
+release_note  ='Note de publication'
+click_open  ='Click here to open'
+size  ='Taille'
+check_latest_fw  ='Consultez le dernier microprogramme disponible'
+do_fw_upgrade  ='Faire_Microprogramme_MiseAJour'
+fw_warn1  ='Récupérer failed.Please Vérifiez votre connexion Internet ou réessayez plus tard.'
+fw_warn2  ='Firmware a stopped.Please Vérifiez votre connexion Internet ou réessayez plus tard.'
+fw_warn3  ='Pas de nouveaux firmware firmware exists.The sur votre appareil est déjà la dernière version.'
+fw_upgrading_message ='Firmware upgrading...Please wait...'
+
+--maintenance backup/restore
+bak_rst  ='Sauvegarder/Restaurer'
+romd='ROM-D'
+backup = 'sauvegarde'
+restarting  ='Redémarrage ...'
+bak_remind1  ='Le système va redémarrer dans le'
+bak_configure  ='Sauvegardez la configuration'
+bak_remind2  ='Cliquez sur Backup (Sauvegarder) pour enregistrer la configuration actuelle de votre système sur votre ordinateur.'
+rst_configure  ='Rétablir la configuration'
+rst_remind1  "Pour rétablir un fichier de configuration précédemment enregistré sur votre système, allez à l’emplacement du fichier de configuration et cliquez sur Upload (Télécharger)."
+factory_default  ="Retour aux valeurs d'usine par défaut"
+factory_remind1  ="Cliquez sur Reset (Réinitialiser) pour effacer toutes les informations de configuration saisies par l'utilisateur et rétablir les valeurs par défaut d'usine. Après la réinitialisation, le"
+factory_pwd  ='Le mot de passe sera'
+factory_lan_ip  ='L’adresse IP LAN sera'
+factory_dhcp  ='DHCP sera réinitialisé sur le serveur'
+factory_reset  ='Réinitialiser'
+
+--maintenance restart
+rst_info1 = "Cliquez sur Restart (Redemarrer) pour que l'appareil effectue un redemarrage logiciel. La LED SYS (ou PWR) clignote quand le materiel redemarre et reste ensuite allumee si le redemarrage a reussi."
+sys_rst = "Redemarrage du systeme"
+Systemrebooting = "Redemarrer"
+rst_err1 = "Voulez-vous vraiment redemarrer l'appareil?"
+
+--maintenance Sys OP Mode
+Config_Mode = "Mode Configuration"
+Router_Mode = "Mode Routeur"
+AP_Mode = "Mode Point d'accès"
+UR_Mode = "Mode Répéteur universel"
+WISP_UR_Mode = "Mode WISP + UR"
+maintenance_Note_1 = "Remarque:"
+Router_note = "Routeur : Dans ce mode, l'appareil est pris en charge pour se connecter à Internet via un modem ADSL/Câble. Des PC en ports LAN partagent la même IP sur l'ISP à travers le port WAN."
+AP_note = "Point d'accès : Dans ce mode, tous les ports Ethernet sont pontés les uns aux autres. L'appareil permet à un ordinateur équipé sans fil de communiquer avec un réseau câblé."
+UR_note = "Mode Répéteur universel: Dans ce mode, l'appareil agit à la fois comme un point d'accès et un client sans fil. Il peut transmettre le trafic sans fil entre deux réseaux sans fil."
+WISP_note = "WISP Mode: In this mode, the device acts as a wireless client. It can connect to an existing network via an access point. Also router functions are added between the wireless WAN and the LAN."
+WISP_UR_note = "Mode WISP + UR: Dans ce mode, l'appareil agit à la fois comme point d'accès et client sans fil et maintient également la fonction de routeur. La connexion sans fil est traitée en tant que WAN, tandis que la diffusion LAN se fait en signaux Wi-Fi auxquels les autres périphériques clients sans fil peuvent se connecter."
+
+--maintenance language
+main_language  ='Langue'
+language_selection  ='sélection de la langue'
+
+--monitor
+monitor  ='Moniteur'
+Log  ='Journal'
+DHCP_Table  ='Table DHCP'
+Packet_Statistics  ='Statistiques des paquets'
+VPN_Monitor  ='VPN Moniteur'
+WLAN_2_dot_4_G_Station_Status  ='Etat WLAN station 2.4G'
+WLAN_5_G_Station_Status  ='Etat WLAN station 5G'
+
+--monitor log
+log  ='Journal'
+view_log  ='Afficher le journal'
+log_setting  ='Paramètres de journal'
+log_display  ='Affichage'
+all_logs  ='Tous les journaux'
+log_refresh  ='Actualiser'
+log_clear  ='Effacer le journal'
+log_summary  ='Résumé'
+log_summary_time  ='Heure'
+log_summary_msg  ='Message'
+active_log_alert  ='Connexion active et alerte'
+log_list1  ='Maintenance du système'
+log_list2  ='Erreurs système'
+log_list3  ="contrôle d'accès"
+log_list4  ='Mise à jour de microprogramme en ligne'
+
+--monitor packet statistics
+pkt_statistics  ='Statistiques des paquets'
+pkt_statistics_port  ='Port'
+pkt_statistics_status  ='État'
+tx_pkt  ='TxPkts'
+rx_pkt  ='RxPkts'
+pkt_collisions  ='Collisions'
+tx_bps  ='Tx B/s'
+rx_bps  ='Rx B/s'
+up_time  ='Temps utilisable'
+pkt_statistics_wan  ='WAN'
+status_down  ='Bas'
+up_day  ='journée'
+pkt_statistics_lan  ='LAN'
+pkt_statistics_wlan1  ='WLAN 2.4G'
+pkt_statistics_wlan2  ='WLAN 5G'
+system_up_time  ="Durée d'activité du système"
+poll_interval  ='Intervalle(s) d’interrogation'
+set_interval  ='Définir l’intervalle'
+stop_interval  ='Arrêter'
+
+--monitor vpn
+sec_association  ='Associations de sécurité'
+current_ipsec  ='Courant association de sécurité IPsec'
+vpn_status  ='État'
+vpn_connect_name  ='Nom de la connexion'
+vpn_remote_gw  ='Remote Gateway'
+vpn_local_addr  ='Adresse locale'
+vpn_remote_addr  ='Adresse à distance'
+vpn_status_refresh  ='Actualiser'
+vpn_monitor  ='VPN Moniteur'
+
+--monitor wlan
+association_list  ="Liste d'associations"
+association_time  ='Durée d’association'
+wlan_sta_status  ='Etat de la station WLAN'
+
+--monitor dhcp
+monitor_dhcp_table  ='Table DHCP'
+dhcp_host_status  ='État'
+dhcp_host_name  ="Nom de l'hôte"
+dhcp_reserve  ='réserve'
+dhcp_host_status_on  ='Activé'
+
+--status dashboard
+device_status  ='État'
+easy_mode  ='Mode Facile'
+about  ='A propos'
+logout  ='Fermer la session'
+welcome  ='Bienvenue'
+logout_confirm  ='Voulez-vous vraiment fermer votre session ?'
+refresh_interval  ="Intervalle d'actualisation"
+refresh_now  ='Actualiser maintenant'
+device_info  ="Informations concernant l'appareil"
+dashboard_item  ='Elément'
+dashboard_data  ='Données'
+device_host_name  ="Nom de l'hôte"
+device_model_number  ='Numéro de modèle'
+fw_version  ='Version du microprogramme'
+wan_info  ='Informations WAN'
+ip_subnet_mask  ="Masque de sous-réseau d'IP"
+global_ipv6_address = 'Global IPv6 Address'
+default_gw  ='Passerelle par défaut'
+lan_info  ='Informations LAN'
+dhcp_mode  ='DHCP'
+dchp_none  ='Aucun'
+dhcp_server  ='Serveur'
+wan6rd_info = 'Informations 6rd'
+wan6rd_border_router_ip = 'Routeur de périphérie IP'
+wlan24G_info  ='Informations WLAN 2.4G'
+wlan5G_info  ='Informations WLAN 5G'
+dashboard_firewall  ='Pare feu'
+dashboard_summary  ='Récapitulatif'
+wlan24G_status  ='WLAN 2.4G Statut de la station'
+wlan5G_status  ='WLAN 5G Statut de la station'
+details  ='Détails'
+ipsec_vpn_status  ='VPN IPSec statut'
+system_status  ='Etat du système'
+current_date_time  ='Date/Heure actuelle'
+system_resource  ='Ressources système'
+cpu_usage  ='Utilisation du CPU'
+memory_usage  ='Utilisation de la mémoire'
+interface_status  ="Etat de l'interface"
+iface  ='Interface'
+iface_status  ='État'
+iface_rate  ='Débit'
+iface_down  ='Bas'
+iface_up  ='Haut'
+iface_wan  ='WAN'
+iface_lan1  ='LAN1'
+iface_lan2  ='LAN2'
+iface_lan3  ='LAN3'
+iface_lan4  ='LAN4'
+iface_wlan1  ='WLAN 2.4G'
+iface_wlan2  ='WLAN 5G'
+
+--easy mode wireless
+easy_wireless_remind1  ="Les données transmises sans fil sans cryptage ne sont pas sécurisées. Protégez votre réseau sans fil avec un mode de sécurité et le mot de pas que vous avez défini. Vous pouvez ensuite utiliser WPS pour connecter vos ordinateurs à votre réseau sans fil d'un seul clic."
+easy_wireless_radio  ='Radio sans fil'
+easy_wlan_24G  ='2.4G Hz'
+easy_wlan_5G  ='5G Hz'
+easy_wlan_name  ='Nom du réseau sans fil (SSID)'
+easy_wlan_password  ='Mot de passe sans fil'
+easy_verify_password  ='Vérifier le mot de passe'
+
+--easy mode wps
+easy_wps  ='WPS'
+easy_wps_remind1  ="WiFi Protected Setup (WPS) vous offre une manière plus facile et plus rapide de connecter vos ordinateurs/périphériques à votre réseau sans fil. Utilisez l'une des approches suivantes pour vous connecter."
+easy_wlan_security  ='Sécurité sans fil'
+easy_wps_remind2  ="Cliquez sur le bouton Wi-Fi Protected Setup de votre client sans fil, et cliquez ensuite sur le bouton du bas."
+easy_wps_register  ='Enregistrer'
+easy_wps_remind3  ='Inscrivez le code PIN de votre client WiFi.'
+easy_wps_remind4  ="Si votre client sans fil nécessite le code PIN du routeur, s'il vous plaît entrer"
+easy_wps_exit  ='Exit (Quitter)'
+
+--easy mode firewall
+easy_firewall_remind1  ="Le fait d'activer le pare feu protège vos ordinateurs contre les attaques malveillantes provenant d'Internet."
+easy_firewall_ok  ='OK'
+
+--easy mode qos
+easy_qos_remind1  ='Faites glisser les curseurs pour ajuster la bande passante pour chaque application réseau.'
+easy_qos_web  ='navigation sur le Web'
+easy_qos_game  ='Console de jeux'
+easy_qos_email  ='E-mail'
+easy_qos_voip  ='VoIP'
+easy_qos_msn  ='Instant Messenger'
+easy_qos_ftp  ='FTP'
+easy_qos_other  ="D'autres"
+
+--easy mode content filter
+easy_filter_remind1  ="Toutes URL contenant l'un des mots clés suivants sera bloquée et ne pourra être parcourue, à moins d'entrer la clé parent."
+easy_filter_key_word  ='Ajouter une clé Word'
+easy_filter_add  ='Ajouter'
+easy_filter_del  ='Supprimer'
+
+--easy mode pwsave
+easy_pwsave_remind1  ='Veuillez planifier le service sans fil avec la table ci-dessous.'
+
+--easy mode game engine
+easy_game_remind1  ="Chaque fois que vous activez le moteur de jeu, le routeur est conçu de sorte à offrir une meilleure expérience de jeu. L'option Console de jeu dans la Gestion de bande passante aura la priorité au niveau le plus élevé et ne peut être réorganisée avant que le moteur de jeu ne soit désactivé."
+easy_game_ok  ='OK'
+
+--eaZy123
+connect_to_internet = 'Connecter à Internet'
+router_password = 'Mot de passe du routeur'
+eaZy123_1_note_1 = 'Les étapes suivantes vous guideront à travers l'installation de votre routeur et de la connexion à Internet. Cliquez sur l'une des icônes de langue ci-dessous pour continuer.'
+eaZy123_1_note_2 = 'Please note that the network settings might be changed after eaZy 123.'
+eaZy123_2_note_1 = 'eaZy 123 détecte votre type de connexion Internet.'
+eaZy123_2_note_2 = 'Détection...'
+eaZy123_2_error_note_1 = 'Aucun service Internet détecté'
+eaZy123_2_error_note_2 = 'Veuillez vérifier manuellement les éléments suivants :<br/>1. L'ordinateur, le routeur, et le modem sont correctement connectés les uns aux autres.<br/>2. Un service Internet valide.'
+eaZy123_2_error_note_3 = 'Vous pouvez cliquer sur Réessayer pour exécuter à nouveau la détection.'
+eaZy123_exit = 'Quitter'
+eaZy123_try_again = 'Réessayer'
+internet_connection_type = 'Type de connexion Internet'
+eaZy123_2_1_note_1 = 'Consultez les informations fournies par votre fournisseur d'accès Internet (FAI) et complétez les espaces vides suivants. '
+eaZy123_back = 'Retour'
+eaZy123_next = 'Suivant'
+eaZy123_2_6_note_1 = 'eaZy 123 se connecte à Internet.'
+eaZy123_2_6_note_2 = 'Connexion...'
+eaZy123_2_error2_note_1 = 'Information incorrecte'
+eaZy123_2_error2_note_2 = 'Sorry! The router is unable to connect to the Internet with the information you just provided. Please enter it again.'
+eaZy123_3_note_1 = 'Changer le mot de passe du routeur'
+eaZy123_3_note_2 = 'Il est fortement recommandé d'avoir un nouveau mot de passe d'administrateur pour remplacer celui par défaut d'usine (1234).'
+eaZy123_3_note_3 = 'Il est fortement recommandé d'avoir un nouveau mot de passe d'administrateur pour remplacer celui par défaut d'usine (supervisor).'
+eaZy123_4_note_1 = 'Sécurité sans fil'
+eaZy123_4_note_2 = 'Un réseau sans fil protégé sécurise le transfert de données quand vous effectuez des activités réseau sans fil. Protégez-le avec un des modes de sécurité suivants et un mot de passe.'
+eaZy123_4_note_3 = 'It is strongly recommended to set WPA or WPA2 encryption for better wireless security.'
+eaZy123_5_note_1 = 'Félicitations !'
+eaZy123_5_note_2 = 'Vous êtes connecté à Internet. Et maintenant, pourquoi ne pas essayer {GO}, un outil de gestion de routeur très facile !'
+eaZy123_5_note_3 = 'To upgrade your device with the latest firmware, please visit us on the web at www.ZyXEL.com.<br/>Or you go to Expert mode > Maintenance > Firmware Upgrade to do on-line firmware upgrade.'
+eaZy123_go = 'Go'
+
+--After login, popup change password page
+ignore = 'Ignore(Ignorer)'
+chgPwd_note1 = 'Utilisez cet écran pour modifier le mot de passe.'
+chgPwd_note2 = 'Le programme d'installation de l'assistant parcourt les paramètres de configuration les plus courants. Nous vous suggérons d'utiliser ce mode si vous installez votre routeur pour la première fois ou si vous devez effectuer des modifications sur la configuration de base.'
+chgPwd_note3 = 'Utilisez le mode Avancé si vous avez besoin d’accéder à plus de fonctionnalités avancées non inclues dans le mode Assistant.'
+
+--network map
+copy_right  ='(C) Copyright 2014 by ZyXEL Communications Corp'
+net_map_home  ='Accueil'
+net_map_expert  ='Mode Expert'
+net_map_logout  ='Fermer la session'
+net_map_status  ='État'
+net_map_modem  ='Modem'
+net_map_wired  ='Wired'
+net_map_wireless  ='Sans fil'
+net_map_scan  ='Analyse de votre réseau'
+net_map  ='MAP du réseau'
+net_map_name  ='Nom'
+net_map_time  ='Heure'
+net_map_wanip  ='IP WAN'
+net_map_wlan24G_name  ='Nom du réseau Wireless 2.4G (SSID)'
+net_map_wlan5G_name  ='Nom du réseau Wireless 5G (SSID)'
+net_map_game_engine  ='Moteur de jeu'
+net_map_pwsaving  ='Economie d’énergie'
+net_map_filter  ='Filtrage de contenu'
+net_map_mgmt  ='Bande passante MGMT'
+net_map_internet ='Cadre Internet'
+net_map_firewall  ='Pare feu'
+net_map_wireless_security  ='Sécurité sans fil'
+net_map_loading  ='Chargement'
+
+welcome_to_emg2926q10a ='Bienvenue sur ZyXEL EMG2926-Q10A'
+VPN ='VPN'
+Lan = 'LAN'
+About_Us = 'About Us'
+Did_you_check = 'Did you check '
+www_zyxel_com = 'www.zyxel.com '
+today = 'today?'
+
+--mobile
+Static_IP ='IP statique'
+Dynamic_IP  ='IP dynamique'
+mobile_wizard3_note_1 = 'Vous êtes connecté à Internet.'
+Dynamic ='Dynamique'
+mobile_start = 'Début'
+mobile_end = 'Fin'
+
+--media
+DLNA = 'DLNA'
+SAMBA = 'SAMBA'
+FTP = 'FTP'
+Enable_DLNA = 'Activer DLNA'
+usb1 = "USB1"
+usb2 = "USB2"
+shared_folders = "Activer les types de médias partagés"
+rescan_content = "Relancer l'analyse du contenu du média"
+rescan = "Rescan"
+dlna_setup = "DLNA Setup"
+Media = 'Partage de média USB'
+SAMBA_Setup = "SAMBA Setup"
+Work_Group = "Groupe de travail"
+Description = "Description"
+USB_Setup = "USB Setup"
+User_Name = "Nom d'utilisateur"
+FTP_Setup = "FTP Setup"
+dlna_note = '60 000 fichiers multimédias maximum peuvent être chargés'
+Photo = 'Photo'
+Music = 'Musique'
+Video = 'Vidéo'
+
+enable_samba = "Activer SAMBA"
+enable_ftp = "Activer FTP"
+usb_access = "Accès USB"
+user_accounts = "User Accounts"
+Read = "Lecture"
+Read_Write = "Lecture et écriture"
+Accounts_Error = "Compte dupliqué trouvé"
+downstream_bandwidth_Error = "Entrez des chiffres dans la bande passante descendante, pas de texte"
+upstream_bandwidth_Error = "Entrez des chiffres dans la bande passante montante, pas de texte"
+port_Error_1 = "Plage non valide, définissez la valeur sur le port 21 ou 1024 ~ 65535"
+port_Error_2 = "Plage non valide, définissez la valeur sur le port 21 ou 1024 ~ 65535" 
+
+--SNMP
+SNMP = "SNMP"
+SNMP_Settings = "Paramètres SNMP"
+Server_Port = "Port du serveur"
+Server_Access = "Accès au serveur"
+Secured_Ip = "IP sécurisée"
+SNMP_Enable = "Activer le SNMP"
+Get_Community = "Communauté de lecture"
+Set_Community = "Communauté d’écriture"
+System_Location = "Emplacement du système"
+System_Contact = "Contact du système"
+Trap_Settings = "Paramètres de trappe"
+Trap_Enable = "Activer la trappe"
+Trap_Manager_Ip = "Adresse de destination des trappes"
+Trap_Community = "Communauté de trappes"
+Note_snmp1 = "Il se pourrait que vous ayez à créer une règle de "
+snmp_firewall = "pare-feu"
+Note_snmp2 = "."
+
+--diagnostic
+Diagnostic = "Diagnostic"
+Ping_TraceRoute = "Ping/TraceRoute"
+diagnostic_note = "Ping est un utilitaire réseau permettant de tester si un hôte particulier est accessible. Entrez l'adresse IP ou le nom de l'hôte et cliquez sur le bouton pour démarrer le test. Le résultat du test sera affiché dans la zone ci-dessous."
+Ping = "Ping"
+TraceRoute = "TraceRoute"

@@ -1,0 +1,42 @@
+Source-Makefile: feeds/streamboost/jigglyp0f/Makefile
+Package: jigglyp0f
+Submenu: Node Management
+Version: 2
+Depends: +libc +USE_EGLIBC:librt +USE_EGLIBC:libpthread +p0f +libevent2 +hiredis +libsbdaemon
+Menu-Depends: 
+Provides: 
+Section: opt
+Category: Bigfoot
+Title: p0f to Redis interface
+Maintainer: Mo Chen <moc@qca.qualcomm.com>
+Source: jigglyp0f-.tar.gz
+Type: ipkg
+Description: An interface to translate p0f stdout to Redis pubsub.
+Mo Chen <moc@qca.qualcomm.com>
+@@
+Config:
+   	menu "overwrite package version"
+		depends on PACKAGE_jigglyp0f
+	config jigglyp0f_USE_CUSTOM_VERSION
+		depends on PACKAGE_jigglyp0f
+		bool "Use custom package version"
+		default n
+	config jigglyp0f_CUSTOM_VERSION
+		depends on jigglyp0f_USE_CUSTOM_VERSION
+		string " version as string (default version: )"
+		default ""
+	endmenu
+   	menu "custom source directory"
+		depends on PACKAGE_jigglyp0f
+	config jigglyp0f_USE_CUSTOM_SOURCE_DIR
+		depends on PACKAGE_jigglyp0f
+		bool "Use custom source directory"
+		default n
+	config jigglyp0f_CUSTOM_SOURCE_DIR
+		depends on jigglyp0f_USE_CUSTOM_SOURCE_DIR
+		string "Custom source directory"
+		default ""
+	endmenu
+@@
+
+

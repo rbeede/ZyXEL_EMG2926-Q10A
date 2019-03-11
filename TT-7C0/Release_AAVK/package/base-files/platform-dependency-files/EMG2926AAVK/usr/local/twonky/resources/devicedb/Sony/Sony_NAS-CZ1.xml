@@ -1,0 +1,19 @@
+<Client>
+	<DeviceId>
+		<DisplayName>Sony NAS-CZ1</DisplayName>
+		<HttpRecognition>
+			<HttpText>NAS-CZ1</HttpText>
+		</HttpRecognition>
+		<MappingUpdatePolicy>FIX</MappingUpdatePolicy>
+	</DeviceId>
+	<Capabilities>
+		<MediaTypeList>
+			<MediaType>MUSIC</MediaType>
+		</MediaTypeList>
+	</Capabilities>
+	<Adaptations>
+		<DLNA>
+			<Version>DLNA10</Version>
+		</DLNA>
+	</Adaptations>
+</Client>

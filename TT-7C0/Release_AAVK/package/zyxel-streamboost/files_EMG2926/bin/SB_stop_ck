@@ -1,0 +1,167 @@
+#!/bin/sh
+
+	sleep 30
+
+	#ZyXEL add
+	#Does check ozker is killed by streamboost stop? If is not, it will to kill it.
+	ozker_pid=$(ps | grep -r "/usr/sbin/ozker" | grep "grep" -v | awk '{print $1}')
+	if [ "$ozker_pid" != "" ]; then
+#		echo "$ozker_pid" >> /tmp/AAA
+		kill -9 $ozker_pid
+	fi
+	
+	#ZyXEL add
+	#Does check p0f is killed by streamboost stop? If is not, it will to kill it.
+	p0f_pid=$(ps | grep -r "/usr/sbin/p0f" | grep "grep" -v | awk '{print $1}')
+	if [ "$p0f_pid" != "" ]; then
+#		echo "$p0f_pid" >> /tmp/AAA
+		kill -9 $p0f_pid
+	fi
+	
+	#ZyXEL add
+	#Does check drflocs is killed by streamboost stop? If is not, it will to kill it.
+	drflocs_pid=$(ps | grep -r "/usr/sbin/drflocs" | grep "grep" -v | awk '{print $1}')
+	if [ "$drflocs_pid" != "" ]; then
+#		echo "$drflocs_pid" >> /tmp/AAA
+		kill -9 $drflocs_pid
+	fi
+	
+	#ZyXEL add
+	#Does check cape is killed by streamboost stop? If is not, it will to kill it.
+	cape_pid=$(ps | grep -r "/usr/sbin/cape" | grep "grep" -v | awk '{print $1}')
+	if [ "$cape_pid" != "" ]; then
+#		echo "$cape_pid" >> /tmp/AAA
+		kill -9 $cape_pid
+	fi
+	
+
+	#ZyXEL add
+	#Does check flowman is killed by streamboost stop? If is not, it will to kill it.
+	flowman_pid=$(ps | grep -r "/usr/sbin/flowman" | grep "grep" -v | awk '{print $1}')
+	if [ "$flowman_pid" != "" ]; then
+#		echo "$flowman_pid" >> /tmp/AAA
+		kill -9 $flowman_pid
+	fi
+	
+	#ZyXEL add
+	#Does check blockman is killed by streamboost stop? If is not, it will to kill it.
+	blockman_pid=$(ps | grep -r "/usr/sbin/blockman" | grep "grep" -v | awk '{print $1}')
+	if [ "$blockman_pid" != "" ]; then
+#		echo "$blockman_pid" >> /tmp/AAA
+		kill -9 $blockman_pid
+	fi
+
+
+	#ZyXEL add
+	#Does check overlord is killed by streamboost stop? If is not, it will to kill it.
+	overlord_pid=$(ps | grep -r "/usr/sbin/overlord" | grep "grep" -v | awk '{print $1}')
+	if [ "$overlord_pid" != "" ]; then
+#		echo "$overlord_pid" >> /tmp/AAA
+		kill -9 $overlord_pid
+	fi
+
+
+	#ZyXEL add
+	#Does check flowmark is killed by streamboost stop? If is not, it will to kill it.
+	flowmark_pid=$(ps | grep -r "/usr/sbin/flowmark" | grep "grep" -v | awk '{print $1}')
+	if [ "$flowmark_pid" != "" ]; then
+#		echo "$flowmark_pid" >> /tmp/AAA
+		kill -9 $flowmark_pid
+	fi
+
+
+	#ZyXEL add
+	#Does check qdiscman is killed by streamboost stop? If is not, it will to kill it.
+	qdiscman_pid=$(ps | grep -r "/usr/sbin/qdiscman" | grep "grep" -v | awk '{print $1}')
+	if [ "$qdiscman_pid" != "" ]; then
+#		echo "$qdiscman_pid" >> /tmp/AAA
+		kill -9 $qdiscman_pid
+	fi
+
+	#ZyXEL add
+	#Does check leash is killed by streamboost stop? If is not, it will to kill it.
+	lease_pid=$(ps | grep -r "dhcp-lease-filt" | grep "grep" -v | awk '{print $1}')
+	if [ "$lease_pid" != "" ]; then
+#		echo "$lease_pid" >> /tmp/AAA
+		kill -9 $lease_pid
+	fi
+
+	#ZyXEL add
+	#Does check jigglyp0f is killed by streamboost stop? If is not, it will to kill it.
+	jigglyp0f_pid=$(ps | grep -r "jigglyp0f" | grep "grep" -v | awk '{print $1}')
+	if [ "$jigglyp0f_pid" != "" ]; then
+#		echo "$jigglyp0f_pid" >> /tmp/AAA
+		kill -9 $jigglyp0f_pid
+	fi
+
+
+	#ZyXEL add
+	#Does check sbmacouid is killed by streamboost stop? If is not, it will to kill it.
+	sbmacouid_pid=$(ps | grep -r "/usr/sbin/sbmacouid" | grep "grep" -v | awk '{print $1}')
+	if [ "$sbmacouid_pid" != "" ]; then
+#		echo "$sbmacouid_pid" >> /tmp/AAA
+		kill -9 $sbmacouid_pid
+	fi
+	
+
+	#ZyXEL add
+	#Does check sbnamed is killed by streamboost stop? If is not, it will to kill it.
+	sbnamed_pid=$(ps | grep -r "/usr/sbin/sbnamed" | grep "grep" -v | awk '{print $1}')
+	if [ "$sbnamed_pid" != "" ]; then
+#		echo "$sbnamed_pid" >> /tmp/AAA
+		kill -9 $sbnamed_pid
+	fi
+	
+	
+	#ZyXEL add
+	#Does check nodedetectd is killed by streamboost stop? If is not, it will to kill it.
+	nodedetectd_pid=$(ps | grep -r "/usr/sbin/nodedetectd" | grep "grep" -v | awk '{print $1}')
+	if [ "$nodedetectd_pid" != "" ]; then
+#		echo "$nodedetectd_pid" >> /tmp/AAA
+		kill -9 $nodedetectd_pid
+	fi
+
+	#ZyXEL add
+	#Does check sbnoded is killed by streamboost stop? If is not, it will to kill it.
+	sbnoded_pid=$(ps | grep -r "/usr/sbin/sbnoded" | grep "grep" -v | awk '{print $1}')
+	if [ "$sbnoded_pid" != "" ]; then
+#		echo "$sbnoded_pid" >> /tmp/AAA
+		kill -9 $sbnoded_pid
+	fi
+	
+	
+	#ZyXEL add
+	#Does check celes is killed by streamboost stop? If is not, it will to kill it.
+	celes_pid=$(ps | grep -r "/usr/sbin/celes" | grep "grep" -v | awk '{print $1}')
+	if [ "$celes_pid" != "" ]; then
+#		echo "$celes_pid" >> /tmp/AAA
+		kill -9 $celes_pid
+	fi
+
+
+	#ZyXEL add
+	#Does check sead is killed by streamboost stop? If is not, it will to kill it.
+	sead_pid=$(ps | grep -r "/usr/sbin/sead" | grep "grep" -v | awk '{print $1}')
+	if [ "$sead_pid" != "" ]; then
+#		echo "$sead_pid" >> /tmp/AAA
+		kill -9 $sead_pid
+	fi
+	
+
+	#ZyXEL add
+	#Does check sbsaved is killed by streamboost stop? If is not, it will to kill it.
+	sbsaved_pid=$(ps | grep -r "/usr/sbin/sbsaved" | grep "grep" -v | awk '{print $1}')
+	if [ "$sbsaved_pid" != "" ]; then
+#		echo "$sbsaved_pid" >> /tmp/AAA
+		kill -9 $sbsaved_pid
+	fi
+	
+	#ZyXEL add
+	#Does check redis-server is killed by streamboost stop? If is not, it will to kill it.
+	redis_pid=$(ps | grep -r "/usr/bin/redis-server" | grep "grep" -v | awk '{print $1}')
+	if [ "$redis_pid" != "" ]; then
+#		echo "$redis_pid" >> /tmp/AAA
+		kill -9 $redis_pid
+	fi	
+	
+	
