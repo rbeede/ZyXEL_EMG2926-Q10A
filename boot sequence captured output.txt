@@ -1,0 +1,370 @@
+
+
+U-Boot 2009.11 (May 25 2015 - 15:53:53)
+
+AAVK-EMG2926Q10A - Scorpion 1.0
+DRAM:  32bit ddr2 256 MB
+Flash: 16 MB
+*** Warning *** : PCIe WLAN Module not found !!!
+Net:   Max resets limit reached exiting...
+eth0, eth1
+NAND:  Hynix NAND 128MiB 3,3V 8-bit [128MB]
+
+
+ZyXEL zloader v2.21 (May 25 2015 - 16:22:07)
+Multiboot clinent version: 1.2
+could not establish link on eth0
+eth_init failed!
+
+Hit any key to stop autoboot:  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  3  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  2  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  0
+### JFFS2 loading '/boot/vmlinux.lzma.uImage' to 0x80400000
+Scanning JFFS2 FS: '/boot/vmlinux.lzma.uImage' found, done
+Loading file: done
+### JFFS2 load complete: 1022244 bytes loaded to 0x80400000
+## Booting kernel from Legacy Image at 80400000 ...
+   Image Name:   MIPS OpenWrt Linux-3.3.8
+   Created:      2018-01-05   8:42:22 UTC
+   Image Type:   MIPS Linux Kernel Image (lzma compressed)
+   Data Size:    1022180 Bytes = 998.2 kB
+   Load Address: 80060000
+   Entry Point:  80060000
+   Verifying Checksum ... OK
+   Uncompressing Kernel Image ... OK
+
+Starting kernel ...
+
+[    0.000000] Linux version 3.3.8 (william@ubuntu) (gcc version 4.6.4 20121106 (prerelease) (Linaro GCC 4.6-2012.11) ) #1 Fri Jan 5 01:44:33 CST 2018
+[    0.000000] bootconsole [early0] enabled
+[    0.000000] CPU revision is: 00019750 (MIPS 74Kc)
+[    0.000000] SoC: Qualcomm Atheros QCA9558 rev 0
+[    0.000000] Clocks: CPU:720.000MHz, DDR:600.000MHz, AHB:200.000MHz, Ref:40.000MHz
+[    0.000000] Determined physical RAM map:
+[    0.000000]  memory: 10000000 @ 00000000 (usable)
+[    0.000000] User-defined physical RAM map:
+[    0.000000]  memory: 10000000 @ 00000000 (usable)
+[    0.000000] Initrd not found or empty - disabling initrd
+[    0.000000] Zone PFN ranges:
+[    0.000000]   Normal   0x00000000 -> 0x00010000
+[    0.000000] Movable zone start PFN for each node
+[    0.000000] Early memory PFN ranges
+[    0.000000]     0: 0x00000000 -> 0x00010000
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 65024
+[    0.000000] Kernel command line:  board=AAVK-EMG2926Q10A
+root=/dev/mtdblock7 rootfstype=jffs2 noinitrd zld_ver=2.21
+console=ttyS0,115200
+mtdparts=spi0.0:0x40000(u-boot)ro,0x10000(env)ro,0x10000(RFdata)ro,-(nbu);ath79-nand:0x200000(rootfs_data),0x200000(romd),0x100000(header),0x1E00000(rootfs),0x100000(header1),0x1E00000(rootfs1),0x200000(bu1),-(bu2)
+mem=256M ethaddr=5C:6A:##:##:##:##
+[    0.000000] PID hash table entries: 1024 (order: 0, 4096 bytes)
+[    0.000000] Dentry cache hash table entries: 32768 (order: 5, 131072 bytes)
+[    0.000000] Inode-cache hash table entries: 16384 (order: 4, 65536 bytes)
+[    0.000000] Primary instruction cache 64kB, VIPT, 4-way, linesize 32 bytes.
+[    0.000000] Primary data cache 32kB, 4-way, VIPT, cache aliases, linesize 32 bytes
+[    0.000000] Writing ErrCtl register=00000000
+[    0.000000] Readback ErrCtl register=00000000
+[    0.000000] Memory: 256304k/262144k available (2195k kernel code, 5840k reserved, 578k data, 180k init, 0k highmem)
+[    0.000000] SLUB: Genslabs=9, HWalign=32, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] NR_IRQS:83
+[    0.000000] Calibrating delay loop... 358.80 BogoMIPS (lpj=1794048)
+[    0.060000] pid_max: default: 32768 minimum: 301
+[    0.060000] Mount-cache hash table entries: 512
+[    0.070000] Initialized recycle list for cpu 0.
+[    0.070000] NET: Registered protocol family 16
+[    0.080000] gpiochip_add: registered GPIOs 0 to 23 on device: ath79
+[    0.080000] MIPS: machine is ZyXEL EMG2926AAVK
+[    0.090000] ar724x-pci ar724x-pci.0: PCIe link is down
+[    0.090000] registering PCI controller with io_map_base unset
+[    0.100000] registering PCI controller with io_map_base unset
+[    0.510000] bio: create slab <bio-0> at 0
+[    0.510000] PCI host bridge to bus 0000:00
+[    0.520000] pci_bus 0000:00: root bus resource [mem 0x10000000-0x11ffffff]
+[    0.520000] pci_bus 0000:00: root bus resource [io  0x0000]
+[    0.530000] PCI host bridge to bus 0000:01
+[    0.530000] pci_bus 0000:01: root bus resource [mem 0x12000000-0x13ffffff]
+[    0.540000] pci_bus 0000:01: root bus resource [io  0x0001]
+[    0.540000] pci 0000:01:00.0: BAR 0: assigned [mem 0x12000000-0x121fffff 64bit]
+[    0.550000] pci 0000:01:00.0: BAR 6: assigned [mem 0x12200000-0x1220ffff pref]
+[    0.550000] pci 0000:01:00.0: using irq 41 for pin 1
+[    0.560000] Switching to clocksource MIPS
+[    0.560000] NET: Registered protocol family 2
+[    0.570000] IP route cache hash table entries: 2048 (order: 1, 8192 bytes)
+[    0.570000] TCP established hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.580000] TCP bind hash table entries: 8192 (order: 3, 32768 bytes)
+[    0.580000] TCP: Hash tables configured (established 8192 bind 8192)
+[    0.590000] TCP reno registered
+[    0.590000] UDP hash table entries: 256 (order: 0, 4096 bytes)
+[    0.600000] UDP-Lite hash table entries: 256 (order: 0, 4096 bytes)
+[    0.600000] NET: Registered protocol family 1
+[    0.620000] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    0.620000] JFFS2 version 2.2 (NAND) (SUMMARY) (LZMA) (RTIME) (CMODE_PRIORITY) (c) 2001-2006 Red Hat, Inc.
+[    0.630000] msgmni has been set to 500
+[    0.640000] io scheduler noop registered
+[    0.640000] io scheduler deadline registered (default)
+[    0.650000] Serial: 8250/16550 driver, 1 ports, IRQ sharing disabled
+[    0.670000] serial8250.0: ttyS0 at MMIO 0x18020000 (irq = 11) is a 16550A
+[    0.680000] console [ttyS0] enabled, bootconsole disabled
+[    0.680000] console [ttyS0] enabled, bootconsole disabled
+[    0.690000] m25p80 spi0.0: found mx25l3205d, expected m25p80
+[    0.700000] m25p80 spi0.0: mx25l3205d (4096 Kbytes)
+[    0.700000] 4 cmdlinepart partitions found on MTD device spi0.0
+[    0.710000] Creating 4 MTD partitions on "spi0.0":
+[    0.710000] 0x000000000000-0x000000040000 : "u-boot"
+[    0.720000] 0x000000040000-0x000000050000 : "env"
+[    0.730000] 0x000000050000-0x000000060000 : "RFdata"
+[    0.730000] 0x000000060000-0x000000400000 : "nbu"
+[    0.740000] ath79-nand ath79-nand: AR71xx/AR9xxx Qualcomm-Atheros NAND FLash Controller driver, Version 1.0 (c) 2010 Atheros Communications, Ltd.
+[    0.750000] NAND device: Manufacturer ID: 0xad, Chip ID: 0xf1 (Hynix NAND 128MiB 3,3V 8-bit)
+[    0.760000] Bad block table found at page 65472, version 0x01
+[    0.770000] Bad block table found at page 65408, version 0x01
+[    0.770000] 8 cmdlinepart partitions found on MTD device ath79-nand
+[    0.780000] Creating 8 MTD partitions on "ath79-nand":
+[    0.790000] 0x000000000000-0x000000200000 : "rootfs_data"
+[    0.790000] 0x000000200000-0x000000400000 : "romd"
+[    0.800000] 0x000000400000-0x000000500000 : "header"
+[    0.810000] 0x000000500000-0x000002300000 : "rootfs"
+[    0.810000] mtd: partition "rootfs" set to be root filesystem
+[    0.820000] split_squashfs: no squashfs found in "ath79-nand"
+[    0.820000] 0x000002300000-0x000002400000 : "header1"
+[    0.830000] 0x000002400000-0x000004200000 : "rootfs1"
+[    0.840000] 0x000004200000-0x000004400000 : "bu1"
+[    0.840000] 0x000004400000-0x000008000000 : "bu2"
+[    0.850000] ath79-nand ath79-nand: ====== NAND Parameters ======
+[    0.850000]  total size = 0x8000000, page = 0x800 block = 0x20000 oob = 0x40
+[    1.000000] ag71xx_mdio: probed
+[    1.010000] eth0: Atheros AG71xx at 0xb9000000, irq 4, mode:RGMII
+[    1.590000] eth0: Atheros AR8337 switch driver attached.
+[    2.790000] ag71xx ag71xx.0: eth0: connected to PHY at ag71xx-mdio.0:00 [uid=004dd036, driver=Atheros AR8216/AR8236/AR8316]
+[    2.800000] eth1: Atheros AG71xx at 0xba000000, irq 5, mode:SGMII
+[    3.360000] TCP cubic registered
+[    3.360000] NET: Registered protocol family 17
+[    3.370000] Bridge firewalling registered
+[    3.370000] 8021q: 802.1Q VLAN Support v1.8
+[    3.370000] ### of_selftest(): No testcase data in device tree; not running tests
+[    6.250000] JFFS2 notice: (1) jffs2_build_xattr_subsystem: complete building xattr subsystem, 0 of xdatum (0 unchecked, 0 orphan) and 0 of xref (0 dead, 0 orphan) found.
+[    6.260000] VFS: Mounted root (jffs2 filesystem) readonly on device 31:7.
+[    6.270000] Freeing unused kernel memory: 180k freed
+- preinit -
+- regular preinit -
+[    9.210000] JFFS2 notice: (505) jffs2_build_xattr_subsystem: complete building xattr subsystem, 2 of xdatum (0 unchecked, 2 orphan) and 2 of xref (0 dead, 2 orphan) found.
+[    9.420000] SCSI subsystem initialized
+[    9.480000] usbcore: registered new interface driver usbfs
+[    9.490000] usbcore: registered new interface driver hub
+[    9.500000] usbcore: registered new device driver usb
+[    9.770000] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    9.780000] ehci-platform ehci-platform.0: Generic Platform EHCI Controller
+[    9.780000] ehci-platform ehci-platform.0: new USB bus registered, assigned bus number 1
+[    9.820000] ehci-platform ehci-platform.0: irq 48, io mem 0x1b000000
+[    9.840000] ehci-platform ehci-platform.0: USB 2.0 started, EHCI 1.00
+[    9.840000] hub 1-0:1.0: USB hub found
+[    9.850000] hub 1-0:1.0: 1 port detected
+[    9.850000] ehci-platform ehci-platform.1: Generic Platform EHCI Controller
+[    9.860000] ehci-platform ehci-platform.1: new USB bus registered, assigned bus number 2
+[    9.900000] ehci-platform ehci-platform.1: irq 49, io mem 0x1b400000
+[    9.920000] ehci-platform ehci-platform.1: USB 2.0 started, EHCI 1.00
+[    9.920000] hub 2-0:1.0: USB hub found
+[    9.930000] hub 2-0:1.0: 1 port detected
+[    9.940000] ohci_hcd: USB 1.1 'Open' Host Controller (OHCI) Driver
+[    9.970000] uhci_hcd: USB Universal Host Controller Interface driver
+[   10.000000] Initializing USB Mass Storage driver...
+[   10.000000] usbcore: registered new interface driver usb-storage
+[   10.010000] USB Mass Storage support registered.
+[   10.020000] eth0: link up (1000Mbps/Full duplex)
+switching to jffs2
+- init -
+[   30.180000] eth0: link down
+
+Please press Enter to activate this console. sysinit: Start preboot
+
+[   37.860000] JFFS2 notice: (693) jffs2_build_xattr_subsystem: complete building xattr subsystem, 0 of xdatum (0 unchecked, 0 orphan) and 0 of xref (0 dead, 0 orphan) found.
+sysinit: zcfg_schema.bin
+
+[   44.700000] fast_classifier: Unknown symbol nf_conntrack_find_get (err 0)
+[   44.710000] fast_classifier: Unknown symbol nf_conntrack_register_notifier (err 0)
+[   44.720000] fast_classifier: Unknown symbol nf_ct_tcp_no_window_check (err 0)
+[   44.720000] fast_classifier: Unknown symbol rt6_lookup (err 0)
+[   44.730000] fast_classifier: Unknown symbol nf_conntrack_unregister_notifier (err 0)
+[   44.740000] fast_classifier: Unknown symbol unregister_inet6addr_notifier (err 0)
+[   44.750000] fast_classifier: Unknown symbol register_inet6addr_notifier (err 0)
+sysinit: Start port_config
+
+sysinit: Start defconfig
+
+sysinit: Start luci_fixtime
+
+sysinit: Fri Jan  5 08:38:00 UTC 2018
+
+sysinit: Start ess_info
+
+sysinit: Start boot
+
+sysinit: Start password
+
+sysinit: Start procd
+
+sysinit: Start fstab
+
+sysinit: Start network
+
+sysinit: Start usb
+
+sysinit: Start proftpd
+
+sysinit: Changing password for supervisor
+
+sysinit: New password: 
+
+sysinit: Retype password: 
+
+sysinit: Password for supervisor changed by root
+
+sysinit: Changing password for admin
+
+sysinit: New password: 
+
+sysinit: Retype password: 
+
+sysinit: Password for admin changed by root
+
+sysinit: Start samba
+
+sysinit: Changing password for supervisor
+
+sysinit: New password: 
+
+sysinit: Retype password: 
+
+sysinit: Password for supervisor changed by root
+
+sysinit: Changing password for admin
+
+sysinit: New password: 
+
+sysinit: Retype password: 
+
+sysinit: Password for admin changed by root
+
+sysinit: Start telnet
+
+sysinit: Start wireless
+
+sysinit: Not to remove kernel module when disable wifi function
+
+sysinit: Not to remove kernel module when disable wifi function
+
+sysinit: Start firewall
+
+sysinit: Start firewall6
+
+sysinit: Start intfGrp
+
+sysinit: Start RA_dhcp6c
+
+sysinit: Start RA_status
+
+sysinit: Start cron
+
+sysinit: Start dropbear
+
+sysinit: Start nat
+
+sysinit: Start qos
+
+sysinit: Start radvd
+
+sysinit: Start snmpd
+
+sysinit: Start ssh
+
+sysinit: Start uhttpd
+
+sysinit: Start updatedd
+
+sysinit: Start luci_dhcp_migrate
+
+sysinit: Start default_lan_radvd
+
+sysinit: Start dnsmasq
+
+sysinit: no more available dns servers !
+
+sysinit: no more available dns servers !
+
+sysinit: no more available dns servers !
+
+sysinit: no more available dns servers !
+
+sysinit: no more available dns servers !
+
+sysinit: dns type is NONE, don't do anything
+
+sysinit: dns type is NONE, don't do anything
+
+sysinit: dns type is NONE, don't do anything
+
+sysinit: Start wol
+
+sysinit: Start shortcut-fe
+
+sysinit: Start lldpd
+
+sysinit: Start route
+
+sysinit: Start done
+
+sysinit: Start miniupnpd
+
+sysinit: 24
+
+sysinit: miniupnpd starting ...
+
+sysinit: Start led
+
+sysinit: Start portTrigger
+
+sysinit: Start time_daemon
+
+sysinit: Start watchdog
+
+sysinit: Start webstr_filter
+
+sysinit: Start wifi_scheduling
+
+sysinit: Start wifi_scheduling5G
+
+sysinit: Start wireless5G_macfilter
+
+sysinit: Start wireless_macfilter
+
+sysinit: Start sysntpd
+
+sysinit: Start ztr69
+
+sysinit: Start dlna
+
+sysinit: Start gw6c
+
+sysinit: You haven't edited your configuration file. Gateway6 is disabled.
+
+sysinit: Gateway6 client cannot start.
+
+sysinit: Start igmpproxy
+
+sysinit: Start parental_monitor
+
+sysinit: Start sysctl
+
+sysinit: Start tr143
+
+sysinit: Start wan_status_monitor
+
+sysinit: Directory wan_monitor does not exists.
+
+sysinit: Start zybootend
+
+sysinit: net.netfilter.nf_conntrack_udp_timeout = 180
+
+sysinit: Boot finished!
+
+
+
+EMG2926-Q10A login: 
+EMG2926-Q10A login: 

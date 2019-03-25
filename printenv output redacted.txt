@@ -1,0 +1,82 @@
+
+AAVK-EMG2926Q10A# help
+?       - alias for 'help'
+bootm   - boot application image from memory
+erase   - erase FLASH memory
+flinfo  - print FLASH memory information
+fsload  - load binary file from a filesystem image
+go      - start application at address 'addr'
+help    - print online help
+imls    - list all images found in flash
+nand    - NAND sub-system
+nboot   - boot from NAND device
+printenv- print environment variables
+protect - enable or disable FLASH write protection
+reset   - Perform RESET of the CPU
+run     - run commands in an environment variable
+saveenv - save environment variables to persistent storage
+setenv  - set environment variables
+tftpboot- boot image via network using TFTP protocol
+version - print monitor version
+zflash  - Flash access commands, length must be align to block/page size
+zgpio   - GPIO access
+
+
+
+AAVK-EMG2926Q10A# printenv
+baudrate=115200
+ipaddr=192.168.1.1
+serverip=192.168.1.33
+uboot_env_ver=1.5
+img_prefix=emg2926aavk-
+loadaddr=80400000
+readonly=ro
+setmtdparts=setenv mtdparts mtdparts=spi0.0:${ldr_psize}(u-boot)${readonly},${env_psize}(env)${readonly},${rfdat_psize}(RFdata)${readonly},-(nbu)\;ath79-nand:${rfsdat_psize}(rootfs_data),${romd_psize}(romd),${hdr_psize}(header),${rfs_psize}(rootfs),${hdr1_psize}(header1),${rfs1_psize}(rootfs1),${bu1_psize}(bu1),-(bu2)
+flashargs=setenv bootargs board=AAVK-EMG2926Q10A root=${bootmtd} rootfstype=jffs2 noinitrd ${bootmode} ${zld_ver}
+addtty=setenv bootargs ${bootargs} console=ttyS0,${baudrate}
+addmtd=setenv bootargs ${bootargs} ${mtdparts}
+boot_flash=run setmtdparts flashargs addtty addmtd;fsload ${loadaddr} /boot/vmlinux.lzma.uImage;bootm ${loadaddr}
+bootcmd=run boot_flash
+ldr_paddr=0x9f000000
+ldr_psize=0x40000
+env_paddr=0x9f040000
+env_psize=0x10000
+rfdat_paddr=0x9f050000
+rfdat_psize=0x10000
+rfsdat_paddr=0
+rfsdat_psize=0x200000
+romd_paddr=0x200000
+romd_psize=0x200000
+hdr_paddr=0x400000
+hdr_psize=0x100000
+rfs_paddr=0x500000
+rfs_psize=0x1E00000
+hdr1_paddr=0x2300000
+hdr1_psize=0x100000
+rfs1_paddr=0x2400000
+rfs1_psize=0x1E00000
+bu1_paddr=0x4200000
+bu1_psize=0x200000
+lu=tftp ${loadaddr} ${dir}u-boot.bin;zflash erase ${ldr_paddr} ${ldr_psize};zflash write ${fileaddr} ${ldr_paddr} ${filesize}
+lf=tftp ${loadaddr} ${dir}${img_prefix}rootfs.jffs2;nand erase ${rfs_paddr} ${rootfs_psize};nand write ${fileaddr} ${rfs_paddr} ${filesize}
+hostname=AAVK-EMG2926Q10A
+countrycode=FF
+ethaddr=5C:6A:##:##:##:##
+serialnum=S############
+stdin=serial
+stdout=serial
+stderr=serial
+ver=U-Boot 2009.11 (May 25 2015 - 15:53:53)
+boot_zld=bootm 9f030000
+ethrotate=no
+netretry=no
+ethact=eth0
+
+Environment size: 1708/65532 bytes
+
+
+
+AAVK-EMG2926Q10A# flinfo
+
+Bank # 1: The hell do you want flinfo for??
+AAVK-EMG2926Q10A# 
