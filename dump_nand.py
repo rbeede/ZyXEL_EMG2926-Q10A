@@ -77,20 +77,43 @@ def main():
 		print("Found expected command prompt and beginning nand dump")
 
 	for page_addr in range(0x0, 0x8000000, 0x800):
+		print(f"Looking at page # {:08x} ...".format(page_addr))
+		
 		ser.write(b"send nand dump {:08x}\n".format(page_addr))
 
-		# Read all of the results until our next prompt
-		line = ser.readline();
+		# Check our starting line header meets expectations
+		line = ser.readline()
 		
 		if("Page {} dump:".format(hex(page_addr)) != line):
-			print(f"Did not see page response for page # {:08x}".format(page_addr))
+			print(f"Did not see page response for page # {:08x}".format(page_addr), file=sys.stderr)
 			sys.exit(255)
 		
 		# Next 128 lines (2048 bytes per page, 16 bytes per line)
-		for lineNumber in range(1,128):
-			line = ser.readline();
+		for lineNumber in range(128):
+			line = ser.readline()
 			
 			# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
+			print('TODO')
+			
+		# Next line should be OOB data
+		line = ser.readline()
+		
+		if("OOB:" != line):
+			print(f"Did not see page response of OOB for page # {:08x}".format(page_addr), file=sys.stderr)
+			sys.exit(254)
+			
+		# Next 8 lines are OOB data which we just ignore
+		for _ in range(8):
+			ser.readline()
+			
+		# Finally expect our next command prompt
+		line = ser.readline()
+
+		if(DEVICE_COMMAND_PROMPT != line):
+			print(f"Did not see {DEVICE_COMMAND_PROMPT} from serial device after page read", file=sys.stderr)
+			sys.exit(1)
+		else:
+			print("Found expected command prompt and beginning next nand page dump")		
 
 	ser.close()
 
