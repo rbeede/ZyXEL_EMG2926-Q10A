@@ -86,7 +86,11 @@ def main():
 			print(f"Did not see page response for page # {:08x}".format(page_addr))
 			sys.exit(255)
 		
-		
+		# Next 128 lines (2048 bytes per page, 16 bytes per line)
+		for lineNumber in range(1,128):
+			line = ser.readline();
+			
+			# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
 
 	ser.close()
 
