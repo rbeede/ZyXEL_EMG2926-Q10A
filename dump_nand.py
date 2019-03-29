@@ -59,63 +59,87 @@ def main():
 		bytesize=8,
 		parity='N',
 		stopbits=1,
-		timeout=3,
+		timeout=3,  # seconds
 		xonxoff=0,
 		rtscts=0)
 
 	print(f"Using serial port:  {ser.name}")
 
-	ser.write(b"\n")  # Send newlin (enter) to wakeup current serial line
+
+	for page_addr in range(0x0, 0x8000000, 0x800):
+		for attempt in range(3):
+			try:
+				page_bytes = _get_nand_page(ser, page_addr)
+			except:
+				print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
+			else:
+				print(f"Success page read on attempt # {attempt}")
+				break
+				
+		# todo, write bytes to somewhere useful
+
+	# All done
+	ser.close()
+
+
+# Consumes and discards all existing unread lines in ser
+# Sends a newline character to trigger a prompt response
+# Will verify that it can get a prompt
+def _get_nand_page(ser, page_addr):
+	print(f"Looking for page # {:08x} ...".format(page_addr))
+
+	# Discard anything in the buffer
+	while ser.in_waiting > 0:
+		ser.read(ser.in_waiting)
+
+	ser.write(b"\n")  # Send newline (enter) to wakeup current serial line and get a prompt
 
 	line = ser.readline()
 
 	if(DEVICE_COMMAND_PROMPT != line):
-		print(f"Did not see {DEVICE_COMMAND_PROMPT} from serial device even after sending newline key", file=sys.stderr)
-		print("Perhaps you need to get the device to the proper unlocked state first?", file=sys.stderr)
-		sys.exit(1)
+		error_message = f"Did not see {DEVICE_COMMAND_PROMPT} from serial device even after sending newline key."
+		error_message += "  "
+		error_message += "Perhaps you need to get the device to the proper unlocked state first?"
+		error_message += "  "
+		error_message += f"Line seen was {line}"
+
+		print(error_message, file=sys.stderr)
+		raise ConnectionError(error_message)
 	else:
-		print("Found expected command prompt and beginning nand dump")
+		print("\tFound expected command prompt and sending nand dump command")
 
-	for page_addr in range(0x0, 0x8000000, 0x800):
-		print(f"Looking at page # {:08x} ...".format(page_addr))
-		
-		ser.write(b"send nand dump {:08x}\n".format(page_addr))
 
-		# Check our starting line header meets expectations
-		line = ser.readline()
-		
-		if("Page {} dump:".format(hex(page_addr)) != line):
-			print(f"Did not see page response for page # {:08x}".format(page_addr), file=sys.stderr)
-			sys.exit(255)
-		
-		# Next 128 lines (2048 bytes per page, 16 bytes per line)
-		for lineNumber in range(128):
-			line = ser.readline()
-			
-			# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
-			print('TODO')
-			
-		# Next line should be OOB data
-		line = ser.readline()
-		
-		if("OOB:" != line):
-			print(f"Did not see page response of OOB for page # {:08x}".format(page_addr), file=sys.stderr)
-			sys.exit(254)
-			
-		# Next 8 lines are OOB data which we just ignore
-		for _ in range(8):
-			ser.readline()
-			
-		# Finally expect our next command prompt
+	ser.write(b"send nand dump {:08x}\n".format(page_addr))
+
+	# Check our starting line header meets expectations
+	line = ser.readline()
+
+	if("Page {} dump:".format(hex(page_addr)) != line):
+		error_message = f"Did not see page response header for page # {:08x}".format(page_addr)
+		print(error_message, file=sys.stderr)
+		raise RuntimeError(error_message)
+
+	# Next 128 lines (2048 bytes per page, 16 bytes per line)
+	for lineNumber in range(128):
 		line = ser.readline()
 
-		if(DEVICE_COMMAND_PROMPT != line):
-			print(f"Did not see {DEVICE_COMMAND_PROMPT} from serial device after page read", file=sys.stderr)
-			sys.exit(1)
-		else:
-			print("Found expected command prompt and beginning next nand page dump")		
+		# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
+		print('TODO')
 
-	ser.close()
+	# Next line should be OOB data
+	line = ser.readline()
+
+	if("OOB:" != line):
+		error_message = f"Did not see page response of OOB for page # {:08x}".format(page_addr)
+		print(error_message, file=sys.stderr)
+		raise RuntimeWarning(error_message)
+
+
+	# Next 8 lines are OOB data which we just ignore
+	for _ in range(8):
+		ser.readline()
+
+	# Last line would be our DEVICE_COMMAND_PROMPT but we don't read it to allow future loops to have it
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
