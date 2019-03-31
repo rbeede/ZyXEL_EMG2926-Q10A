@@ -80,7 +80,7 @@ def main():
 				break
 
 		# Write current page to our file
-		f.write(pages_bytes)
+		f.write(page_bytes)
 
 
 	# All done
