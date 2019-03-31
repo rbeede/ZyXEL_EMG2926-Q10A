@@ -65,7 +65,7 @@ def main():
 
 	print(f"Using serial port:  {ser.name}")
 
-	print(f"Writing output to canonical path:  {}".format(os.path.realpath(sys.argv[2])))
+	print("Writing output to canonical path:  {}".format(os.path.realpath(sys.argv[2])))
 
 	f = open(os.path.realpath(sys.argv[2]), 'wb')
 
