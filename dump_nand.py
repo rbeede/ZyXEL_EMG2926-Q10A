@@ -40,12 +40,13 @@ os.umask(0o077)
 #---------------------------------
 # Your library/module imports here
 import serial
+import time
 
 # Third party Python libraries.
 
 
 # Global constants
-DEVICE_COMMAND_PROMPT = 'AAVK-EMG2926Q10A#'
+DEVICE_COMMAND_PROMPT = 'AAVK-EMG2926Q10A# '
 
 
 #----------
@@ -74,6 +75,7 @@ def main():
 			try:
 				page_bytes = _get_nand_page(ser, page_addr)
 			except:
+				print("Unwanted error detail:", sys.exc_info()[0])
 				if(2 != attempt):
 					print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
 				else:
@@ -99,17 +101,19 @@ def main():
 # Sends a newline character to trigger a prompt response
 # Will verify that it can get a prompt
 def _get_nand_page(ser, page_addr):
-	print("Looking for page # {:08x} ...".format(page_addr))
+	print("Dumping page # {:08x} ...".format(page_addr))
 
 	# Discard anything in the buffer
 	while ser.in_waiting > 0:
 		ser.read(ser.in_waiting)
 
-	ser.write(b"\n")  # Send newline (enter) to wakeup current serial line and get a prompt
+	ser.write("\n".encode())  # Send newline (enter) to wakeup current serial line and get a prompt
+	time.sleep(2)
 
 	# Read all lines and save the last line which should be our prompt
+	line = ''
 	while ser.in_waiting > 0:
-		line = ser.readline()
+		line = ser.readline().decode()
 
 	if(DEVICE_COMMAND_PROMPT != line):
 		error_message = f"Did not see {DEVICE_COMMAND_PROMPT} from serial device even after sending newline key."
@@ -123,21 +127,26 @@ def _get_nand_page(ser, page_addr):
 	else:
 		print("\tFound expected command prompt and sending nand dump command")
 
+	ser.write("nand dump {:08x}\n".format(page_addr).encode())
 
-	ser.write(b"send nand dump {:08x}\n".format(page_addr))
-
+	
+	line = ser.readline()  # Next line is echo back of what we just sent
+	print(f"Remote device echoed back to us:  {line}")
 	# Check our starting line header meets expectations
-	line = ser.readline()
+	line = ser.readline()  # leave it raw bytes for debugging
 
-	if("Page {:08x} dump:".format(page_addr) != line):
+	if("Page {:08x} dump:".format(page_addr) != line.decode):
 		error_message = "Did not see page response header for page # {:08x}".format(page_addr)
+		error_message += "\t"
+		error_message += f"Saw line:  {line}"
+
 		print(error_message, file=sys.stderr)
 		raise RuntimeError(error_message)
 
 	# Next 128 lines (2048 bytes per page, 16 bytes per line)
 	page_bytes = bytearray()
 	for lineNumber in range(128):
-		line = ser.readline()
+		line = ser.readline().decode()
 
 		# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
 		line_bytes = bytes.fromhex(line[1:-1])  # drop first char (tab) an last char (newline)
@@ -147,7 +156,7 @@ def _get_nand_page(ser, page_addr):
 		page_bytes.extend(line_bytes)
 
 	# Next line should be OOB data
-	line = ser.readline()
+	line = ser.readline().decode()
 
 	if("OOB:" != line):
 		error_message = "Did not see page response of OOB for page # {:08x}".format(page_addr)
