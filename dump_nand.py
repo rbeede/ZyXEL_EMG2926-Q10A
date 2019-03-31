@@ -50,8 +50,8 @@ DEVICE_COMMAND_PROMPT = 'AAVK-EMG2926Q10A#'
 
 #----------
 def main():
-	if(len(sys.argv) != 2):  # 0 is program name, 1..(n-1) are passed args
-		sys.exit(f"Usage:  python3 {sys.argv[0]} /dev/ttyUSB0")
+	if(len(sys.argv) != 3):  # 0 is program name, 1..(n-1) are passed args
+		sys.exit(f"Usage:  python3 {sys.argv[0]} /dev/ttyUSB0 output-file")
 
 	ser = serial.Serial(
 		sys.argv[1],
@@ -65,6 +65,9 @@ def main():
 
 	print(f"Using serial port:  {ser.name}")
 
+	print(f"Writing output to canonical path:  {}".format(os.path.realpath(sys.argv[2])))
+
+	f = open(os.path.realpath(sys.argv[2]), 'wb')
 
 	for page_addr in range(0x0, 0x8000000, 0x800):
 		for attempt in range(3):
@@ -75,11 +78,15 @@ def main():
 			else:
 				print(f"Success page read on attempt # {attempt}")
 				break
-				
-		# todo, write bytes to somewhere useful
+
+		# Write current page to our file
+		f.write(pages_bytes)
+
 
 	# All done
+	f.close()
 	ser.close()
+	print("Completed nand dump")
 
 
 # Consumes and discards all existing unread lines in ser
@@ -120,11 +127,16 @@ def _get_nand_page(ser, page_addr):
 		raise RuntimeError(error_message)
 
 	# Next 128 lines (2048 bytes per page, 16 bytes per line)
+	page_bytes = bytearray()
 	for lineNumber in range(128):
 		line = ser.readline()
 
 		# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
-		print('TODO')
+		line_bytes = bytes.fromhex(line[1:-1])  # drop first char (tab) an last char (newline)
+
+		assert len(line_bytes) == 16, f"Incomplete line from input lacks 16 bytes:  {line}"
+
+		page_bytes.extend(line_bytes)
 
 	# Next line should be OOB data
 	line = ser.readline()
@@ -141,6 +153,7 @@ def _get_nand_page(ser, page_addr):
 
 	# Last line would be our DEVICE_COMMAND_PROMPT but we don't read it to allow future loops to have it
 
+	return page_bytes
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 if __name__ == "__main__": # Scoping
