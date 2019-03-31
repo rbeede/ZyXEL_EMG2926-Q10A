@@ -93,7 +93,7 @@ def main():
 # Sends a newline character to trigger a prompt response
 # Will verify that it can get a prompt
 def _get_nand_page(ser, page_addr):
-	print(f"Looking for page # {:08x} ...".format(page_addr))
+	print("Looking for page # {:08x} ...".format(page_addr))
 
 	# Discard anything in the buffer
 	while ser.in_waiting > 0:
@@ -121,8 +121,8 @@ def _get_nand_page(ser, page_addr):
 	# Check our starting line header meets expectations
 	line = ser.readline()
 
-	if("Page {} dump:".format(hex(page_addr)) != line):
-		error_message = f"Did not see page response header for page # {:08x}".format(page_addr)
+	if("Page {:08x} dump:".format(page_addr) != line):
+		error_message = "Did not see page response header for page # {:08x}".format(page_addr)
 		print(error_message, file=sys.stderr)
 		raise RuntimeError(error_message)
 
@@ -142,7 +142,7 @@ def _get_nand_page(ser, page_addr):
 	line = ser.readline()
 
 	if("OOB:" != line):
-		error_message = f"Did not see page response of OOB for page # {:08x}".format(page_addr)
+		error_message = "Did not see page response of OOB for page # {:08x}".format(page_addr)
 		print(error_message, file=sys.stderr)
 		raise RuntimeWarning(error_message)
 
