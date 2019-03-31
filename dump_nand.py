@@ -74,7 +74,13 @@ def main():
 			try:
 				page_bytes = _get_nand_page(ser, page_addr)
 			except:
-				print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
+				if(2 != attempt):
+					print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
+				else:
+					print(f"Failed on attempt {attempt}.  Giving up", file=sys.stderr)
+					f.close()
+					ser.close()
+					sys.exit(101)
 			else:
 				print(f"Success page read on attempt # {attempt}")
 				break
