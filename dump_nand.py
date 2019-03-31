@@ -107,7 +107,9 @@ def _get_nand_page(ser, page_addr):
 
 	ser.write(b"\n")  # Send newline (enter) to wakeup current serial line and get a prompt
 
-	line = ser.readline()
+	# Read all lines and save the last line which should be our prompt
+	while ser.in_waiting > 0:
+		line = ser.readline()
 
 	if(DEVICE_COMMAND_PROMPT != line):
 		error_message = f"Did not see {DEVICE_COMMAND_PROMPT} from serial device even after sending newline key."
