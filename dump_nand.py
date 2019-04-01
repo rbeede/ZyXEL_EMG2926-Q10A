@@ -1,4 +1,4 @@
-__author__ = 'Rodney Beede'
+__author__ = "Rodney Beede"
 
 # Date created      : 2019-03-26
 #
@@ -24,13 +24,13 @@ __author__ = 'Rodney Beede'
 
 # Strict code checking (in-case cli option -W error wasn't used)
 import warnings
-warnings.simplefilter('error')
+warnings.simplefilter("error")
 
 # Minimum version check
 import sys
 MIN_VERSION_PY = (3, 6)
 if sys.version_info < MIN_VERSION_PY:
-	sys.exit("Python %s.%s or later is required." % MIN_VERSION_PY)
+	sys.exit("Python %s.%s or later is required." % MIN_VERSION_PY)  # old style for python2 compatibility
 
 # Always a good security practice as a default
 import os
@@ -46,7 +46,8 @@ import time
 
 
 # Global constants
-DEVICE_COMMAND_PROMPT = 'AAVK-EMG2926Q10A# '
+DEVICE_COMMAND_PROMPT = bytes("AAVK-EMG2926Q10A# ", "utf_8")
+DEVICE_LINE_SEPARATOR = bytes("\r\n", "utf_8")
 
 
 #----------
@@ -58,7 +59,7 @@ def main():
 		sys.argv[1],
 		baudrate=115200,
 		bytesize=8,
-		parity='N',
+		parity="N",
 		stopbits=1,
 		timeout=3,  # seconds
 		xonxoff=0,
@@ -68,14 +69,17 @@ def main():
 
 	print("Writing output to canonical path:  {}".format(os.path.realpath(sys.argv[2])))
 
-	f = open(os.path.realpath(sys.argv[2]), 'wb')
+	f = open(os.path.realpath(sys.argv[2]), "wb")
 
 	for page_addr in range(0x0, 0x8000000, 0x800):
+		print("Dumping page # {:08x} ...".format(page_addr))
+
 		for attempt in range(3):
 			try:
 				page_bytes = _get_nand_page(ser, page_addr)
 			except:
 				print("Unwanted error detail:", sys.exc_info()[0])
+
 				if(2 != attempt):
 					print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
 				else:
@@ -94,26 +98,24 @@ def main():
 	# All done
 	f.close()
 	ser.close()
-	print("Completed nand dump")
+	print(f"Completed nand dump to {sys.argv[2]}")
 
 
 # Consumes and discards all existing unread lines in ser
-# Sends a newline character to trigger a prompt response
+# Sends a line separator to trigger a prompt response
 # Will verify that it can get a prompt
 def _get_nand_page(ser, page_addr):
-	print("Dumping page # {:08x} ...".format(page_addr))
-
 	# Discard anything in the buffer
 	while ser.in_waiting > 0:
 		ser.read(ser.in_waiting)
 
-	ser.write("\n".encode())  # Send newline (enter) to wakeup current serial line and get a prompt
-	time.sleep(2)
+	ser.write(DEVICE_LINE_SEPARATOR)  # Send to wakeup current serial line and get a prompt
+	time.sleep(2)  # Allow device time to send response
 
 	# Read all lines and save the last line which should be our prompt
-	line = ''
+	line = ""
 	while ser.in_waiting > 0:
-		line = ser.readline().decode()
+		line = ser.readline()
 
 	if(DEVICE_COMMAND_PROMPT != line):
 		error_message = f"Did not see {DEVICE_COMMAND_PROMPT} from serial device even after sending newline key."
@@ -127,13 +129,14 @@ def _get_nand_page(ser, page_addr):
 	else:
 		print("\tFound expected command prompt and sending nand dump command")
 
-	ser.write("nand dump {:08x}\n".format(page_addr).encode())
+	ser.write("nand dump {:08x}{}".format(page_addr).encode())
+	ser.write(DEVICE_LINE_SEPARATOR)
 
 	
 	line = ser.readline()  # Next line is echo back of what we just sent
 	print(f"Remote device echoed back to us:  {line}")
 	# Check our starting line header meets expectations
-	line = ser.readline()  # leave it raw bytes for debugging
+	line = ser.readline()  # remember that this is a bytes sequence still, not a string
 
 	if("Page {:08x} dump:".format(page_addr) != line.decode):
 		error_message = "Did not see page response header for page # {:08x}".format(page_addr)
@@ -146,20 +149,22 @@ def _get_nand_page(ser, page_addr):
 	# Next 128 lines (2048 bytes per page, 16 bytes per line)
 	page_bytes = bytearray()
 	for lineNumber in range(128):
-		line = ser.readline().decode()
+		line = ser.readline()
+		line_as_string = line.decode("utf_8")
 
-		# expecting tab 8 hex bytes space sep, then two spaces, then 8 hex bytes, then \n
-		line_bytes = bytes.fromhex(line[1:-1])  # drop first char (tab) an last char (newline)
+		# expecting tab -> 8 hex bytes (with space sep 7 times) -> two spaces -> 8 hex bytes (with space sep 7 times) -> \n
+		line_hex_to_bytes = bytes.fromhex(line_as_string[1:-1])  # drop first char (tab) and last char (newline)
 
-		assert len(line_bytes) == 16, f"Incomplete line from input lacks 16 bytes:  {line}"
+		assert len(line_hex_to_bytes) == 16, f"Incomplete line because input lacks 16 bytes:  {line}"
 
-		page_bytes.extend(line_bytes)
+		page_bytes.extend(line_hex_to_bytes)
 
 	# Next line should be OOB data
-	line = ser.readline().decode()
+	line = ser.readline()
 
-	if("OOB:" != line):
+	if("OOB:" != line.decode("utf_8")):
 		error_message = "Did not see page response of OOB for page # {:08x}".format(page_addr)
+		error_message += "\tInstead saw:  {line}"
 		print(error_message, file=sys.stderr)
 		raise RuntimeWarning(error_message)
 
