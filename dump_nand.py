@@ -61,7 +61,7 @@ def main():
 		bytesize=8,
 		parity="N",
 		stopbits=1,
-		timeout=3,  # seconds
+		timeout=1,  # seconds
 		xonxoff=0,
 		rtscts=0)
 
@@ -105,19 +105,22 @@ def main():
 # Sends a line separator to trigger a prompt response
 # Will verify that it can get a prompt
 def _get_nand_page(ser, page_addr):
+	print("\t{}\tStarting buffer clear".format(time.ctime()))
 	# Discard anything in the buffer
 	while ser.in_waiting > 0:
 		ser.read(ser.in_waiting)
 
+	print("\t{}\tSending newlines to wakeup terminal".format(time.ctime()))
 	ser.write(DEVICE_LINE_SEPARATOR)  # Send to wakeup current serial line and get a prompt
-	time.sleep(2)  # Allow device time to send response
 	ser.write(DEVICE_LINE_SEPARATOR)  # Repeat twice to get good char read
-	time.sleep(2)  # Allow device time to send response
+	time.sleep(1)  # Allow device time to send response
 
 	# Read all lines and save the last line which should be our prompt
+	print("\t{}\tLooking for device prompt".format(time.ctime()))
 	line = ""
 	while ser.in_waiting > 0:
 		line = ser.readline()
+	print("\t{}\tChecking for correct device prompt".format(time.ctime()))
 
 	if(DEVICE_COMMAND_PROMPT != line):
 		error_message = f"Did not see {DEVICE_COMMAND_PROMPT} from serial device even after sending newline key."
@@ -129,13 +132,13 @@ def _get_nand_page(ser, page_addr):
 		print(error_message, file=sys.stderr)
 		raise ConnectionError(error_message)
 	else:
-		print("\tFound expected command prompt and sending nand dump command")
+		print("\t{}\tFound expected command prompt and sending nand dump command".format(time.ctime()))
 
 	ser.write("nand dump {:08x}".format(page_addr).encode())
 	ser.write(DEVICE_LINE_SEPARATOR)
 
 	
-	line = ser.readline()  # Next line is echo back of what we just sent
+	line = ser.readline()  # Next line is echo back of what we just sent, so ignore
 
 	# Check our starting line header meets expectations
 	line = ser.readline()  # remember that this is a bytes sequence still, not a string
@@ -162,6 +165,7 @@ def _get_nand_page(ser, page_addr):
 		page_bytes.extend(line_hex_to_bytes)
 
 	# Next line should be OOB data
+	print("\t{}\tLooking for OOB".format(time.ctime()))
 	line = ser.readline()
 
 	if("OOB:{}".format(DEVICE_LINE_SEPARATOR.decode('utf_8')) != line.decode("utf_8")):
@@ -175,7 +179,7 @@ def _get_nand_page(ser, page_addr):
 	for _ in range(8):
 		ser.readline()
 
-	# Last line would be our DEVICE_COMMAND_PROMPT but we don't read it to allow future loops to have it
+	# Last line would be our DEVICE_COMMAND_PROMPT but we just ignore it (it is not line separator terminated so readline() would timeout)
 
 	return page_bytes
 
