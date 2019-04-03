@@ -52,8 +52,12 @@ DEVICE_LINE_SEPARATOR = bytes("\r\n", "utf_8")
 
 #----------
 def main():
-	if(len(sys.argv) != 3):  # 0 is program name, 1..(n-1) are passed args
-		sys.exit(f"Usage:  python3 {sys.argv[0]} /dev/ttyUSB0 output-file")
+	if(len(sys.argv) < 3):  # 0 is program name, 1..(n-1) are passed args
+		sys.exit(f"Usage:  python3 {sys.argv[0]} /dev/ttyUSB0 output-file [optional starte hex page number]")
+
+	start_page = 0x0	
+	if(len(sys.argv) == 4):
+		start_page = int(sys.argv[3], 0)  # auto-detects if user passes 0x####
 
 	ser = serial.Serial(
 		sys.argv[1],
@@ -69,18 +73,18 @@ def main():
 
 	print("Writing output to canonical path:  {}".format(os.path.realpath(sys.argv[2])))
 
-	f = open(os.path.realpath(sys.argv[2]), "wb")
+	f = open(os.path.realpath(sys.argv[2]), "ab")  # appends
 
-	for page_addr in range(0x0, 0x8000000, 0x800):
+	for page_addr in range(start_page, 0x8000000, 0x800):
 		print("Dumping page # {:08x} ...".format(page_addr))
 
-		for attempt in range(3):
+		for attempt in range(5):
 			try:
 				page_bytes = _get_nand_page(ser, page_addr)
 			except:
 				print("Unwanted error detail:", sys.exc_info())
 
-				if(2 != attempt):
+				if(5 != attempt):
 					print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
 				else:
 					print(f"Failed on attempt {attempt}.  Giving up", file=sys.stderr)
