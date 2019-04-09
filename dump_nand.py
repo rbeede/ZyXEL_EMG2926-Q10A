@@ -78,19 +78,20 @@ def main():
 	for page_addr in range(start_page, 0x8000000, 0x800):
 		print("Dumping page # {:08x} ...".format(page_addr))
 
-		for attempt in range(5):
+		for attempt in range(1000):
 			try:
 				page_bytes = _get_nand_page(ser, page_addr)
 			except:
 				print("Unwanted error detail:", sys.exc_info())
 
-				if(5 != attempt):
+				if(attempt < 5):
 					print(f"Failed on attempt {attempt}.  Will retry", file=sys.stderr)
 				else:
-					print(f"Failed on attempt {attempt}.  Giving up", file=sys.stderr)
-					f.close()
-					ser.close()
-					sys.exit(101)
+					print(f"Failed on attempt {attempt}.  slowing down", file=sys.stderr)
+					#f.close()
+					#ser.close()
+					#sys.exit(101)
+					time.sleep(3)
 			else:
 				print(f"Success page read on attempt # {attempt}")
 				break
