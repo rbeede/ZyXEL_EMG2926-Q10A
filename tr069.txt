@@ -1,0 +1,14 @@
+
+config tr069 'main'
+	option tr69cInformInterval '86400'
+	option tr69cInterface 'wan'
+	option tr69cInterfaceMask '255.255.255.255'
+	option tr69cInform '1'
+	option tr69cAcsURL 'http://tr069.YOURISPGOESHERE.com:8080'
+	option tr69cAcsUser 'tr069'
+	option tr69cAcsPwd 'isp069'
+	option tr69cConnReqPort '30005'
+	option tr69cConnReqUser 'tr069'
+	option tr69cConnReqPwd 'isp069'
+	option tr69cInformSource '2'
+
